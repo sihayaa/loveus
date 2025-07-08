@@ -61,32 +61,7 @@
       box-shadow: 0 0 15px #fff;
     }
 
-    .heart {
-      position: absolute;
-      width: 20px;
-      height: 20px;
-      background: url('https://upload.wikimedia.org/wikipedia/commons/3/32/Red_heart_icon.svg');
-      background-size: cover;
-      animation: floatUp 5s linear infinite;
-      pointer-events: auto;
-    }
-
-    @keyframes floatUp {
-      0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-100vh) scale(0.7); opacity: 0; }
-    }
-
-    .pop {
-      animation: pop 0.5s ease-out forwards;
-    }
-
-    @keyframes pop {
-      0% { transform: scale(1); }
-      50% { transform: scale(2); }
-      100% { transform: scale(0); opacity: 0; }
-    }
-
-    /* 🎶 Music player styling */
+    /* 🎶 Music player */
     .music-player {
       position: fixed;
       bottom: 20px;
@@ -115,6 +90,19 @@
     .music-player button:hover {
       background-color: #b485d1;
     }
+
+    /* 💖 Floating hearts */
+    .heart {
+      position: absolute;
+      font-size: 20px;
+      animation: floatUp 5s linear forwards;
+      pointer-events: auto;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-100vh) scale(0.7); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -134,13 +122,13 @@
   <div class="music-player">
     <button id="playPause">▶</button>
     <audio id="bgMusic" loop>
-      <source src="https://dl.sndup.net/cxmn/bg.mp3" type="audio/mpeg">
+      <source src="https://raw.githubusercontent.com/sihayaa/loveus/main/Bruno%20Mars%20-%20Just%20the%20Way%20You%20Are%20%5BOfficial%20Instrumental%5D-yt.savetube.me.mp3" type="audio/mpeg">
       Your browser does not support audio playback.
     </audio>
   </div>
 
   <script>
-    // Date tracker
+    // 📆 Date tracker
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
@@ -150,25 +138,31 @@
     document.getElementById('duration-value').textContent =
       `${months} months and ${Math.floor(days)} days`;
 
-    // Floating hearts
+    // 💘 Floating hearts
     function createHeart() {
       const heart = document.createElement('div');
+      heart.textContent = '❤️';
       heart.classList.add('heart');
       heart.style.left = Math.random() * 100 + 'vw';
       heart.style.bottom = '0px';
+
       heart.addEventListener('click', () => {
-        heart.classList.add('pop');
-        setTimeout(() => heart.remove(), 500);
+        heart.style.transform = 'scale(2)';
+        heart.style.opacity = '0';
+        setTimeout(() => heart.remove(), 400);
       });
+
       document.body.appendChild(heart);
       setTimeout(() => heart.remove(), 6000);
     }
+
     setInterval(createHeart, 1500);
 
-    // Music player toggle
+    // 🔊 Music player control
     const bgMusic = document.getElementById('bgMusic');
     const playPause = document.getElementById('playPause');
     let playing = false;
+
     playPause.addEventListener('click', () => {
       if (!playing) {
         bgMusic.play();
