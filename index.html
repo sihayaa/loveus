@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Our Love Space</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to bottom right, #c5f0d4, #e1d8f0);
+      text-align: center;
+      padding: 40px;
+      color: #444;
+    }
+    h1 {
+      font-size: 2em;
+      margin-bottom: 10px;
+    }
+    p {
+      font-size: 1.2em;
+      margin-top: 0;
+    }
+    #duration {
+      font-size: 1em;
+      color: #666;
+      margin-bottom: 30px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 1em;
+      background-color: #a3d2ca;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #95c2b6;
+    }
+  </style>
+</head>
+<body>
+  <h1>Started Dating: October 13, 2024</h1>
+  <p id="duration">Together for: ...</p>
+
+  <button onclick="location.href='games.html'">🎮 Mini Games</button>
+  <button onclick="location.href='letters.html'">💌 Letters</button>
+
+  <script>
+    const startDate = new Date('2024-10-13');
+    const today = new Date();
+    const diffTime = today - startDate;
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    const months = Math.floor(diffDays / 30.44);
+    const days = diffDays % 30.44;
+    document.getElementById('duration').textContent = 
+      `Together for: ${months} months and ${Math.floor(days)} days`;
+  </script>
+</body>
+</html>
