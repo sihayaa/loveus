@@ -52,9 +52,7 @@
       flex-wrap: wrap;
     }
 
-    .upload-section input[type="file"],
-    .upload-section input[type="text"],
-    .upload-section button {
+    .custom-button {
       font-family: 'Freestyle Script', cursive;
       font-size: 1.2em;
       color: #a7d33a;
@@ -64,15 +62,24 @@
       padding: 10px 25px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       transition: all 0.3s ease;
+      cursor: pointer;
+      display: inline-block;
     }
 
-    .upload-section input[type="text"] {
+    .custom-button:hover {
+      box-shadow: 0 0 15px rgba(255, 105, 180, 0.7);
+    }
+
+    .caption-input {
+      font-family: 'Freestyle Script', cursive;
+      font-size: 1.2em;
       color: black;
       background: white;
-    }
-
-    .upload-section button:hover {
-      box-shadow: 0 0 15px rgba(255, 105, 180, 0.7);
+      border: none;
+      border-radius: 40px;
+      padding: 10px 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
     }
 
     .gallery {
@@ -106,7 +113,7 @@
 
     .photo-block p {
       font-family: 'Great Vibes', cursive;
-      font-size: 1.2em;
+      font-size: 1.4em;
       color: #8628ac;
       margin-top: 8px;
       text-shadow: 0 1px 1px #fff;
@@ -142,12 +149,10 @@
   <h1>Our Memories 📷</h1>
 
   <div class="upload-section">
-    <label>
-      📷 Pick a Memory
-      <input type="file" id="upload" accept="image/*" style="display:none">
-    </label>
-    <input type="text" id="caption" placeholder="Add a sweet caption...">
-    <button id="uploadBtn">💞 Seal the Memory</button>
+    <label for="upload" class="custom-button">📷 Pick a Memory</label>
+    <input type="file" id="upload" accept="image/*" style="display:none">
+    <input type="text" id="caption" placeholder="Add a sweet caption..." class="caption-input">
+    <button id="uploadBtn" class="custom-button">💞 Seal the Memory</button>
   </div>
 
   <div class="gallery" id="gallery"></div>
@@ -218,9 +223,10 @@
     }
 
     document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
-    document.querySelector('label input[type="file"]').addEventListener('change', (e) => {
+    document.querySelector('input[type="file"]').addEventListener('change', (e) => {
       document.getElementById('upload').files = e.target.files;
     });
+
     loadGallery();
   </script>
 </body>
