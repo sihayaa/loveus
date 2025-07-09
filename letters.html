@@ -4,18 +4,6 @@
   <meta charset="UTF-8">
   <title>Love Letters</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
-
-  <!-- Supabase CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-  <!-- Supabase initialization -->
-  <script>
-    const { createClient } = supabase;
-    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
-    const supabase = createClient(supabaseUrl, supabaseKey);
-  </script>
-
   <style>
     body {
       margin: 0;
@@ -37,13 +25,13 @@
     p.subtitle {
       font-size: 1.3em;
       color: #7b4b94;
-      margin-bottom: 0;
+      margin: 0;
     }
 
-    p.encouragement {
-      font-size: 1em;
-      color: #6a3f80;
-      margin-top: 6px;
+    p.encourage {
+      margin-bottom: 10px;
+      font-size: 1.3em;
+      color: #9b3bb0;
     }
 
     .letter-form {
@@ -87,7 +75,7 @@
     .letters {
       margin-top: 40px;
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
       gap: 20px;
       padding: 0 20px 40px;
       width: 100%;
@@ -102,7 +90,12 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
+      transition: transform 0.3s ease;
       cursor: pointer;
+    }
+
+    .letter:hover {
+      transform: scale(1.03);
     }
 
     .date {
@@ -115,8 +108,8 @@
 </head>
 <body>
   <h1>Love Letters</h1>
-  <p class="subtitle">💌 Express your love</p>
-  <p class="encouragement">📝 You can come back anytime and read something sweet.</p>
+  <p class="encourage">💌 Express your love</p>
+  <p class="subtitle">📝 You can come back anytime and read something sweet.</p>
 
   <div class="letter-form">
     <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
@@ -125,15 +118,21 @@
 
   <div class="letters" id="letters"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
     async function sealLetter() {
       const input = document.getElementById('letterInput');
       const text = input.value.trim();
       if (!text) return;
 
-      const { data, error } = await supabase.from('letters').insert([{ content: text }]);
+      const { error } = await supabase.from('letters').insert([{ content: text }]);
       if (error) {
-        alert('Error saving letter.');
+        alert('Failed to save letter: ' + error.message);
         return;
       }
 
@@ -143,19 +142,22 @@
 
     async function loadLetters() {
       const { data, error } = await supabase.from('letters').select('*').order('created_at', { ascending: false });
-      if (error) return console.error('Error loading letters:', error);
+      if (error) {
+        console.error('Failed to load letters:', error.message);
+        return;
+      }
 
       const container = document.getElementById('letters');
       container.innerHTML = '';
 
-      data.forEach(letter => {
+      data.forEach(({ content, created_at }) => {
         const card = document.createElement('div');
         card.className = 'letter';
-        card.innerText = letter.content;
+        card.innerText = content;
 
         const date = document.createElement('div');
         date.className = 'date';
-        date.innerText = new Date(letter.created_at).toLocaleString();
+        date.innerText = new Date(created_at).toLocaleString();
 
         card.appendChild(date);
         container.appendChild(card);
