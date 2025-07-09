@@ -92,23 +92,22 @@
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
       position: relative;
+      transition: transform 0.4s ease-in-out;
       cursor: pointer;
-      transition: transform 0.3s ease;
     }
 
-    .letter:hover {
-      transform: scale(1.02);
-    }
-
-    .letter.opened {
-      animation: openLetter 0.5s ease forwards;
-      transform: scale(1.1);
-      z-index: 10;
-    }
-
-    @keyframes openLetter {
-      0% { transform: scale(1); }
-      100% { transform: scale(1.1); }
+    .letter.zoomed {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(1.5);
+      z-index: 999;
+      background: #fffdfc;
+      max-width: 600px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      padding: 30px;
     }
 
     .date {
@@ -118,16 +117,15 @@
       text-align: right;
     }
 
-    .edit-controls {
-      display: flex;
-      justify-content: space-between;
+    .actions {
+      display: none;
       margin-top: 10px;
+      justify-content: flex-end;
+      gap: 10px;
     }
 
-    .edit-controls button {
-      font-size: 0.9em;
-      padding: 5px 12px;
-      border-radius: 12px;
+    .letter.zoomed .actions {
+      display: flex;
     }
   </style>
 </head>
@@ -144,92 +142,90 @@
   <div class="letters" id="letters"></div>
 
   <script>
-    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
-    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+    const supabaseClient = supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
 
     async function sealLetter() {
       const input = document.getElementById('letterInput');
       const text = input.value.trim();
       if (!text) return;
-
       const { error } = await supabaseClient.from('letters').insert({ content: text });
-      if (error) {
-        alert('Error saving letter: ' + error.message);
-        return;
-      }
-
+      if (error) return alert('Error saving: ' + error.message);
       input.value = '';
       loadLetters();
     }
 
-    async function updateLetter(id, newContent) {
-      const { error } = await supabaseClient.from('letters').update({ content: newContent }).eq('id', id);
-      if (error) {
-        alert('Error updating letter: ' + error.message);
-      } else {
-        loadLetters();
-      }
-    }
-
     async function loadLetters() {
       const { data, error } = await supabaseClient.from('letters').select('*').order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error loading letters:', error);
-        return;
-      }
-
+      if (error) return console.error('Error loading:', error);
       const container = document.getElementById('letters');
       container.innerHTML = '';
+
       data.forEach(letter => {
         const div = document.createElement('div');
         div.className = 'letter';
-
-        const content = document.createElement('div');
-        content.innerText = letter.content;
-        content.contentEditable = false;
-        content.style.outline = 'none';
+        div.innerHTML = `<div class="text">${letter.content}</div>`;
+        div.setAttribute('data-id', letter.id);
 
         const date = document.createElement('div');
         date.className = 'date';
         date.innerText = new Date(letter.created_at).toLocaleString();
 
-        const controls = document.createElement('div');
-        controls.className = 'edit-controls';
-
+        const actions = document.createElement('div');
+        actions.className = 'actions';
         const editBtn = document.createElement('button');
-        editBtn.innerText = 'Edit';
-        editBtn.onclick = () => {
-          content.contentEditable = true;
-          content.focus();
-          saveBtn.style.display = 'inline-block';
-        };
-
+        editBtn.textContent = 'Edit';
         const saveBtn = document.createElement('button');
-        saveBtn.innerText = 'Save';
+        saveBtn.textContent = 'Save';
         saveBtn.style.display = 'none';
-        saveBtn.onclick = () => {
-          content.contentEditable = false;
-          saveBtn.style.display = 'none';
-          updateLetter(letter.id, content.innerText);
-        };
 
-        controls.appendChild(editBtn);
-        controls.appendChild(saveBtn);
-
-        div.appendChild(content);
+        actions.append(editBtn, saveBtn);
         div.appendChild(date);
-        div.appendChild(controls);
+        div.appendChild(actions);
 
-        div.onclick = () => {
-          div.classList.toggle('opened');
-        };
+        div.addEventListener('click', (e) => {
+          if (!div.classList.contains('zoomed')) {
+            document.querySelectorAll('.letter').forEach(l => l.classList.remove('zoomed'));
+            div.classList.add('zoomed');
+          }
+        });
+
+        editBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const textDiv = div.querySelector('.text');
+          const textarea = document.createElement('textarea');
+          textarea.value = textDiv.textContent;
+          textarea.style.width = '100%';
+          textarea.style.height = '150px';
+          textarea.style.fontSize = '1.1em';
+          textarea.style.fontFamily = 'Patrick Hand';
+          textDiv.replaceWith(textarea);
+          editBtn.style.display = 'none';
+          saveBtn.style.display = 'inline-block';
+        });
+
+        saveBtn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const textarea = div.querySelector('textarea');
+          const updated = textarea.value;
+          const id = div.getAttribute('data-id');
+          const { error } = await supabaseClient.from('letters').update({ content: updated }).eq('id', id);
+          if (error) return alert('Failed to save');
+          const textDiv = document.createElement('div');
+          textDiv.className = 'text';
+          textDiv.textContent = updated;
+          textarea.replaceWith(textDiv);
+          editBtn.style.display = 'inline-block';
+          saveBtn.style.display = 'none';
+        });
 
         container.appendChild(div);
       });
     }
 
-    document.addEventListener('DOMContentLoaded', loadLetters);
+    loadLetters();
   </script>
 </body>
 </html>
