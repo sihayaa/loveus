@@ -170,20 +170,20 @@
       }
     }
 
-   async function deletePhoto(id, path) {
-  try {
-    const { error: deleteError } = await supabase.from('memories').delete().eq('id', id);
-    if (deleteError) throw deleteError;
+    async function deletePhoto(id, path) {
+      try {
+        const { error: deleteError } = await supabase.from('memories').delete().eq('id', id);
+        if (deleteError) throw deleteError;
 
-    const { error: storageError } = await supabase.storage.from('memories').remove([path]);
-    if (storageError) throw storageError;
+        const { error: storageError } = await supabase.storage.from('memories').remove([path]);
+        if (storageError) throw storageError;
 
-    loadGallery();
-  } catch (err) {
-    console.error('Deletion failed:', err);
-  }
-}
-    
+        loadGallery();
+      } catch (err) {
+        console.error('Deletion failed:', err);
+      }
+    }
+
     async function loadGallery() {
       const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: false });
       const gallery = document.getElementById('gallery');
@@ -197,7 +197,7 @@
         const block = document.createElement('div');
         block.className = 'photo-block';
         block.innerHTML = `
-          <button class="delete-btn" onclick="deletePhoto(${item.id}, '${item.file_path}')">×</button>
+          <button class="delete-btn" onclick="deletePhoto(${item.id}, \`${item.file_path}\`)">×</button>
           <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}')">
           <p>${item.caption || ''}</p>
         `;
