@@ -118,10 +118,10 @@
       pointer-events: auto;
     }
 
-    /* 💡 Post-it Notes */
+    /* 📌 Post-it Notes */
     #note-icon {
       position: fixed;
-      bottom: 20px;
+      top: 190px;
       left: 20px;
       width: 60px;
       cursor: pointer;
@@ -130,7 +130,7 @@
 
     #color-picker {
       position: fixed;
-      bottom: 90px;
+      top: 265px;
       left: 20px;
       background: #fff;
       padding: 10px;
@@ -176,14 +176,13 @@
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
+  <!-- 📸 Album Icon -->
   <div class="album-icon" onclick="openAlbum()">
     <img src="album-icon.png" alt="Album Icon">
   </div>
 
-  <div id="album-overlay"></div>
-
-  <!-- 📌 Post-it Note Trigger -->
-  <img id="note-icon" src="/mnt/data/80716d15-12b8-43a7-a703-0aefc9aa50b1.png" alt="Add Note">
+  <!-- 📌 Add Note Icon -->
+  <img id="note-icon" src="/mnt/data/762c2ffd-d011-4a4c-93b3-0b073db9efce.png" alt="Add Note">
 
   <!-- 🎨 Color Picker -->
   <div id="color-picker">
@@ -192,10 +191,11 @@
     <button class="color-btn" style="background:#6bff6d" data-color="#6bff6d"></button>
   </div>
 
-  <!-- 📝 Notes Container -->
+  <div id="album-overlay"></div>
   <div id="notesContainer"></div>
 
   <script>
+    // ❤️ Date Duration
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
@@ -205,25 +205,24 @@
     document.getElementById('duration-value').textContent =
       `${months} months and ${Math.floor(days)} days`;
 
+    // ❤️ Floating hearts
     function createHeart() {
       const heart = document.createElement('div');
       heart.textContent = '❤️';
       heart.classList.add('heart');
       heart.style.left = Math.random() * 100 + 'vw';
       heart.style.bottom = '0px';
-
       heart.addEventListener('click', () => {
         heart.style.transform = 'scale(2)';
         heart.style.opacity = '0';
         setTimeout(() => heart.remove(), 400);
       });
-
       document.body.appendChild(heart);
       setTimeout(() => heart.remove(), 6000);
     }
-
     setInterval(createHeart, 1500);
 
+    // 📸 Album transition
     function openAlbum() {
       const overlay = document.getElementById('album-overlay');
       overlay.classList.add('show');
@@ -232,7 +231,7 @@
       }, 800);
     }
 
-    // 📌 Sticky Note Logic
+    // 📌 Sticky Notes Logic
     const noteBtn = document.getElementById("note-icon");
     const colorPicker = document.getElementById("color-picker");
 
