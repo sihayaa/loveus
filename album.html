@@ -85,8 +85,8 @@
 
   <script>
     const supabase = supabase.createClient(
-      'https://vxbtetyfilbipmdxeydt.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ4YnRldHlmaWxiaXBtZHhleWR0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzI3ODksImV4cCI6MjA2NzY0ODc4OX0.sEz0Zpd1clU9yWEDc8Rq_Kb_MkRzkJAvj9NeYPCikxM'
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
     async function uploadPhoto() {
@@ -96,7 +96,7 @@
       const filePath = `${Date.now()}_${file.name}`;
 
       const { data, error } = await supabase.storage
-        .from('memories')
+      .from('memories')
         .upload(filePath, file);
 
       if (!error) {
