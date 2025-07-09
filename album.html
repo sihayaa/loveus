@@ -170,12 +170,20 @@
       }
     }
 
-    async function deletePhoto(id, path) {
-      await supabase.from('memories').delete().eq('id', id);
-      await supabase.storage.from('memories').remove([path]);
-      loadGallery();
-    }
+   async function deletePhoto(id, path) {
+  try {
+    const { error: deleteError } = await supabase.from('memories').delete().eq('id', id);
+    if (deleteError) throw deleteError;
 
+    const { error: storageError } = await supabase.storage.from('memories').remove([path]);
+    if (storageError) throw storageError;
+
+    loadGallery();
+  } catch (err) {
+    console.error('Deletion failed:', err);
+  }
+}
+    
     async function loadGallery() {
       const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: false });
       const gallery = document.getElementById('gallery');
