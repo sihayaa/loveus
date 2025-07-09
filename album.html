@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Our Memories</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Freestyle+Script&family=Great+Vibes&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -55,26 +55,20 @@
     .upload-section input[type="file"],
     .upload-section input[type="text"],
     .upload-section button {
-      border: none;
-      border-radius: 40px;
-      padding: 10px 25px;
       font-family: 'Freestyle Script', cursive;
       font-size: 1.2em;
       color: #a7d33a;
-      background: linear-gradient(to right, #5e4c78, #6b4d94);
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      transition: all 0.3s ease-in-out;
-    }
-
-    .upload-section input[type="file"]::file-selector-button {
+      background: linear-gradient(to bottom, #6a4c93, #5c3d85);
       border: none;
-      background: none;
-      color: #a7d33a;
-      font-family: 'Freestyle Script', cursive;
+      border-radius: 40px;
+      padding: 10px 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
     }
 
     .upload-section input[type="text"] {
       color: black;
+      background: white;
     }
 
     .upload-section button:hover {
@@ -82,42 +76,40 @@
     }
 
     .gallery {
-      display: flex;
-      flex-wrap: wrap;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
       gap: 20px;
       padding: 30px;
-      justify-content: flex-start;
+      justify-content: start;
     }
 
     .photo-block {
       background: white;
-      border: 5px solid #eee;
+      border: 3px solid #eee;
       border-radius: 12px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-      width: 200px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
       padding: 10px;
-      position: relative;
-      transition: transform 0.3s ease;
-    }
-
-    .photo-block:hover {
-      transform: translateY(-5px);
+      width: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .photo-block img {
       width: 100%;
-      height: auto;
+      height: 220px;
+      object-fit: contain;
       border-radius: 8px;
       background-color: #f0f0f0;
       cursor: pointer;
     }
 
     .photo-block p {
-      margin-top: 12px;
-      font-size: 1.3em;
       font-family: 'Great Vibes', cursive;
+      font-size: 1.2em;
       color: #8628ac;
-      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+      margin-top: 8px;
+      text-shadow: 0 1px 1px #fff;
     }
 
     .lightbox {
@@ -132,20 +124,16 @@
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      color: white;
+      color: #fff;
+      font-family: 'Great Vibes', cursive;
+      font-size: 2em;
+      padding: 20px;
     }
 
     .lightbox img {
       max-width: 90%;
-      max-height: 80%;
-      border-radius: 10px;
-    }
-
-    .lightbox p {
-      margin-top: 15px;
-      font-size: 2em;
-      font-family: 'Great Vibes', cursive;
-      color: #ffbbff;
+      max-height: 70vh;
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -154,7 +142,10 @@
   <h1>Our Memories 📷</h1>
 
   <div class="upload-section">
-    <input type="file" id="upload" accept="image/*">
+    <label>
+      📷 Pick a Memory
+      <input type="file" id="upload" accept="image/*" style="display:none">
+    </label>
     <input type="text" id="caption" placeholder="Add a sweet caption...">
     <button id="uploadBtn">💞 Seal the Memory</button>
   </div>
@@ -163,7 +154,7 @@
 
   <div class="lightbox" id="lightbox" onclick="this.style.display='none'">
     <img id="lightbox-img" src="" alt="Preview">
-    <p id="lightbox-caption"></p>
+    <div id="lightbox-caption"></div>
   </div>
 
   <script>
@@ -198,7 +189,7 @@
     }
 
     async function loadGallery() {
-      const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabase.from('memories').select('*').order('id', { ascending: true });
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
       if (error) {
@@ -227,6 +218,9 @@
     }
 
     document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
+    document.querySelector('label input[type="file"]').addEventListener('change', (e) => {
+      document.getElementById('upload').files = e.target.files;
+    });
     loadGallery();
   </script>
 </body>
