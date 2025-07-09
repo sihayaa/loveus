@@ -101,6 +101,25 @@
       border-radius: 12px;
       object-fit: cover;
     }
+
+    /* 📖 Album overlay animation */
+    #album-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle, #d2b4de 0%, #884ea0 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      z-index: 1000;
+    }
+
+    #album-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
   </style>
 </head>
 <body>
@@ -117,9 +136,12 @@
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
   <!-- 📸 Side Album Icon -->
-  <div class="album-icon" onclick="alert('Photo album coming soon 💜')">
+  <div class="album-icon" onclick="openAlbum()">
     <img src="album-icon.png" alt="Album Icon">
   </div>
+
+  <!-- Overlay Animation -->
+  <div id="album-overlay"></div>
 
   <script>
     // 📆 Date tracker
@@ -151,6 +173,16 @@
     }
 
     setInterval(createHeart, 1500);
+
+    // 📖 Album transition
+    function openAlbum() {
+      const overlay = document.getElementById('album-overlay');
+      overlay.classList.add('show');
+      setTimeout(() => {
+        window.location.href = 'album.html';
+      }, 800);
+    }
   </script>
 </body>
 </html>
+
