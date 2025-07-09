@@ -179,7 +179,7 @@
       if (!file) return;
 
       const filePath = `${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage.from('memories').upload(filePath, file);
+      const { error: uploadError } = await supabase.storage.from('memories').upload(filePath, file);
 
       if (uploadError) {
         console.error('Upload error:', uploadError);
