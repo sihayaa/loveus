@@ -14,7 +14,7 @@
       color: #4b2354;
       text-align: center;
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden;
     }
 
     @keyframes gradientShift {
@@ -30,30 +30,39 @@
 
     .gallery {
       display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: center;
       gap: 30px;
       padding: 30px;
     }
 
-    .memory {
+    .photo-block {
       background: white;
       border: 3px solid #d2b4de;
       border-radius: 10px;
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      padding: 10px;
-      width: 200px;
-      transition: transform 0.3s ease;
+      padding: 15px;
+      width: 80%;
+      max-width: 400px;
     }
 
-    .memory:hover {
-      transform: scale(1.05);
-    }
-
-    .memory img {
+    .photo-block img {
       width: 100%;
       border-radius: 6px;
-      margin-bottom: 8px;
+      margin-bottom: 10px;
+    }
+
+    textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: vertical;
+      font-size: 14px;
+    }
+
+    .upload-section {
+      margin-top: 30px;
     }
 
     .back-button {
@@ -72,7 +81,6 @@
       background: #b085c6;
     }
 
-    /* Floating sparkles */
     .sparkle {
       position: absolute;
       width: 8px;
@@ -88,7 +96,6 @@
       to { transform: translateY(-10vh); opacity: 0; }
     }
 
-    /* Optional soft clouds */
     .cloud {
       position: absolute;
       background: rgba(255, 255, 255, 0.2);
@@ -107,23 +114,39 @@
   <a href="index.html" class="back-button">← Back to Home</a>
   <h1>Our Memories 📷</h1>
 
-  <div class="gallery">
-    <div class="memory">
-      <img src="memory1.jpg" alt="Memory 1">
-      <div>Memory 1</div>
-    </div>
-    <div class="memory">
-      <img src="memory2.jpg" alt="Memory 2">
-      <div>Memory 2</div>
-    </div>
-    <div class="memory">
-      <img src="memory3.jpg" alt="Memory 3">
-      <div>Memory 3</div>
-    </div>
+  <div class="upload-section">
+    <input type="file" id="upload" accept="image/*">
   </div>
 
-  <!-- Sparkles -->
+  <div class="gallery" id="gallery"></div>
+
   <script>
+    const gallery = document.getElementById('gallery');
+    const upload = document.getElementById('upload');
+
+    upload.addEventListener('change', () => {
+      const file = upload.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const block = document.createElement('div');
+          block.className = 'photo-block';
+
+          const img = document.createElement('img');
+          img.src = e.target.result;
+
+          const caption = document.createElement('textarea');
+          caption.placeholder = 'Write something sweet...';
+
+          block.appendChild(img);
+          block.appendChild(caption);
+          gallery.appendChild(block);
+        }
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // Sparkles
     for (let i = 0; i < 30; i++) {
       const sparkle = document.createElement('div');
       sparkle.classList.add('sparkle');
@@ -133,6 +156,7 @@
       document.body.appendChild(sparkle);
     }
 
+    // Clouds
     for (let i = 0; i < 5; i++) {
       const cloud = document.createElement('div');
       cloud.classList.add('cloud');
@@ -146,4 +170,3 @@
   </script>
 </body>
 </html>
-
