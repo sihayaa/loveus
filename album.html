@@ -29,11 +29,13 @@
     }
 
     .gallery {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 30px;
-      padding: 30px;
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+      padding: 20px;
+      max-width: 100vw;
+      overflow: hidden;
+      justify-items: center;
     }
 
     .photo-block {
@@ -41,24 +43,30 @@
       border: 3px solid #d2b4de;
       border-radius: 10px;
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-      padding: 15px;
-      width: 80%;
-      max-width: 400px;
+      padding: 10px;
+      width: 150px;
+      max-height: 300px;
+      overflow: hidden;
+      position: relative;
     }
 
     .photo-block img {
       width: 100%;
+      height: 120px;
+      object-fit: cover;
       border-radius: 6px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+      cursor: pointer;
     }
 
     textarea {
       width: 100%;
-      padding: 10px;
+      height: 60px;
+      padding: 6px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      resize: vertical;
-      font-size: 14px;
+      resize: none;
+      font-size: 12px;
     }
 
     .upload-section {
@@ -79,6 +87,46 @@
 
     .back-button:hover {
       background: #b085c6;
+    }
+
+    .delete-btn, .edit-btn {
+      position: absolute;
+      top: 8px;
+      font-size: 10px;
+      padding: 4px 8px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      background-color: #f8b6b6;
+      color: #fff;
+    }
+
+    .edit-btn {
+      right: 40px;
+      background-color: #a3d2ca;
+    }
+
+    .delete-btn {
+      right: 8px;
+    }
+
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      border-radius: 10px;
     }
 
     .sparkle {
@@ -120,9 +168,15 @@
 
   <div class="gallery" id="gallery"></div>
 
+  <div class="lightbox" id="lightbox">
+    <img id="lightbox-img" src="" alt="Preview">
+  </div>
+
   <script>
     const gallery = document.getElementById('gallery');
     const upload = document.getElementById('upload');
+    const lightbox = document.getElementById('lightbox');
+    const lightboxImg = document.getElementById('lightbox-img');
 
     upload.addEventListener('change', () => {
       const file = upload.files[0];
@@ -134,16 +188,36 @@
 
           const img = document.createElement('img');
           img.src = e.target.result;
+          img.addEventListener('click', () => {
+            lightboxImg.src = img.src;
+            lightbox.style.display = 'flex';
+          });
 
           const caption = document.createElement('textarea');
           caption.placeholder = 'Write something sweet...';
 
+          const deleteBtn = document.createElement('button');
+          deleteBtn.className = 'delete-btn';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.onclick = () => block.remove();
+
+          const editBtn = document.createElement('button');
+          editBtn.className = 'edit-btn';
+          editBtn.textContent = 'Edit';
+          editBtn.onclick = () => caption.focus();
+
           block.appendChild(img);
           block.appendChild(caption);
+          block.appendChild(editBtn);
+          block.appendChild(deleteBtn);
           gallery.appendChild(block);
         }
         reader.readAsDataURL(file);
       }
+    });
+
+    lightbox.addEventListener('click', () => {
+      lightbox.style.display = 'none';
     });
 
     // Sparkles
@@ -170,3 +244,4 @@
   </script>
 </body>
 </html>
+
