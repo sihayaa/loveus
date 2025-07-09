@@ -4,10 +4,8 @@
   <meta charset="UTF-8">
   <title>Our Memories</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Freestyle+Script&family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&display=swap');
-
     body {
       margin: 0;
       padding: 0;
@@ -47,48 +45,57 @@
     }
 
     .upload-section {
-      margin: 30px;
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
     }
 
-    input[type="file"], #caption, #uploadBtn {
+    .upload-section input[type="file"],
+    .upload-section input[type="text"],
+    .upload-section button {
       border: none;
-      border-radius: 30px;
-      padding: 10px 20px;
-      margin: 5px;
+      border-radius: 40px;
+      padding: 10px 25px;
       font-family: 'Freestyle Script', cursive;
-      background: linear-gradient(145deg, #6d4773, #a07bb0);
+      font-size: 1.2em;
       color: #a7d33a;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      transition: 0.3s ease;
+      background: linear-gradient(to right, #5e4c78, #6b4d94);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      transition: all 0.3s ease-in-out;
     }
 
-    input[type="file"]::file-selector-button {
-      font-family: 'Freestyle Script', cursive;
-      color: #a7d33a;
-      background: transparent;
+    .upload-section input[type="file"]::file-selector-button {
       border: none;
-      cursor: pointer;
+      background: none;
+      color: #a7d33a;
+      font-family: 'Freestyle Script', cursive;
     }
 
-    #uploadBtn:hover, input[type="file"]:hover, #caption:hover {
-      box-shadow: 0 0 15px rgba(255, 105, 180, 0.5);
-      transform: scale(1.03);
+    .upload-section input[type="text"] {
+      color: black;
+    }
+
+    .upload-section button:hover {
+      box-shadow: 0 0 15px rgba(255, 105, 180, 0.7);
     }
 
     .gallery {
       display: flex;
       flex-wrap: wrap;
       gap: 20px;
-      padding: 20px;
+      padding: 30px;
       justify-content: flex-start;
     }
 
     .photo-block {
-      background: #fff;
+      background: white;
+      border: 5px solid #eee;
       border-radius: 12px;
-      padding: 15px 15px 25px;
-      width: 170px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
+      width: 200px;
+      padding: 10px;
       position: relative;
       transition: transform 0.3s ease;
     }
@@ -100,21 +107,45 @@
     .photo-block img {
       width: 100%;
       height: auto;
-      border: 4px solid #fff;
-      box-shadow: inset 0 0 10px rgba(0,0,0,0.08);
-      border-radius: 6px;
-      margin-bottom: 10px;
+      border-radius: 8px;
+      background-color: #f0f0f0;
+      cursor: pointer;
     }
 
     .photo-block p {
-      font-family: 'Freestyle Script', cursive;
-      font-size: 1.2em;
+      margin-top: 12px;
+      font-size: 1.3em;
+      font-family: 'Great Vibes', cursive;
       color: #8628ac;
-      text-shadow: 1px 1px 2px rgba(0,0,0,0.15);
-      background: rgba(255,255,255,0.8);
-      padding: 5px 10px;
-      border-radius: 8px;
-      display: inline-block;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    }
+
+    .lightbox {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: white;
+    }
+
+    .lightbox img {
+      max-width: 90%;
+      max-height: 80%;
+      border-radius: 10px;
+    }
+
+    .lightbox p {
+      margin-top: 15px;
+      font-size: 2em;
+      font-family: 'Great Vibes', cursive;
+      color: #ffbbff;
     }
   </style>
 </head>
@@ -129,6 +160,11 @@
   </div>
 
   <div class="gallery" id="gallery"></div>
+
+  <div class="lightbox" id="lightbox" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="" alt="Preview">
+    <p id="lightbox-caption"></p>
+  </div>
 
   <script>
     const supabase = window.supabase.createClient(
@@ -174,11 +210,20 @@
         const block = document.createElement('div');
         block.className = 'photo-block';
         block.innerHTML = `
-          <img src="${item.image_url}" alt="Memory">
+          <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}', \`${item.caption || ''}\`)">
           <p>${item.caption || ''}</p>
         `;
         gallery.appendChild(block);
       });
+    }
+
+    function showLightbox(src, caption) {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxCaption = document.getElementById('lightbox-caption');
+      lightboxImg.src = src;
+      lightboxCaption.textContent = caption;
+      lightbox.style.display = 'flex';
     }
 
     document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
