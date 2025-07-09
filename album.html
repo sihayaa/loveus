@@ -191,7 +191,6 @@
 
       const filePath = `${Date.now()}_${file.name}`;
       const { error: uploadError } = await supabase.storage.from('memories').upload(filePath, file);
-
       if (uploadError) {
         console.error('Upload error:', uploadError);
         return;
@@ -206,12 +205,22 @@
       } else {
         document.getElementById('caption').value = '';
         document.getElementById('fileName').innerText = 'No file chosen';
+        await refreshOrderIndices();
         loadGallery();
       }
     }
 
+    async function refreshOrderIndices() {
+      const { data, error } = await supabase.from('memories').select('id').order('id');
+      if (error) return;
+      const updates = data.map((item, index) =>
+        supabase.from('memories').update({ order_index: index }).eq('id', item.id)
+      );
+      await Promise.all(updates);
+    }
+
     async function loadGallery() {
-      const { data, error } = await supabase.from('memories').select('*').order('id', { ascending: true });
+      const { data, error } = await supabase.from('memories').select('*').order('order_index', { ascending: true });
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
       if (error) {
@@ -222,6 +231,7 @@
       data.forEach(item => {
         const block = document.createElement('div');
         block.className = 'photo-block';
+        block.setAttribute('data-id', item.id);
         block.innerHTML = `
           <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}', \`${item.caption || ''}\`)">
           <p>${item.caption || ''}</p>
@@ -231,7 +241,13 @@
 
       Sortable.create(gallery, {
         animation: 150,
-        ghostClass: 'sortable-ghost'
+        ghostClass: 'sortable-ghost',
+        onEnd: async () => {
+          const newOrder = [...gallery.children].map((el, i) => ({ id: el.dataset.id, order_index: i }));
+          await Promise.all(newOrder.map(({ id, order_index }) =>
+            supabase.from('memories').update({ order_index }).eq('id', id)
+          ));
+        }
       });
     }
 
