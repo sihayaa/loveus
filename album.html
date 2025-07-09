@@ -6,6 +6,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
+
     body {
       margin: 0;
       padding: 0;
@@ -51,7 +53,7 @@
     .gallery {
       display: flex;
       flex-wrap: wrap;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 15px;
       padding: 20px;
     }
@@ -63,6 +65,7 @@
       box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
       padding: 10px;
       width: 150px;
+      overflow: hidden;
       position: relative;
     }
 
@@ -80,25 +83,6 @@
       font-size: 1em;
       font-family: 'Great Vibes', cursive;
       color: #8628ac;
-    }
-
-    .delete-btn {
-      position: absolute;
-      top: 5px;
-      right: 5px;
-      background: #ff6b81;
-      color: white;
-      border: none;
-      border-radius: 50%;
-      width: 25px;
-      height: 25px;
-      font-size: 14px;
-      display: none;
-      cursor: pointer;
-    }
-
-    .photo-block:hover .delete-btn {
-      display: block;
     }
 
     .lightbox {
@@ -167,16 +151,6 @@
       }
     }
 
-    async function deletePhoto(id, path) {
-      const { error: deleteError } = await supabase.from('memories').delete().eq('id', id);
-      const { error: storageError } = await supabase.storage.from('memories').remove([path]);
-      if (deleteError || storageError) {
-        console.error('Delete error:', deleteError || storageError);
-      } else {
-        loadGallery();
-      }
-    }
-
     async function loadGallery() {
       const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: false });
       const gallery = document.getElementById('gallery');
@@ -189,23 +163,10 @@
       data.forEach(item => {
         const block = document.createElement('div');
         block.className = 'photo-block';
-
-        const btn = document.createElement('button');
-        btn.className = 'delete-btn';
-        btn.textContent = '×';
-        btn.addEventListener('click', () => deletePhoto(item.id, item.file_path));
-
-        const img = document.createElement('img');
-        img.src = item.image_url;
-        img.alt = 'Memory';
-        img.onclick = () => showLightbox(item.image_url);
-
-        const caption = document.createElement('p');
-        caption.textContent = item.caption || '';
-
-        block.appendChild(btn);
-        block.appendChild(img);
-        block.appendChild(caption);
+        block.innerHTML = `
+          <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}')">
+          <p>${item.caption || ''}</p>
+        `;
         gallery.appendChild(block);
       });
     }
