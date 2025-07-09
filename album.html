@@ -2,59 +2,148 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Our Photo Album</title>
+  <title>Our Memories</title>
   <style>
     body {
-      background: #fdf6fb;
+      margin: 0;
+      padding: 0;
       font-family: 'Segoe UI', sans-serif;
-      padding: 40px;
+      background: linear-gradient(135deg, #c2f0f4, #fddde6, #fad1d1);
+      background-size: 300% 300%;
+      animation: gradientShift 15s ease infinite;
+      color: #4b2354;
       text-align: center;
-      color: #884ea0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
     }
 
     h1 {
-      font-size: 2.2em;
-      margin-bottom: 30px;
-      color: #6d3a8c;
-    }
-
-    .back-button {
-      display: inline-block;
-      background: #d2b4de;
-      color: #fff;
-      padding: 10px 20px;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: bold;
-      margin-bottom: 30px;
+      font-size: 2.5em;
+      margin-top: 40px;
     }
 
     .gallery {
       display: flex;
-      flex-wrap: wrap;
       justify-content: center;
-      gap: 20px;
+      flex-wrap: wrap;
+      gap: 30px;
+      padding: 30px;
     }
 
-    .gallery img {
-      width: 200px;
-      height: auto;
+    .memory {
+      background: white;
+      border: 3px solid #d2b4de;
       border-radius: 10px;
-      box-shadow: 0 0 10px rgba(136, 78, 160, 0.3);
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      width: 200px;
+      transition: transform 0.3s ease;
+    }
+
+    .memory:hover {
+      transform: scale(1.05);
+    }
+
+    .memory img {
+      width: 100%;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+
+    .back-button {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #d2b4de;
+      color: white;
+      border-radius: 10px;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+
+    .back-button:hover {
+      background: #b085c6;
+    }
+
+    /* Floating sparkles */
+    .sparkle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: white;
+      border-radius: 50%;
+      opacity: 0.6;
+      animation: sparkleFloat 10s linear infinite;
+    }
+
+    @keyframes sparkleFloat {
+      from { transform: translateY(100vh); opacity: 0.6; }
+      to { transform: translateY(-10vh); opacity: 0; }
+    }
+
+    /* Optional soft clouds */
+    .cloud {
+      position: absolute;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      filter: blur(20px);
+      animation: floatClouds 30s linear infinite;
+    }
+
+    @keyframes floatClouds {
+      0% { transform: translateX(0); }
+      100% { transform: translateX(100vw); }
     }
   </style>
 </head>
 <body>
-
   <a href="index.html" class="back-button">← Back to Home</a>
   <h1>Our Memories 📷</h1>
 
   <div class="gallery">
-    <!-- Add your photo URLs here -->
-    <img src="https://via.placeholder.com/200x250.png?text=Us+1" alt="Memory 1">
-    <img src="https://via.placeholder.com/200x250.png?text=Us+2" alt="Memory 2">
-    <img src="https://via.placeholder.com/200x250.png?text=Us+3" alt="Memory 3">
+    <div class="memory">
+      <img src="memory1.jpg" alt="Memory 1">
+      <div>Memory 1</div>
+    </div>
+    <div class="memory">
+      <img src="memory2.jpg" alt="Memory 2">
+      <div>Memory 2</div>
+    </div>
+    <div class="memory">
+      <img src="memory3.jpg" alt="Memory 3">
+      <div>Memory 3</div>
+    </div>
   </div>
 
+  <!-- Sparkles -->
+  <script>
+    for (let i = 0; i < 30; i++) {
+      const sparkle = document.createElement('div');
+      sparkle.classList.add('sparkle');
+      sparkle.style.left = Math.random() * 100 + 'vw';
+      sparkle.style.animationDuration = (6 + Math.random() * 6) + 's';
+      sparkle.style.top = Math.random() * 100 + 'vh';
+      document.body.appendChild(sparkle);
+    }
+
+    for (let i = 0; i < 5; i++) {
+      const cloud = document.createElement('div');
+      cloud.classList.add('cloud');
+      cloud.style.width = 100 + Math.random() * 150 + 'px';
+      cloud.style.height = 50 + Math.random() * 50 + 'px';
+      cloud.style.top = Math.random() * 80 + 'vh';
+      cloud.style.left = -200 + 'px';
+      cloud.style.animationDuration = 40 + Math.random() * 30 + 's';
+      document.body.appendChild(cloud);
+    }
+  </script>
 </body>
 </html>
+
