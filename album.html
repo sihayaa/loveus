@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Our Memories</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&display=swap" rel="stylesheet">
   <style>
     body {
@@ -50,6 +51,7 @@
       justify-content: center;
       gap: 15px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .custom-button {
@@ -82,12 +84,19 @@
       transition: all 0.3s ease;
     }
 
+    .file-name {
+      font-family: 'Freestyle Script', cursive;
+      font-size: 1.1em;
+      margin-top: 8px;
+      color: #4b2354;
+    }
+
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
       gap: 20px;
       padding: 30px;
-      justify-content: start;
+      justify-items: center;
     }
 
     .photo-block {
@@ -96,10 +105,11 @@
       border-radius: 12px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
       padding: 10px;
-      width: 180px;
+      width: 200px;
       display: flex;
       flex-direction: column;
       align-items: center;
+      cursor: move;
     }
 
     .photo-block img {
@@ -156,6 +166,7 @@
   <div class="upload-section">
     <label for="upload" class="custom-button">📷 Pick a Memory</label>
     <input type="file" id="upload" accept="image/*" style="display:none">
+    <span class="file-name" id="fileName">No file chosen</span>
     <input type="text" id="caption" placeholder="Add a sweet caption..." class="caption-input">
     <button id="uploadBtn" class="custom-button">💞 Seal the Memory</button>
   </div>
@@ -194,6 +205,7 @@
         console.error('Insert error:', insertError);
       } else {
         document.getElementById('caption').value = '';
+        document.getElementById('fileName').innerText = 'No file chosen';
         loadGallery();
       }
     }
@@ -216,6 +228,11 @@
         `;
         gallery.appendChild(block);
       });
+
+      Sortable.create(gallery, {
+        animation: 150,
+        ghostClass: 'sortable-ghost'
+      });
     }
 
     function showLightbox(src, caption) {
@@ -228,8 +245,9 @@
     }
 
     document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
-    document.querySelector('input[type="file"]').addEventListener('change', (e) => {
-      document.getElementById('upload').files = e.target.files;
+    document.getElementById('upload').addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      document.getElementById('fileName').innerText = file ? file.name : 'No file chosen';
     });
 
     loadGallery();
