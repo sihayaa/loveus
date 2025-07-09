@@ -91,23 +91,8 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
-      position: relative;
-      transition: transform 0.4s ease-in-out;
       cursor: pointer;
-    }
-
-    .letter.zoomed {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(1.5);
-      z-index: 999;
-      background: #fffdfc;
-      max-width: 600px;
-      width: 90%;
-      max-height: 80vh;
-      overflow-y: auto;
-      padding: 30px;
+      transition: transform 0.3s ease;
     }
 
     .date {
@@ -117,15 +102,48 @@
       text-align: right;
     }
 
-    .actions {
-      display: none;
-      margin-top: 10px;
-      justify-content: flex-end;
-      gap: 10px;
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
     }
 
-    .letter.zoomed .actions {
-      display: flex;
+    .zoomed-letter {
+      background: white;
+      padding: 40px;
+      border-radius: 12px;
+      max-width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      position: relative;
+      animation: openLetter 0.4s ease;
+    }
+
+    @keyframes openLetter {
+      0% {
+        transform: scale(0.6) rotateX(80deg);
+        opacity: 0;
+      }
+      100% {
+        transform: scale(1) rotateX(0);
+        opacity: 1;
+      }
+    }
+
+    .zoomed-letter .date {
+      text-align: right;
+    }
+
+    .zoomed-letter button {
+      margin-top: 15px;
     }
   </style>
 </head>
@@ -142,87 +160,93 @@
   <div class="letters" id="letters"></div>
 
   <script>
-    const supabaseClient = supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
+    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
     async function sealLetter() {
       const input = document.getElementById('letterInput');
       const text = input.value.trim();
       if (!text) return;
+
       const { error } = await supabaseClient.from('letters').insert({ content: text });
-      if (error) return alert('Error saving: ' + error.message);
+      if (error) {
+        alert('Error saving letter: ' + error.message);
+        return;
+      }
+
       input.value = '';
       loadLetters();
     }
 
     async function loadLetters() {
       const { data, error } = await supabaseClient.from('letters').select('*').order('created_at', { ascending: false });
-      if (error) return console.error('Error loading:', error);
+      if (error) {
+        console.error('Error loading letters:', error);
+        return;
+      }
+
       const container = document.getElementById('letters');
       container.innerHTML = '';
-
       data.forEach(letter => {
         const div = document.createElement('div');
         div.className = 'letter';
-        div.innerHTML = `<div class="text">${letter.content}</div>`;
-        div.setAttribute('data-id', letter.id);
+        div.innerText = letter.content;
+        div.onclick = () => showLetterPopup(letter);
 
         const date = document.createElement('div');
         date.className = 'date';
         date.innerText = new Date(letter.created_at).toLocaleString();
-
-        const actions = document.createElement('div');
-        actions.className = 'actions';
-        const editBtn = document.createElement('button');
-        editBtn.textContent = 'Edit';
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = 'Save';
-        saveBtn.style.display = 'none';
-
-        actions.append(editBtn, saveBtn);
         div.appendChild(date);
-        div.appendChild(actions);
-
-        div.addEventListener('click', (e) => {
-          if (!div.classList.contains('zoomed')) {
-            document.querySelectorAll('.letter').forEach(l => l.classList.remove('zoomed'));
-            div.classList.add('zoomed');
-          }
-        });
-
-        editBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const textDiv = div.querySelector('.text');
-          const textarea = document.createElement('textarea');
-          textarea.value = textDiv.textContent;
-          textarea.style.width = '100%';
-          textarea.style.height = '150px';
-          textarea.style.fontSize = '1.1em';
-          textarea.style.fontFamily = 'Patrick Hand';
-          textDiv.replaceWith(textarea);
-          editBtn.style.display = 'none';
-          saveBtn.style.display = 'inline-block';
-        });
-
-        saveBtn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const textarea = div.querySelector('textarea');
-          const updated = textarea.value;
-          const id = div.getAttribute('data-id');
-          const { error } = await supabaseClient.from('letters').update({ content: updated }).eq('id', id);
-          if (error) return alert('Failed to save');
-          const textDiv = document.createElement('div');
-          textDiv.className = 'text';
-          textDiv.textContent = updated;
-          textarea.replaceWith(textDiv);
-          editBtn.style.display = 'inline-block';
-          saveBtn.style.display = 'none';
-        });
 
         container.appendChild(div);
       });
+    }
+
+    function showLetterPopup(letter) {
+      const overlay = document.createElement('div');
+      overlay.className = 'overlay';
+      overlay.onclick = (e) => {
+        if (e.target === overlay) overlay.remove();
+      };
+
+      const zoomed = document.createElement('div');
+      zoomed.className = 'zoomed-letter';
+
+      const text = document.createElement('div');
+      text.contentEditable = false;
+      text.innerText = letter.content;
+      zoomed.appendChild(text);
+
+      const date = document.createElement('div');
+      date.className = 'date';
+      date.innerText = new Date(letter.created_at).toLocaleString();
+      zoomed.appendChild(date);
+
+      const editBtn = document.createElement('button');
+      editBtn.innerText = 'Edit';
+      editBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (editBtn.innerText === 'Edit') {
+          text.contentEditable = true;
+          text.focus();
+          editBtn.innerText = 'Save';
+        } else {
+          const { error } = await supabaseClient.from('letters').update({ content: text.innerText }).eq('id', letter.id);
+          if (!error) {
+            text.contentEditable = false;
+            editBtn.innerText = 'Edit';
+            loadLetters();
+            overlay.remove();
+          } else {
+            alert('Failed to update letter.');
+          }
+        }
+      };
+      zoomed.appendChild(editBtn);
+
+      overlay.appendChild(zoomed);
+      document.body.appendChild(overlay);
     }
 
     loadLetters();
