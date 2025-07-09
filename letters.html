@@ -95,55 +95,40 @@
       transition: transform 0.3s ease;
     }
 
-    .date {
-      font-size: 0.9em;
-      color: #888;
-      margin-top: 10px;
-      text-align: right;
-    }
-
-    .overlay {
+    .zoom-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
-      background-color: rgba(0, 0, 0, 0.3);
+      background: rgba(0,0,0,0.5);
       display: flex;
       align-items: center;
       justify-content: center;
-      z-index: 10;
+      z-index: 1000;
     }
 
     .zoomed-letter {
-      background: white;
-      padding: 40px;
-      border-radius: 12px;
+      background: #fff;
+      padding: 30px;
+      border-radius: 14px;
       max-width: 90vw;
-      max-height: 80vh;
-      overflow-y: auto;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      width: 650px;
+      font-size: 1.3em;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
       position: relative;
-      animation: openLetter 0.4s ease;
-    }
-
-    @keyframes openLetter {
-      0% {
-        transform: scale(0.6) rotateX(80deg);
-        opacity: 0;
-      }
-      100% {
-        transform: scale(1) rotateX(0);
-        opacity: 1;
-      }
     }
 
     .zoomed-letter .date {
       text-align: right;
+      color: #777;
+      font-size: 0.9em;
+      margin-top: 20px;
     }
 
     .zoomed-letter button {
-      margin-top: 15px;
+      margin-top: 20px;
+      display: inline-block;
     }
   </style>
 </head>
@@ -168,13 +153,11 @@
       const input = document.getElementById('letterInput');
       const text = input.value.trim();
       if (!text) return;
-
       const { error } = await supabaseClient.from('letters').insert({ content: text });
       if (error) {
         alert('Error saving letter: ' + error.message);
         return;
       }
-
       input.value = '';
       loadLetters();
     }
@@ -185,71 +168,59 @@
         console.error('Error loading letters:', error);
         return;
       }
-
       const container = document.getElementById('letters');
       container.innerHTML = '';
       data.forEach(letter => {
         const div = document.createElement('div');
         div.className = 'letter';
-        div.innerText = letter.content;
-        div.onclick = () => showLetterPopup(letter);
-
-        const date = document.createElement('div');
-        date.className = 'date';
-        date.innerText = new Date(letter.created_at).toLocaleString();
-        div.appendChild(date);
-
+        div.textContent = letter.content;
+        div.dataset.id = letter.id;
+        div.dataset.date = letter.created_at;
+        div.onclick = () => showZoomedLetter(letter);
         container.appendChild(div);
       });
     }
 
-    function showLetterPopup(letter) {
+    function showZoomedLetter(letter) {
       const overlay = document.createElement('div');
-      overlay.className = 'overlay';
-      overlay.onclick = (e) => {
-        if (e.target === overlay) overlay.remove();
+      overlay.className = 'zoom-overlay';
+      overlay.onclick = e => {
+        if (e.target === overlay) document.body.removeChild(overlay);
       };
 
-      const zoomed = document.createElement('div');
-      zoomed.className = 'zoomed-letter';
+      const zoomBox = document.createElement('div');
+      zoomBox.className = 'zoomed-letter';
+      zoomBox.onclick = e => e.stopPropagation();
 
-      const text = document.createElement('div');
-      text.contentEditable = false;
-      text.innerText = letter.content;
-      zoomed.appendChild(text);
+      const content = document.createElement('textarea');
+      content.value = letter.content;
+      content.style.width = '100%';
+      content.style.height = '200px';
+      content.style.fontFamily = 'Patrick Hand';
+      content.style.fontSize = '1.2em';
 
       const date = document.createElement('div');
       date.className = 'date';
-      date.innerText = new Date(letter.created_at).toLocaleString();
-      zoomed.appendChild(date);
+      date.textContent = new Date(letter.created_at).toLocaleString();
 
-      const editBtn = document.createElement('button');
-      editBtn.innerText = 'Edit';
-      editBtn.onclick = async (e) => {
-        e.stopPropagation();
-        if (editBtn.innerText === 'Edit') {
-          text.contentEditable = true;
-          text.focus();
-          editBtn.innerText = 'Save';
-        } else {
-          const { error } = await supabaseClient.from('letters').update({ content: text.innerText }).eq('id', letter.id);
-          if (!error) {
-            text.contentEditable = false;
-            editBtn.innerText = 'Edit';
-            loadLetters();
-            overlay.remove();
-          } else {
-            alert('Failed to update letter.');
-          }
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.onclick = async () => {
+        const { error } = await supabaseClient.from('letters').update({ content: content.value }).eq('id', letter.id);
+        if (!error) {
+          document.body.removeChild(overlay);
+          loadLetters();
         }
       };
-      zoomed.appendChild(editBtn);
 
-      overlay.appendChild(zoomed);
+      zoomBox.appendChild(content);
+      zoomBox.appendChild(date);
+      zoomBox.appendChild(saveBtn);
+      overlay.appendChild(zoomBox);
       document.body.appendChild(overlay);
     }
 
-    loadLetters();
+    document.addEventListener('DOMContentLoaded', loadLetters);
   </script>
 </body>
 </html>
