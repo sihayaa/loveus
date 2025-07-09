@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Love Letters</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
@@ -53,7 +53,7 @@
       font-size: 1.3em;
       background: #fffafc;
       resize: none;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
     }
 
     button {
@@ -88,9 +88,27 @@
       border-radius: 10px;
       padding: 20px;
       font-size: 1.1em;
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
+      position: relative;
+      cursor: pointer;
+      transition: transform 0.3s ease;
+    }
+
+    .letter:hover {
+      transform: scale(1.02);
+    }
+
+    .letter.opened {
+      animation: openLetter 0.5s ease forwards;
+      transform: scale(1.1);
+      z-index: 10;
+    }
+
+    @keyframes openLetter {
+      0% { transform: scale(1); }
+      100% { transform: scale(1.1); }
     }
 
     .date {
@@ -98,6 +116,18 @@
       color: #888;
       margin-top: 10px;
       text-align: right;
+    }
+
+    .edit-controls {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+    }
+
+    .edit-controls button {
+      font-size: 0.9em;
+      padding: 5px 12px;
+      border-radius: 12px;
     }
   </style>
 </head>
@@ -115,8 +145,7 @@
 
   <script>
     const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
-    const supabaseKey =
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
     async function sealLetter() {
@@ -134,12 +163,17 @@
       loadLetters();
     }
 
-    async function loadLetters() {
-      const { data, error } = await supabaseClient
-        .from('letters')
-        .select('*')
-        .order('created_at', { ascending: false });
+    async function updateLetter(id, newContent) {
+      const { error } = await supabaseClient.from('letters').update({ content: newContent }).eq('id', id);
+      if (error) {
+        alert('Error updating letter: ' + error.message);
+      } else {
+        loadLetters();
+      }
+    }
 
+    async function loadLetters() {
+      const { data, error } = await supabaseClient.from('letters').select('*').order('created_at', { ascending: false });
       if (error) {
         console.error('Error loading letters:', error);
         return;
@@ -150,12 +184,46 @@
       data.forEach(letter => {
         const div = document.createElement('div');
         div.className = 'letter';
-        div.innerText = letter.content;
+
+        const content = document.createElement('div');
+        content.innerText = letter.content;
+        content.contentEditable = false;
+        content.style.outline = 'none';
 
         const date = document.createElement('div');
         date.className = 'date';
         date.innerText = new Date(letter.created_at).toLocaleString();
+
+        const controls = document.createElement('div');
+        controls.className = 'edit-controls';
+
+        const editBtn = document.createElement('button');
+        editBtn.innerText = 'Edit';
+        editBtn.onclick = () => {
+          content.contentEditable = true;
+          content.focus();
+          saveBtn.style.display = 'inline-block';
+        };
+
+        const saveBtn = document.createElement('button');
+        saveBtn.innerText = 'Save';
+        saveBtn.style.display = 'none';
+        saveBtn.onclick = () => {
+          content.contentEditable = false;
+          saveBtn.style.display = 'none';
+          updateLetter(letter.id, content.innerText);
+        };
+
+        controls.appendChild(editBtn);
+        controls.appendChild(saveBtn);
+
+        div.appendChild(content);
         div.appendChild(date);
+        div.appendChild(controls);
+
+        div.onclick = () => {
+          div.classList.toggle('opened');
+        };
 
         container.appendChild(div);
       });
