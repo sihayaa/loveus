@@ -61,36 +61,6 @@
       box-shadow: 0 0 15px #fff;
     }
 
-    /* 🎶 Music player */
-    .music-player {
-      position: fixed;
-      bottom: 20px;
-      left: 20px;
-      background: #d0f0f7;
-      border-radius: 20px;
-      padding: 10px 15px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      z-index: 10;
-    }
-
-    .music-player button {
-      background-color: #cfa9e7;
-      border: none;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      font-size: 18px;
-      color: white;
-      cursor: pointer;
-    }
-
-    .music-player button:hover {
-      background-color: #b485d1;
-    }
-
     /* 💖 Floating hearts */
     .heart {
       position: absolute;
@@ -117,15 +87,6 @@
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
-
-  <!-- 🎶 Music Player -->
-  <div class="music-player">
-    <button id="playPause">▶</button>
-    <audio id="bgMusic" loop>
-      <source src="https://raw.githubusercontent.com/sihayaa/loveus/main/Bruno%20Mars%20-%20Just%20the%20Way%20You%20Are%20%5BOfficial%20Instrumental%5D-yt.savetube.me.mp3" type="audio/mpeg">
-      Your browser does not support audio playback.
-    </audio>
-  </div>
 
   <script>
     // 📆 Date tracker
@@ -157,22 +118,6 @@
     }
 
     setInterval(createHeart, 1500);
-
-    // 🔊 Music player control
-    const bgMusic = document.getElementById('bgMusic');
-    const playPause = document.getElementById('playPause');
-    let playing = false;
-
-    playPause.addEventListener('click', () => {
-      if (!playing) {
-        bgMusic.play();
-        playPause.textContent = '⏸';
-      } else {
-        bgMusic.pause();
-        playPause.textContent = '▶';
-      }
-      playing = !playing;
-    });
   </script>
 </body>
 </html>
