@@ -113,7 +113,7 @@
 
     .photo-block p {
       font-family: 'Great Vibes', cursive;
-      font-size: 1.4em;
+      font-size: 1.6em;
       color: #8628ac;
       margin-top: 8px;
       text-shadow: 0 1px 1px #fff;
@@ -141,6 +141,11 @@
       max-width: 90%;
       max-height: 70vh;
       margin-bottom: 20px;
+    }
+
+    .lightbox div {
+      text-align: center;
+      color: white;
     }
   </style>
 </head>
@@ -218,7 +223,7 @@
       const lightboxImg = document.getElementById('lightbox-img');
       const lightboxCaption = document.getElementById('lightbox-caption');
       lightboxImg.src = src;
-      lightboxCaption.textContent = caption;
+      lightboxCaption.innerHTML = caption;
       lightbox.style.display = 'flex';
     }
 
