@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Love Letters</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/+esm" type="module"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <style>
     body {
       margin: 0;
@@ -113,23 +113,17 @@
 
   <div class="letters" id="letters"></div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/+esm';
-
+  <script>
     const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
     async function sealLetter() {
       const input = document.getElementById('letterInput');
       const text = input.value.trim();
       if (!text) return;
 
-      const now = new Date();
-      const dateStr = now.toISOString();
-
-      // Save to Supabase
-      const { error } = await supabase.from('letters').insert({ content: text, created_at: dateStr });
+      const { error } = await supabase.from('letters').insert({ content: text });
       if (error) {
         alert('Error saving letter: ' + error.message);
         return;
@@ -163,7 +157,6 @@
     }
 
     loadLetters();
-    window.sealLetter = sealLetter;
   </script>
 </body>
 </html>
