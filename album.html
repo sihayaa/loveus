@@ -3,61 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Memories</title>
-  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-  <script defer>
-    window.addEventListener('DOMContentLoaded', () => {
-      const supabase = window.supabase.createClient(
-        'https://tmjozxcjylcxgemffnoc.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-      );
-
-      document.querySelector('button').addEventListener('click', uploadPhoto);
-
-      async function uploadPhoto() {
-        const file = document.getElementById('upload').files[0];
-        const caption = document.getElementById('caption').value;
-        if (!file) return;
-        const filePath = `${Date.now()}_${file.name}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('memories')
-          .upload(filePath, file);
-
-        if (!uploadError) {
-          const { data: urlData } = supabase.storage.from('memories').getPublicUrl(filePath);
-          const imageUrl = urlData.publicUrl;
-
-          const { error: insertError } = await supabase.from('memories').insert([{ image_url: imageUrl, caption }]);
-          if (!insertError) {
-            document.getElementById('caption').value = '';
-            loadGallery();
-          } else {
-            console.error('Insert error:', insertError);
-          }
-        } else {
-          console.error('Upload error:', uploadError);
-        }
-      }
-
-      async function loadGallery() {
-        const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: false });
-        const gallery = document.getElementById('gallery');
-        gallery.innerHTML = '';
-        if (error) {
-          console.error('Load error:', error);
-          return;
-        }
-        data.forEach(item => {
-          const block = document.createElement('div');
-          block.className = 'photo-block';
-          block.innerHTML = `<img src="${item.image_url}" alt="Memory"><p>${item.caption || ''}</p>`;
-          gallery.appendChild(block);
-        });
-      }
-
-      loadGallery();
-    });
-  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
@@ -114,14 +61,34 @@
     }
     .photo-block img {
       width: 100%;
-      height: 120px;
-      object-fit: cover;
+      height: auto;
+      aspect-ratio: 1 / 1;
+      object-fit: contain;
       border-radius: 6px;
       background-color: #f0f0f0;
     }
     .photo-block p {
       margin: 8px 0 0;
-      font-size: 0.9em;
+      font-size: 1em;
+      font-family: 'Great Vibes', cursive;
+      color: #8628ac;
+    }
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background: #ff6b81;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      font-size: 14px;
+      display: none;
+      cursor: pointer;
+    }
+    .photo-block:hover .delete-btn {
+      display: block;
     }
   </style>
 </head>
@@ -132,10 +99,71 @@
   <div class="upload-section">
     <input type="file" id="upload" accept="image/*">
     <input type="text" id="caption" placeholder="Add a sweet caption...">
-    <button>Upload</button>
+    <button onclick="uploadPhoto()">Upload</button>
   </div>
 
   <div class="gallery" id="gallery"></div>
+
+  <script>
+    const supabase = supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
+
+    async function uploadPhoto() {
+      const file = document.getElementById('upload').files[0];
+      const caption = document.getElementById('caption').value;
+      if (!file) return;
+      const filePath = `${Date.now()}_${file.name}`;
+
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('memories')
+        .upload(filePath, file);
+
+      if (!uploadError) {
+        const { data: urlData } = supabase.storage.from('memories').getPublicUrl(filePath);
+        const imageUrl = urlData.publicUrl;
+
+        const { error: insertError } = await supabase.from('memories').insert([{ image_url: imageUrl, caption, file_path: filePath }]);
+        if (!insertError) {
+          document.getElementById('caption').value = '';
+          loadGallery();
+        } else {
+          console.error('Insert error:', insertError);
+        }
+      } else {
+        console.error('Upload error:', uploadError);
+      }
+    }
+
+    async function deletePhoto(id, path) {
+      await supabase.from('memories').delete().eq('id', id);
+      await supabase.storage.from('memories').remove([path]);
+      loadGallery();
+    }
+
+    async function loadGallery() {
+      const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: false });
+      const gallery = document.getElementById('gallery');
+      gallery.innerHTML = '';
+      if (error) {
+        console.error('Load error:', error);
+        return;
+      }
+      data.forEach(item => {
+        const block = document.createElement('div');
+        block.className = 'photo-block';
+        block.innerHTML = `
+          <button class="delete-btn" onclick="deletePhoto(${item.id}, '${item.file_path}')">×</button>
+          <img src="${item.image_url}" alt="Memory">
+          <p>${item.caption || ''}</p>
+        `;
+        gallery.appendChild(block);
+      });
+    }
+
+    loadGallery();
+  </script>
 </body>
 </html>
 
