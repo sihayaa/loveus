@@ -4,6 +4,18 @@
   <meta charset="UTF-8">
   <title>Love Letters</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <!-- Supabase initialization -->
+  <script>
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
+    const supabase = createClient(supabaseUrl, supabaseKey);
+  </script>
+
   <style>
     body {
       margin: 0;
@@ -25,13 +37,13 @@
     p.subtitle {
       font-size: 1.3em;
       color: #7b4b94;
-      margin: 0;
+      margin-bottom: 0;
     }
 
-    p.note {
-      font-size: 1.1em;
-      color: #5a3d6d;
-      margin-bottom: 20px;
+    p.encouragement {
+      font-size: 1em;
+      color: #6a3f80;
+      margin-top: 6px;
     }
 
     .letter-form {
@@ -90,23 +102,7 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
       cursor: pointer;
-    }
-
-    .letter:hover {
-      transform: scale(1.03);
-      box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-    }
-
-    .letter.zoomed {
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%) scale(1.5);
-      z-index: 1000;
-      box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-      background: #fff;
     }
 
     .date {
@@ -120,7 +116,7 @@
 <body>
   <h1>Love Letters</h1>
   <p class="subtitle">💌 Express your love</p>
-  <p class="note">📝 You can come back anytime and read something sweet.</p>
+  <p class="encouragement">📝 You can come back anytime and read something sweet.</p>
 
   <div class="letter-form">
     <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
@@ -130,33 +126,43 @@
   <div class="letters" id="letters"></div>
 
   <script>
-    function sealLetter() {
+    async function sealLetter() {
       const input = document.getElementById('letterInput');
       const text = input.value.trim();
       if (!text) return;
 
-      const letter = document.createElement('div');
-      letter.className = 'letter';
-      letter.innerText = text;
-
-      const date = document.createElement('div');
-      date.className = 'date';
-      const now = new Date();
-      date.innerText = now.toLocaleDateString('en-US', {
-        year: 'numeric', month: 'long', day: 'numeric',
-        hour: '2-digit', minute: '2-digit'
-      });
-
-      letter.appendChild(date);
-      letter.onclick = function () {
-        letter.classList.toggle('zoomed');
-      };
-
-      const lettersContainer = document.getElementById('letters');
-      lettersContainer.prepend(letter);
+      const { data, error } = await supabase.from('letters').insert([{ content: text }]);
+      if (error) {
+        alert('Error saving letter.');
+        return;
+      }
 
       input.value = '';
+      loadLetters();
     }
+
+    async function loadLetters() {
+      const { data, error } = await supabase.from('letters').select('*').order('created_at', { ascending: false });
+      if (error) return console.error('Error loading letters:', error);
+
+      const container = document.getElementById('letters');
+      container.innerHTML = '';
+
+      data.forEach(letter => {
+        const card = document.createElement('div');
+        card.className = 'letter';
+        card.innerText = letter.content;
+
+        const date = document.createElement('div');
+        date.className = 'date';
+        date.innerText = new Date(letter.created_at).toLocaleString();
+
+        card.appendChild(date);
+        container.appendChild(card);
+      });
+    }
+
+    loadLetters();
   </script>
 </body>
 </html>
