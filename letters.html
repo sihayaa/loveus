@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Love Letters</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/+esm" type="module"></script>
   <style>
     body {
       margin: 0;
@@ -25,13 +26,13 @@
     p.subtitle {
       font-size: 1.3em;
       color: #7b4b94;
-      margin: 0;
+      margin-bottom: 10px;
     }
 
     p.encourage {
-      margin-bottom: 10px;
-      font-size: 1.3em;
-      color: #9b3bb0;
+      font-size: 1.4em;
+      margin-top: 10px;
+      margin-bottom: 0;
     }
 
     .letter-form {
@@ -75,7 +76,7 @@
     .letters {
       margin-top: 40px;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
       padding: 0 20px 40px;
       width: 100%;
@@ -90,12 +91,6 @@
       box-shadow: 0 8px 20px rgba(0,0,0,0.1);
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
-      transition: transform 0.3s ease;
-      cursor: pointer;
-    }
-
-    .letter:hover {
-      transform: scale(1.03);
     }
 
     .date {
@@ -118,9 +113,9 @@
 
   <div class="letters" id="letters"></div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script>
-    const { createClient } = supabase;
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7/+esm';
+
     const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
     const supabase = createClient(supabaseUrl, supabaseKey);
@@ -130,9 +125,13 @@
       const text = input.value.trim();
       if (!text) return;
 
-      const { error } = await supabase.from('letters').insert([{ content: text }]);
+      const now = new Date();
+      const dateStr = now.toISOString();
+
+      // Save to Supabase
+      const { error } = await supabase.from('letters').insert({ content: text, created_at: dateStr });
       if (error) {
-        alert('Failed to save letter: ' + error.message);
+        alert('Error saving letter: ' + error.message);
         return;
       }
 
@@ -143,28 +142,28 @@
     async function loadLetters() {
       const { data, error } = await supabase.from('letters').select('*').order('created_at', { ascending: false });
       if (error) {
-        console.error('Failed to load letters:', error.message);
+        console.error('Error loading letters:', error);
         return;
       }
 
       const container = document.getElementById('letters');
       container.innerHTML = '';
-
-      data.forEach(({ content, created_at }) => {
-        const card = document.createElement('div');
-        card.className = 'letter';
-        card.innerText = content;
+      data.forEach(letter => {
+        const div = document.createElement('div');
+        div.className = 'letter';
+        div.innerText = letter.content;
 
         const date = document.createElement('div');
         date.className = 'date';
-        date.innerText = new Date(created_at).toLocaleString();
+        date.innerText = new Date(letter.created_at).toLocaleString();
+        div.appendChild(date);
 
-        card.appendChild(date);
-        container.appendChild(card);
+        container.appendChild(div);
       });
     }
 
     loadLetters();
+    window.sealLetter = sealLetter;
   </script>
 </body>
 </html>
