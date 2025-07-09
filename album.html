@@ -95,17 +95,23 @@
       if (!file) return;
       const filePath = `${Date.now()}_${file.name}`;
 
-      const { data, error } = await supabase.storage
-      .from('memories')
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('memories')
         .upload(filePath, file);
 
-      if (!error) {
+      if (!uploadError) {
         const { data: urlData } = supabase.storage.from('memories').getPublicUrl(filePath);
         const imageUrl = urlData.publicUrl;
 
-        await supabase.from('memories').insert([{ image_url: imageUrl, caption }]);
-        document.getElementById('caption').value = '';
-        loadGallery();
+        const { error: insertError } = await supabase.from('memories').insert([{ image_url: imageUrl, caption }]);
+        if (!insertError) {
+          document.getElementById('caption').value = '';
+          loadGallery();
+        } else {
+          console.error('Insert error:', insertError);
+        }
+      } else {
+        console.error('Upload error:', uploadError);
       }
     }
 
@@ -113,6 +119,10 @@
       const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: false });
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
+      if (error) {
+        console.error('Load error:', error);
+        return;
+      }
       data.forEach(item => {
         const block = document.createElement('div');
         block.className = 'photo-block';
