@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Love Letters</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       margin: 0;
@@ -114,49 +114,51 @@
   <div class="letters" id="letters"></div>
 
   <script>
-    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
-    const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+    document.addEventListener('DOMContentLoaded', async () => {
+      const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
+      const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
 
-    async function sealLetter() {
-      const input = document.getElementById('letterInput');
-      const text = input.value.trim();
-      if (!text) return;
+      window.sealLetter = async function () {
+        const input = document.getElementById('letterInput');
+        const text = input.value.trim();
+        if (!text) return;
 
-      const { error } = await supabase.from('letters').insert({ content: text });
-      if (error) {
-        alert('Error saving letter: ' + error.message);
-        return;
+        const { error } = await supabaseClient.from('letters').insert({ content: text });
+        if (error) {
+          alert('Error saving letter: ' + error.message);
+          return;
+        }
+
+        input.value = '';
+        loadLetters();
+      };
+
+      async function loadLetters() {
+        const { data, error } = await supabaseClient.from('letters').select('*').order('created_at', { ascending: false });
+        if (error) {
+          console.error('Error loading letters:', error);
+          return;
+        }
+
+        const container = document.getElementById('letters');
+        container.innerHTML = '';
+        data.forEach(letter => {
+          const div = document.createElement('div');
+          div.className = 'letter';
+          div.innerText = letter.content;
+
+          const date = document.createElement('div');
+          date.className = 'date';
+          date.innerText = new Date(letter.created_at).toLocaleString();
+          div.appendChild(date);
+
+          container.appendChild(div);
+        });
       }
 
-      input.value = '';
       loadLetters();
-    }
-
-    async function loadLetters() {
-      const { data, error } = await supabase.from('letters').select('*').order('created_at', { ascending: false });
-      if (error) {
-        console.error('Error loading letters:', error);
-        return;
-      }
-
-      const container = document.getElementById('letters');
-      container.innerHTML = '';
-      data.forEach(letter => {
-        const div = document.createElement('div');
-        div.className = 'letter';
-        div.innerText = letter.content;
-
-        const date = document.createElement('div');
-        date.className = 'date';
-        date.innerText = new Date(letter.created_at).toLocaleString();
-        div.appendChild(date);
-
-        container.appendChild(div);
-      });
-    }
-
-    loadLetters();
+    });
   </script>
 </body>
 </html>
