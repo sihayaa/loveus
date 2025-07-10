@@ -119,18 +119,16 @@
       pointer-events: auto;
     }
 
-    /* 💬 Chatbox Styles */
     .chatbox {
       position: fixed;
       bottom: 20px;
       left: 20px;
-      width: 300px;
+      width: 330px;
       background: rgba(0, 0, 0, 0.6);
       padding: 15px;
       border-radius: 15px;
       box-shadow: 0 0 12px rgba(0,0,0,0.5);
       z-index: 100;
-      font-family: 'Segoe UI', sans-serif;
     }
 
     .chat-messages {
@@ -138,64 +136,45 @@
       overflow-y: auto;
       margin-bottom: 10px;
       text-align: left;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
     }
 
-    .chat-bubble {
-      padding: 10px 12px;
+    .chat-message {
+      padding: 8px 12px;
       border-radius: 10px;
-      max-width: 85%;
-      word-wrap: break-word;
+      margin-bottom: 6px;
       font-size: 0.9em;
-      color: white;
       position: relative;
+      color: #fff;
     }
 
-    .chat-bubble.me {
-      background-color: #71f0ce;
-      align-self: flex-start;
+    .chat-message.green {
+      background-color: #4fa981;
     }
 
-    .chat-bubble.boyfriend {
-      background-color: #c264f3;
-      align-self: flex-end;
+    .chat-message.purple {
+      background-color: #a16ef5;
     }
 
-    .chat-time {
+    .chat-message .timestamp {
+      display: block;
       font-size: 0.7em;
-      text-align: right;
+      color: #eee;
       margin-top: 4px;
-      opacity: 0.8;
+      text-align: right;
     }
 
-    .chat-controls {
-      display: flex;
-      gap: 6px;
-      align-items: center;
-    }
-
-    .chat-controls select,
-    .chat-controls input[type="text"] {
-      padding: 6px;
+    .chatbox input[type="text"],
+    .chatbox select {
+      padding: 6px 10px;
       border-radius: 8px;
       border: none;
-      font-size: 0.85em;
+      margin-right: 5px;
     }
 
-    .chat-controls input[type="text"] {
-      flex: 1;
-    }
-
-    .chat-controls button {
-      padding: 6px 10px;
+    .chatbox button {
+      padding: 6px 12px;
       font-size: 0.9em;
       border-radius: 8px;
-      background-color: #a3d2ca;
-      color: black;
-      border: none;
-      cursor: pointer;
     }
   </style>
 </head>
@@ -219,14 +198,12 @@
   <!-- 💬 Chatbox -->
   <div class="chatbox">
     <div class="chat-messages" id="chat-messages"></div>
-    <div class="chat-controls">
-      <select id="sender">
-        <option value="me">💚 Me</option>
-        <option value="boyfriend">💜 Boyfriend</option>
-      </select>
-      <input type="text" id="chat-input" placeholder="Type a message...">
-      <button onclick="sendMessage()">Send</button>
-    </div>
+    <select id="sender-select">
+      <option value="me">💚</option>
+      <option value="bf">💜</option>
+    </select>
+    <input type="text" id="chat-input" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
   </div>
 
   <script>
@@ -241,40 +218,42 @@
         .select('*')
         .order('created_at', { ascending: true });
 
+      if (error) {
+        console.error(error);
+        return;
+      }
+
       const container = document.getElementById('chat-messages');
       container.innerHTML = '';
       data.forEach(msg => {
-        const bubble = document.createElement('div');
-        bubble.className = `chat-bubble ${msg.sender}`;
-        bubble.innerHTML = `
+        const div = document.createElement('div');
+        div.className = 'chat-message ' + (msg.sender === 'me' ? 'green' : 'purple');
+        div.innerHTML = `
           ${msg.message}
-          <div class="chat-time">${new Date(msg.created_at).toLocaleString()}</div>
+          <span class="timestamp">${new Date(msg.created_at).toLocaleString()}</span>
         `;
-        container.appendChild(bubble);
+        container.appendChild(div);
       });
+
       container.scrollTop = container.scrollHeight;
     }
 
     async function sendMessage() {
       const input = document.getElementById('chat-input');
-      const sender = document.getElementById('sender').value;
+      const sender = document.getElementById('sender-select').value;
       const message = input.value.trim();
       if (!message) return;
 
-      await supabase.from('chat').insert([{ message, sender }]);
+      const { error } = await supabase.from('chat').insert([{ message, sender }]);
+      if (error) {
+        console.error('Send failed:', error.message);
+        return;
+      }
+
       input.value = '';
       loadMessages();
     }
 
-    // Auto-update with Supabase listener
-    supabase
-      .channel('chat-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat' }, () => {
-        loadMessages();
-      })
-      .subscribe();
-
-    // Floating hearts
     function createHeart() {
       const heart = document.createElement('div');
       heart.textContent = '❤️';
@@ -286,7 +265,6 @@
     }
     setInterval(createHeart, 1500);
 
-    // Dating Duration
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
@@ -296,7 +274,6 @@
     document.getElementById('duration-value').textContent =
       `${months} months and ${Math.floor(days)} days`;
 
-    // Album overlay
     function openAlbum() {
       const overlay = document.getElementById('album-overlay');
       overlay.classList.add('show');
@@ -306,6 +283,7 @@
     }
 
     loadMessages();
+    setInterval(loadMessages, 5000);
   </script>
 </body>
 </html>
