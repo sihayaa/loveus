@@ -165,6 +165,19 @@
       cursor: pointer;
       opacity: 0.9;
     }
+    .falling-heart {
+      position: fixed;
+      top: -40px;
+      font-size: 1.5em;
+      color: #ff5c9c;
+      animation: fallHeart 2s ease-out forwards;
+      pointer-events: none;
+      z-index: 999;
+    }
+    @keyframes fallHeart {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -187,6 +200,21 @@
       'https://tmjozxcjylcxgemffnoc.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
+
+    function showerHearts() {
+      const totalHearts = 30;
+      for (let i = 0; i < totalHearts; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'falling-heart';
+        heart.textContent = '💖';
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.fontSize = `${1 + Math.random() * 1.5}em`;
+        heart.style.animationDelay = `${Math.random() * 0.5}s`;
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 2000);
+      }
+    }
+
     async function sealLetter() {
       const to = document.getElementById('toInput').value.trim();
       const content = document.getElementById('letterInput').value.trim();
@@ -200,8 +228,10 @@
       document.getElementById('toInput').value = '';
       document.getElementById('letterInput').value = '';
       document.getElementById('fromInput').value = '';
+      showerHearts();
       loadLetters();
     }
+
     async function loadLetters() {
       const { data, error } = await client.from('letters').select('*').order('created_at', { ascending: false });
       if (error) return;
@@ -243,15 +273,53 @@
         container.appendChild(div);
       });
     }
+
     function showZoomedLetter(letter) {
       const overlay = document.createElement('div');
       overlay.className = 'zoom-overlay';
       overlay.onclick = e => {
         if (e.target === overlay) document.body.removeChild(overlay);
       };
+
       const zoomBox = document.createElement('div');
       zoomBox.className = 'zoomed-letter';
       zoomBox.onclick = e => e.stopPropagation();
+
+      const header = document.createElement('div');
+      header.className = 'letter-header';
+      header.textContent = letter.to ? `To: ${letter.to}` : '';
+
+      const content = document.createElement('div');
+      content.textContent = letter.content;
+      content.style.whiteSpace = 'pre-wrap';
+      content.style.marginTop = '10px';
+
+      const footer = document.createElement('div');
+      footer.className = 'letter-footer';
+      footer.textContent = letter.from ? `Love, ${letter.from}` : '';
+
+      const date = document.createElement('div');
+      date.className = 'date';
+      date.textContent = new Date(letter.created_at).toLocaleString();
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-save-button';
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = () => switchToEditMode(letter, overlay);
+
+      zoomBox.appendChild(header);
+      zoomBox.appendChild(content);
+      zoomBox.appendChild(footer);
+      zoomBox.appendChild(date);
+      zoomBox.appendChild(editBtn);
+      overlay.appendChild(zoomBox);
+      document.body.appendChild(overlay);
+    }
+
+    function switchToEditMode(letter, overlay) {
+      const zoomBox = overlay.querySelector('.zoomed-letter');
+      zoomBox.innerHTML = '';
+
       const textarea = document.createElement('textarea');
       textarea.value = letter.content;
       textarea.style.width = '100%';
@@ -260,6 +328,7 @@
       textarea.style.fontSize = '1.2em';
       textarea.style.border = '2px dashed #a28dc2';
       textarea.style.padding = '12px';
+
       const saveBtn = document.createElement('button');
       saveBtn.textContent = 'Save';
       saveBtn.className = 'edit-save-button';
@@ -270,15 +339,16 @@
           loadLetters();
         }
       };
+
       const date = document.createElement('div');
       date.className = 'date';
       date.textContent = new Date(letter.created_at).toLocaleString();
+
       zoomBox.appendChild(textarea);
       zoomBox.appendChild(date);
       zoomBox.appendChild(saveBtn);
-      overlay.appendChild(zoomBox);
-      document.body.appendChild(overlay);
     }
+
     document.addEventListener('DOMContentLoaded', loadLetters);
   </script>
 </body>
