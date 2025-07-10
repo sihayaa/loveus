@@ -1,5 +1,12 @@
+
 const canvas = document.getElementById("gameCanvas");
 const ctx = canvas.getContext("2d");
+
+const dinoImg = new Image();
+dinoImg.src = "dino.png";
+
+const cactusImg = new Image();
+cactusImg.src = "cactus.png";
 
 let dino = {
   x: 50,
@@ -13,7 +20,7 @@ let dino = {
 };
 
 let cactus = {
-  x: 900,
+  x: 1200,
   y: 160,
   width: 20,
   height: 40,
@@ -31,7 +38,7 @@ document.addEventListener("keydown", function(e) {
 });
 
 function resetGame() {
-  cactus.x = 900 + Math.random() * 200;
+  cactus.x = 1000 + Math.random() * 300;
   score = 0;
   gameOver = false;
   dino.y = 150;
@@ -42,7 +49,53 @@ function resetGame() {
 function update() {
   if (gameOver) return;
 
-  // Dino jump physics
   dino.y += dino.vy;
   dino.vy += dino.gravity;
-  if (dino.y >
+  if (dino.y >= 150) {
+    dino.y = 150;
+    dino.vy = 0;
+    dino.grounded = true;
+  }
+
+  cactus.x -= cactus.speed;
+  if (cactus.x + cactus.width < 0) {
+    cactus.x = 800 + Math.random() * 200;
+    score++;
+  }
+
+  if (
+    dino.x < cactus.x + cactus.width &&
+    dino.x + dino.width > cactus.x &&
+    dino.y < cactus.y + cactus.height &&
+    dino.y + dino.height > cactus.y
+  ) {
+    gameOver = true;
+    setTimeout(() => {
+      alert("Game Over! Your Score: " + score);
+      resetGame();
+    }, 100);
+  }
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  ctx.fillStyle = "#ccc";
+  ctx.fillRect(0, 190, canvas.width, 10);
+
+  ctx.drawImage(dinoImg, dino.x, dino.y, dino.width, dino.height);
+  ctx.drawImage(cactusImg, cactus.x, cactus.y, cactus.width, cactus.height);
+
+  ctx.fillStyle = "#333";
+  ctx.font = "20px Arial";
+  ctx.fillText("Score: " + score, 700, 30);
+}
+
+function gameLoop() {
+  update();
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+resetGame();
+gameLoop();
