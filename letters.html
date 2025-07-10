@@ -17,7 +17,6 @@
       align-items: center;
       min-height: 100vh;
     }
-
     a.back-button {
       position: absolute;
       top: 20px;
@@ -29,7 +28,6 @@
       border-radius: 10px;
       font-size: 1.1em;
     }
-
     .center-content {
       display: flex;
       flex-direction: column;
@@ -39,12 +37,10 @@
       width: 100%;
       padding: 0 20px;
     }
-
     h1 {
       font-size: 2.8em;
       margin-bottom: 10px;
     }
-
     .forever {
       font-family: 'Great Vibes', cursive;
       font-size: 2em;
@@ -52,7 +48,6 @@
       animation: glowPulse 3s ease-in-out infinite;
       margin-bottom: 20px;
     }
-
     @keyframes glowPulse {
       0%, 100% {
         text-shadow: 0 0 6px #ffb3dd, 0 0 12px #ffb3dd, 0 0 18px #ffb3dd;
@@ -63,7 +58,6 @@
         transform: scale(1.05);
       }
     }
-
     .letter-form {
       display: flex;
       flex-direction: column;
@@ -71,7 +65,6 @@
       width: 100%;
       max-width: 600px;
     }
-
     .letter-form input,
     .letter-form textarea {
       width: 100%;
@@ -82,18 +75,15 @@
       font-size: 1.2em;
       background: #fffafc;
     }
-
     .letter-form textarea {
       height: 150px;
       resize: none;
     }
-
     .form-row {
       display: flex;
       justify-content: center;
       margin-top: 10px;
     }
-
     button {
       font-family: 'Patrick Hand', cursive;
       font-size: 1.2em;
@@ -104,7 +94,6 @@
       padding: 8px 20px;
       cursor: pointer;
     }
-
     .letters {
       margin-top: 40px;
       display: grid;
@@ -114,7 +103,6 @@
       width: 100%;
       max-width: 1100px;
     }
-
     .letter {
       background: #fff;
       border-radius: 10px;
@@ -126,18 +114,15 @@
       position: relative;
       cursor: pointer;
     }
-
     .letter-header {
       font-weight: bold;
       margin-bottom: 10px;
     }
-
     .letter-footer {
       margin-top: 10px;
       font-style: italic;
       text-align: right;
     }
-
     .zoom-overlay {
       position: fixed;
       top: 0;
@@ -150,7 +135,6 @@
       justify-content: center;
       z-index: 1000;
     }
-
     .zoomed-letter {
       background: #fff;
       padding: 30px;
@@ -161,14 +145,12 @@
       box-shadow: 0 12px 30px rgba(0,0,0,0.3);
       position: relative;
     }
-
     .zoomed-letter .date {
       text-align: right;
       color: #777;
       font-size: 0.9em;
       margin-top: 20px;
     }
-
     .edit-save-button {
       position: absolute;
       bottom: 20px;
@@ -199,21 +181,17 @@
       </div>
     </div>
   </div>
-
   <div class="letters" id="letters"></div>
-
   <script>
     const client = supabase.createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
-
     async function sealLetter() {
       const to = document.getElementById('toInput').value.trim();
       const content = document.getElementById('letterInput').value.trim();
       const from = document.getElementById('fromInput').value.trim();
       if (!content) return;
-
       const { error } = await client.from('letters').insert({ to, content, from });
       if (error) {
         alert('Error saving letter.');
@@ -224,29 +202,23 @@
       document.getElementById('fromInput').value = '';
       loadLetters();
     }
-
     async function loadLetters() {
       const { data, error } = await client.from('letters').select('*').order('created_at', { ascending: false });
       if (error) return;
       const container = document.getElementById('letters');
       container.innerHTML = '';
-
       data.forEach(letter => {
         const div = document.createElement('div');
         div.className = 'letter';
         div.onclick = () => showZoomedLetter(letter);
-
         const header = document.createElement('div');
         header.className = 'letter-header';
         header.textContent = letter.to ? `To: ${letter.to}` : '';
-
         const body = document.createElement('div');
         body.textContent = letter.content;
-
         const footer = document.createElement('div');
         footer.className = 'letter-footer';
         footer.textContent = letter.from ? `Love, ${letter.from}` : '';
-
         const deleteBtn = document.createElement('span');
         deleteBtn.textContent = '❌';
         deleteBtn.style.position = 'absolute';
@@ -264,7 +236,6 @@
             else alert('Failed to delete letter.');
           }
         };
-
         div.appendChild(deleteBtn);
         div.appendChild(header);
         div.appendChild(body);
@@ -272,81 +243,42 @@
         container.appendChild(div);
       });
     }
-
     function showZoomedLetter(letter) {
       const overlay = document.createElement('div');
       overlay.className = 'zoom-overlay';
       overlay.onclick = e => {
         if (e.target === overlay) document.body.removeChild(overlay);
       };
-
       const zoomBox = document.createElement('div');
       zoomBox.className = 'zoomed-letter';
       zoomBox.onclick = e => e.stopPropagation();
-
-      const header = document.createElement('div');
-      header.className = 'letter-header';
-      header.textContent = letter.to ? `To: ${letter.to}` : '';
-
-      const text = document.createElement('div');
-      text.textContent = letter.content;
-      text.style.whiteSpace = 'pre-wrap';
-      text.style.marginBottom = '10px';
-
-      const footer = document.createElement('div');
-      footer.className = 'letter-footer';
-      footer.textContent = letter.from ? `Love, ${letter.from}` : '';
-
+      const textarea = document.createElement('textarea');
+      textarea.value = letter.content;
+      textarea.style.width = '100%';
+      textarea.style.height = '200px';
+      textarea.style.fontFamily = 'Patrick Hand';
+      textarea.style.fontSize = '1.2em';
+      textarea.style.border = '2px dashed #a28dc2';
+      textarea.style.padding = '12px';
+      const saveBtn = document.createElement('button');
+      saveBtn.textContent = 'Save';
+      saveBtn.className = 'edit-save-button';
+      saveBtn.onclick = async () => {
+        const { error } = await client.from('letters').update({ content: textarea.value }).eq('id', letter.id);
+        if (!error) {
+          document.body.removeChild(overlay);
+          loadLetters();
+        }
+      };
       const date = document.createElement('div');
       date.className = 'date';
       date.textContent = new Date(letter.created_at).toLocaleString();
-
-      const editBtn = document.createElement('button');
-      editBtn.className = 'edit-save-button';
-      editBtn.textContent = 'Edit';
-
-      editBtn.onclick = () => {
-        zoomBox.innerHTML = '';
-
-        const headerInput = document.createElement('input');
-        headerInput.value = letter.to || '';
-        headerInput.placeholder = 'To';
-        const textarea = document.createElement('textarea');
-        textarea.value = letter.content;
-        const footerInput = document.createElement('input');
-        footerInput.value = letter.from || '';
-        footerInput.placeholder = 'Love';
-
-        const saveBtn = document.createElement('button');
-        saveBtn.textContent = 'Save';
-        saveBtn.className = 'edit-save-button';
-        saveBtn.onclick = async () => {
-          const { error } = await client.from('letters')
-            .update({ content: textarea.value, to: headerInput.value, from: footerInput.value })
-            .eq('id', letter.id);
-          if (!error) {
-            document.body.removeChild(overlay);
-            loadLetters();
-          }
-        };
-
-        zoomBox.appendChild(headerInput);
-        zoomBox.appendChild(textarea);
-        zoomBox.appendChild(footerInput);
-        zoomBox.appendChild(date);
-        zoomBox.appendChild(saveBtn);
-      };
-
-      zoomBox.appendChild(header);
-      zoomBox.appendChild(text);
-      zoomBox.appendChild(footer);
+      zoomBox.appendChild(textarea);
       zoomBox.appendChild(date);
-      zoomBox.appendChild(editBtn);
-
+      zoomBox.appendChild(saveBtn);
       overlay.appendChild(zoomBox);
       document.body.appendChild(overlay);
     }
-
     document.addEventListener('DOMContentLoaded', loadLetters);
   </script>
 </body>
