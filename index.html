@@ -112,7 +112,7 @@
   </div>
 
   <!-- Post-it Icon -->
-  <img id="note-icon" src="https://raw.githubusercontent.com/sihayaa/loveus/main/love-note-icon.png" alt="Add Note" onclick="alert('Post-it note logic goes here')">
+  <img id="note-icon" src="https://raw.githubusercontent.com/sihayaa/loveus/main/love-note-icon.png" alt="Add Note">
 
   <script>
     const startDate = new Date('2024-10-13');
@@ -122,6 +122,10 @@
     const months = Math.floor(diffDays / 30.44);
     const days = Math.floor(diffDays % 30.44);
     document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+
+    document.getElementById("note-icon").addEventListener("click", () => {
+      alert("Coming soon: Post-it notes with Supabase support!");
+    });
   </script>
 </body>
 </html>
