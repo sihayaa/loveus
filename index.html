@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Love Space</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
       background-size: cover;
-      color: #fff;
-      margin: 0;
+      text-align: center;
       padding: 40px;
+      color: #fff;
+      overflow-x: hidden;
     }
 
     h1 {
@@ -21,7 +22,6 @@
       color: white;
       text-shadow: 2px 2px 8px #8e5dd2;
       margin-bottom: 20px;
-      text-align: center;
     }
 
     #duration-block {
@@ -62,6 +62,18 @@
       box-shadow: 0 0 15px #fff;
     }
 
+    .heart {
+      position: absolute;
+      font-size: 20px;
+      animation: floatUp 5s linear forwards;
+      pointer-events: auto;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-100vh) scale(0.7); opacity: 0; }
+    }
+
     .album-icon {
       position: fixed;
       top: 100px;
@@ -73,7 +85,13 @@
       box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
       padding: 6px;
       cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       z-index: 10;
+    }
+
+    .album-icon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 18px #d2b4de, 6px 6px 14px rgba(0,0,0,0.4);
     }
 
     .album-icon img {
@@ -83,53 +101,79 @@
       object-fit: cover;
     }
 
-    /* Chatbox styles */
-    #chatbox {
+    #album-overlay {
       position: fixed;
-      bottom: 30px;
-      left: 30px;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 15px;
-      border-radius: 12px;
-      max-width: 320px;
-      width: 100%;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle, #d2b4de 0%, #884ea0 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      z-index: 1000;
     }
 
-    .message {
-      background: #362d5c;
-      border-radius: 12px;
-      padding: 10px;
-      margin: 5px 0;
-      color: #fff;
+    #album-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* 💬 Chatbox Styles */
+    .chatbox {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      width: 300px;
+      background: rgba(0, 0, 0, 0.6);
+      padding: 15px;
+      border-radius: 15px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.5);
+      z-index: 100;
+    }
+
+    .chat-messages {
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+      text-align: left;
+    }
+
+    .chat-message {
+      background: #ffffffc2;
+      color: #000;
+      padding: 8px 12px;
+      border-radius: 10px;
+      margin-bottom: 6px;
       font-size: 0.9em;
       position: relative;
     }
 
-    .timestamp {
+    .chat-message .timestamp {
+      display: block;
       font-size: 0.7em;
-      color: #ccc;
-      margin-top: 5px;
+      color: #333;
+      margin-top: 4px;
+      text-align: right;
     }
 
-    #message-input {
-      width: 75%;
-      padding: 8px;
-      border-radius: 6px;
+    .chatbox input[type="text"] {
+      width: calc(100% - 70px);
+      padding: 6px 10px;
+      border-radius: 8px;
       border: none;
-      font-size: 1em;
+      margin-right: 5px;
     }
 
-    #send-button {
-      padding: 8px 12px;
-      margin-left: 5px;
-      background-color: #a3d2ca;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
+    .chatbox button {
+      padding: 6px 12px;
+      font-size: 0.9em;
+      border-radius: 8px;
     }
   </style>
 </head>
 <body>
+
   <h1>Started Dating: October 13, 2024</h1>
   <div id="duration-block">
     <span id="duration-label">Together for: </span>
@@ -138,58 +182,98 @@
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
-  <div class="album-icon" onclick="window.location.href='album.html'">
-    <img src="album-icon.png" alt="Album Icon">
+
+  <!-- Album Icon -->
+  <div class="album-icon" onclick="openAlbum()">
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/main/album-icon.png" alt="Album Icon">
+  </div>
+  <div id="album-overlay"></div>
+
+  <!-- 💬 Chatbox -->
+  <div class="chatbox">
+    <div class="chat-messages" id="chat-messages"></div>
+    <input type="text" id="chat-input" placeholder="Type a message...">
+    <button onclick="sendMessage()">Send</button>
   </div>
 
-  <!-- Chatbox -->
-  <div id="chatbox">
-    <div id="chat-messages"></div>
-    <div>
-      <input type="text" id="message-input" placeholder="Type a message...">
-      <button id="send-button">Send</button>
-    </div>
-  </div>
-
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
+    const supabase = supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
+
+    // Load messages
+    async function loadMessages() {
+      const { data, error } = await supabase
+        .from('chat')
+        .select('*')
+        .order('created_at', { ascending: true });
+      
+      if (error) {
+        console.error(error);
+        return;
+      }
+
+      const container = document.getElementById('chat-messages');
+      container.innerHTML = '';
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-message';
+        div.innerHTML = `
+          ${msg.message}
+          <span class="timestamp">${new Date(msg.created_at).toLocaleString()}</span>
+        `;
+        container.appendChild(div);
+      });
+
+      container.scrollTop = container.scrollHeight;
+    }
+
+    // Send message
+    async function sendMessage() {
+      const input = document.getElementById('chat-input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      await supabase.from('chat').insert([{ message }]);
+      input.value = '';
+      loadMessages();
+    }
+
+    // Floating hearts animation
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.textContent = '❤️';
+      heart.classList.add('heart');
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.bottom = '0px';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 6000);
+    }
+    setInterval(createHeart, 1500);
+
+    // Date duration counter
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const months = Math.floor(diffDays / 30.44);
-    const days = Math.floor(diffDays % 30.44);
-    document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+    const days = diffDays % 30.44;
+    document.getElementById('duration-value').textContent =
+      `${months} months and ${Math.floor(days)} days`;
 
-    const supabase = window.supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
-
-    async function loadMessages() {
-      const { data, error } = await supabase.from('chat').select('*').order('created_at', { ascending: true });
-      if (data) {
-        const container = document.getElementById('chat-messages');
-        container.innerHTML = '';
-        data.forEach(msg => {
-          const bubble = document.createElement('div');
-          bubble.className = 'message';
-          bubble.innerHTML = `${msg.content}<div class="timestamp">${new Date(msg.created_at).toLocaleString()}</div>`;
-          container.appendChild(bubble);
-        });
-      }
+    // Album transition
+    function openAlbum() {
+      const overlay = document.getElementById('album-overlay');
+      overlay.classList.add('show');
+      setTimeout(() => {
+        window.location.href = 'album.html';
+      }, 800);
     }
 
-    document.getElementById('send-button').onclick = async () => {
-      const input = document.getElementById('message-input');
-      const content = input.value.trim();
-      if (!content) return;
-      await supabase.from('chat').insert([{ content }]);
-      input.value = '';
-      loadMessages();
-    };
-
     loadMessages();
-    setInterval(loadMessages, 5000); // refresh every 5 seconds
+    setInterval(loadMessages, 5000); // auto-refresh every 5s
   </script>
 </body>
 </html>
