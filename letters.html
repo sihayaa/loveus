@@ -1,3 +1,4 @@
+<!-- FULL SCRIPT BELOW (MERGED) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -187,6 +188,8 @@
     <p class="forever">❤️Mike & Tricia Forever❤️</p>
     <div class="letter-form">
       <input type="text" id="toInput" placeholder="To:">
+      <label for="colorPicker">Pick a text color:</label>
+      <input type="color" id="colorPicker" value="#4b2354">
       <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
       <input type="text" id="fromInput" placeholder="Love:">
       <div class="form-row">
@@ -196,10 +199,7 @@
   </div>
   <div class="letters" id="letters"></div>
   <script>
-    const client = supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
+    const client = supabase.createClient('https://tmjozxcjylcxgemffnoc.supabase.co', 'your-public-anon-key');
 
     function showerHearts() {
       const totalHearts = 30;
@@ -219,15 +219,14 @@
       const to = document.getElementById('toInput').value.trim();
       const content = document.getElementById('letterInput').value.trim();
       const from = document.getElementById('fromInput').value.trim();
+      const color = document.getElementById('colorPicker').value;
       if (!content) return;
-      const { error } = await client.from('letters').insert({ to, content, from });
-      if (error) {
-        alert('Error saving letter.');
-        return;
-      }
+      const { error } = await client.from('letters').insert({ to, content, from, color });
+      if (error) return alert('Error saving letter.');
       document.getElementById('toInput').value = '';
       document.getElementById('letterInput').value = '';
       document.getElementById('fromInput').value = '';
+      document.getElementById('colorPicker').value = '#4b2354';
       showerHearts();
       loadLetters();
     }
@@ -246,6 +245,7 @@
         header.textContent = letter.to ? `To: ${letter.to}` : '';
         const body = document.createElement('div');
         body.textContent = letter.content;
+        body.style.color = letter.color || '#4b2354';
         const footer = document.createElement('div');
         footer.className = 'letter-footer';
         footer.textContent = letter.from ? `Love, ${letter.from}` : '';
@@ -289,10 +289,11 @@
       header.className = 'letter-header';
       header.textContent = letter.to ? `To: ${letter.to}` : '';
 
-      const content = document.createElement('div');
-      content.textContent = letter.content;
-      content.style.whiteSpace = 'pre-wrap';
-      content.style.marginTop = '10px';
+      const text = document.createElement('div');
+      text.textContent = letter.content;
+      text.style.whiteSpace = 'pre-wrap';
+      text.style.marginTop = '10px';
+      text.style.color = letter.color || '#4b2354';
 
       const footer = document.createElement('div');
       footer.className = 'letter-footer';
@@ -308,7 +309,7 @@
       editBtn.onclick = () => switchToEditMode(letter, overlay);
 
       zoomBox.appendChild(header);
-      zoomBox.appendChild(content);
+      zoomBox.appendChild(text);
       zoomBox.appendChild(footer);
       zoomBox.appendChild(date);
       zoomBox.appendChild(editBtn);
