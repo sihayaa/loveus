@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<h<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -31,18 +30,25 @@
       font-size: 1.1em;
     }
 
-    h1 {
-      margin-top: 40px;
-      font-size: 2.8em;
+    .center-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-top: 60px;
     }
 
-    /* ❤️ Mike & Tricia Forever ❤️ styling */
+    h1 {
+      font-size: 2.8em;
+      margin-bottom: 10px;
+    }
+
     .forever {
       font-family: 'Great Vibes', cursive;
       font-size: 2em;
       color: #d14185;
       animation: glowPulse 3s ease-in-out infinite;
-      margin-bottom: 10px;
+      margin-bottom: 20px;
     }
 
     @keyframes glowPulse {
@@ -167,14 +173,17 @@
 </head>
 <body>
   <a href="index.html" class="back-button">← Back to Home</a>
-  <h1>Love Letters</h1>
-  <p class="forever">❤️Mike & Tricia Forever❤️</p> <!-- 🌟 ADDED animated text here -->
-  <p class="encourage">💌 Express your love</p>
-  <p class="subtitle">📝 You can come back anytime and read something sweet.</p>
 
-  <div class="letter-form">
-    <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
-    <button onclick="sealLetter()">Seal the Letter 💌</button>
+  <div class="center-content">
+    <h1>Love Letters</h1>
+    <p class="forever">❤️Mike & Tricia Forever❤️</p>
+    <p class="encourage">💌 Express your love</p>
+    <p class="subtitle">📝 You can come back anytime and read something sweet.</p>
+
+    <div class="letter-form">
+      <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
+      <button onclick="sealLetter()">Seal the Letter 💌</button>
+    </div>
   </div>
 
   <div class="letters" id="letters"></div>
