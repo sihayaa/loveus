@@ -21,7 +21,7 @@
       font-size: 2.4em;
       color: white;
       text-shadow: 2px 2px 8px #8e5dd2;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     #duration-block {
@@ -29,7 +29,7 @@
       display: inline-block;
       padding: 12px 20px;
       border-radius: 12px;
-      margin-bottom: 30px;
+      margin-bottom: 20px;
     }
 
     #duration-label {
@@ -46,7 +46,7 @@
 
     button {
       padding: 10px 20px;
-      margin: 10px;
+      margin: 10px 5px;
       font-size: 1em;
       background-color: #a3d2ca;
       border: none;
@@ -135,128 +135,74 @@
       background: #fff;
       padding: 10px;
       border-radius: 10px;
+      display: none;
       z-index: 20;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-      width: 140px;
+      gap: 5px;
+      width: 110px;
     }
 
     .color-btn {
-      width: 40px;
-      height: 40px;
+      width: 25px;
+      height: 25px;
       border-radius: 50%;
       border: none;
       cursor: pointer;
+    }
+
+    .note {
+      width: 180px;
+      height: 180px;
+      position: absolute;
+      padding: 10px;
+      padding-top: 25px;
+      border-radius: 10px;
+      box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+      resize: none;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 14px;
+      overflow: auto;
+      z-index: 15;
+      color: #111;
+    }
+
+    .note .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #333;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: pointer;
+      z-index: 100;
+    }
+
+    .note .timestamp {
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+      font-size: 10px;
+      color: #333;
+    }
+
+    .top-section {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <h1>Started Dating: October 13, 2024</h1>
-  <div id="duration-block">
-    <span id="duration-label">Together for: </span>
-    <span id="duration-value">loading...</span>
+  <div class="top-section">
+    <div id="duration-block">
+      <span id="duration-label">Together for: </span>
+      <span id="duration-value">loading...</span>
+    </div>
+    <br>
+    <button onclick="location.href='games.html'">🎮 Mini Games</button>
+    <button onclick="location.href='letters.html'">💌 Letters</button>
   </div>
-  <button onclick="location.href='games.html'">🎮 Mini Games</button>
-  <button onclick="location.href='letters.html'">💌 Letters</button>
-  <div class="album-icon" onclick="openAlbum()">
-    <img src="album-icon.png" alt="Album Icon">
-  </div>
-  <img id="note-icon" src="https://raw.githubusercontent.com/sihayaa/loveus/main/love-note-icon.png" alt="Add Note">
-  <div id="color-picker" style="display: none;">
-    <button class="color-btn" style="background:#71f0ce" data-color="#71f0ce"></button>
-    <button class="color-btn" style="background:#c264f3" data-color="#c264f3"></button>
-    <button class="color-btn" style="background:#6bff6d" data-color="#6bff6d"></button>
-    <button class="color-btn" style="background:#ffcb77" data-color="#ffcb77"></button>
-    <button class="color-btn" style="background:#ff9aa2" data-color="#ff9aa2"></button>
-    <button class="color-btn" style="background:#d5a6bd" data-color="#d5a6bd"></button>
-  </div>
-  <div id="album-overlay"></div>
-  <div id="notesContainer"></div>
-
-  <script>
-    const startDate = new Date('2024-10-13');
-    const today = new Date();
-    const diffTime = today - startDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const months = Math.floor(diffDays / 30.44);
-    const days = diffDays % 30.44;
-    document.getElementById('duration-value').textContent = `${months} months and ${Math.floor(days)} days`;
-
-    function createHeart() {
-      const heart = document.createElement('div');
-      heart.textContent = '❤️';
-      heart.classList.add('heart');
-      heart.style.left = Math.random() * 100 + 'vw';
-      heart.style.bottom = '0px';
-      heart.addEventListener('click', () => {
-        heart.style.transform = 'scale(2)';
-        heart.style.opacity = '0';
-        setTimeout(() => heart.remove(), 400);
-      });
-      document.body.appendChild(heart);
-      setTimeout(() => heart.remove(), 6000);
-    }
-    setInterval(createHeart, 1500);
-
-    function openAlbum() {
-      const overlay = document.getElementById('album-overlay');
-      overlay.classList.add('show');
-      setTimeout(() => {
-        window.location.href = 'album.html';
-      }, 800);
-    }
-
-    const noteBtn = document.getElementById("note-icon");
-    const colorPicker = document.getElementById("color-picker");
-
-    noteBtn.onclick = () => {
-      colorPicker.style.display = colorPicker.style.display === 'none' ? 'grid' : 'none';
-    };
-
-    document.querySelectorAll(".color-btn").forEach(btn => {
-      btn.onclick = () => {
-        const color = btn.getAttribute("data-color");
-        createNote(color);
-        colorPicker.style.display = 'none';
-      };
-    });
-
-    function createNote(color) {
-      const note = document.createElement("textarea");
-      note.className = "note";
-      note.style.background = color;
-      note.style.left = "100px";
-      note.style.top = "100px";
-      note.style.position = "absolute";
-      note.style.padding = "10px";
-      note.style.width = "180px";
-      note.style.height = "180px";
-      note.style.borderRadius = "10px";
-      note.style.boxShadow = "2px 2px 10px rgba(0,0,0,0.3)";
-      note.style.fontSize = "14px";
-      note.style.resize = "none";
-      note.style.color = "#111";
-      note.style.zIndex = 15;
-      makeDraggable(note);
-      document.getElementById("notesContainer").appendChild(note);
-    }
-
-    function makeDraggable(el) {
-      let offsetX, offsetY;
-      el.onmousedown = function(e) {
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
-        document.onmousemove = function(e) {
-          el.style.left = e.clientX - offsetX + "px";
-          el.style.top = e.clientY - offsetY + "px";
-        };
-        document.onmouseup = function() {
-          document.onmousemove = null;
-          document.onmouseup = null;
-        };
-      };
-    }
-  </script>
 </body>
 </html>
