@@ -62,6 +62,18 @@
       box-shadow: 0 0 15px #fff;
     }
 
+    .heart {
+      position: absolute;
+      font-size: 20px;
+      animation: floatUp 5s linear forwards;
+      pointer-events: auto;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-100vh) scale(0.7); opacity: 0; }
+    }
+
     .album-icon {
       position: fixed;
       top: 100px;
@@ -107,77 +119,68 @@
       pointer-events: auto;
     }
 
-    /* 💬 Pixel Chatbox */
+    /* 💬 Chatbox UI */
     .chatbox {
       position: fixed;
       bottom: 20px;
       left: 20px;
-      width: 330px;
-      background: rgba(0, 0, 0, 0.6);
-      padding: 12px;
-      border: 2px solid #fff;
-      border-radius: 12px;
+      width: 300px;
+      background: rgba(0, 0, 0, 0.7);
+      padding: 15px;
+      border: 3px solid #fff;
+      border-radius: 10px;
+      box-shadow: 4px 4px #000;
       font-family: 'Courier New', monospace;
-      box-shadow: 0 0 12px rgba(0,0,0,0.5);
       z-index: 100;
     }
 
-    .chat-messages {
-      max-height: 200px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-      text-align: left;
-    }
-
-    .chat-message {
-      padding: 8px 12px;
-      border-radius: 10px;
-      margin-bottom: 6px;
-      font-size: 0.9em;
-      position: relative;
-      display: inline-block;
-      max-width: 90%;
-    }
-
-    .sender-me {
-      background-color: #71f0ce;
-      color: #111;
-    }
-
-    .sender-bf {
-      background-color: #c264f3;
-      color: white;
-    }
-
-    .timestamp {
-      display: block;
-      font-size: 0.7em;
-      color: #333;
-      margin-top: 4px;
-      text-align: right;
-    }
-
-    .chatbox select, .chatbox input[type="text"] {
-      padding: 6px 8px;
+    .chatbox input[type="text"] {
+      width: 140px;
+      padding: 5px;
+      margin-left: 5px;
       font-family: 'Courier New', monospace;
-      border-radius: 6px;
-      border: none;
-      margin-right: 5px;
+      border: 2px solid #555;
+      border-radius: 5px;
     }
 
-    .chatbox select {
-      width: 50px;
+    .chatbox input:focus {
+      outline: none;
     }
 
     .chatbox button {
-      padding: 6px 12px;
-      font-size: 0.9em;
-      border-radius: 6px;
+      margin-top: 6px;
+      padding: 5px 10px;
+      border-radius: 5px;
       font-family: 'Courier New', monospace;
+      background-color: #a3d2ca;
+      border: none;
     }
 
-    .heart-option {
-      font-size: 1.1em;
+    .chat-dropdown {
+      font-family: 'Courier New', monospace;
+      padding: 4px;
+      border-radius: 4px;
+    }
+
+    .chat-bubble {
+      position: absolute;
+      padding: 10px;
+      border-radius: 8px;
+      font-family: 'Courier New', monospace;
+      background-color: #eee;
+      color: #000;
+      border: 2px solid #333;
+      box-shadow: 2px 2px #000;
+      cursor: move;
+      max-width: 200px;
+    }
+
+    .bubble-green {
+      background-color: #71f0ce;
+    }
+
+    .bubble-purple {
+      background-color: #c264f3;
     }
   </style>
 </head>
@@ -192,18 +195,16 @@
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Album Icon -->
   <div class="album-icon" onclick="openAlbum()">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/main/album-icon.png" alt="Album Icon">
   </div>
   <div id="album-overlay"></div>
 
-  <!-- 💬 Chatbox -->
+  <!-- Chat UI -->
   <div class="chatbox">
-    <div class="chat-messages" id="chat-messages"></div>
-    <select id="sender">
-      <option value="me">💚</option>
-      <option value="bf">💜</option>
+    <select id="sender" class="chat-dropdown">
+      <option value="green">💚</option>
+      <option value="purple">💜</option>
     </select>
     <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
     <button onclick="sendMessage()">Send</button>
@@ -215,53 +216,46 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
+    function makeDraggable(el) {
+      let offsetX, offsetY;
+      el.onmousedown = function(e) {
+        offsetX = e.clientX - el.offsetLeft;
+        offsetY = e.clientY - el.offsetTop;
+        document.onmousemove = function(e) {
+          el.style.left = e.clientX - offsetX + 'px';
+          el.style.top = e.clientY - offsetY + 'px';
+        };
+        document.onmouseup = function() {
+          document.onmousemove = null;
+          document.onmouseup = null;
+        };
+      };
+    }
+
     async function loadMessages() {
-      const { data, error } = await supabase
-        .from('chat')
-        .select('*')
-        .order('created_at', { ascending: true });
+      const { data, error } = await supabase.from('chat').select('*').order('created_at', { ascending: true });
+      if (error) return console.error(error);
 
-      if (error) {
-        console.error(error);
-        return;
-      }
-
-      const container = document.getElementById('chat-messages');
-      container.innerHTML = '';
       data.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = `chat-message ${msg.sender === 'me' ? 'sender-me' : 'sender-bf'}`;
-        div.innerHTML = `
-          ${msg.message}
-          <div class="timestamp">${new Date(msg.created_at).toLocaleString()}</div>
-        `;
-        container.appendChild(div);
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble ' + (msg.sender === 'green' ? 'bubble-green' : 'bubble-purple');
+        bubble.textContent = msg.message;
+        bubble.style.left = Math.random() * 70 + 'vw';
+        bubble.style.top = Math.random() * 60 + 'vh';
+        makeDraggable(bubble);
+        document.body.appendChild(bubble);
       });
-
-      container.scrollTop = container.scrollHeight;
     }
 
     async function sendMessage() {
-      const input = document.getElementById('chat-input');
       const sender = document.getElementById('sender').value;
-      const message = input.value.trim();
+      const message = document.getElementById('chat-input').value.trim();
       if (!message) return;
 
-      const { error } = await supabase.from('chat').insert([{ message, sender }]);
-      if (error) {
-        console.error('Send error:', error);
-        return;
-      }
-      input.value = '';
-      loadMessages();
-    }
-
-    function openAlbum() {
-      const overlay = document.getElementById('album-overlay');
-      overlay.classList.add('show');
-      setTimeout(() => {
-        window.location.href = 'album.html';
-      }, 800);
+      const { error } = await supabase.from('chat').insert([{ sender, message }]);
+      if (error) return console.error(error);
+      document.getElementById('chat-input').value = '';
+      location.reload();
     }
 
     function createHeart() {
@@ -275,19 +269,21 @@
     }
     setInterval(createHeart, 1500);
 
-    // Fix: run after DOM is loaded
-    window.addEventListener('DOMContentLoaded', () => {
-      const startDate = new Date('2024-10-13');
-      const today = new Date();
-      const diffTime = today - startDate;
-      const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-      const months = Math.floor(diffDays / 30.44);
-      const days = diffDays % 30.44;
-      document.getElementById('duration-value').textContent = `${months} months and ${Math.floor(days)} days`;
+    // Fix day counter
+    const startDate = new Date('2024-10-13');
+    const now = new Date();
+    const diff = Math.floor((now - startDate) / (1000 * 60 * 60 * 24));
+    const months = Math.floor(diff / 30.44);
+    const days = Math.floor(diff % 30.44);
+    document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
 
-      loadMessages();
-      setInterval(loadMessages, 5000);
-    });
+    function openAlbum() {
+      const overlay = document.getElementById('album-overlay');
+      overlay.classList.add('show');
+      setTimeout(() => window.location.href = 'album.html', 800);
+    }
+
+    loadMessages();
   </script>
 </body>
 </html>
