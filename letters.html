@@ -1,9 +1,10 @@
 <!DOCTYPE html>
+<h<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>Love Letters</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
@@ -33,6 +34,26 @@
     h1 {
       margin-top: 40px;
       font-size: 2.8em;
+    }
+
+    /* ❤️ Mike & Tricia Forever ❤️ styling */
+    .forever {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2em;
+      color: #d14185;
+      animation: glowPulse 3s ease-in-out infinite;
+      margin-bottom: 10px;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% {
+        text-shadow: 0 0 6px #ffb3dd, 0 0 12px #ffb3dd, 0 0 18px #ffb3dd;
+        transform: scale(1);
+      }
+      50% {
+        text-shadow: 0 0 12px #ff69b4, 0 0 24px #ff69b4, 0 0 32px #ff69b4;
+        transform: scale(1.05);
+      }
     }
 
     p.subtitle {
@@ -147,6 +168,7 @@
 <body>
   <a href="index.html" class="back-button">← Back to Home</a>
   <h1>Love Letters</h1>
+  <p class="forever">❤️Mike & Tricia Forever❤️</p> <!-- 🌟 ADDED animated text here -->
   <p class="encourage">💌 Express your love</p>
   <p class="subtitle">📝 You can come back anytime and read something sweet.</p>
 
