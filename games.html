@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Mini Games</title>
+  <link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -16,19 +17,19 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      background-color: #c4a6e8;
-      color: #2d124d;
+      background-color: #caa7e2;
+      color: #3e215d;
       padding: 10px 20px;
       border: none;
-      border-radius: 10px;
+      border-radius: 12px;
       cursor: pointer;
-      font-size: 14px;
-      font-family: 'Segoe UI', cursive;
+      font-size: 16px;
+      font-family: 'Gochi Hand', cursive;
       text-decoration: none;
     }
 
     .back-button:hover {
-      background-color: #b18ad6;
+      background-color: #b990d2;
     }
 
     h1 {
@@ -39,6 +40,25 @@
     p {
       font-size: 1.1em;
     }
+
+    .script-font {
+      font-family: 'Great Vibes', cursive;
+      font-size: 1.8em;
+      color: #d14185;
+      margin-top: 30px;
+      animation: glowPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes glowPulse {
+      0%, 100% {
+        text-shadow: 0 0 5px #ff9bd2, 0 0 10px #ff9bd2, 0 0 20px #ff9bd2;
+        transform: scale(1);
+      }
+      50% {
+        text-shadow: 0 0 15px #ff69b4, 0 0 25px #ff69b4, 0 0 35px #ff69b4;
+        transform: scale(1.05);
+      }
+    }
   </style>
 </head>
 <body>
@@ -46,5 +66,7 @@
 
   <h1>🎮 Mini Games</h1>
   <p>Game zone coming soon! You two will be playing together here.</p>
+  <p class="script-font">❤️Mike&Tricia Forever❤️</p>
 </body>
 </html>
+
