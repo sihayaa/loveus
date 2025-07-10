@@ -3,35 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Love Space</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
       background: url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
       background-size: cover;
-      color: #fff;
-      overflow-x: hidden;
-      margin: 0;
-      padding: 40px;
       text-align: center;
+      padding: 40px;
+      color: #fff;
+      overflow: hidden;
     }
 
     h1 {
       font-family: 'Great Vibes', cursive;
       font-size: 2.4em;
+      color: white;
       text-shadow: 2px 2px 8px #8e5dd2;
+      margin-bottom: 20px;
     }
 
     #duration-block {
-      background: rgba(255,255,255,0.65);
+      background: rgba(255, 255, 255, 0.65);
+      display: inline-block;
       padding: 12px 20px;
       border-radius: 12px;
-      display: inline-block;
       margin-bottom: 30px;
     }
 
-    #duration-label { color: #111; font-weight: bold; font-size: 1.1em; }
-    #duration-value { color: #4fa981; font-weight: bold; font-size: 1.1em; }
+    #duration-label {
+      color: #111;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
+
+    #duration-value {
+      color: #4fa981;
+      font-weight: bold;
+      font-size: 1.1em;
+    }
 
     button {
       padding: 10px 20px;
@@ -42,6 +52,25 @@
       border-radius: 8px;
       cursor: pointer;
       transition: all 0.3s ease;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    }
+
+    button:hover {
+      background-color: #8fc6bb;
+      transform: scale(1.07);
+      box-shadow: 0 0 15px #fff;
+    }
+
+    .heart {
+      position: absolute;
+      font-size: 20px;
+      animation: floatUp 5s linear forwards;
+      pointer-events: auto;
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      100% { transform: translateY(-100vh) scale(0.7); opacity: 0; }
     }
 
     .album-icon {
@@ -52,69 +81,46 @@
       height: 80px;
       background-color: #884ea0;
       border-radius: 20px;
-      box-shadow: 0 0 12px #d2b4de;
+      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
       padding: 6px;
       cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       z-index: 10;
+    }
+
+    .album-icon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 18px #d2b4de, 6px 6px 14px rgba(0,0,0,0.4);
     }
 
     .album-icon img {
       width: 100%;
       height: 100%;
       border-radius: 12px;
+      object-fit: cover;
     }
 
-    .chatbox {
+    #album-overlay {
       position: fixed;
-      bottom: 20px;
-      left: 20px;
-      background: rgba(0, 0, 0, 0.7);
-      padding: 10px;
-      border-radius: 12px;
-      width: 330px;
-      font-size: 14px;
-      z-index: 100;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle, #d2b4de 0%, #884ea0 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      z-index: 1000;
     }
 
-    .chatbox select,
-    .chatbox input {
-      border-radius: 6px;
-      padding: 6px;
-      border: none;
-      outline: none;
-    }
-
-    .chatbox button {
-      margin-top: 6px;
-      padding: 6px 14px;
-      font-size: 14px;
-    }
-
-    .bubble {
-      position: absolute;
-      padding: 10px 14px;
-      border-radius: 12px;
-      background-color: #fff;
-      color: #000;
-      font-family: monospace;
-      font-size: 13px;
-      cursor: move;
-      box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-      z-index: 50;
-    }
-
-    .bubble.green { background-color: #b5f9c8; }
-    .bubble.purple { background-color: #dfc4ff; }
-
-    .timestamp {
-      font-size: 10px;
-      text-align: right;
-      margin-top: 4px;
-      color: #555;
+    #album-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
     }
   </style>
 </head>
 <body>
+
   <h1>Started Dating: October 13, 2024</h1>
   <div id="duration-block">
     <span id="duration-label">Together for: </span>
@@ -125,84 +131,42 @@
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
   <!-- Album Icon -->
-  <div class="album-icon" onclick="window.location.href='album.html'">
+  <div class="album-icon" onclick="openAlbum()">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/main/album-icon.png" alt="Album Icon">
   </div>
+  <div id="album-overlay"></div>
 
-  <!-- Chatbox -->
-  <div class="chatbox">
-    <select id="sender">
-      <option value="me">💚</option>
-      <option value="bf">💜</option>
-    </select>
-    <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off">
-    <br>
-    <button onclick="sendMessage()">Send</button>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
-    const supabase = supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
-
-    async function sendMessage() {
-      const msg = document.getElementById("chat-input").value.trim();
-      const sender = document.getElementById("sender").value;
-      if (!msg) return;
-
-      await supabase.from("chat").insert([{ message: msg, sender }]);
-      document.getElementById("chat-input").value = '';
-      loadMessages();
+    // Floating hearts
+    function createHeart() {
+      const heart = document.createElement('div');
+      heart.textContent = '❤️';
+      heart.classList.add('heart');
+      heart.style.left = Math.random() * 100 + 'vw';
+      heart.style.bottom = '0px';
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 6000);
     }
+    setInterval(createHeart, 1500);
 
-    function createBubble(msg, sender, time) {
-      const div = document.createElement("div");
-      div.className = `bubble ${sender === "me" ? "green" : "purple"}`;
-      div.style.left = Math.random() * (window.innerWidth - 200) + "px";
-      div.style.top = Math.random() * (window.innerHeight - 150) + "px";
-      div.innerHTML = `
-        ${msg}
-        <div class="timestamp">${new Date(time).toLocaleString()}</div>
-      `;
-      makeDraggable(div);
-      document.body.appendChild(div);
-    }
-
-    async function loadMessages() {
-      const { data, error } = await supabase.from("chat").select("*").order("created_at", { ascending: true });
-      if (error) return;
-
-      // remove old bubbles
-      document.querySelectorAll(".bubble").forEach(el => el.remove());
-      data.forEach(item => createBubble(item.message, item.sender, item.created_at));
-    }
-
-    function makeDraggable(el) {
-      let offsetX, offsetY;
-      el.onmousedown = function (e) {
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
-        document.onmousemove = function (e) {
-          el.style.left = (e.clientX - offsetX) + "px";
-          el.style.top = (e.clientY - offsetY) + "px";
-        };
-        document.onmouseup = () => document.onmousemove = null;
-      };
-    }
-
-    // Day counter
+    // Date tracker
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
     const months = Math.floor(diffDays / 30.44);
-    const days = Math.floor(diffDays % 30.44);
-    document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+    const days = diffDays % 30.44;
+    document.getElementById('duration-value').textContent =
+      `${months} months and ${Math.floor(days)} days`;
 
-    loadMessages();
-    setInterval(loadMessages, 5000);
+    // Album overlay
+    function openAlbum() {
+      const overlay = document.getElementById('album-overlay');
+      overlay.classList.add('show');
+      setTimeout(() => {
+        window.location.href = 'album.html';
+      }, 800);
+    }
   </script>
 </body>
 </html>
