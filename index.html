@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Our Love Space</title>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -82,50 +81,6 @@
       border-radius: 12px;
       object-fit: cover;
     }
-
-    /* Chatbox styles */
-    #chatbox {
-      position: fixed;
-      bottom: 30px;
-      left: 30px;
-      background: rgba(0, 0, 0, 0.5);
-      padding: 15px;
-      border-radius: 12px;
-      max-width: 320px;
-      width: 100%;
-    }
-
-    .message {
-      background: #362d5c;
-      border-radius: 12px;
-      padding: 10px;
-      margin: 5px 0;
-      color: #fff;
-      font-size: 0.9em;
-    }
-
-    .timestamp {
-      font-size: 0.7em;
-      color: #ccc;
-      margin-top: 5px;
-    }
-
-    #message-input {
-      width: 75%;
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      font-size: 1em;
-    }
-
-    #send-button {
-      padding: 8px 12px;
-      margin-left: 5px;
-      background-color: #a3d2ca;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
   </style>
 </head>
 <body>
@@ -137,17 +92,10 @@
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
+
+  <!-- Album Icon -->
   <div class="album-icon" onclick="window.location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
-  </div>
-
-  <!-- Chatbox -->
-  <div id="chatbox">
-    <div id="chat-messages"></div>
-    <div>
-      <input type="text" id="message-input" placeholder="Type a message...">
-      <button id="send-button">Send</button>
-    </div>
   </div>
 
   <script>
@@ -158,37 +106,7 @@
     const months = Math.floor(diffDays / 30.44);
     const days = Math.floor(diffDays % 30.44);
     document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
-
-    const supabase = window.supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
-
-    async function loadMessages() {
-      const { data, error } = await supabase.from('chat').select('*').order('created_at', { ascending: true });
-      if (data) {
-        const container = document.getElementById('chat-messages');
-        container.innerHTML = '';
-        data.forEach(msg => {
-          const bubble = document.createElement('div');
-          bubble.className = 'message';
-          bubble.innerHTML = `${msg.content}<div class="timestamp">${new Date(msg.created_at).toLocaleString()}</div>`;
-          container.appendChild(bubble);
-        });
-      }
-    }
-
-    document.getElementById('send-button').onclick = async () => {
-      const input = document.getElementById('message-input');
-      const content = input.value.trim();
-      if (!content) return;
-      await supabase.from('chat').insert([{ content }]);
-      input.value = '';
-      loadMessages();
-    };
-
-    loadMessages();
-    setInterval(loadMessages, 5000);
   </script>
 </body>
 </html>
+
