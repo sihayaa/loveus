@@ -73,6 +73,7 @@
       box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
       padding: 6px;
       cursor: pointer;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
       z-index: 10;
     }
 
@@ -86,7 +87,7 @@
     #note-icon {
       position: fixed;
       top: 205px;
-      left: 28px;
+      left: 32px;
       width: 60px;
       cursor: pointer;
       z-index: 20;
@@ -128,6 +129,14 @@
       color: #111;
     }
 
+    .note .timestamp {
+      position: absolute;
+      bottom: 5px;
+      right: 10px;
+      font-size: 10px;
+      color: #333;
+    }
+
     .note .delete-btn {
       position: absolute;
       top: 5px;
@@ -138,15 +147,6 @@
       font-weight: bold;
       font-size: 16px;
       cursor: pointer;
-      z-index: 100;
-    }
-
-    .note .timestamp {
-      position: absolute;
-      bottom: 5px;
-      right: 10px;
-      font-size: 10px;
-      color: #333;
     }
   </style>
 </head>
@@ -165,7 +165,7 @@
     <img src="album-icon.png" alt="Album Icon">
   </div>
 
-  <img id="note-icon" src="https://raw.githubusercontent.com/sihayaa/loveus/main/postit.png" alt="Add Note" />
+  <img id="note-icon" src="https://raw.githubusercontent.com/sihayaa/loveus/main/love-note-icon.png" alt="Add Note">
 
   <div id="color-picker">
     <button class="color-btn" style="background:#71f0ce" data-color="#71f0ce"></button>
@@ -173,9 +173,14 @@
     <button class="color-btn" style="background:#6bff6d" data-color="#6bff6d"></button>
   </div>
 
+  <div id="album-overlay"></div>
   <div id="notesContainer"></div>
 
   <script>
+    const SUPABASE_URL = 'https://tmjozxcjylcxgemffnoc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
@@ -184,97 +189,92 @@
     const days = diffDays % 30.44;
     document.getElementById('duration-value').textContent = `${months} months and ${Math.floor(days)} days`;
 
-    const supabase = createClient('https://tmjozxcjylcxgemffnoc.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI');
+    function openAlbum() {
+      const overlay = document.getElementById('album-overlay');
+      overlay.classList.add('show');
+      setTimeout(() => {
+        window.location.href = 'album.html';
+      }, 800);
+    }
+
+    const noteBtn = document.getElementById("note-icon");
+    const colorPicker = document.getElementById("color-picker");
+
+    noteBtn.onclick = () => {
+      colorPicker.style.display = colorPicker.style.display === 'none' ? 'block' : 'none';
+    };
+
+    document.querySelectorAll(".color-btn").forEach(btn => {
+      btn.onclick = async () => {
+        const color = btn.getAttribute("data-color");
+        const now = new Date();
+        const note = {
+          color,
+          content: '',
+          x: 100,
+          y: 100,
+          timestamp: now.toISOString()
+        };
+        await supabase.from('notes').insert([note]);
+        loadNotes();
+        colorPicker.style.display = 'none';
+      };
+    });
 
     async function loadNotes() {
-      const { data, error } = await supabase.from('notes').select('*');
-      if (!error) {
-        data.forEach(note => createNote(note.color, note.content, note.id, note.x, note.y, note.created_at));
-      }
-    }
+      const { data } = await supabase.from('notes').select('*');
+      const container = document.getElementById("notesContainer");
+      container.innerHTML = '';
+      data.forEach(note => {
+        const textarea = document.createElement("textarea");
+        textarea.className = "note";
+        textarea.style.background = note.color;
+        textarea.style.left = note.x + 'px';
+        textarea.style.top = note.y + 'px';
+        textarea.value = note.content;
 
-    async function saveNote(id, content, x, y) {
-      await supabase.from('notes').update({ content, x, y }).eq('id', id);
-    }
+        const timestamp = document.createElement("div");
+        timestamp.className = "timestamp";
+        timestamp.textContent = new Date(note.timestamp).toLocaleString();
 
-    async function deleteNote(id, el) {
-      await supabase.from('notes').delete().eq('id', id);
-      el.remove();
-    }
+        const deleteBtn = document.createElement("button");
+        deleteBtn.className = "delete-btn";
+        deleteBtn.textContent = "×";
+        deleteBtn.onclick = async () => {
+          await supabase.from('notes').delete().eq('id', note.id);
+          loadNotes();
+        };
 
-    async function createNote(color, content = '', id = null, x = 100, y = 100, timestamp = null) {
-      const note = document.createElement("textarea");
-      note.className = "note";
-      note.style.background = color;
-      note.style.left = `${x}px`;
-      note.style.top = `${y}px`;
-      note.value = content;
-      note.placeholder = 'Write here...';
-      makeDraggable(note, id);
-
-      const wrapper = document.createElement('div');
-      wrapper.className = 'note-wrapper';
-      wrapper.style.position = 'absolute';
-      wrapper.style.left = `${x}px`;
-      wrapper.style.top = `${y}px`;
-      wrapper.appendChild(note);
-
-      const timestampEl = document.createElement('div');
-      timestampEl.className = 'timestamp';
-      timestampEl.textContent = timestamp ? new Date(timestamp).toLocaleString() : new Date().toLocaleString();
-      note.appendChild(timestampEl);
-
-      const del = document.createElement('button');
-      del.className = 'delete-btn';
-      del.textContent = '×';
-      del.onclick = () => {
-        if (id) deleteNote(id, wrapper);
-        else wrapper.remove();
-      };
-      note.appendChild(del);
-
-      document.getElementById("notesContainer").appendChild(wrapper);
-
-      if (!id) {
-        const { data, error } = await supabase.from('notes').insert({ content, color, x, y }).select().single();
-        if (!error) note.setAttribute('data-id', data.id);
-      }
-
-      note.addEventListener('input', () => {
-        const noteId = note.getAttribute('data-id');
-        if (noteId) saveNote(noteId, note.value, parseInt(wrapper.style.left), parseInt(wrapper.style.top));
+        textarea.appendChild(timestamp);
+        textarea.appendChild(deleteBtn);
+        makeDraggable(textarea, note);
+        container.appendChild(textarea);
       });
     }
 
-    function makeDraggable(el, id) {
+    function makeDraggable(el, noteData) {
       let offsetX, offsetY;
       el.onmousedown = function(e) {
         offsetX = e.clientX - el.offsetLeft;
         offsetY = e.clientY - el.offsetTop;
         document.onmousemove = function(e) {
-          const x = e.clientX - offsetX;
-          const y = e.clientY - offsetY;
-          el.style.left = x + 'px';
-          el.style.top = y + 'px';
+          el.style.left = e.clientX - offsetX + "px";
+          el.style.top = e.clientY - offsetY + "px";
         };
-        document.onmouseup = function() {
+        document.onmouseup = async function() {
           document.onmousemove = null;
           document.onmouseup = null;
-          if (id) saveNote(id, el.value, parseInt(el.style.left), parseInt(el.style.top));
+          await supabase.from('notes').update({
+            x: parseInt(el.style.left),
+            y: parseInt(el.style.top)
+          }).eq('id', noteData.id);
         };
       };
+
+      el.oninput = async function() {
+        await supabase.from('notes').update({ content: el.value }).eq('id', noteData.id);
+      }
     }
-
-    document.getElementById("note-icon").onclick = () => {
-      document.getElementById("color-picker").style.display = 'block';
-    };
-
-    document.querySelectorAll(".color-btn").forEach(btn => {
-      btn.onclick = () => {
-        createNote(btn.getAttribute("data-color"));
-        document.getElementById("color-picker").style.display = 'none';
-      };
-    });
 
     loadNotes();
   </script>
