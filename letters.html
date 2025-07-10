@@ -37,6 +37,7 @@
       text-align: center;
       margin-top: 60px;
       width: 100%;
+      padding: 0 20px;
     }
 
     h1 {
@@ -64,15 +65,11 @@
     }
 
     .letter-form {
-      display: grid;
-      grid-template-columns: 1fr 2fr 1fr;
+      display: flex;
+      flex-direction: column;
       gap: 10px;
-      align-items: start;
       width: 100%;
-      max-width: 1000px;
-      margin: 0 auto;
-      flex-wrap: wrap;
-      padding: 0 20px;
+      max-width: 600px;
     }
 
     .letter-form input,
@@ -92,7 +89,6 @@
     }
 
     .form-row {
-      grid-column: 1 / -1;
       display: flex;
       justify-content: center;
       margin-top: 10px;
@@ -109,16 +105,88 @@
       cursor: pointer;
     }
 
-    @media (max-width: 768px) {
-      .letter-form {
-        grid-template-columns: 1fr;
-      }
+    .letters {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 0 20px 40px;
+      width: 100%;
+      max-width: 1100px;
+    }
+
+    .letter {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 1.1em;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      border-left: 5px solid #a28dc2;
+      white-space: pre-wrap;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .letter-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .letter-footer {
+      margin-top: 10px;
+      font-style: italic;
+      text-align: right;
+    }
+
+    .zoom-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+    }
+
+    .zoomed-letter {
+      background: #fff;
+      padding: 30px;
+      border-radius: 14px;
+      max-width: 85vw;
+      width: 600px;
+      font-size: 1.2em;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+      position: relative;
+    }
+
+    .zoomed-letter .date {
+      text-align: right;
+      color: #777;
+      font-size: 0.9em;
+      margin-top: 20px;
+    }
+
+    .edit-save-button {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #a28dc2;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 0.9em;
+      padding: 5px 12px;
+      font-family: 'Patrick Hand', cursive;
+      cursor: pointer;
+      opacity: 0.9;
     }
   </style>
 </head>
 <body>
   <a href="index.html" class="back-button">← Back to Home</a>
-
   <div class="center-content">
     <h1>Love Letters</h1>
     <p class="forever">❤️Mike & Tricia Forever❤️</p>
@@ -131,5 +199,155 @@
       </div>
     </div>
   </div>
+
+  <div class="letters" id="letters"></div>
+
+  <script>
+    const client = supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
+
+    async function sealLetter() {
+      const to = document.getElementById('toInput').value.trim();
+      const content = document.getElementById('letterInput').value.trim();
+      const from = document.getElementById('fromInput').value.trim();
+      if (!content) return;
+
+      const { error } = await client.from('letters').insert({ to, content, from });
+      if (error) {
+        alert('Error saving letter.');
+        return;
+      }
+      document.getElementById('toInput').value = '';
+      document.getElementById('letterInput').value = '';
+      document.getElementById('fromInput').value = '';
+      loadLetters();
+    }
+
+    async function loadLetters() {
+      const { data, error } = await client.from('letters').select('*').order('created_at', { ascending: false });
+      if (error) return;
+      const container = document.getElementById('letters');
+      container.innerHTML = '';
+
+      data.forEach(letter => {
+        const div = document.createElement('div');
+        div.className = 'letter';
+        div.onclick = () => showZoomedLetter(letter);
+
+        const header = document.createElement('div');
+        header.className = 'letter-header';
+        header.textContent = letter.to ? `To: ${letter.to}` : '';
+
+        const body = document.createElement('div');
+        body.textContent = letter.content;
+
+        const footer = document.createElement('div');
+        footer.className = 'letter-footer';
+        footer.textContent = letter.from ? `Love, ${letter.from}` : '';
+
+        const deleteBtn = document.createElement('span');
+        deleteBtn.textContent = '❌';
+        deleteBtn.style.position = 'absolute';
+        deleteBtn.style.top = '8px';
+        deleteBtn.style.right = '12px';
+        deleteBtn.style.cursor = 'pointer';
+        deleteBtn.style.color = '#b75d5d';
+        deleteBtn.style.fontSize = '1.2em';
+        deleteBtn.title = 'Delete this letter';
+        deleteBtn.onclick = async (e) => {
+          e.stopPropagation();
+          if (confirm('Are you sure you want to delete this letter?')) {
+            const { error } = await client.from('letters').delete().eq('id', letter.id);
+            if (!error) loadLetters();
+            else alert('Failed to delete letter.');
+          }
+        };
+
+        div.appendChild(deleteBtn);
+        div.appendChild(header);
+        div.appendChild(body);
+        div.appendChild(footer);
+        container.appendChild(div);
+      });
+    }
+
+    function showZoomedLetter(letter) {
+      const overlay = document.createElement('div');
+      overlay.className = 'zoom-overlay';
+      overlay.onclick = e => {
+        if (e.target === overlay) document.body.removeChild(overlay);
+      };
+
+      const zoomBox = document.createElement('div');
+      zoomBox.className = 'zoomed-letter';
+      zoomBox.onclick = e => e.stopPropagation();
+
+      const header = document.createElement('div');
+      header.className = 'letter-header';
+      header.textContent = letter.to ? `To: ${letter.to}` : '';
+
+      const text = document.createElement('div');
+      text.textContent = letter.content;
+      text.style.whiteSpace = 'pre-wrap';
+      text.style.marginBottom = '10px';
+
+      const footer = document.createElement('div');
+      footer.className = 'letter-footer';
+      footer.textContent = letter.from ? `Love, ${letter.from}` : '';
+
+      const date = document.createElement('div');
+      date.className = 'date';
+      date.textContent = new Date(letter.created_at).toLocaleString();
+
+      const editBtn = document.createElement('button');
+      editBtn.className = 'edit-save-button';
+      editBtn.textContent = 'Edit';
+
+      editBtn.onclick = () => {
+        zoomBox.innerHTML = '';
+
+        const headerInput = document.createElement('input');
+        headerInput.value = letter.to || '';
+        headerInput.placeholder = 'To';
+        const textarea = document.createElement('textarea');
+        textarea.value = letter.content;
+        const footerInput = document.createElement('input');
+        footerInput.value = letter.from || '';
+        footerInput.placeholder = 'Love';
+
+        const saveBtn = document.createElement('button');
+        saveBtn.textContent = 'Save';
+        saveBtn.className = 'edit-save-button';
+        saveBtn.onclick = async () => {
+          const { error } = await client.from('letters')
+            .update({ content: textarea.value, to: headerInput.value, from: footerInput.value })
+            .eq('id', letter.id);
+          if (!error) {
+            document.body.removeChild(overlay);
+            loadLetters();
+          }
+        };
+
+        zoomBox.appendChild(headerInput);
+        zoomBox.appendChild(textarea);
+        zoomBox.appendChild(footerInput);
+        zoomBox.appendChild(date);
+        zoomBox.appendChild(saveBtn);
+      };
+
+      zoomBox.appendChild(header);
+      zoomBox.appendChild(text);
+      zoomBox.appendChild(footer);
+      zoomBox.appendChild(date);
+      zoomBox.appendChild(editBtn);
+
+      overlay.appendChild(zoomBox);
+      document.body.appendChild(overlay);
+    }
+
+    document.addEventListener('DOMContentLoaded', loadLetters);
+  </script>
 </body>
 </html>
