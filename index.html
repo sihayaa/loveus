@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Our Love Space</title>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -89,6 +88,11 @@
       z-index: 10;
     }
 
+    .album-icon:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 18px #d2b4de, 6px 6px 14px rgba(0,0,0,0.4);
+    }
+
     .album-icon img {
       width: 100%;
       height: 100%;
@@ -96,70 +100,31 @@
       object-fit: cover;
     }
 
+    #album-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: radial-gradient(circle, #d2b4de 0%, #884ea0 100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+      z-index: 1000;
+    }
+
+    #album-overlay.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     #note-icon {
       position: fixed;
       top: 205px;
-      left: 30px;
-      width: 58px;
-      cursor: pointer;
-      z-index: 20;
-    }
-
-    #color-picker {
-      position: fixed;
-      top: 280px;
       left: 28px;
-      background: #fff;
-      padding: 10px;
-      border-radius: 10px;
-      display: none;
+      width: 60px;
+      cursor: pointer;
       z-index: 20;
-    }
-
-    .color-btn {
-      width: 30px;
-      height: 30px;
-      margin: 5px;
-      border: none;
-      border-radius: 50%;
-      cursor: pointer;
-    }
-
-    .note {
-      width: 180px;
-      height: 180px;
-      position: absolute;
-      padding: 10px;
-      padding-top: 25px;
-      border-radius: 10px;
-      box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-      resize: none;
-      font-family: 'Segoe UI', sans-serif;
-      font-size: 14px;
-      overflow: auto;
-      z-index: 15;
-      color: #111;
-    }
-
-    .note .delete-btn {
-      position: absolute;
-      top: 5px;
-      right: 8px;
-      background: none;
-      border: none;
-      color: #333;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      z-index: 100;
-    }
-
-    .note .timestamp {
-      position: absolute;
-      bottom: 5px;
-      right: 10px;
-      font-size: 10px;
-      color: #333;
     }
   </style>
 </head>
@@ -169,103 +134,19 @@
     <span id="duration-label">Together for: </span>
     <span id="duration-value">loading...</span>
   </div>
+
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
-  <div class="album-icon" onclick="window.location.href='album.html'">
+
+  <div class="album-icon" onclick="openAlbum()">
     <img src="album-icon.png" alt="Album Icon">
   </div>
-  <img id="note-icon" src="https://raw.githubusercontent.com/sihayaa/loveus/main/postit.png" alt="Add Note">
-  <div id="color-picker">
-    <button class="color-btn" style="background:#71f0ce" data-color="#71f0ce"></button>
-    <button class="color-btn" style="background:#c264f3" data-color="#c264f3"></button>
-    <button class="color-btn" style="background:#6bff6d" data-color="#6bff6d"></button>
-  </div>
-  <div id="notesContainer"></div>
-  <script>
-    // Duration
-    const startDate = new Date('2024-10-13');
-    const today = new Date();
-    const diffTime = today - startDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const months = Math.floor(diffDays / 30.44);
-    const days = diffDays % 30.44;
-    document.getElementById('duration-value').textContent = `${months} months and ${Math.floor(days)} days`;
 
-    // Supabase Init
-    const SUPABASE_URL = 'https://tmjozxcjylcxgemffnoc.supabase.co';
-    const SUPABASE_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
-    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+  <img id="note-icon" 
+       src="https://raw.githubusercontent.com/sihayaa/loveus/main/love-note-icon.png" 
+       alt="Add Note">
 
-    // Create Note
-    const noteIcon = document.getElementById('note-icon');
-    const picker = document.getElementById('color-picker');
-
-    noteIcon.onclick = () => {
-      picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
-    };
-
-    document.querySelectorAll('.color-btn').forEach(btn => {
-      btn.onclick = async () => {
-        const color = btn.dataset.color;
-        const content = '';
-        const x = 150, y = 150;
-        const created_at = new Date().toISOString();
-        const { data, error } = await supabase.from('notes').insert([{ content, color, x, y, created_at }]);
-        if (!error) loadNotes();
-        picker.style.display = 'none';
-      }
-    });
-
-    function makeDraggable(noteEl, noteData) {
-      let offsetX, offsetY;
-      noteEl.onmousedown = function(e) {
-        offsetX = e.clientX - noteEl.offsetLeft;
-        offsetY = e.clientY - noteEl.offsetTop;
-        document.onmousemove = function(e) {
-          noteEl.style.left = e.clientX - offsetX + 'px';
-          noteEl.style.top = e.clientY - offsetY + 'px';
-        };
-        document.onmouseup = async function() {
-          document.onmousemove = null;
-          document.onmouseup = null;
-          await supabase.from('notes').update({ x: noteEl.offsetLeft, y: noteEl.offsetTop }).eq('id', noteData.id);
-        };
-      };
-    }
-
-    async function loadNotes() {
-      document.getElementById('notesContainer').innerHTML = '';
-      const { data, error } = await supabase.from('notes').select('*');
-      data.forEach(note => {
-        const el = document.createElement('textarea');
-        el.className = 'note';
-        el.value = note.content;
-        el.style.background = note.color;
-        el.style.left = note.x + 'px';
-        el.style.top = note.y + 'px';
-        const delBtn = document.createElement('button');
-        delBtn.className = 'delete-btn';
-        delBtn.textContent = '×';
-        delBtn.onclick = async () => {
-          await supabase.from('notes').delete().eq('id', note.id);
-          loadNotes();
-        };
-        const timestamp = document.createElement('div');
-        timestamp.className = 'timestamp';
-        timestamp.textContent = new Date(note.created_at).toLocaleString();
-        el.appendChild(delBtn);
-        el.appendChild(timestamp);
-        el.oninput = async () => {
-          await supabase.from('notes').update({ content: el.value }).eq('id', note.id);
-        }
-        document.getElementById('notesContainer').appendChild(el);
-        makeDraggable(el, note);
-      });
-    }
-
-    loadNotes();
-  </script>
+  <div id="album-overlay"></div>
 </body>
 </html>
-
