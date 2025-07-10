@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Our Love Space</title>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -12,7 +13,6 @@
       text-align: center;
       padding: 40px;
       color: #fff;
-      overflow: hidden;
     }
 
     h1 {
@@ -82,6 +82,57 @@
       border-radius: 12px;
       object-fit: cover;
     }
+
+    #chatbox {
+      max-width: 600px;
+      margin: 40px auto;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 12px;
+      padding: 20px;
+      color: #222;
+      box-shadow: 0 0 15px rgba(0,0,0,0.3);
+      height: 400px;
+      overflow-y: auto;
+    }
+
+    .message {
+      background: #f0f0f0;
+      padding: 10px;
+      border-radius: 8px;
+      margin: 10px 0;
+      text-align: left;
+      font-size: 0.95em;
+    }
+
+    .timestamp {
+      display: block;
+      font-size: 0.75em;
+      color: #666;
+      margin-top: 5px;
+    }
+
+    #messageInput {
+      width: calc(100% - 100px);
+      padding: 10px;
+      font-size: 1em;
+      border-radius: 6px;
+      border: none;
+    }
+
+    #sendBtn {
+      padding: 10px 20px;
+      margin-left: 10px;
+      background-color: #6cc7b4;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    #sendBtn:hover {
+      background-color: #5ab3a2;
+    }
   </style>
 </head>
 <body>
@@ -95,9 +146,14 @@
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Album Icon -->
   <div class="album-icon" onclick="window.location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
+  </div>
+
+  <div id="chatbox"></div>
+  <div style="text-align:center; margin-top:20px;">
+    <input type="text" id="messageInput" placeholder="Type a message...">
+    <button id="sendBtn">Send</button>
   </div>
 
   <script>
@@ -108,6 +164,40 @@
     const months = Math.floor(diffDays / 30.44);
     const days = Math.floor(diffDays % 30.44);
     document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+
+    const supabase = window.supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
+
+    const chatbox = document.getElementById('chatbox');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    async function loadMessages() {
+      const { data, error } = await supabase.from('messages').select().order('created_at', { ascending: true });
+      if (!error && data) {
+        chatbox.innerHTML = '';
+        data.forEach(msg => {
+          const div = document.createElement('div');
+          div.className = 'message';
+          div.innerHTML = `${msg.content}<span class="timestamp">${new Date(msg.created_at).toLocaleString()}</span>`;
+          chatbox.appendChild(div);
+        });
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+    }
+
+    sendBtn.onclick = async () => {
+      const content = messageInput.value.trim();
+      if (content) {
+        await supabase.from('messages').insert({ content });
+        messageInput.value = '';
+        loadMessages();
+      }
+    };
+
+    loadMessages();
   </script>
 </body>
 </html>
