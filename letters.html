@@ -176,26 +176,23 @@
       display: inline-block;
     }
 
-    .heart-pop {
+    .falling-heart {
       position: fixed;
-      bottom: 100px;
-      font-size: 4em; /* BIGGER heart 💖 */
-      opacity: 1;
-      animation: heartFloat 1s ease-out forwards;
-      z-index: 1000;
+      top: -40px;
+      font-size: 1.5em;
+      color: #ff5c9c;
+      animation: fallHeart 2s ease-out forwards;
       pointer-events: none;
+      z-index: 999;
     }
 
-    @keyframes heartFloat {
+    @keyframes fallHeart {
       0% {
-        transform: scale(0.8) translateY(0);
+        transform: translateY(0) rotate(0deg);
         opacity: 1;
       }
-      50% {
-        transform: scale(1.6) translateY(-30px);
-      }
       100% {
-        transform: scale(1.2) translateY(-60px);
+        transform: translateY(100vh) rotate(360deg);
         opacity: 0;
       }
     }
@@ -233,19 +230,28 @@
         return;
       }
       input.value = '';
-      showHeartPop();
+      showerHearts();
       loadLetters();
     }
 
-    function showHeartPop() {
-      const heart = document.createElement('div');
-      heart.className = 'heart-pop';
-      heart.textContent = '💖';
-      heart.style.left = `${window.innerWidth / 2 + (Math.random() * 60 - 30)}px`;
-      document.body.appendChild(heart);
-      setTimeout(() => {
-        document.body.removeChild(heart);
-      }, 1000);
+    function showerHearts() {
+      const totalHearts = 30;
+
+      for (let i = 0; i < totalHearts; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'falling-heart';
+        heart.textContent = '💖';
+
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.fontSize = `${1 + Math.random() * 1.5}em`;
+        heart.style.animationDelay = `${Math.random() * 0.5}s`;
+
+        document.body.appendChild(heart);
+
+        setTimeout(() => {
+          heart.remove();
+        }, 2000);
+      }
     }
 
     async function loadLetters() {
