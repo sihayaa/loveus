@@ -4,7 +4,6 @@
   <meta charset="UTF-8">
   <title>Our Love Space</title>
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body {
       font-family: 'Segoe UI', sans-serif;
@@ -83,44 +82,6 @@
       border-radius: 12px;
       object-fit: cover;
     }
-
-    #note-icon {
-      position: fixed;
-      top: 200px;
-      left: 40px;
-      width: 50px;
-      height: 50px;
-      cursor: pointer;
-      z-index: 20;
-    }
-
-    .note {
-      position: absolute;
-      width: 180px;
-      height: 180px;
-      padding: 20px 10px 10px 10px;
-      border-radius: 10px;
-      box-shadow: 2px 2px 10px rgba(0,0,0,0.3);
-      resize: none;
-      font-family: 'Segoe UI', sans-serif;
-      font-size: 14px;
-      overflow: auto;
-      z-index: 15;
-      color: #111;
-    }
-
-    .delete-btn {
-      position: absolute;
-      top: 5px;
-      right: 8px;
-      background: none;
-      border: none;
-      color: #333;
-      font-weight: bold;
-      font-size: 16px;
-      cursor: pointer;
-      z-index: 100;
-    }
   </style>
 </head>
 <body>
@@ -139,11 +100,6 @@
     <img src="album-icon.png" alt="Album Icon">
   </div>
 
-  <!-- Post-it Icon -->
-  <img id="note-icon" src="https://raw.githubusercontent.com/sihayaa/loveus/main/love-note-icon.png" alt="Add Note">
-
-  <div id="notesContainer"></div>
-
   <script>
     const startDate = new Date('2024-10-13');
     const today = new Date();
@@ -152,73 +108,6 @@
     const months = Math.floor(diffDays / 30.44);
     const days = Math.floor(diffDays % 30.44);
     document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
-
-    const supabase = window.supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
-
-    const notesContainer = document.getElementById('notesContainer');
-
-    async function loadNotes() {
-      const { data, error } = await supabase.from('notes').select();
-      if (!error && data) {
-        data.forEach(note => createNoteElement(note));
-      }
-    }
-
-    function createNoteElement(note) {
-      const noteEl = document.createElement('textarea');
-      noteEl.className = 'note';
-      noteEl.value = note.content;
-      noteEl.style.background = note.color;
-      noteEl.style.left = note.x + 'px';
-      noteEl.style.top = note.y + 'px';
-
-      const deleteBtn = document.createElement('button');
-      deleteBtn.textContent = '×';
-      deleteBtn.className = 'delete-btn';
-      deleteBtn.onclick = async () => {
-        await supabase.from('notes').delete().eq('id', note.id);
-        noteEl.remove();
-      };
-
-      noteEl.appendChild(deleteBtn);
-      notesContainer.appendChild(noteEl);
-      makeDraggable(noteEl, note.id);
-    }
-
-    function makeDraggable(el, id) {
-      let offsetX, offsetY;
-      el.onmousedown = function(e) {
-        if (e.target.className === 'delete-btn') return;
-        offsetX = e.clientX - el.offsetLeft;
-        offsetY = e.clientY - el.offsetTop;
-        document.onmousemove = function(e) {
-          el.style.left = e.clientX - offsetX + 'px';
-          el.style.top = e.clientY - offsetY + 'px';
-        };
-        document.onmouseup = async function() {
-          document.onmousemove = null;
-          document.onmouseup = null;
-          await supabase.from('notes').update({ x: el.offsetLeft, y: el.offsetTop }).eq('id', id);
-        };
-      };
-    }
-
-    document.getElementById('note-icon').onclick = async () => {
-      const defaultColor = '#71f0ce';
-      const { data, error } = await supabase.from('notes').insert({
-        content: '',
-        color: defaultColor,
-        x: 100,
-        y: 100
-      }).select().single();
-
-      if (!error && data) createNoteElement(data);
-    };
-
-    loadNotes();
   </script>
 </body>
 </html>
