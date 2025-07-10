@@ -66,10 +66,34 @@
     input, button {
       font-family: inherit;
     }
+
+    .back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: #c5a3e0;
+      color: #fff;
+      text-decoration: none;
+      padding: 10px 15px;
+      border-radius: 10px;
+      font-size: 0.95em;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      transition: all 0.2s ease;
+    }
+
+    .back-button:hover {
+      background-color: #b087d0;
+      transform: scale(1.05);
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
+
+  <!-- 🌸 Back Button -->
+  <a href="index.html" class="back-button">← Back to Home</a>
+
   <h1>🎮 Mini Games</h1>
   <p>Have fun playing together! Track your scores below 💚💜</p>
 
