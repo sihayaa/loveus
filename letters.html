@@ -1,4 +1,3 @@
-<!-- FULL SCRIPT BELOW (MERGED) -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -188,9 +187,12 @@
     <p class="forever">❤️Mike & Tricia Forever❤️</p>
     <div class="letter-form">
       <input type="text" id="toInput" placeholder="To:">
-      <label for="colorPicker">Pick a text color:</label>
-      <input type="color" id="colorPicker" value="#4b2354">
-      <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
+      
+      <div style="position: relative;">
+  <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
+  <input type="color" id="colorPicker" value="#4b2354" title="Pick a text color" style="position: absolute; top: 10px; right: 10px; width: 30px; height: 30px; border: none; background: transparent; cursor: pointer;" />
+  <span style="position: absolute; top: 12px; right: 45px; font-size: 18px;">🎨</span>
+</div>
       <input type="text" id="fromInput" placeholder="Love:">
       <div class="form-row">
         <button onclick="sealLetter()">Seal the Letter 💌</button>
