@@ -130,6 +130,7 @@
       border-radius: 15px;
       box-shadow: 0 0 12px rgba(0,0,0,0.5);
       z-index: 100;
+      font-family: 'Segoe UI', sans-serif;
     }
 
     .chat-messages {
@@ -137,38 +138,64 @@
       overflow-y: auto;
       margin-bottom: 10px;
       text-align: left;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
 
-    .chat-message {
-      background: #ffffffc2;
-      color: #000;
-      padding: 8px 12px;
+    .chat-bubble {
+      padding: 10px 12px;
       border-radius: 10px;
-      margin-bottom: 6px;
+      max-width: 85%;
+      word-wrap: break-word;
       font-size: 0.9em;
+      color: white;
       position: relative;
     }
 
-    .chat-message .timestamp {
-      display: block;
-      font-size: 0.7em;
-      color: #333;
-      margin-top: 4px;
-      text-align: right;
+    .chat-bubble.me {
+      background-color: #71f0ce;
+      align-self: flex-start;
     }
 
-    .chatbox input[type="text"] {
-      width: calc(100% - 70px);
-      padding: 6px 10px;
+    .chat-bubble.boyfriend {
+      background-color: #c264f3;
+      align-self: flex-end;
+    }
+
+    .chat-time {
+      font-size: 0.7em;
+      text-align: right;
+      margin-top: 4px;
+      opacity: 0.8;
+    }
+
+    .chat-controls {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+
+    .chat-controls select,
+    .chat-controls input[type="text"] {
+      padding: 6px;
       border-radius: 8px;
       border: none;
-      margin-right: 5px;
+      font-size: 0.85em;
     }
 
-    .chatbox button {
-      padding: 6px 12px;
+    .chat-controls input[type="text"] {
+      flex: 1;
+    }
+
+    .chat-controls button {
+      padding: 6px 10px;
       font-size: 0.9em;
       border-radius: 8px;
+      background-color: #a3d2ca;
+      color: black;
+      border: none;
+      cursor: pointer;
     }
   </style>
 </head>
@@ -192,56 +219,62 @@
   <!-- 💬 Chatbox -->
   <div class="chatbox">
     <div class="chat-messages" id="chat-messages"></div>
-    <input type="text" id="chat-input" placeholder="Type a message...">
-    <button onclick="sendMessage()">Send</button>
+    <div class="chat-controls">
+      <select id="sender">
+        <option value="me">💚 Me</option>
+        <option value="boyfriend">💜 Boyfriend</option>
+      </select>
+      <input type="text" id="chat-input" placeholder="Type a message...">
+      <button onclick="sendMessage()">Send</button>
+    </div>
   </div>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
   <script>
     const supabase = supabase.createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
-    // Load messages
     async function loadMessages() {
       const { data, error } = await supabase
         .from('chat')
         .select('*')
         .order('created_at', { ascending: true });
-      
-      if (error) {
-        console.error(error);
-        return;
-      }
 
       const container = document.getElementById('chat-messages');
       container.innerHTML = '';
       data.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = 'chat-message';
-        div.innerHTML = `
+        const bubble = document.createElement('div');
+        bubble.className = `chat-bubble ${msg.sender}`;
+        bubble.innerHTML = `
           ${msg.message}
-          <span class="timestamp">${new Date(msg.created_at).toLocaleString()}</span>
+          <div class="chat-time">${new Date(msg.created_at).toLocaleString()}</div>
         `;
-        container.appendChild(div);
+        container.appendChild(bubble);
       });
-
       container.scrollTop = container.scrollHeight;
     }
 
-    // Send message
     async function sendMessage() {
       const input = document.getElementById('chat-input');
+      const sender = document.getElementById('sender').value;
       const message = input.value.trim();
       if (!message) return;
 
-      await supabase.from('chat').insert([{ message }]);
+      await supabase.from('chat').insert([{ message, sender }]);
       input.value = '';
       loadMessages();
     }
 
-    // Floating hearts animation
+    // Auto-update with Supabase listener
+    supabase
+      .channel('chat-realtime')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chat' }, () => {
+        loadMessages();
+      })
+      .subscribe();
+
+    // Floating hearts
     function createHeart() {
       const heart = document.createElement('div');
       heart.textContent = '❤️';
@@ -253,7 +286,7 @@
     }
     setInterval(createHeart, 1500);
 
-    // Date duration counter
+    // Dating Duration
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
@@ -263,7 +296,7 @@
     document.getElementById('duration-value').textContent =
       `${months} months and ${Math.floor(days)} days`;
 
-    // Album transition
+    // Album overlay
     function openAlbum() {
       const overlay = document.getElementById('album-overlay');
       overlay.classList.add('show');
@@ -273,7 +306,6 @@
     }
 
     loadMessages();
-    setInterval(loadMessages, 5000); // auto-refresh every 5s
   </script>
 </body>
 </html>
