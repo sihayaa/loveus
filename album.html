@@ -2,225 +2,174 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Our Memories</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <title>Maxine's Album</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&display=swap" rel="stylesheet">
+
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&family=Fredoka&display=swap" rel="stylesheet">
+
   <style>
     body {
       margin: 0;
-      padding: 0;
+      padding: 20px;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #c2f0f4, #fddde6, #fad1d1);
-      background-size: 300% 300%;
-      animation: gradientShift 15s ease infinite;
+      background: url('https://github.com/sihayaa/family-pets/blob/main/maxine2.jpg?raw=true') no-repeat center center fixed;
+      background-size: cover;
       color: #4b2354;
       text-align: center;
     }
 
-    @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+    h1 {
+      font-size: 2.4em;
+      margin-top: 60px;
+      font-family: 'Freestyle Script', cursive;
+      color: #d1791b;
+      text-shadow: 2px 2px 4px #00000050;
     }
 
-    h1 {
-      font-size: 2.5em;
-      margin-top: 40px;
+    h1::after {
+      content: ' 🐾';
+    }
+
+    .bio {
+      font-family: 'Fredoka', sans-serif;
+      font-size: 1.1em;
+      margin-top: -10px;
+      margin-bottom: 20px;
+      color: #4b2354;
     }
 
     .back-button {
       display: inline-block;
-      margin-top: 20px;
+      margin-top: 10px;
       padding: 10px 20px;
-      background: #d2b4de;
+      background: #f4c390;
       color: white;
       border-radius: 10px;
       text-decoration: none;
       font-weight: bold;
       transition: background 0.3s ease;
+      position: absolute;
+      top: 20px;
+      left: 20px;
     }
 
     .back-button:hover {
-      background: #b085c6;
+      background: #e39d4f;
     }
 
     .upload-section {
-      margin-top: 30px;
+      margin-top: 40px;
       display: flex;
-      justify-content: center;
-      gap: 15px;
       flex-wrap: wrap;
-      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      padding: 0 10px;
+    }
+
+    .custom-button,
+    .caption-input,
+    .file-name {
+      font-family: 'Fredoka', sans-serif;
     }
 
     .custom-button {
-      font-family: 'Freestyle Script', cursive;
-      font-size: 1.2em;
-      color: #a7d33a;
-      background: linear-gradient(to bottom, #6a4c93, #5c3d85);
+      font-size: 1.1em;
+      color: #fff4dd;
+      background: linear-gradient(to bottom, #cc6515, #a44800);
       border: none;
       border-radius: 40px;
       padding: 10px 25px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
       transition: all 0.3s ease;
       cursor: pointer;
-      display: inline-block;
+      max-width: 100%;
     }
 
     .custom-button:hover {
-      box-shadow: 0 0 15px rgba(255, 105, 180, 0.7);
+      box-shadow: 0 0 12px rgba(255, 145, 0, 0.7);
     }
 
     .caption-input {
-      font-family: 'Freestyle Script', cursive;
-      font-size: 1.2em;
+      font-size: 1.1em;
       color: black;
       background: white;
       border: none;
       border-radius: 40px;
       padding: 10px 25px;
       box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
+      max-width: 90vw;
     }
 
     .file-name {
-      font-family: 'Freestyle Script', cursive;
-      font-size: 1.1em;
-      margin-top: 8px;
+      font-size: 1em;
       color: #4b2354;
-    }
-
-    .gallery {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-      gap: 20px;
-      padding: 30px;
-      justify-items: center;
-    }
-
-    .photo-block {
-      background: white;
-      border: 3px solid #eee;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-      padding: 10px;
-      width: 200px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      cursor: move;
-    }
-
-    .photo-block img {
-      width: 100%;
-      height: 220px;
-      object-fit: contain;
-      border-radius: 8px;
-      background-color: #f0f0f0;
-      cursor: pointer;
-    }
-
-    .photo-block p {
-      font-family: 'Great Vibes', cursive;
-      font-size: 1.6em;
-      color: #8628ac;
       margin-top: 8px;
-      text-shadow: 0 1px 1px #fff;
-    }
-
-    .lightbox {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
-      justify-content: center;
-      align-items: center;
-      flex-direction: column;
-      color: #fff;
-      font-family: 'Great Vibes', cursive;
-      font-size: 2em;
-      padding: 20px;
-    }
-
-    .lightbox img {
-      max-width: 90%;
-      max-height: 70vh;
-      margin-bottom: 20px;
-    }
-
-    .lightbox div {
-      text-align: center;
-      color: white;
     }
   </style>
 </head>
 <body>
   <a href="index.html" class="back-button">← Back to Home</a>
-  <h1>Our Memories 📷</h1>
+  <h1>Maxine's Memories</h1>
+  <p class="bio">2008/02/24 • Female<br>eat, sleep, poop, sleep, eat, drink water, sleep, eat, poop, sleep, eat, sleep…</p>
 
   <div class="upload-section">
-    <label for="upload" class="custom-button">📷 Pick a Memory</label>
+    <label for="upload" class="custom-button">📷 Pick a Photo</label>
     <input type="file" id="upload" accept="image/*" style="display:none">
     <span class="file-name" id="fileName">No file chosen</span>
-    <input type="text" id="caption" placeholder="Add a sweet caption..." class="caption-input">
-    <button id="uploadBtn" class="custom-button">💞 Seal the Memory</button>
+    <input type="text" id="caption" placeholder="Maxine’s moment..." class="caption-input">
+    <button id="uploadBtn" class="custom-button">🧡 Save it</button>
   </div>
 
   <div class="gallery" id="gallery"></div>
 
-  <div class="lightbox" id="lightbox" onclick="this.style.display='none'">
-    <img id="lightbox-img" src="" alt="Preview">
-    <div id="lightbox-caption"></div>
-  </div>
-
   <script>
     const supabase = window.supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+      'https://ceuapgdsrztwkstlsooa.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNldWFwZ2Rzcnp0d2tzdGxzb29hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MzgyOTMsImV4cCI6MjA2ODAxNDI5M30.tIiGVyEPw1WEUgBCtOnXIPU4mn7yJpZ7jiPXPmBjVY8'
     );
+
+    const bucket = 'dog-photos';
+    const folder = 'maxine';
+    const table = 'dog_memories';
+    const dogName = 'maxine';
 
     async function uploadPhoto() {
       const file = document.getElementById('upload').files[0];
       const caption = document.getElementById('caption').value;
       if (!file) return;
 
-      const filePath = `${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('memories').upload(filePath, file);
+      const filePath = `${folder}/${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file);
       if (uploadError) {
         console.error('Upload error:', uploadError);
         return;
       }
 
-      const { data: urlData } = supabase.storage.from('memories').getPublicUrl(filePath);
+      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
       const imageUrl = urlData.publicUrl;
 
-      const { error: insertError } = await supabase.from('memories').insert([{ image_url: imageUrl, caption, file_path: filePath }]);
+      const { error: insertError } = await supabase
+        .from(table)
+        .insert([{ image_url: imageUrl, caption, file_path: filePath, dog_name: dogName }]);
+
       if (insertError) {
         console.error('Insert error:', insertError);
       } else {
         document.getElementById('caption').value = '';
         document.getElementById('fileName').innerText = 'No file chosen';
-        await refreshOrderIndices();
         loadGallery();
       }
     }
 
-    async function refreshOrderIndices() {
-      const { data, error } = await supabase.from('memories').select('id').order('id');
-      if (error) return;
-      const updates = data.map((item, index) =>
-        supabase.from('memories').update({ order_index: index }).eq('id', item.id)
-      );
-      await Promise.all(updates);
-    }
-
     async function loadGallery() {
-      const { data, error } = await supabase.from('memories').select('*').order('order_index', { ascending: true });
+      const { data, error } = await supabase
+        .from(table)
+        .select('*')
+        .eq('dog_name', dogName);
+
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
       if (error) {
@@ -231,33 +180,12 @@
       data.forEach(item => {
         const block = document.createElement('div');
         block.className = 'photo-block';
-        block.setAttribute('data-id', item.id);
         block.innerHTML = `
-          <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}', \`${item.caption || ''}\`)">
+          <img src="${item.image_url}" alt="Memory">
           <p>${item.caption || ''}</p>
         `;
         gallery.appendChild(block);
       });
-
-      Sortable.create(gallery, {
-        animation: 150,
-        ghostClass: 'sortable-ghost',
-        onEnd: async () => {
-          const newOrder = [...gallery.children].map((el, i) => ({ id: el.dataset.id, order_index: i }));
-          await Promise.all(newOrder.map(({ id, order_index }) =>
-            supabase.from('memories').update({ order_index }).eq('id', id)
-          ));
-        }
-      });
-    }
-
-    function showLightbox(src, caption) {
-      const lightbox = document.getElementById('lightbox');
-      const lightboxImg = document.getElementById('lightbox-img');
-      const lightboxCaption = document.getElementById('lightbox-caption');
-      lightboxImg.src = src;
-      lightboxCaption.innerHTML = caption;
-      lightbox.style.display = 'flex';
     }
 
     document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
