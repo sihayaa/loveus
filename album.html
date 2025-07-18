@@ -2,199 +2,131 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Maxine's Album</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+  <title>Our Album</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&family=Fredoka&display=swap" rel="stylesheet">
-
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
       padding: 20px;
-      font-family: 'Segoe UI', sans-serif;
-      background: url('https://github.com/sihayaa/family-pets/blob/main/maxine2.jpg?raw=true') no-repeat center center fixed;
-      background-size: cover;
-      color: #4b2354;
+      font-family: 'Patrick Hand', cursive;
+      background: linear-gradient(to right, #ffdde1, #ee9ca7);
       text-align: center;
+      color: #4b2354;
     }
-
     h1 {
-      font-size: 2.4em;
-      margin-top: 60px;
-      font-family: 'Freestyle Script', cursive;
-      color: #d1791b;
-      text-shadow: 2px 2px 4px #00000050;
+      font-size: 2.8em;
+      margin-bottom: 10px;
     }
-
-    h1::after {
-      content: ' 🐾';
+    .upload-block {
+      margin-bottom: 30px;
     }
-
-    .bio {
-      font-family: 'Fredoka', sans-serif;
-      font-size: 1.1em;
-      margin-top: -10px;
-      margin-bottom: 20px;
-      color: #4b2354;
-    }
-
-    .back-button {
-      display: inline-block;
-      margin-top: 10px;
-      padding: 10px 20px;
-      background: #f4c390;
-      color: white;
-      border-radius: 10px;
-      text-decoration: none;
-      font-weight: bold;
-      transition: background 0.3s ease;
-      position: absolute;
-      top: 20px;
-      left: 20px;
-    }
-
-    .back-button:hover {
-      background: #e39d4f;
-    }
-
-    .upload-section {
-      margin-top: 40px;
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      padding: 0 10px;
-    }
-
-    .custom-button,
-    .caption-input,
-    .file-name {
-      font-family: 'Fredoka', sans-serif;
-    }
-
-    .custom-button {
-      font-size: 1.1em;
-      color: #fff4dd;
-      background: linear-gradient(to bottom, #cc6515, #a44800);
-      border: none;
-      border-radius: 40px;
-      padding: 10px 25px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      transition: all 0.3s ease;
-      cursor: pointer;
-      max-width: 100%;
-    }
-
-    .custom-button:hover {
-      box-shadow: 0 0 12px rgba(255, 145, 0, 0.7);
-    }
-
-    .caption-input {
-      font-size: 1.1em;
-      color: black;
-      background: white;
-      border: none;
-      border-radius: 40px;
-      padding: 10px 25px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-      max-width: 90vw;
-    }
-
-    .file-name {
+    input[type="file"] {
       font-size: 1em;
-      color: #4b2354;
+      margin-bottom: 10px;
+    }
+    input[type="text"] {
+      padding: 6px;
+      font-size: 1em;
+      margin: 5px;
+      border: 2px dashed #d497c7;
+      border-radius: 10px;
+    }
+    button {
+      font-family: 'Patrick Hand', cursive;
+      background-color: #d497c7;
+      border: none;
+      color: white;
+      padding: 8px 18px;
+      font-size: 1em;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 15px;
+      margin-top: 30px;
+    }
+    .photo-box {
+      background: #fff;
+      padding: 10px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+    .photo-box img {
+      width: 100%;
+      border-radius: 8px;
+      max-height: 200px;
+      object-fit: cover;
+    }
+    .caption {
       margin-top: 8px;
+      font-size: 0.95em;
     }
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-button">← Back to Home</a>
-  <h1>Maxine's Memories</h1>
-  <p class="bio">2008/02/24 • Female<br>eat, sleep, poop, sleep, eat, drink water, sleep, eat, poop, sleep, eat, sleep…</p>
+  <h1>Our Album</h1>
 
-  <div class="upload-section">
-    <label for="upload" class="custom-button">📷 Pick a Photo</label>
-    <input type="file" id="upload" accept="image/*" style="display:none">
-    <span class="file-name" id="fileName">No file chosen</span>
-    <input type="text" id="caption" placeholder="Maxine’s moment..." class="caption-input">
-    <button id="uploadBtn" class="custom-button">🧡 Save it</button>
+  <div class="upload-block">
+    <input type="file" id="photoUpload">
+    <input type="text" id="captionInput" placeholder="Caption">
+    <button onclick="uploadPhoto()">Upload</button>
   </div>
 
   <div class="gallery" id="gallery"></div>
 
   <script>
     const supabase = window.supabase.createClient(
-      'https://ceuapgdsrztwkstlsooa.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNldWFwZ2Rzcnp0d2tzdGxzb29hIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTI0MzgyOTMsImV4cCI6MjA2ODAxNDI5M30.tIiGVyEPw1WEUgBCtOnXIPU4mn7yJpZ7jiPXPmBjVY8'
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
-    const bucket = 'dog-photos';
-    const folder = 'maxine';
-    const table = 'dog_memories';
-    const dogName = 'maxine';
-
     async function uploadPhoto() {
-      const file = document.getElementById('upload').files[0];
-      const caption = document.getElementById('caption').value;
-      if (!file) return;
+      const fileInput = document.getElementById('photoUpload');
+      const caption = document.getElementById('captionInput').value.trim();
+      const file = fileInput.files[0];
+      if (!file) return alert('Please select a file.');
 
-      const filePath = `${folder}/${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage.from(bucket).upload(filePath, file);
-      if (uploadError) {
-        console.error('Upload error:', uploadError);
-        return;
-      }
+      const fileName = `${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage.from('loveus-album').upload(fileName, file);
+      if (uploadError) return alert('Upload failed.');
 
-      const { data: urlData } = supabase.storage.from(bucket).getPublicUrl(filePath);
-      const imageUrl = urlData.publicUrl;
+      const { data: publicUrlData } = supabase.storage.from('loveus-album').getPublicUrl(fileName);
+      const url = publicUrlData.publicUrl;
 
-      const { error: insertError } = await supabase
-        .from(table)
-        .insert([{ image_url: imageUrl, caption, file_path: filePath, dog_name: dogName }]);
-
-      if (insertError) {
-        console.error('Insert error:', insertError);
-      } else {
-        document.getElementById('caption').value = '';
-        document.getElementById('fileName').innerText = 'No file chosen';
-        loadGallery();
-      }
+      await supabase.from('loveus_album').insert({ url, caption });
+      fileInput.value = '';
+      document.getElementById('captionInput').value = '';
+      loadGallery();
     }
 
     async function loadGallery() {
-      const { data, error } = await supabase
-        .from(table)
-        .select('*')
-        .eq('dog_name', dogName);
+      const { data, error } = await supabase.from('loveus_album').select('*').order('created_at', { ascending: false });
+      if (error) return;
 
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
-      if (error) {
-        console.error('Load error:', error);
-        return;
-      }
 
       data.forEach(item => {
-        const block = document.createElement('div');
-        block.className = 'photo-block';
-        block.innerHTML = `
-          <img src="${item.image_url}" alt="Memory">
-          <p>${item.caption || ''}</p>
-        `;
-        gallery.appendChild(block);
+        const box = document.createElement('div');
+        box.className = 'photo-box';
+
+        const img = document.createElement('img');
+        img.src = item.url;
+
+        const caption = document.createElement('div');
+        caption.className = 'caption';
+        caption.textContent = item.caption || '';
+
+        box.appendChild(img);
+        box.appendChild(caption);
+        gallery.appendChild(box);
       });
     }
 
-    document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
-    document.getElementById('upload').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      document.getElementById('fileName').innerText = file ? file.name : 'No file chosen';
-    });
-
-    loadGallery();
+    document.addEventListener('DOMContentLoaded', loadGallery);
   </script>
 </body>
 </html>
