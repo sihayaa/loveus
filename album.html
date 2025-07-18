@@ -2,80 +2,170 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Our Album</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <title>Our Memories</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Freestyle+Script&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      padding: 20px;
-      font-family: 'Patrick Hand', cursive;
-      background: linear-gradient(to right, #ffdde1, #ee9ca7);
-      text-align: center;
+      padding: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #c2f0f4, #fddde6, #fad1d1);
+      background-size: 300% 300%;
+      animation: gradientShift 15s ease infinite;
       color: #4b2354;
+      text-align: center;
     }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     h1 {
-      font-size: 2.8em;
-      margin-bottom: 10px;
+      font-size: 2.5em;
+      margin-top: 40px;
     }
-    .upload-block {
-      margin-bottom: 30px;
-    }
-    input[type="file"] {
-      font-size: 1em;
-      margin-bottom: 10px;
-    }
-    input[type="text"] {
-      padding: 6px;
-      font-size: 1em;
-      margin: 5px;
-      border: 2px dashed #d497c7;
-      border-radius: 10px;
-    }
-    button {
-      font-family: 'Patrick Hand', cursive;
-      background-color: #d497c7;
-      border: none;
+
+    .back-button {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 10px 20px;
+      background: #d2b4de;
       color: white;
-      padding: 8px 18px;
-      font-size: 1em;
       border-radius: 10px;
-      cursor: pointer;
+      text-decoration: none;
+      font-weight: bold;
+      transition: background 0.3s ease;
     }
+
+    .back-button:hover {
+      background: #b085c6;
+    }
+
+    .upload-section {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+
+    .custom-button {
+      font-family: 'Freestyle Script', cursive;
+      font-size: 1.2em;
+      color: #a7d33a;
+      background: linear-gradient(to bottom, #6a4c93, #5c3d85);
+      border: none;
+      border-radius: 40px;
+      padding: 10px 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      display: inline-block;
+    }
+
+    .custom-button:hover {
+      box-shadow: 0 0 15px rgba(255, 105, 180, 0.7);
+    }
+
+    .caption-input {
+      font-family: 'Freestyle Script', cursive;
+      font-size: 1.2em;
+      color: black;
+      background: white;
+      border: none;
+      border-radius: 40px;
+      padding: 10px 25px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+    }
+
     .gallery {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-top: 30px;
+      grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+      gap: 20px;
+      padding: 30px;
+      justify-content: start;
     }
-    .photo-box {
-      background: #fff;
+
+    .photo-block {
+      background: white;
+      border: 3px solid #eee;
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
       padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 180px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
-    .photo-box img {
+
+    .photo-block img {
       width: 100%;
+      height: 220px;
+      object-fit: contain;
       border-radius: 8px;
-      max-height: 200px;
-      object-fit: cover;
+      background-color: #f0f0f0;
+      cursor: pointer;
     }
-    .caption {
+
+    .photo-block p {
+      font-family: 'Great Vibes', cursive;
+      font-size: 1.6em;
+      color: #8628ac;
       margin-top: 8px;
-      font-size: 0.95em;
+      text-shadow: 0 1px 1px #fff;
+    }
+
+    .lightbox {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+      color: #fff;
+      font-family: 'Great Vibes', cursive;
+      font-size: 2em;
+      padding: 20px;
+    }
+
+    .lightbox img {
+      max-width: 90%;
+      max-height: 70vh;
+      margin-bottom: 20px;
+    }
+
+    .lightbox div {
+      text-align: center;
+      color: white;
     }
   </style>
 </head>
 <body>
-  <h1>Our Album</h1>
+  <a href="index.html" class="back-button">← Back to Home</a>
+  <h1>Our Memories 📷</h1>
 
-  <div class="upload-block">
-    <input type="file" id="photoUpload">
-    <input type="text" id="captionInput" placeholder="Caption">
-    <button onclick="uploadPhoto()">Upload</button>
+  <div class="upload-section">
+    <label for="upload" class="custom-button">📷 Pick a Memory</label>
+    <input type="file" id="upload" accept="image/*" style="display:none">
+    <input type="text" id="caption" placeholder="Add a sweet caption..." class="caption-input">
+    <button id="uploadBtn" class="custom-button">💞 Seal the Memory</button>
   </div>
 
   <div class="gallery" id="gallery"></div>
+
+  <div class="lightbox" id="lightbox" onclick="this.style.display='none'">
+    <img id="lightbox-img" src="" alt="Preview">
+    <div id="lightbox-caption"></div>
+  </div>
 
   <script>
     const supabase = window.supabase.createClient(
@@ -84,49 +174,65 @@
     );
 
     async function uploadPhoto() {
-      const fileInput = document.getElementById('photoUpload');
-      const caption = document.getElementById('captionInput').value.trim();
-      const file = fileInput.files[0];
-      if (!file) return alert('Please select a file.');
+      const file = document.getElementById('upload').files[0];
+      const caption = document.getElementById('caption').value;
+      if (!file) return;
 
-      const fileName = `${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('loveus-album').upload(fileName, file);
-      if (uploadError) return alert('Upload failed.');
+      const filePath = `${Date.now()}_${file.name}`;
+      const { data: uploadData, error: uploadError } = await supabase.storage.from('memories').upload(filePath, file);
 
-      const { data: publicUrlData } = supabase.storage.from('loveus-album').getPublicUrl(fileName);
-      const url = publicUrlData.publicUrl;
+      if (uploadError) {
+        console.error('Upload error:', uploadError);
+        return;
+      }
 
-      await supabase.from('loveus_album').insert({ url, caption });
-      fileInput.value = '';
-      document.getElementById('captionInput').value = '';
-      loadGallery();
+      const { data: urlData } = supabase.storage.from('memories').getPublicUrl(filePath);
+      const imageUrl = urlData.publicUrl;
+
+      const { error: insertError } = await supabase.from('memories').insert([{ image_url: imageUrl, caption, file_path: filePath }]);
+      if (insertError) {
+        console.error('Insert error:', insertError);
+      } else {
+        document.getElementById('caption').value = '';
+        loadGallery();
+      }
     }
 
     async function loadGallery() {
-      const { data, error } = await supabase.from('loveus_album').select('*').order('created_at', { ascending: false });
-      if (error) return;
-
+      const { data, error } = await supabase.from('memories').select('*').order('id', { ascending: true });
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
+      if (error) {
+        console.error('Load error:', error);
+        return;
+      }
 
       data.forEach(item => {
-        const box = document.createElement('div');
-        box.className = 'photo-box';
-
-        const img = document.createElement('img');
-        img.src = item.url;
-
-        const caption = document.createElement('div');
-        caption.className = 'caption';
-        caption.textContent = item.caption || '';
-
-        box.appendChild(img);
-        box.appendChild(caption);
-        gallery.appendChild(box);
+        const block = document.createElement('div');
+        block.className = 'photo-block';
+        block.innerHTML = `
+          <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}', \`${item.caption || ''}\`)">
+          <p>${item.caption || ''}</p>
+        `;
+        gallery.appendChild(block);
       });
     }
 
-    document.addEventListener('DOMContentLoaded', loadGallery);
+    function showLightbox(src, caption) {
+      const lightbox = document.getElementById('lightbox');
+      const lightboxImg = document.getElementById('lightbox-img');
+      const lightboxCaption = document.getElementById('lightbox-caption');
+      lightboxImg.src = src;
+      lightboxCaption.innerHTML = caption;
+      lightbox.style.display = 'flex';
+    }
+
+    document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
+    document.querySelector('input[type="file"]').addEventListener('change', (e) => {
+      document.getElementById('upload').files = e.target.files;
+    });
+
+    loadGallery();
   </script>
 </body>
 </html>
