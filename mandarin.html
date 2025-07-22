@@ -172,7 +172,10 @@
           const del = document.createElement('button');
           del.className = 'delete-btn';
           del.textContent = '×';
-          del.onclick = () => deleteMessage(msg.id);
+          del.onclick = () => {
+            console.log("Trying to delete message id:", msg.id); // Debug
+            deleteMessage(msg.id);
+          };
           div.appendChild(del);
 
           chatBox.appendChild(div);
@@ -194,7 +197,7 @@
         }
 
         input.value = '';
-        await loadMessages(); // Manual refresh to instantly reflect
+        await loadMessages(); // Ensure message shows up instantly
       };
 
       async function deleteMessage(id) {
