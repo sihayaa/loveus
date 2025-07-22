@@ -132,14 +132,14 @@
   <div class="controls">
     <input type="text" id="input" placeholder="Type a message..." />
     <div class="button-group">
-      <button onclick="addMessage('boy')">Send as Godbrand 💜</button>
-      <button onclick="addMessage('girl')">Send as Sihaya 💚</button>
+      <button onclick="addMessage('boy')">Send as Him 💜</button>
+      <button onclick="addMessage('girl')">Send as Me 💚</button>
     </div>
   </div>
 
   <script>
     window.onload = () => {
-      const supabase = supabase.createClient(
+      const client = window.supabase.createClient(
         'https://tmjozxcjylcxgemffnoc.supabase.co',
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
       );
@@ -148,7 +148,7 @@
       const input = document.getElementById('input');
 
       async function loadMessages() {
-        const { data, error } = await supabase
+        const { data, error } = await client
           .from('mandarin_messages')
           .select('*')
           .order('created_at', { ascending: true });
@@ -176,11 +176,11 @@
         chatBox.scrollTop = chatBox.scrollHeight;
       }
 
-      window.addMessage = async function(sender) {
+      window.addMessage = async function (sender) {
         const message = input.value.trim();
         if (message === '') return;
 
-        const { error } = await supabase.from('mandarin_messages').insert([
+        const { error } = await client.from('mandarin_messages').insert([
           { sender, content: message }
         ]);
 
@@ -192,7 +192,7 @@
       };
 
       async function deleteMessage(id) {
-        const { error } = await supabase
+        const { error } = await client
           .from('mandarin_messages')
           .delete()
           .eq('id', id);
@@ -202,7 +202,7 @@
         }
       }
 
-      supabase.channel('realtime:mandarin_messages')
+      client.channel('realtime:mandarin_messages')
         .on(
           'postgres_changes',
           { event: '*', schema: 'public', table: 'mandarin_messages' },
