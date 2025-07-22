@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Mandarin Wall</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/+esm"></script>
   <style>
     body {
       font-family: 'Patrick Hand', cursive;
@@ -139,13 +139,16 @@
     </div>
   </div>
 
-  <script>
-    const supabase = createSupabaseClient(
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/+esm';
+
+    const supabase = createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
     const chatBox = document.getElementById('chatBox');
+    const input = document.getElementById('input');
 
     async function loadMessages() {
       const { data, error } = await supabase
@@ -164,7 +167,6 @@
         div.className = 'chat-message ' + msg.sender;
         div.textContent = msg.content;
 
-        // Add delete button
         const del = document.createElement('button');
         del.className = 'delete-btn';
         del.textContent = '×';
@@ -177,7 +179,6 @@
     }
 
     async function addMessage(sender) {
-      const input = document.getElementById('input');
       const message = input.value.trim();
       if (message === '') return;
 
