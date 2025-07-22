@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Mandarin Wall</title>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: linear-gradient(to right, #fff4fb, #e0f7fa);
+      margin: 0;
+      padding: 40px;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #b065d9;
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .chat-box {
+      width: 90%;
+      max-width: 600px;
+      background: #ffffffcc;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 0 10px #ccc;
+    }
+
+    .chat-message {
+      margin-bottom: 15px;
+    }
+
+    .boy {
+      color: #6e2fb9;
+    }
+
+    .girl {
+      color: #28a745;
+      text-align: right;
+    }
+
+    input, button {
+      margin-top: 10px;
+      padding: 10px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    button {
+      background-color: #b065d9;
+      color: white;
+      cursor: pointer;
+    }
+
+    .back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: #d1b3e0;
+      color: #4b2354;
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-button">← Back</a>
+  <h1>Mandarin Wall</h1>
+  <div class="chat-box" id="chatBox">
+    <div class="chat-message boy">"What do you want to eat?"</div>
+    <div class="chat-message girl">我想吃火锅！</div>
+  </div>
+
+  <!-- Just placeholders, replace with Supabase chat later -->
+  <input type="text" id="input" placeholder="Type a message..." />
+  <button onclick="addMessage()">Send</button>
+
+  <script>
+    function addMessage() {
+      const input = document.getElementById('input');
+      const message = input.value.trim();
+      if (message) {
+        const chatBox = document.getElementById('chatBox');
+        const div = document.createElement('div');
+        div.className = 'chat-message girl'; // change to boy if needed
+        div.textContent = message;
+        chatBox.appendChild(div);
+        input.value = '';
+      }
+    }
+  </script>
+</body>
+</html>
