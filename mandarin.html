@@ -24,38 +24,73 @@
 
     .chat-box {
       width: 90%;
-      max-width: 600px;
-      background: #ffffffcc;
+      max-width: 700px;
+      background: #ffffffdd;
       border-radius: 12px;
       padding: 20px;
       box-shadow: 0 0 10px #ccc;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      min-height: 200px;
+      margin-bottom: 20px;
     }
 
     .chat-message {
       margin-bottom: 15px;
+      padding: 5px 10px;
+      max-width: 80%;
+      word-wrap: break-word;
+      border-radius: 10px;
     }
 
     .boy {
       color: #6e2fb9;
+      text-align: left;
+      align-self: flex-start;
+      background-color: #f3e7ff;
     }
 
     .girl {
       color: #28a745;
       text-align: right;
+      align-self: flex-end;
+      background-color: #dcffec;
     }
 
-    input, button {
-      margin-top: 10px;
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input {
       padding: 10px;
+      width: 300px;
       border: none;
       border-radius: 8px;
       font-family: 'Patrick Hand', cursive;
     }
 
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
     button {
+      padding: 10px 20px;
       background-color: #b065d9;
       color: white;
+      border: none;
+      border-radius: 10px;
       cursor: pointer;
+      font-family: 'Patrick Hand', cursive;
+      transition: background-color 0.2s ease;
+    }
+
+    button:hover {
+      background-color: #9a4bcc;
     }
 
     .back-button {
@@ -73,27 +108,33 @@
 <body>
   <a href="index.html" class="back-button">← Back</a>
   <h1>Mandarin Wall</h1>
+
   <div class="chat-box" id="chatBox">
-    <div class="chat-message boy">"What do you want to eat?"</div>
+    <div class="chat-message boy">What do you want to eat?</div>
     <div class="chat-message girl">我想吃火锅！</div>
   </div>
 
-  <!-- Just placeholders, replace with Supabase chat later -->
-  <input type="text" id="input" placeholder="Type a message..." />
-  <button onclick="addMessage()">Send</button>
+  <div class="controls">
+    <input type="text" id="input" placeholder="Type a message..." />
+    <div class="button-group">
+      <button onclick="addMessage('boy')">Send as Him 💜</button>
+      <button onclick="addMessage('girl')">Send as Me 💚</button>
+    </div>
+  </div>
 
   <script>
-    function addMessage() {
+    function addMessage(sender) {
       const input = document.getElementById('input');
       const message = input.value.trim();
-      if (message) {
-        const chatBox = document.getElementById('chatBox');
-        const div = document.createElement('div');
-        div.className = 'chat-message girl'; // change to boy if needed
-        div.textContent = message;
-        chatBox.appendChild(div);
-        input.value = '';
-      }
+      if (message === '') return;
+
+      const chatBox = document.getElementById('chatBox');
+      const div = document.createElement('div');
+      div.className = 'chat-message ' + sender;
+      div.textContent = message;
+      chatBox.appendChild(div);
+      input.value = '';
+      chatBox.scrollTop = chatBox.scrollHeight;
     }
   </script>
 </body>
