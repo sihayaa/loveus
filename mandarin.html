@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>Mandarin Wall</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/+esm"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
     body {
       font-family: 'Patrick Hand', cursive;
@@ -127,9 +127,7 @@
   <a href="index.html" class="back-button">← Back</a>
   <h1>Mandarin Wall</h1>
 
-  <div class="chat-box" id="chatBox">
-    <!-- Messages will load here -->
-  </div>
+  <div class="chat-box" id="chatBox"></div>
 
   <div class="controls">
     <input type="text" id="input" placeholder="Type a message..." />
@@ -139,10 +137,8 @@
     </div>
   </div>
 
-  <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/+esm';
-
-    const supabase = createClient(
+  <script>
+    const supabase = supabase.createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
