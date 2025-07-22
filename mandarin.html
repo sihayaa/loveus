@@ -9,6 +9,11 @@
     body {
       font-family: 'Patrick Hand', cursive;
       background: linear-gradient(to right, #fff4fb, #e0f7fa);
+      background-image: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mandabg.png');
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-attachment: fixed;
       margin: 0;
       padding: 40px;
       color: #333;
@@ -137,8 +142,8 @@
   <div class="controls">
     <input type="text" id="input" placeholder="Type a message..." />
     <div class="button-group">
-      <button onclick="addMessage('boy')">Send as Godbrand 💜</button>
-      <button onclick="addMessage('girl')">Send as Sihaya 💚</button>
+      <button onclick="addMessage('boy')">Send as Him 💜</button>
+      <button onclick="addMessage('girl')">Send as Me 💚</button>
     </div>
   </div>
 
@@ -167,7 +172,7 @@
         data.forEach(msg => {
           const div = document.createElement('div');
           div.className = 'chat-message ' + msg.sender;
-          div.dataset.id = msg.id; // 💡 to target for instant delete
+          div.dataset.id = msg.id;
           div.textContent = msg.content;
 
           const del = document.createElement('button');
@@ -195,7 +200,7 @@
         }
 
         input.value = '';
-        await loadMessages(); // show instantly
+        await loadMessages();
       };
 
       async function deleteMessage(id) {
@@ -208,7 +213,7 @@
           console.error('Delete error:', error);
         } else {
           const msgElement = document.querySelector(`[data-id='${id}']`);
-          if (msgElement) msgElement.remove(); // 💡 delete from DOM
+          if (msgElement) msgElement.remove();
         }
       }
 
