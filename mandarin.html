@@ -132,84 +132,86 @@
   <div class="controls">
     <input type="text" id="input" placeholder="Type a message..." />
     <div class="button-group">
-      <button onclick="addMessage('boy')">Send as Him 💜</button>
-      <button onclick="addMessage('girl')">Send as Me 💚</button>
+      <button onclick="addMessage('boy')">Send as Godbrand 💜</button>
+      <button onclick="addMessage('girl')">Send as Sihaya 💚</button>
     </div>
   </div>
 
-  <!-- SCRIPT GOES HERE -->
   <script>
-    const supabase = supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
+    window.onload = () => {
+      const supabase = supabase.createClient(
+        'https://tmjozxcjylcxgemffnoc.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+      );
 
-    const chatBox = document.getElementById('chatBox');
-    const input = document.getElementById('input');
+      const chatBox = document.getElementById('chatBox');
+      const input = document.getElementById('input');
 
-    async function loadMessages() {
-      const { data, error } = await supabase
-        .from('mandarin_messages')
-        .select('*')
-        .order('created_at', { ascending: true });
+      async function loadMessages() {
+        const { data, error } = await supabase
+          .from('mandarin_messages')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Load error:', error);
-        return;
+        if (error) {
+          console.error('Load error:', error);
+          return;
+        }
+
+        chatBox.innerHTML = '';
+        data.forEach(msg => {
+          const div = document.createElement('div');
+          div.className = 'chat-message ' + msg.sender;
+          div.textContent = msg.content;
+
+          const del = document.createElement('button');
+          del.className = 'delete-btn';
+          del.textContent = '×';
+          del.onclick = () => deleteMessage(msg.id);
+          div.appendChild(del);
+
+          chatBox.appendChild(div);
+        });
+
+        chatBox.scrollTop = chatBox.scrollHeight;
       }
 
-      chatBox.innerHTML = '';
-      data.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = 'chat-message ' + msg.sender;
-        div.textContent = msg.content;
+      window.addMessage = async function(sender) {
+        const message = input.value.trim();
+        if (message === '') return;
 
-        const del = document.createElement('button');
-        del.className = 'delete-btn';
-        del.textContent = '×';
-        del.onclick = () => deleteMessage(msg.id);
-        div.appendChild(del);
+        const { error } = await supabase.from('mandarin_messages').insert([
+          { sender, content: message }
+        ]);
 
-        chatBox.appendChild(div);
-      });
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
+        if (error) {
+          console.error('Send error:', error);
+        }
 
-    async function addMessage(sender) {
-      const message = input.value.trim();
-      if (message === '') return;
+        input.value = '';
+      };
 
-      const { error } = await supabase.from('mandarin_messages').insert([
-        { sender, content: message }
-      ]);
+      async function deleteMessage(id) {
+        const { error } = await supabase
+          .from('mandarin_messages')
+          .delete()
+          .eq('id', id);
 
-      if (error) {
-        console.error('Send error:', error);
+        if (error) {
+          console.error('Delete error:', error);
+        }
       }
 
-      input.value = '';
-    }
+      supabase.channel('realtime:mandarin_messages')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'mandarin_messages' },
+          () => loadMessages()
+        )
+        .subscribe();
 
-    async function deleteMessage(id) {
-      const { error } = await supabase
-        .from('mandarin_messages')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        console.error('Delete error:', error);
-      }
-    }
-
-    supabase.channel('realtime:mandarin_messages')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'mandarin_messages' },
-        () => loadMessages()
-      )
-      .subscribe();
-
-    loadMessages();
+      loadMessages();
+    };
   </script>
 </body>
 </html>
