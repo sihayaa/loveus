@@ -206,13 +206,17 @@
     }
 
     async function deleteMessage(id) {
-      const { error } = await client
-        .from('chatwall')
-        .delete()
-        .eq('id', id);
+  const { error } = await client
+    .from('chatwall')
+    .delete()
+    .eq('id', id);
 
-      if (error) console.error('Delete error:', error);
-    }
+  if (error) {
+    console.error('Delete error:', error);
+  } else {
+    await loadMessages(); // 👈 auto-refresh after delete
+  }
+}
 
     function sprinkleHearts() {
       const colors = ['💚', '💜'];
