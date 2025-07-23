@@ -15,6 +15,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      overflow-x: hidden;
     }
 
     h1 {
@@ -34,9 +35,9 @@
       margin-bottom: 20px;
       overflow-y: auto;
       max-height: 400px;
-      position: relative;
       scrollbar-width: none;
       -ms-overflow-style: none;
+      position: relative;
     }
 
     .chat-box::-webkit-scrollbar {
@@ -131,22 +132,24 @@
       text-decoration: none;
     }
 
-    .heart {
-      position: absolute;
-      font-size: 16px;
-      opacity: 0;
-      animation: floatUp 1s ease-out forwards;
+    .heart-sprinkle {
+      position: fixed;
+      font-size: 18px;
+      animation: sprinkleDown 1.2s ease-out forwards;
       pointer-events: none;
-      z-index: 1;
+      z-index: 999;
     }
 
-    @keyframes floatUp {
+    @keyframes sprinkleDown {
       0% {
-        transform: translateY(0) scale(1);
+        transform: translateY(-30px) scale(1);
+        opacity: 1;
+      }
+      80% {
         opacity: 1;
       }
       100% {
-        transform: translateY(-60px) scale(1.5);
+        transform: translateY(100vh) scale(1.2);
         opacity: 0;
       }
     }
@@ -218,7 +221,7 @@
         if (error) {
           console.error('Send error:', error);
         } else {
-          showHeartBurst(sender === 'girl' ? '💚' : '💜');
+          sprinkleHearts(sender === 'girl' ? '💚' : '💜');
         }
 
         input.value = '';
@@ -238,21 +241,19 @@
         }
       }
 
-      function showHeartBurst(emoji) {
-        const origin = chatBox.getBoundingClientRect();
-        for (let i = 0; i < 7; i++) {
+      function sprinkleHearts(emoji) {
+        for (let i = 0; i < 20; i++) {
           const heart = document.createElement('div');
-          heart.className = 'heart';
+          heart.className = 'heart-sprinkle';
           heart.textContent = emoji;
 
-          const offsetX = Math.random() * 120 - 60;
-          const offsetY = Math.random() * 20;
+          heart.style.left = `${Math.random() * 100}vw`;
+          heart.style.top = `${Math.random() * 10 - 10}px`;
+          heart.style.fontSize = `${14 + Math.random() * 10}px`;
+          heart.style.animationDelay = `${Math.random() * 0.5}s`;
 
-          heart.style.left = `${origin.width / 2 + offsetX}px`;
-          heart.style.top = `${chatBox.scrollTop + origin.height - 100 + offsetY}px`;
-
-          chatBox.appendChild(heart);
-          setTimeout(() => heart.remove(), 1000);
+          document.body.appendChild(heart);
+          setTimeout(() => heart.remove(), 1200);
         }
       }
 
