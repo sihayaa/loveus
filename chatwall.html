@@ -2,192 +2,227 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Chat Wall</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <title>Message Wall</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
     body {
-      margin: 0;
-      padding: 20px;
       font-family: 'Patrick Hand', cursive;
-      background:  no-repeat center center fixed;
-      background-size: cover;
+      background: none;
+      margin: 0;
+      padding: 40px;
       color: #333;
-    }
-
-    .back-btn {
-      position: fixed;
-      top: 20px;
-      left: 20px;
-      background-color: rgba(255, 255, 255, 0.8);
-      padding: 8px 14px;
-      border-radius: 10px;
-      font-size: 16px;
-      color: #444;
-      cursor: pointer;
-      z-index: 99;
-      text-decoration: none;
-      box-shadow: 0 0 6px rgba(0,0,0,0.2);
-    }
-
-    h1 {
-      text-align: center;
-      color: #57b3ab;
-      font-size: 2.2em;
-      margin-bottom: 30px;
-    }
-
-    #chatBox {
-      max-width: 700px;
-      margin: auto;
-      background-color: rgba(255, 255, 255, 0.85);
-      border-radius: 16px;
-      padding: 20px;
-      max-height: 60vh;
-      overflow-y: auto;
-      box-shadow: 0 0 20px rgba(0,0,0,0.1);
-    }
-
-    .message {
-      display: inline-block;
-      clear: both;
-      padding: 10px 16px;
-      margin: 6px 0;
-      max-width: 70%;
-      border-radius: 16px;
-      font-size: 17px;
-      line-height: 1.4;
-    }
-
-    .green {
-      background-color: #c8f7dc;
-      color: #2d7c4c;
-      float: right;
-      text-align: right;
-    }
-
-    .purple {
-      background-color: #e3c7f5;
-      color: #5b3586;
-      float: left;
-      text-align: left;
-    }
-
-    #messageInput {
-      width: 100%;
-      max-width: 700px;
-      margin: 30px auto 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    #message {
+    h1 {
+      color: #8a3d1c;
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .chat-box {
       width: 100%;
-      max-width: 600px;
-      height: 80px;
-      border-radius: 12px;
-      padding: 10px;
-      font-size: 16px;
-      resize: none;
-      border: none;
-      box-shadow: 0 0 6px rgba(0,0,0,0.2);
-      font-family: 'Patrick Hand', cursive;
-    }
-
-    .send-buttons {
+      max-width: 700px;
+      padding: 20px;
       display: flex;
-      justify-content: center;
-      gap: 15px;
-      margin-top: 10px;
-      flex-wrap: wrap;
+      flex-direction: column;
+      align-items: flex-start;
+      min-height: 200px;
+      margin-bottom: 20px;
+      overflow-y: auto;
+      max-height: 400px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
 
-    .send-buttons button {
-      font-family: 'Patrick Hand', cursive;
+    .chat-box::-webkit-scrollbar {
+      display: none;
+    }
+
+    .chat-message {
+      position: relative;
+      margin-bottom: 15px;
       padding: 10px 16px;
+      max-width: 80%;
+      word-wrap: break-word;
+      border-radius: 10px;
+    }
+
+    .boy {
+      color: #6e2fb9;
+      text-align: left;
+      align-self: flex-start;
+      background-color: #f3e7ff;
+    }
+
+    .girl {
+      color: #28a745;
+      text-align: right;
+      align-self: flex-end;
+      background-color: #dcffec;
+    }
+
+    .chat-message .delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      background: transparent;
+      color: #ff5c5c;
+      border: none;
       font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      display: none;
+    }
+
+    .chat-message:hover .delete-btn {
+      display: block;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
+    input {
+      padding: 10px;
+      width: 300px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #b065d9;
+      color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      color: white;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      transition: transform 0.2s ease;
+      font-family: 'Patrick Hand', cursive;
+      transition: background-color 0.2s ease;
     }
 
-    .send-buttons button:hover {
-      transform: scale(1.07);
+    button:hover {
+      background-color: #9a4bcc;
     }
 
-    .green-btn {
-      background-color: #4caf50;
-    }
-
-    .purple-btn {
-      background-color: #a347dd;
+    .back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background-color: #d1b3e0;
+      color: #4b2354;
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-decoration: none;
     }
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-btn">← Back Home</a>
-  <h1>Chat Wall</h1>
-  <div id="chatBox"></div>
+  <a href="index.html" class="back-button">← Back</a>
+  <h1>Message Wall</h1>
 
-  <div id="messageInput">
-    <textarea id="message" placeholder="Type a message..."></textarea>
-    <div class="send-buttons">
-      <button class="purple-btn" onclick="sendMessage('💜')">Send as Godbrand 💜</button>
-      <button class="green-btn" onclick="sendMessage('💚')">Send as Sihaya 💚</button>
+  <div class="chat-box" id="chatBox"></div>
+
+  <div class="controls">
+    <input type="text" id="input" placeholder="Type a message..." />
+    <div class="button-group">
+      <button onclick="addMessage('boy')">Send as Godbrand 💜</button>
+      <button onclick="addMessage('girl')">Send as Sihaya 💚</button>
     </div>
   </div>
 
   <script>
-    const supabase = supabase.createClient('https://YOUR_PROJECT_ID.supabase.co', 'YOUR_PUBLIC_ANON_KEY');
-    const chatBox = document.getElementById('chatBox');
-    const messageInput = document.getElementById('message');
+    window.onload = () => {
+      const client = window.supabase.createClient(
+        'https://tmjozxcjylcxgemffnoc.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+      );
 
-    async function loadMessages() {
-      const { data, error } = await supabase
-        .from('chatwall') // change this table name as needed
-        .select('*')
-        .order('created_at', { ascending: true });
+      const chatBox = document.getElementById('chatBox');
+      const input = document.getElementById('input');
 
-      if (error) console.error(error);
-      else {
+      async function loadMessages() {
+        const { data, error } = await client
+          .from('chatwall') // ✅ keep this as 'chatwall'
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) {
+          console.error('Load error:', error);
+          return;
+        }
+
         chatBox.innerHTML = '';
-        data.forEach(({ sender, message }) => {
-          const msg = document.createElement('div');
-          msg.className = 'message ' + (sender === '💚' ? 'green' : 'purple');
-          msg.textContent = message;
-          chatBox.appendChild(msg);
+        data.forEach(msg => {
+          const div = document.createElement('div');
+          div.className = 'chat-message ' + msg.sender;
+          div.textContent = msg.content;
+
+          const del = document.createElement('button');
+          del.className = 'delete-btn';
+          del.textContent = '×';
+          del.onclick = () => {
+            deleteMessage(msg.id);
+          };
+          div.appendChild(del);
+
+          chatBox.appendChild(div);
         });
+
         chatBox.scrollTop = chatBox.scrollHeight;
       }
-    }
 
-    async function sendMessage(sender) {
-      const message = messageInput.value.trim();
-      if (!message) return;
+      window.addMessage = async function (sender) {
+        const message = input.value.trim();
+        if (message === '') return;
 
-      const { error } = await supabase
-        .from('chatwall')
-        .insert([{ sender, message }]);
+        const { error } = await client.from('chatwall').insert([
+          { sender, content: message }
+        ]);
 
-      if (error) console.error(error);
-      else {
-        messageInput.value = '';
-        loadMessages();
+        if (error) {
+          console.error('Send error:', error);
+        }
+
+        input.value = '';
+        await loadMessages();
+      };
+
+      async function deleteMessage(id) {
+        const { error } = await client
+          .from('chatwall')
+          .delete()
+          .eq('id', id);
+
+        if (error) {
+          console.error('Delete error:', error);
+        }
       }
-    }
 
-    supabase
-      .channel('chatwall-updates')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatwall' }, payload => {
-        loadMessages();
-      })
-      .subscribe();
+      client.channel('realtime:chatwall')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'chatwall' },
+          () => loadMessages()
+        )
+        .subscribe();
 
-    loadMessages();
+      loadMessages();
+    };
   </script>
 </body>
 </html>
