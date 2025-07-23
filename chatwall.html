@@ -8,19 +8,19 @@
   <style>
     body {
       font-family: 'Patrick Hand', cursive;
-      background: none;
+      background: white;
       margin: 0;
       padding: 40px;
       color: #333;
       display: flex;
       flex-direction: column;
       align-items: center;
-      overflow-x: hidden;
     }
 
     h1 {
-      color: #8a3d1c;
-      font-size: 36px;
+      color: #9a1047;
+      font-family: 'Freestyle Script', cursive;
+      font-size: 40px;
       margin-bottom: 20px;
     }
 
@@ -37,7 +37,6 @@
       max-height: 400px;
       scrollbar-width: none;
       -ms-overflow-style: none;
-      position: relative;
     }
 
     .chat-box::-webkit-scrollbar {
@@ -132,24 +131,23 @@
       text-decoration: none;
     }
 
-    .magic-drop {
+    .falling-heart {
       position: fixed;
-      animation: sparkleFall 2.5s ease-out forwards;
+      top: -40px;
+      font-size: 1.2em;
+      animation: fallHeart 2.8s ease-out forwards;
       pointer-events: none;
       z-index: 999;
-      text-shadow: 0 0 4px white;
-      transform: translateY(-10px) rotate(0deg) scale(0.9);
-      opacity: 0.8;
-      will-change: transform, opacity;
+      opacity: 0.9;
     }
 
-    @keyframes sparkleFall {
+    @keyframes fallHeart {
       0% {
-        transform: translateY(-10px) rotate(0deg) scale(0.9);
+        transform: translateY(0) rotate(0deg) scale(1);
         opacity: 1;
       }
       100% {
-        transform: translateY(100vh) rotate(180deg) scale(1.1);
+        transform: translateY(100vh) rotate(360deg) scale(0.8);
         opacity: 0;
       }
     }
@@ -170,105 +168,91 @@
   </div>
 
   <script>
-    window.onload = () => {
-      const client = window.supabase.createClient(
-        'https://tmjozxcjylcxgemffnoc.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-      );
+    const client = window.supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
 
-      const chatBox = document.getElementById('chatBox');
-      const input = document.getElementById('input');
+    const chatBox = document.getElementById('chatBox');
+    const input = document.getElementById('input');
 
-      async function loadMessages() {
-        const { data, error } = await client
-          .from('chatwall')
-          .select('*')
-          .order('created_at', { ascending: true });
+    async function loadMessages() {
+      const { data, error } = await client
+        .from('chatwall')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-        if (error) {
-          console.error('Load error:', error);
-          return;
-        }
-
-        chatBox.innerHTML = '';
-        data.forEach(msg => {
-          const div = document.createElement('div');
-          div.className = 'chat-message ' + msg.sender;
-          div.textContent = msg.content;
-
-          const del = document.createElement('button');
-          del.className = 'delete-btn';
-          del.textContent = '×';
-          del.onclick = () => {
-            deleteMessage(msg.id);
-          };
-          div.appendChild(del);
-
-          chatBox.appendChild(div);
-        });
-
-        chatBox.scrollTop = chatBox.scrollHeight;
+      if (error) {
+        console.error('Load error:', error);
+        return;
       }
 
-      window.addMessage = async function (sender) {
-        const message = input.value.trim();
-        if (message === '') return;
+      chatBox.innerHTML = '';
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-message ' + msg.sender;
+        div.textContent = msg.content;
 
-        const { error } = await client.from('chatwall').insert([
-          { sender, content: message }
-        ]);
+        const del = document.createElement('button');
+        del.className = 'delete-btn';
+        del.textContent = '×';
+        del.onclick = () => deleteMessage(msg.id);
+        div.appendChild(del);
 
-        if (error) {
-          console.error('Send error:', error);
-        } else {
-          magicSprinkle(sender === 'girl' ? '💚' : '💜');
-        }
+        chatBox.appendChild(div);
+      });
 
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function deleteMessage(id) {
+      const { error } = await client
+        .from('chatwall')
+        .delete()
+        .eq('id', id);
+
+      if (error) console.error('Delete error:', error);
+    }
+
+    function sprinkleHearts() {
+      const colors = ['💚', '💜'];
+      for (let i = 0; i < 25; i++) {
+        const heart = document.createElement('div');
+        heart.className = 'falling-heart';
+        heart.textContent = colors[Math.floor(Math.random() * colors.length)];
+        heart.style.left = Math.random() * 100 + 'vw';
+        heart.style.fontSize = (16 + Math.random() * 10) + 'px';
+        heart.style.animationDuration = (2.5 + Math.random()) + 's';
+
+        document.body.appendChild(heart);
+        setTimeout(() => heart.remove(), 3000);
+      }
+    }
+
+    window.addMessage = async function (sender) {
+      const message = input.value.trim();
+      if (message === '') return;
+
+      const { error } = await client.from('chatwall').insert([
+        { sender, content: message }
+      ]);
+
+      if (error) {
+        console.error('Send error:', error);
+      } else {
+        sprinkleHearts();
         input.value = '';
         await loadMessages();
-      };
-
-      async function deleteMessage(id) {
-        const { error } = await client
-          .from('chatwall')
-          .delete()
-          .eq('id', id);
-
-        if (error) {
-          console.error('Delete error:', error);
-        } else {
-          await loadMessages();
-        }
       }
-
-      function magicSprinkle(mainEmoji) {
-        const mix = [mainEmoji, '✨', '🌟', mainEmoji];
-        for (let i = 0; i < 25; i++) {
-          const el = document.createElement('div');
-          el.className = 'magic-drop';
-          el.textContent = mix[Math.floor(Math.random() * mix.length)];
-
-          el.style.left = `${Math.random() * 100}vw`;
-          el.style.top = `${Math.random() * 10 - 5}px`;
-          el.style.fontSize = `${12 + Math.random() * 10}px`;
-          el.style.opacity = `${0.6 + Math.random() * 0.4}`;
-          el.style.transform = `rotate(${Math.random() * 180}deg) scale(${0.8 + Math.random() * 0.5})`;
-
-          document.body.appendChild(el);
-          setTimeout(() => el.remove(), 2500);
-        }
-      }
-
-      client.channel('realtime:chatwall')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'chatwall' },
-          () => loadMessages()
-        )
-        .subscribe();
-
-      loadMessages();
     };
+
+    client.channel('realtime:chatwall')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chatwall' }, () => {
+        loadMessages();
+      })
+      .subscribe();
+
+    loadMessages();
   </script>
 </body>
 </html>
