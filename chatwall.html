@@ -34,6 +34,7 @@
       margin-bottom: 20px;
       overflow-y: auto;
       max-height: 400px;
+      position: relative;
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
@@ -130,26 +131,22 @@
       text-decoration: none;
     }
 
-    /* firework animation */
-    .firework {
-      position: fixed;
-      font-size: 32px;
-      animation: pop 1s ease forwards;
+    .heart {
+      position: absolute;
+      font-size: 16px;
+      opacity: 0;
+      animation: floatUp 1s ease-out forwards;
       pointer-events: none;
-      z-index: 999;
+      z-index: 1;
     }
 
-    @keyframes pop {
+    @keyframes floatUp {
       0% {
-        opacity: 1;
-        transform: scale(1) translateY(0);
-      }
-      50% {
-        transform: scale(1.8) translateY(-50px);
+        transform: translateY(0) scale(1);
         opacity: 1;
       }
       100% {
-        transform: scale(0.2) translateY(-100px);
+        transform: translateY(-60px) scale(1.5);
         opacity: 0;
       }
     }
@@ -221,7 +218,7 @@
         if (error) {
           console.error('Send error:', error);
         } else {
-          showFirework(sender === 'girl' ? '💚' : '💜');
+          showHeartBurst(sender === 'girl' ? '💚' : '💜');
         }
 
         input.value = '';
@@ -241,20 +238,22 @@
         }
       }
 
-      function showFirework(emoji) {
-        const el = document.createElement('div');
-        el.className = 'firework';
-        el.textContent = emoji;
+      function showHeartBurst(emoji) {
+        const origin = chatBox.getBoundingClientRect();
+        for (let i = 0; i < 7; i++) {
+          const heart = document.createElement('div');
+          heart.className = 'heart';
+          heart.textContent = emoji;
 
-        const offsetX = (Math.random() * 60 - 30);
-        el.style.left = `calc(50% + ${offsetX}px)`;
-        el.style.bottom = '100px';
+          const offsetX = Math.random() * 120 - 60;
+          const offsetY = Math.random() * 20;
 
-        document.body.appendChild(el);
+          heart.style.left = `${origin.width / 2 + offsetX}px`;
+          heart.style.top = `${chatBox.scrollTop + origin.height - 100 + offsetY}px`;
 
-        setTimeout(() => {
-          el.remove();
-        }, 1000);
+          chatBox.appendChild(heart);
+          setTimeout(() => heart.remove(), 1000);
+        }
       }
 
       client.channel('realtime:chatwall')
