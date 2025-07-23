@@ -3,107 +3,152 @@
 <head>
   <meta charset="UTF-8">
   <title>Chat Wall</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <style>
     body {
-      font-family: 'Patrick Hand', cursive;
-      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatbg.png') no-repeat center center fixed;
-      background-size: cover;
       margin: 0;
-      padding: 40px;
+      padding: 20px;
+      font-family: 'Patrick Hand', cursive;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png') no-repeat center center fixed;
+      background-size: cover;
       color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    }
+
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background-color: rgba(255, 255, 255, 0.8);
+      padding: 8px 14px;
+      border-radius: 10px;
+      font-size: 16px;
+      color: #444;
+      cursor: pointer;
+      z-index: 99;
+      text-decoration: none;
+      box-shadow: 0 0 6px rgba(0,0,0,0.2);
     }
 
     h1 {
+      text-align: center;
       color: #57b3ab;
-      font-size: 36px;
-      margin-bottom: 20px;
+      font-size: 2.2em;
+      margin-bottom: 30px;
     }
 
-    .chat-box {
-      width: 100%;
-      max-width: 600px;
-      background: rgba(255, 255, 255, 0.85);
-      border-radius: 10px;
+    #chatBox {
+      max-width: 700px;
+      margin: auto;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 16px;
       padding: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-      overflow-y: auto;
       max-height: 60vh;
+      overflow-y: auto;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
     }
 
     .message {
-      margin-bottom: 10px;
+      display: inline-block;
+      clear: both;
+      padding: 10px 16px;
+      margin: 6px 0;
+      max-width: 70%;
+      border-radius: 16px;
+      font-size: 17px;
+      line-height: 1.4;
     }
 
     .green {
-      color: #4CAF50;
+      background-color: #c8f7dc;
+      color: #2d7c4c;
+      float: right;
+      text-align: right;
     }
 
     .purple {
-      color: #a347dd;
+      background-color: #e3c7f5;
+      color: #5b3586;
+      float: left;
+      text-align: left;
     }
 
-    form {
-      margin-top: 20px;
+    #messageInput {
+      width: 100%;
+      max-width: 700px;
+      margin: 30px auto 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    select, textarea, button {
-      font-family: 'Patrick Hand', cursive;
-      margin: 5px 0;
+    #message {
+      width: 100%;
+      max-width: 600px;
+      height: 80px;
+      border-radius: 12px;
       padding: 10px;
       font-size: 16px;
-    }
-
-    textarea {
-      width: 300px;
-      height: 80px;
       resize: none;
-    }
-
-    button {
-      background-color: #57b3ab;
-      color: white;
       border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background 0.3s ease;
+      box-shadow: 0 0 6px rgba(0,0,0,0.2);
+      font-family: 'Patrick Hand', cursive;
     }
 
-    button:hover {
-      background-color: #469e99;
+    .send-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+
+    .send-buttons button {
+      font-family: 'Patrick Hand', cursive;
+      padding: 10px 16px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      color: white;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: transform 0.2s ease;
+    }
+
+    .send-buttons button:hover {
+      transform: scale(1.07);
+    }
+
+    .green-btn {
+      background-color: #4caf50;
+    }
+
+    .purple-btn {
+      background-color: #a347dd;
     }
   </style>
 </head>
 <body>
+  <a href="index.html" class="back-btn">← Back Home</a>
   <h1>Chat Wall</h1>
-  <div class="chat-box" id="chatBox"></div>
+  <div id="chatBox"></div>
 
-  <form id="chatForm">
-    <select id="sender">
-      <option value="💚">💚</option>
-      <option value="💜">💜</option>
-    </select>
-    <textarea id="message" placeholder="Type your message..."></textarea>
-    <button type="submit">Send</button>
-  </form>
+  <div id="messageInput">
+    <textarea id="message" placeholder="Type a message..."></textarea>
+    <div class="send-buttons">
+      <button class="purple-btn" onclick="sendMessage('💜')">Send as Godbrand 💜</button>
+      <button class="green-btn" onclick="sendMessage('💚')">Send as Sihaya 💚</button>
+    </div>
+  </div>
 
   <script>
     const supabase = supabase.createClient('https://YOUR_PROJECT_ID.supabase.co', 'YOUR_PUBLIC_ANON_KEY');
     const chatBox = document.getElementById('chatBox');
-    const chatForm = document.getElementById('chatForm');
     const messageInput = document.getElementById('message');
-    const senderInput = document.getElementById('sender');
 
     async function loadMessages() {
       const { data, error } = await supabase
-        .from('chatwall') // <- your new Supabase table name
+        .from('chatwall') // change this table name as needed
         .select('*')
         .order('created_at', { ascending: true });
 
@@ -111,18 +156,16 @@
       else {
         chatBox.innerHTML = '';
         data.forEach(({ sender, message }) => {
-          const msgEl = document.createElement('div');
-          msgEl.className = 'message ' + (sender === '💚' ? 'green' : 'purple');
-          msgEl.textContent = sender + ' ' + message;
-          chatBox.appendChild(msgEl);
+          const msg = document.createElement('div');
+          msg.className = 'message ' + (sender === '💚' ? 'green' : 'purple');
+          msg.textContent = message;
+          chatBox.appendChild(msg);
         });
         chatBox.scrollTop = chatBox.scrollHeight;
       }
     }
 
-    chatForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      const sender = senderInput.value;
+    async function sendMessage(sender) {
       const message = messageInput.value.trim();
       if (!message) return;
 
@@ -135,7 +178,7 @@
         messageInput.value = '';
         loadMessages();
       }
-    });
+    }
 
     supabase
       .channel('chatwall-updates')
