@@ -132,24 +132,27 @@
       text-decoration: none;
     }
 
-    .heart-sprinkle {
+    .magic-drop {
       position: fixed;
-      font-size: 18px;
-      animation: sprinkleDown 1.2s ease-out forwards;
+      animation: sparkleFall 2.5s ease-out forwards;
       pointer-events: none;
       z-index: 999;
+      opacity: 0.8;
+      transform: scale(0.9) rotate(0deg);
+      will-change: transform, opacity;
+      text-shadow: 0 0 4px white;
     }
 
-    @keyframes sprinkleDown {
+    @keyframes sparkleFall {
       0% {
-        transform: translateY(-30px) scale(1);
-        opacity: 1;
+        transform: translateY(-20px) rotate(0deg) scale(0.9);
+        opacity: 0;
       }
-      80% {
+      20% {
         opacity: 1;
       }
       100% {
-        transform: translateY(100vh) scale(1.2);
+        transform: translateY(100vh) rotate(180deg) scale(1.2);
         opacity: 0;
       }
     }
@@ -221,7 +224,7 @@
         if (error) {
           console.error('Send error:', error);
         } else {
-          sprinkleHearts(sender === 'girl' ? '💚' : '💜');
+          magicSprinkle(sender === 'girl' ? '💚' : '💜');
         }
 
         input.value = '';
@@ -241,19 +244,22 @@
         }
       }
 
-      function sprinkleHearts(emoji) {
-        for (let i = 0; i < 20; i++) {
-          const heart = document.createElement('div');
-          heart.className = 'heart-sprinkle';
-          heart.textContent = emoji;
+      function magicSprinkle(mainEmoji) {
+        const mix = [mainEmoji, '✨', '🌟', mainEmoji];
+        for (let i = 0; i < 25; i++) {
+          const el = document.createElement('div');
+          el.className = 'magic-drop';
+          el.textContent = mix[Math.floor(Math.random() * mix.length)];
 
-          heart.style.left = `${Math.random() * 100}vw`;
-          heart.style.top = `${Math.random() * 10 - 10}px`;
-          heart.style.fontSize = `${14 + Math.random() * 10}px`;
-          heart.style.animationDelay = `${Math.random() * 0.5}s`;
+          el.style.left = `${Math.random() * 100}vw`;
+          el.style.top = `${Math.random() * 10 - 5}px`;
+          el.style.fontSize = `${12 + Math.random() * 10}px`;
+          el.style.opacity = `${0.6 + Math.random() * 0.4}`;
+          el.style.animationDelay = `${Math.random() * 0.5}s`;
+          el.style.transform = `rotate(${Math.random() * 180}deg) scale(${0.8 + Math.random() * 0.5})`;
 
-          document.body.appendChild(heart);
-          setTimeout(() => heart.remove(), 1200);
+          document.body.appendChild(el);
+          setTimeout(() => el.remove(), 2500);
         }
       }
 
