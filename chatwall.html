@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Wall</title>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <style>
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatbg.png') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 40px;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #57b3ab;
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .chat-box {
+      width: 100%;
+      max-width: 600px;
+      background: rgba(255, 255, 255, 0.85);
+      border-radius: 10px;
+      padding: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+      overflow-y: auto;
+      max-height: 60vh;
+    }
+
+    .message {
+      margin-bottom: 10px;
+    }
+
+    .green {
+      color: #4CAF50;
+    }
+
+    .purple {
+      color: #a347dd;
+    }
+
+    form {
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    select, textarea, button {
+      font-family: 'Patrick Hand', cursive;
+      margin: 5px 0;
+      padding: 10px;
+      font-size: 16px;
+    }
+
+    textarea {
+      width: 300px;
+      height: 80px;
+      resize: none;
+    }
+
+    button {
+      background-color: #57b3ab;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #469e99;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chat Wall</h1>
+  <div class="chat-box" id="chatBox"></div>
+
+  <form id="chatForm">
+    <select id="sender">
+      <option value="💚">💚</option>
+      <option value="💜">💜</option>
+    </select>
+    <textarea id="message" placeholder="Type your message..."></textarea>
+    <button type="submit">Send</button>
+  </form>
+
+  <script>
+    const supabase = supabase.createClient('https://YOUR_PROJECT_ID.supabase.co', 'YOUR_PUBLIC_ANON_KEY');
+    const chatBox = document.getElementById('chatBox');
+    const chatForm = document.getElementById('chatForm');
+    const messageInput = document.getElementById('message');
+    const senderInput = document.getElementById('sender');
+
+    async function loadMessages() {
+      const { data, error } = await supabase
+        .from('chatwall') // <- your new Supabase table name
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) console.error(error);
+      else {
+        chatBox.innerHTML = '';
+        data.forEach(({ sender, message }) => {
+          const msgEl = document.createElement('div');
+          msgEl.className = 'message ' + (sender === '💚' ? 'green' : 'purple');
+          msgEl.textContent = sender + ' ' + message;
+          chatBox.appendChild(msgEl);
+        });
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+    }
+
+    chatForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const sender = senderInput.value;
+      const message = messageInput.value.trim();
+      if (!message) return;
+
+      const { error } = await supabase
+        .from('chatwall')
+        .insert([{ sender, message }]);
+
+      if (error) console.error(error);
+      else {
+        messageInput.value = '';
+        loadMessages();
+      }
+    });
+
+    supabase
+      .channel('chatwall-updates')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatwall' }, payload => {
+        loadMessages();
+      })
+      .subscribe();
+
+    loadMessages();
+  </script>
+</body>
+</html>
