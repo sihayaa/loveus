@@ -213,8 +213,8 @@
         heart.className = 'falling-heart';
         heart.textContent = '💖';
         heart.style.left = Math.random() * 100 + 'vw';
-        heart.style.fontSize = ${1 + Math.random() * 1.5}em;
-        heart.style.animationDelay = ${Math.random() * 0.5}s;
+        heart.style.fontSize = `${1 + Math.random() * 1.5}em`;
+        heart.style.animationDelay = `${Math.random() * 0.5}s`;
         document.body.appendChild(heart);
         setTimeout(() => heart.remove(), 2000);
       }
@@ -247,13 +247,13 @@
         div.onclick = () => showZoomedLetter(letter);
         const header = document.createElement('div');
         header.className = 'letter-header';
-        header.textContent = letter.to ? To: ${letter.to} : '';
+        header.textContent = letter.to ? `To: ${letter.to}` : '';
         const body = document.createElement('div');
         body.textContent = letter.content;
         body.style.color = letter.color || '#4b2354';
         const footer = document.createElement('div');
         footer.className = 'letter-footer';
-        footer.textContent = letter.from ? Love, ${letter.from} : '';
+        footer.textContent = letter.from ? `Love, ${letter.from}` : '';
         const deleteBtn = document.createElement('span');
         deleteBtn.textContent = '❌';
         deleteBtn.style.position = 'absolute';
@@ -292,7 +292,7 @@
 
       const header = document.createElement('div');
       header.className = 'letter-header';
-      header.textContent = letter.to ? To: ${letter.to} : '';
+      header.textContent = letter.to ? `To: ${letter.to}` : '';
 
       const text = document.createElement('div');
       text.textContent = letter.content;
@@ -302,7 +302,7 @@
 
       const footer = document.createElement('div');
       footer.className = 'letter-footer';
-      footer.textContent = letter.from ? Love, ${letter.from} : '';
+      footer.textContent = letter.from ? `Love, ${letter.from}` : '';
 
       const date = document.createElement('div');
       date.className = 'date';
@@ -362,4 +362,4 @@
 document.addEventListener('DOMContentLoaded', loadLetters);
   </script>
 </body>
-</html>   
+</html>
