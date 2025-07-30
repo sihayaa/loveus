@@ -6,47 +6,178 @@
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    /* [your styles remain unchanged] */
-    /* ... (unchanged style section from your code) ... */
-    /* Add this at the end of your <style> block for modal styling: */
-    #customConfirm {
-      display: none;
+    body {
+      margin: 0;
+      padding: 0;
+      background: url('https://github.com/sihayaa/loveus/blob/main/letterbg2.png?raw=true') no-repeat center center fixed;
+      background-size: cover;
+      font-family: 'Patrick Hand', cursive;
+      color: #4b2354;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    a.back-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #d1b3e0;
+      padding: 8px 14px;
+      text-decoration: none;
+      color: #4b2354;
+      border-radius: 10px;
+      font-size: 1.1em;
+    }
+    .center-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      margin-top: 20px;
+      width: 100%;
+      padding: 0 20px;
+    }
+    h1 {
+      font-size: 3.4em;
+      margin-bottom: 10px;
+    }
+    .forever {
+      font-family: 'Great Vibes', cursive;
+      font-size: 2em;
+      color: #d14185;
+      animation: glowPulse 3s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+    @keyframes glowPulse {
+      0%, 100% {
+        text-shadow: 0 0 6px #ffb3dd, 0 0 12px #ffb3dd, 0 0 18px #ffb3dd;
+        transform: scale(1);
+      }
+      50% {
+        text-shadow: 0 0 12px #ff69b4, 0 0 24px #ff69b4, 0 0 32px #ff69b4;
+        transform: scale(1.05);
+      }
+    }
+    .letter-form {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      max-width: 600px;
+    }
+    .letter-form input,
+    .letter-form textarea {
+      width: 100%;
+      padding: 10px;
+      border-radius: 10px;
+      border: 2px dashed #a28dc2;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 1.2em;
+      background: #fffafc;
+    }
+    .letter-form textarea {
+      height: 150px;
+      resize: none;
+    }
+    .form-row {
+      display: flex;
+      justify-content: center;
+      margin-top: 10px;
+    }
+    button {
+      font-family: 'Patrick Hand', cursive;
+      font-size: 1.2em;
+      background: #a28dc2;
+      color: white;
+      border: none;
+      border-radius: 20px;
+      padding: 8px 20px;
+      cursor: pointer;
+    }
+    .letters {
+      margin-top: 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      padding: 0 20px 40px;
+      width: 100%;
+      max-width: 1100px;
+    }
+    .letter {
+      background: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      font-size: 1.1em;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      border-left: 5px solid #a28dc2;
+      white-space: pre-wrap;
+      position: relative;
+      cursor: pointer;
+    }
+    .letter-header {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .letter-footer {
+      margin-top: 10px;
+      font-style: italic;
+      text-align: right;
+    }
+    .zoom-overlay {
       position: fixed;
       top: 0;
       left: 0;
       width: 100vw;
       height: 100vh;
       background: rgba(0,0,0,0.5);
-      z-index: 9999;
+      display: flex;
       align-items: center;
       justify-content: center;
+      z-index: 1000;
     }
-    #customConfirmBox {
+    .zoomed-letter {
       background: #fff;
-      padding: 30px 20px;
-      border-radius: 12px;
-      max-width: 300px;
-      width: 90%;
-      text-align: center;
-      font-family: 'Patrick Hand', cursive;
-      color: #4b2354;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      padding: 30px;
+      border-radius: 14px;
+      max-width: 85vw;
+      width: 600px;
+      font-size: 1.2em;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+      position: relative;
     }
-    #customConfirmBox button {
-      padding: 8px 20px;
+    .zoomed-letter .date {
+      text-align: right;
+      color: #777;
+      font-size: 0.9em;
+      margin-top: 20px;
+    }
+    .edit-save-button {
+      position: absolute;
+      bottom: 20px;
+      left: 20px;
+      background: #a28dc2;
+      color: white;
       border: none;
       border-radius: 10px;
-      cursor: pointer;
+      font-size: 0.9em;
+      padding: 5px 12px;
       font-family: 'Patrick Hand', cursive;
-      font-size: 1em;
+      cursor: pointer;
+      opacity: 0.9;
     }
-    #confirmYes {
-      background: #d75d73;
-      color: white;
+    .falling-heart {
+      position: fixed;
+      top: -40px;
+      font-size: 1.5em;
+      color: #ff5c9c;
+      animation: fallHeart 2s ease-out forwards;
+      pointer-events: none;
+      z-index: 999;
     }
-    #confirmNo {
-      background: #ccc;
-      color: #333;
+    @keyframes fallHeart {
+      0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
     }
   </style>
 </head>
@@ -61,10 +192,10 @@
       <input type="text" id="toInput" placeholder="To:">
       
       <div style="position: relative;">
-        <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
-        <button id="colorBtn" title="Pick a text color" style="position: absolute; top: 10px; right: 10px; font-size: 18px; border: none; background: transparent; cursor: pointer;">🎨</button>
-        <input type="color" id="colorPicker" value="#4b2354" style="display: none;" />
-      </div>
+  <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
+  <button id="colorBtn" title="Pick a text color" style="position: absolute; top: 10px; right: 10px; font-size: 18px; border: none; background: transparent; cursor: pointer;">🎨</button>
+  <input type="color" id="colorPicker" value="#4b2354" style="display: none;" />
+</div>
       <input type="text" id="fromInput" placeholder="Love:">
       <div class="form-row">
         <button onclick="sealLetter()">Seal the Letter 💌</button>
@@ -72,18 +203,6 @@
     </div>
   </div>
   <div class="letters" id="letters"></div>
-
-  <!-- ✅ Custom Confirmation Modal -->
-  <div id="customConfirm">
-    <div id="customConfirmBox">
-      <p style="font-size:1.3em; margin-bottom:20px;">Are you sure you want to delete this letter?</p>
-      <div style="display:flex; justify-content:space-around;">
-        <button id="confirmYes">Yes</button>
-        <button id="confirmNo">Cancel</button>
-      </div>
-    </div>
-  </div>
-
   <script>
     const client = supabase.createClient('https://tmjozxcjylcxgemffnoc.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI');
 
@@ -94,8 +213,8 @@
         heart.className = 'falling-heart';
         heart.textContent = '💖';
         heart.style.left = Math.random() * 100 + 'vw';
-        heart.style.fontSize = `${1 + Math.random() * 1.5}em`;
-        heart.style.animationDelay = `${Math.random() * 0.5}s`;
+        heart.style.fontSize = ${1 + Math.random() * 1.5}em;
+        heart.style.animationDelay = ${Math.random() * 0.5}s;
         document.body.appendChild(heart);
         setTimeout(() => heart.remove(), 2000);
       }
@@ -128,13 +247,13 @@
         div.onclick = () => showZoomedLetter(letter);
         const header = document.createElement('div');
         header.className = 'letter-header';
-        header.textContent = letter.to ? `To: ${letter.to}` : '';
+        header.textContent = letter.to ? To: ${letter.to} : '';
         const body = document.createElement('div');
         body.textContent = letter.content;
         body.style.color = letter.color || '#4b2354';
         const footer = document.createElement('div');
         footer.className = 'letter-footer';
-        footer.textContent = letter.from ? `Love, ${letter.from}` : '';
+        footer.textContent = letter.from ? Love, ${letter.from} : '';
         const deleteBtn = document.createElement('span');
         deleteBtn.textContent = '❌';
         deleteBtn.style.position = 'absolute';
@@ -144,15 +263,13 @@
         deleteBtn.style.color = '#b75d5d';
         deleteBtn.style.fontSize = '1.2em';
         deleteBtn.title = 'Delete this letter';
-        deleteBtn.onclick = (e) => {
+        deleteBtn.onclick = async (e) => {
           e.stopPropagation();
-          showCustomConfirm(async (confirmed) => {
-            if (confirmed) {
-              const { error } = await client.from('letters').delete().eq('id', letter.id);
-              if (!error) loadLetters();
-              else alert('Failed to delete letter.');
-            }
-          });
+          if (confirm('Are you sure you want to delete this letter?')) {
+            const { error } = await client.from('letters').delete().eq('id', letter.id);
+            if (!error) loadLetters();
+            else alert('Failed to delete letter.');
+          }
         };
         div.appendChild(deleteBtn);
         div.appendChild(header);
@@ -175,7 +292,7 @@
 
       const header = document.createElement('div');
       header.className = 'letter-header';
-      header.textContent = letter.to ? `To: ${letter.to}` : '';
+      header.textContent = letter.to ? To: ${letter.to} : '';
 
       const text = document.createElement('div');
       text.textContent = letter.content;
@@ -185,7 +302,7 @@
 
       const footer = document.createElement('div');
       footer.className = 'letter-footer';
-      footer.textContent = letter.from ? `Love, ${letter.from}` : '';
+      footer.textContent = letter.from ? Love, ${letter.from} : '';
 
       const date = document.createElement('div');
       date.className = 'date';
@@ -238,35 +355,11 @@
       zoomBox.appendChild(saveBtn);
     }
 
-    function showCustomConfirm(callback) {
-      const modal = document.getElementById('customConfirm');
-      modal.style.display = 'flex';
-
-      const yesBtn = document.getElementById('confirmYes');
-      const noBtn = document.getElementById('confirmNo');
-
-      const cleanup = () => {
-        modal.style.display = 'none';
-        yesBtn.onclick = null;
-        noBtn.onclick = null;
-      };
-
-      yesBtn.onclick = () => {
-        cleanup();
-        callback(true);
-      };
-
-      noBtn.onclick = () => {
-        cleanup();
-        callback(false);
-      };
-    }
-
     document.getElementById('colorBtn').addEventListener('click', () => {
-      document.getElementById('colorPicker').click();
-    });
+  document.getElementById('colorPicker').click();
+});
 
-    document.addEventListener('DOMContentLoaded', loadLetters);
+document.addEventListener('DOMContentLoaded', loadLetters);
   </script>
 </body>
-</html>
+</html>   
