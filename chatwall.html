@@ -206,11 +206,10 @@
 
       chatBox.innerHTML = '';
       data.forEach(addMessageToDOM);
-      chatBox.scrollTop = chatBox.scrollHeight;
     }
 
     function addMessageToDOM(msg) {
-      if (document.getElementById(`msg-${msg.id}`)) return; // prevent duplicates
+      if (document.getElementById(`msg-${msg.id}`)) return;
 
       const div = document.createElement('div');
       div.id = `msg-${msg.id}`;
@@ -278,26 +277,34 @@
       } else {
         sprinkleHearts();
         input.value = '';
-        // No need to reload — real-time handles it
       }
     };
 
+    // REAL-TIME SETUP
     client
       .channel('public:chatwall')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'chatwall' },
-        (payload) => addMessageToDOM(payload.new)
+        (payload) => {
+          console.log('New message:', payload.new);
+          addMessageToDOM(payload.new);
+        }
       )
       .on(
         'postgres_changes',
         { event: 'DELETE', schema: 'public', table: 'chatwall' },
         (payload) => {
+          console.log('Message deleted:', payload.old.id);
           const msgDiv = document.getElementById(`msg-${payload.old.id}`);
           if (msgDiv) msgDiv.remove();
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('✅ Subscribed to chatwall realtime updates');
+        }
+      });
 
     loadMessages();
   </script>
