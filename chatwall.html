@@ -193,21 +193,6 @@
     const chatBox = document.getElementById('chatBox');
     const input = document.getElementById('input');
 
-    async function loadMessages() {
-      const { data, error } = await client
-        .from('chatwall')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Load error:', error);
-        return;
-      }
-
-      chatBox.innerHTML = '';
-      data.forEach(addMessageToDOM);
-    }
-
     function addMessageToDOM(msg) {
       if (document.getElementById(`msg-${msg.id}`)) return;
 
@@ -236,6 +221,21 @@
 
       chatBox.appendChild(div);
       chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    async function loadMessages() {
+      const { data, error } = await client
+        .from('chatwall')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('Load error:', error);
+        return;
+      }
+
+      chatBox.innerHTML = '';
+      data.forEach(addMessageToDOM);
     }
 
     async function deleteMessage(id) {
@@ -268,41 +268,32 @@
       const message = input.value.trim();
       if (message === '') return;
 
-      const { error } = await client.from('chatwall').insert([
+      const { data, error } = await client.from('chatwall').insert([
         { sender, content: message }
-      ]);
+      ]).select();
 
       if (error) {
         console.error('Send error:', error);
       } else {
         sprinkleHearts();
         input.value = '';
+        if (data && data.length > 0) {
+          addMessageToDOM(data[0]);
+        }
       }
     };
 
-    // REAL-TIME SETUP
-    client
-      .channel('public:chatwall')
-      .on(
-        'postgres_changes',
-        { event: 'INSERT', schema: 'public', table: 'chatwall' },
-        (payload) => {
-          console.log('New message:', payload.new);
-          addMessageToDOM(payload.new);
-        }
-      )
-      .on(
-        'postgres_changes',
-        { event: 'DELETE', schema: 'public', table: 'chatwall' },
-        (payload) => {
-          console.log('Message deleted:', payload.old.id);
-          const msgDiv = document.getElementById(`msg-${payload.old.id}`);
-          if (msgDiv) msgDiv.remove();
-        }
-      )
+    client.channel('chatwall')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatwall' }, (payload) => {
+        addMessageToDOM(payload.new);
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chatwall' }, (payload) => {
+        const msgDiv = document.getElementById(`msg-${payload.old.id}`);
+        if (msgDiv) msgDiv.remove();
+      })
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
-          console.log('✅ Subscribed to chatwall realtime updates');
+          console.log('✅ Subscribed to realtime chatwall');
         }
       });
 
@@ -310,3 +301,4 @@
   </script>
 </body>
 </html>
+
