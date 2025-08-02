@@ -82,6 +82,43 @@
       border-radius: 12px;
       object-fit: cover;
     }
+
+    /* TIME ZONE BOX */
+    #timezone-box {
+      position: fixed;
+      left: 20px;
+      bottom: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 18px 22px;
+      width: 220px;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3);
+      text-align: left;
+      z-index: 5;
+    }
+
+    .tz-header {
+      font-family: 'Great Vibes', cursive;
+      font-size: 1.6em;
+      color: #ffffff;
+      text-shadow: 1px 1px 4px #8e5dd2;
+      margin-bottom: 10px;
+    }
+
+    .tz-line {
+      margin: 6px 0;
+      font-size: 1em;
+      color: #fff;
+      text-shadow: 0 0 5px #67e4ca;
+    }
+
+    .tz-label {
+      font-weight: bold;
+      color: #f5e6ff;
+    }
   </style>
 </head>
 <body>
@@ -114,6 +151,13 @@
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
   </div>
 
+  <!-- Timezone Box -->
+  <div id="timezone-box">
+    <div class="tz-header">Time Zones</div>
+    <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
+    <div class="tz-line"><span class="tz-label">🌇 Manila:</span> <span id="manila-time">loading...</span></div>
+  </div>
+
   <script>
     const startDate = new Date('2024-10-13');
     const today = new Date();
@@ -122,7 +166,26 @@
     const months = Math.floor(diffDays / 30.44);
     const days = Math.floor(diffDays % 30.44);
     document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+
+    function updateTimeZones() {
+      const options = { hour: '2-digit', minute: '2-digit', hour12: true };
+
+      const vegasTime = new Date().toLocaleString('en-US', {
+        timeZone: 'America/Los_Angeles',
+        ...options
+      });
+
+      const manilaTime = new Date().toLocaleString('en-PH', {
+        timeZone: 'Asia/Manila',
+        ...options
+      });
+
+      document.getElementById('vegas-time').textContent = vegasTime;
+      document.getElementById('manila-time').textContent = manilaTime;
+    }
+
+    updateTimeZones();
+    setInterval(updateTimeZones, 60000); // updates every 60 seconds
   </script>
 </body>
 </html>
-
