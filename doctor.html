@@ -222,7 +222,8 @@
       }
     }
 
-    client.channel('doctor_checklist')
+    client
+      .channel('doctor_checklist')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
       .subscribe();
 
