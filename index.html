@@ -15,9 +15,10 @@
       text-align: center;
     }
 
+    /* enlarged the date started title */
     h1 {
       font-family: 'Great Vibes', cursive;
-      font-size: 2.4em;
+      font-size: 3.4em;
       color: white;
       text-shadow: 2px 2px 8px #8e5dd2;
       margin-bottom: 20px;
@@ -31,17 +32,21 @@
       margin-bottom: 30px;
     }
 
+    /* “Together for:” bigger with green glow */
     #duration-label {
       font-family: 'Great Vibes', cursive;
       color: #111;
       font-weight: normal;
-      font-size: 1.4em;
+      font-size: 1.9em;
+      text-shadow: 0 0 6px #4fa981, 0 0 10px #4fa981; /* green glow */
     }
 
+    /* date value bigger with dark purple glow */
     #duration-value {
       color: #4fa981;
       font-weight: bold;
-      font-size: 1.1em;
+      font-size: 1.9em;
+      text-shadow: 0 0 6px #4a004a, 0 0 10px #4a004a; /* dark purple glow */
     }
 
     button {
@@ -62,6 +67,7 @@
       box-shadow: 0 0 15px #fff;
     }
 
+    /* icons hover grow + purple glow */
     .album-icon {
       position: fixed;
       top: 100px;
@@ -175,10 +181,21 @@
     const startDate = new Date('2024-10-13');
     const today = new Date();
     const diffTime = today - startDate;
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-    const months = Math.floor(diffDays / 30.44);
-    const days = Math.floor(diffDays % 30.44);
-    document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+    const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    // if anniversary is reached (365+ days) → convert to years / months / days
+    if (totalDays >= 365) {
+      const years = Math.floor(totalDays / 365);
+      const remainingDays = totalDays % 365;
+      const months = Math.floor(remainingDays / 30.44);
+      const days = Math.floor(remainingDays % 30.44);
+      document.getElementById('duration-value').textContent = `${years} year${years !== 1 ? 's' : ''} ${months} months ${days} days`;
+    } else {
+      // regular months + days
+      const months = Math.floor(totalDays / 30.44);
+      const days = Math.floor(totalDays % 30.44);
+      document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+    }
 
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
@@ -198,7 +215,7 @@
     }
 
     updateTimeZones();
-    setInterval(updateTimeZones, 60000); // updates every 60 seconds
+    setInterval(updateTimeZones, 60000);
   </script>
 </body>
 </html>
