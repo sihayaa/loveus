@@ -47,6 +47,33 @@
       text-shadow: 0 0 6px #4a004a, 0 0 10px #4a004a;
     }
 
+    /* Glowing outline + pulse for duration value */
+#duration-value {
+  color: #4fa981;
+  font-weight: bold;
+  font-size: 1.9em;
+  text-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px  1px 0 #000, 1px  1px 0 #000,
+    0 0 6px #4fa981, 0 0 10px #4fa981;
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    text-shadow:
+      -1px -1px 0 #000, 1px -1px 0 #000,
+      -1px 1px 0 #000, 1px 1px 0 #000,
+      0 0 4px #4fa981, 0 0 8px #4fa981;
+  }
+  50% {
+    text-shadow:
+      -1px -1px 0 #000, 1px -1px 0 #000,
+      -1px 1px 0 #000, 1px 1px 0 #000,
+      0 0 10px #4fa981, 0 0 18px #4fa981;
+  }
+}
+
     button {
       padding: 10px 20px;
       margin: 10px;
