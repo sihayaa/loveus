@@ -91,11 +91,6 @@
       object-fit: cover;
     }
 
-    .album-icon:nth-of-type(1) { top: 100px; }
-    .album-icon:nth-of-type(2) { top: 200px; }
-    .album-icon:nth-of-type(3) { top: 300px; }
-    .album-icon:nth-of-type(4) { top: 400px; }
-
     #timezone-box {
       position: fixed;
       top: 40px;
@@ -173,35 +168,45 @@
 </head>
 <body>
   <h1>Started Dating: October 13, 2024</h1>
+
   <div id="duration-block">
     <span id="duration-label">Together for: </span>
     <span id="duration-value">loading...</span>
   </div>
+
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Icons -->
-  <div class="album-icon" onclick="location.href='album.html'"><img src="album-icon.png" alt="Album Icon"></div>
-  <div class="album-icon" onclick="location.href='mandarin.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon"></div>
-  <div class="album-icon" onclick="location.href='chatwall.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon"></div>
-  <div class="album-icon" onclick="location.href='doctor.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon"></div>
+  <!-- Aligned Sidebar Icons -->
+  <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
+    <img src="album-icon.png" alt="Album Icon">
+  </div>
+  <div class="album-icon" style="top: 200px;" onclick="location.href='mandarin.html'">
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
+  </div>
+  <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
+  </div>
+  <div class="album-icon" style="top: 400px;" onclick="location.href='doctor.html'">
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
+  </div>
 
-  <!-- Timezone Box -->
+  <!-- Time Zones -->
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
     <div class="tz-line"><span class="tz-label">🌇 Manila:</span> <span id="manila-time">loading...</span></div>
   </div>
 
-  <!-- Countdown Box -->
+  <!-- Countdown -->
   <div id="countdown-box">
     <div class="count-number" id="countdown-number">loading...</div>
     <div class="count-label">before</div>
     <div class="count-label">1-year anniversary</div>
   </div>
 
-  <!-- Hearts Cursor Canvas -->
+  <!-- Hearts Canvas -->
   <canvas id="heart-canvas"></canvas>
 
   <script>
@@ -248,7 +253,7 @@
     updateCountdown();
     setInterval(updateTimeZones, 60000);
 
-    // Cursor trailing hearts
+    // Soft heart trail
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
     let hearts = [];
@@ -257,6 +262,7 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -287,6 +293,7 @@
       });
       requestAnimationFrame(drawHearts);
     }
+
     drawHearts();
   </script>
 </body>
