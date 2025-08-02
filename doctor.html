@@ -120,8 +120,7 @@
       const { data, error } = await client
         .from('doctor_checklist')
         .select('*')
-        .eq('user_id', 'default-user')
-        .order('id');
+        .order('created_at', { ascending: true });
 
       if (!error) {
         checklist.innerHTML = '';
@@ -143,10 +142,10 @@
         .eq('id', id);
     }
 
-    async function editItem(id, text) {
-      const newText = prompt("Edit this item:", text);
-      if (newText !== null && newText.trim() !== '') {
-        await client.from('doctor_checklist').update({ text: newText }).eq('id', id);
+    async function editItem(id, currentMessage) {
+      const newMessage = prompt("Edit this item:", currentMessage);
+      if (newMessage !== null && newMessage.trim() !== '') {
+        await client.from('doctor_checklist').update({ message: newMessage }).eq('id', id);
       }
     }
 
@@ -170,7 +169,7 @@
       };
 
       const span = document.createElement('span');
-      span.textContent = item.text;
+      span.textContent = item.message;
 
       left.appendChild(checkbox);
       left.appendChild(span);
@@ -179,7 +178,7 @@
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Edit';
       editBtn.onclick = async () => {
-        await editItem(item.id, item.text);
+        await editItem(item.id, item.message);
         loadItems();
       };
 
@@ -208,11 +207,11 @@
 
     async function addItem(e) {
       e.preventDefault();
-      const text = newItemInput.value.trim();
-      if (!text) return;
+      const message = newItemInput.value.trim();
+      if (!message) return;
 
-      const { data, error } = await client.from('doctor_checklist').insert([
-        { user_id: 'default-user', text, checked: false }
+      const { error } = await client.from('doctor_checklist').insert([
+        { message, checked: false }
       ]);
 
       if (!error) {
