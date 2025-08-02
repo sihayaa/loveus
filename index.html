@@ -20,6 +20,15 @@
       background: url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
       background-size: cover;
       padding: 40px;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      z-index: -1;
+      pointer-events: none;
       transition: background-color 1s ease;
     }
 
@@ -134,7 +143,7 @@
 
     #countdown-box {
       position: fixed;
-      top: 200px;
+      top: 230px;
       right: 40px;
       background: rgba(255, 255, 255, 0.25);
       backdrop-filter: blur(10px);
@@ -149,19 +158,20 @@
       white-space: pre-line;
     }
 
-    /* Heart trail */
-    .heart {
+    .heart-trail {
       position: absolute;
-      font-size: 14px;
+      width: 8px;
+      height: 8px;
+      background: radial-gradient(circle, #ffcfe2, #ffffff);
+      border-radius: 50%;
       pointer-events: none;
-      color: #ff84b7;
+      animation: floatUp 1.5s ease-out forwards;
       opacity: 0.7;
-      animation: float 2s linear forwards;
     }
 
-    @keyframes float {
+    @keyframes floatUp {
       to {
-        transform: translateY(-100px) scale(1.2);
+        transform: translateY(-100px) scale(1.5);
         opacity: 0;
       }
     }
@@ -193,7 +203,7 @@
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
   </div>
 
-  <!-- Timezone -->
+  <!-- Timezone Box -->
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
@@ -209,7 +219,6 @@
     const diffTime = today - startDate;
     const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    // Duration display logic
     function updateDuration() {
       if (totalDays >= 365) {
         const years = Math.floor(totalDays / 365);
@@ -224,7 +233,6 @@
       }
     }
 
-    // Timezone display
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
       const vegasTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
@@ -233,7 +241,6 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
-    // Anniversary countdown
     function updateCountdown() {
       const nextAnniversary = new Date('2025-10-13');
       const today = new Date();
@@ -241,39 +248,38 @@
       document.getElementById('countdown-box').textContent = `${diff} days\nbefore\n1-year anniversary`;
     }
 
-    // Background color by time of day
-    function updateBackgroundOverlay() {
+    function updateOverlayColor() {
       const hour = new Date().getHours();
-      const body = document.body;
-      body.style.backgroundColor = '';
-
+      const overlay = document.body.querySelector("body::before");
+      let bg = "";
       if (hour >= 5 && hour < 11) {
-        body.style.backgroundColor = "#FFE7D6";
+        bg = "#FFE7D6";
       } else if (hour >= 11 && hour < 17) {
-        body.style.backgroundColor = "#D6FFE2";
+        bg = "#D6FFE2";
       } else if (hour >= 17 && hour < 21) {
-        body.style.backgroundColor = "#E8D6FF";
+        bg = "#E8D6FF";
       } else {
-        body.style.backgroundColor = "rgba(46, 0, 92, 0.4)";
+        bg = "rgba(46, 0, 92, 0.4)";
       }
+      document.body.style.setProperty('--overlay', bg);
+      document.querySelector("body::before")?.style?.setProperty("background-color", bg);
     }
+
+    // Trail
+    document.addEventListener("mousemove", (e) => {
+      const heart = document.createElement("div");
+      heart.className = "heart-trail";
+      heart.style.left = `${e.clientX}px`;
+      heart.style.top = `${e.clientY}px`;
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 1500);
+    });
 
     updateDuration();
     updateTimeZones();
     updateCountdown();
-    updateBackgroundOverlay();
+    updateOverlayColor();
     setInterval(updateTimeZones, 60000);
-
-    // Heart cursor trail
-    document.addEventListener("mousemove", (e) => {
-      const heart = document.createElement("div");
-      heart.classList.add("heart");
-      heart.style.left = `${e.clientX}px`;
-      heart.style.top = `${e.clientY}px`;
-      heart.textContent = "💖";
-      document.body.appendChild(heart);
-      setTimeout(() => heart.remove(), 2000);
-    });
   </script>
 </body>
 </html>
