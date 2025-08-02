@@ -8,7 +8,7 @@
   <style>
     body {
       font-family: 'Patrick Hand', cursive;
-      background: white url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctorbg.png') no-repeat center center fixed;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctorbg.png') no-repeat center center fixed;
       background-size: cover;
       margin: 0;
       padding: 120px 40px 40px;
@@ -30,7 +30,7 @@
       top: 0;
       left: 0;
       right: 0;
-      background: rgba(255, 255, 255, 0.9);
+      background: white;
       z-index: 100;
       padding: 20px 40px 10px;
       border-bottom: 1px solid #ccc;
@@ -40,9 +40,9 @@
     }
 
     .back-button {
-      position: absolute;
-      top: 20px;
-      left: 20px;
+      position: fixed;
+      top: 10px;
+      left: 10px;
       padding: 10px 20px;
       background: #d2b4de;
       color: white;
@@ -50,6 +50,7 @@
       text-decoration: none;
       font-weight: bold;
       transition: background 0.3s ease;
+      z-index: 200;
     }
 
     .back-button:hover {
@@ -130,7 +131,7 @@
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-button">← Back to Home</a>
+  <a href="index.html" class="back-button">&larr; Back to Home</a>
 
   <div class="fixed-form">
     <h1>✅ What to Tell the Doctor</h1>
