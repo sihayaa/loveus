@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>What to Tell the Doctor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <style>
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: white;
+      margin: 0;
+      padding: 40px;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    h1 {
+      color: #2e3a59;
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .checklist {
+      width: 100%;
+      max-width: 600px;
+    }
+
+    .checklist-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px;
+      margin-bottom: 8px;
+      background-color: #f0f4ff;
+      border-radius: 8px;
+    }
+
+    .checklist-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-grow: 1;
+    }
+
+    .checked span {
+      text-decoration: line-through;
+      color: #999;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 100%;
+      max-width: 600px;
+      margin-top: 20px;
+      margin-bottom: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    button {
+      padding: 8px 14px;
+      margin-left: 5px;
+      background-color: #4f6cff;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    .delete-btn {
+      background-color: #ff5c5c;
+    }
+
+    .fall-item {
+      position: fixed;
+      top: -40px;
+      font-size: 1.4em;
+      animation: fallItem 2s ease-out forwards;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    @keyframes fallItem {
+      0% {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(100vh) scale(0.7);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <h1>✅ What to Tell the Doctor</h1>
+
+  <div class="checklist" id="checklist"></div>
+
+  <form onsubmit="addItem(event)">
+    <input type="text" id="newItem" placeholder="Add something to talk about...">
+    <button type="submit">Add</button>
+  </form>
+
+  <script>
+    const client = window.supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
+
+    const checklist = document.getElementById('checklist');
+    const newItemInput = document.getElementById('newItem');
+
+    async function loadItems() {
+      const { data, error } = await client
+        .from('doctor_checklist')
+        .select('*')
+        .eq('user_id', 'default-user')
+        .order('id');
+
+      if (!error) {
+        checklist.innerHTML = '';
+        data.forEach(addItemToDOM);
+      }
+    }
+
+    async function toggleItem(id, current) {
+      await client
+        .from('doctor_checklist')
+        .update({ checked: !current })
+        .eq('id', id);
+    }
+
+    async function deleteItem(id) {
+      await client
+        .from('doctor_checklist')
+        .delete()
+        .eq('id', id);
+    }
+
+    async function editItem(id, text) {
+      const newText = prompt("Edit this item:", text);
+      if (newText !== null && newText.trim() !== '') {
+        await client.from('doctor_checklist').update({ text: newText }).eq('id', id);
+      }
+    }
+
+    function addItemToDOM(item) {
+      if (document.getElementById(`item-${item.id}`)) return;
+
+      const div = document.createElement('div');
+      div.className = 'checklist-item';
+      div.id = `item-${item.id}`;
+      if (item.checked) div.classList.add('checked');
+
+      const left = document.createElement('div');
+      left.className = 'checklist-left';
+
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.checked = item.checked;
+      checkbox.onclick = async () => {
+        await toggleItem(item.id, item.checked);
+        loadItems();
+      };
+
+      const span = document.createElement('span');
+      span.textContent = item.text;
+
+      left.appendChild(checkbox);
+      left.appendChild(span);
+      div.appendChild(left);
+
+      const editBtn = document.createElement('button');
+      editBtn.textContent = 'Edit';
+      editBtn.onclick = async () => {
+        await editItem(item.id, item.text);
+        loadItems();
+      };
+
+      const delBtn = document.createElement('button');
+      delBtn.textContent = 'Delete';
+      delBtn.className = 'delete-btn';
+      delBtn.onclick = async () => {
+        await deleteItem(item.id);
+        loadItems();
+      };
+
+      div.appendChild(editBtn);
+      div.appendChild(delBtn);
+
+      checklist.appendChild(div);
+    }
+
+    function dropEffect() {
+      const drop = document.createElement('div');
+      drop.className = 'fall-item';
+      drop.textContent = '💊';
+      drop.style.left = Math.random() * 100 + 'vw';
+      document.body.appendChild(drop);
+      setTimeout(() => drop.remove(), 2500);
+    }
+
+    async function addItem(e) {
+      e.preventDefault();
+      const text = newItemInput.value.trim();
+      if (!text) return;
+
+      const { data, error } = await client.from('doctor_checklist').insert([
+        { user_id: 'default-user', text, checked: false }
+      ]);
+
+      if (!error) {
+        dropEffect();
+        newItemInput.value = '';
+        loadItems();
+      }
+    }
+
+    client.channel('doctor_checklist')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
+      .subscribe();
+
+    loadItems();
+  </script>
+</body>
+</html>
