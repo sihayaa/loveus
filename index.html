@@ -16,17 +16,6 @@
       overflow-x: hidden;
     }
 
-    /* mood overlay */
-    #overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: -1;
-      pointer-events: none;
-    }
-
     h1 {
       font-family: 'Great Vibes', cursive;
       font-size: 3.4em;
@@ -56,17 +45,6 @@
       font-weight: bold;
       font-size: 1.9em;
       text-shadow: 0 0 6px #4a004a, 0 0 10px #4a004a;
-    }
-
-    #countdown-box {
-      margin-top: 20px;
-      background: rgba(255,255,255,0.2);
-      backdrop-filter: blur(10px);
-      padding: 10px 16px;
-      display: inline-block;
-      border-radius: 14px;
-      font-size: 1em;
-      box-shadow: 0 0 10px #d2b4de;
     }
 
     button {
@@ -113,6 +91,11 @@
       object-fit: cover;
     }
 
+    .album-icon:nth-of-type(1) { top: 100px; }
+    .album-icon:nth-of-type(2) { top: 200px; }
+    .album-icon:nth-of-type(3) { top: 300px; }
+    .album-icon:nth-of-type(4) { top: 400px; }
+
     #timezone-box {
       position: fixed;
       top: 40px;
@@ -141,55 +124,85 @@
       margin: 6px 0;
       font-size: 1em;
       color: #111;
-      text-shadow:
-        0 0 3px #4a004a,
-        0 0 6px #4a004a,
-        0 0 9px #4a004a;
+      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a;
     }
 
     .tz-label {
       font-weight: bold;
       color: #111;
-      text-shadow:
-        0 0 3px #4a004a,
-        0 0 6px #4a004a,
-        0 0 9px #4a004a;
+      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a;
+    }
+
+    #countdown-box {
+      position: fixed;
+      top: 180px;
+      right: 40px;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 18px;
+      width: 220px;
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 0 12px #f5b3f5, 4px 4px 12px rgba(0, 0, 0, 0.3);
+      text-align: center;
+      z-index: 5;
+    }
+
+    #countdown-box .count-number {
+      font-size: 1.6em;
+      font-weight: bold;
+      color: #ffecf7;
+      text-shadow: 0 0 8px #a027a0;
+    }
+
+    #countdown-box .count-label {
+      font-size: 1em;
+      color: #f8e5f8;
+      text-shadow: 0 0 6px #a027a0;
+    }
+
+    canvas#heart-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      pointer-events: none;
     }
   </style>
 </head>
 <body>
-  <div id="overlay"></div>
-
   <h1>Started Dating: October 13, 2024</h1>
   <div id="duration-block">
     <span id="duration-label">Together for: </span>
     <span id="duration-value">loading...</span>
   </div>
-
-  <div id="countdown-box">Loading countdown...</div>
-
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <div class="album-icon" style="top: 100px;" onclick="window.location.href='album.html'">
-    <img src="album-icon.png" alt="Album Icon">
-  </div>
-  <div class="album-icon" style="top: 200px;" onclick="window.location.href='mandarin.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
-  </div>
-  <div class="album-icon" style="top: 300px;" onclick="window.location.href='chatwall.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
-  </div>
-  <div class="album-icon" style="top: 400px;" onclick="window.location.href='doctor.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
-  </div>
+  <!-- Icons -->
+  <div class="album-icon" onclick="location.href='album.html'"><img src="album-icon.png" alt="Album Icon"></div>
+  <div class="album-icon" onclick="location.href='mandarin.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon"></div>
+  <div class="album-icon" onclick="location.href='chatwall.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon"></div>
+  <div class="album-icon" onclick="location.href='doctor.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon"></div>
 
+  <!-- Timezone Box -->
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
     <div class="tz-line"><span class="tz-label">🌇 Manila:</span> <span id="manila-time">loading...</span></div>
   </div>
+
+  <!-- Countdown Box -->
+  <div id="countdown-box">
+    <div class="count-number" id="countdown-number">loading...</div>
+    <div class="count-label">before</div>
+    <div class="count-label">1-year anniversary</div>
+  </div>
+
+  <!-- Hearts Cursor Canvas -->
+  <canvas id="heart-canvas"></canvas>
 
   <script>
     const startDate = new Date('2024-10-13');
@@ -209,75 +222,72 @@
       document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
     }
 
-    const anniversaryDate = new Date('2025-10-13');
-    const daysLeft = Math.ceil((anniversaryDate - today) / (1000 * 60 * 60 * 24));
-    document.getElementById('countdown-box').textContent = daysLeft > 0 ? `${daysLeft} days before 1-year anniversary` : '🎉 1 year anniversary today!';
-
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
-
-      const vegasTime = new Date().toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles', ...options
-      });
-
-      const manilaTime = new Date().toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila', ...options
-      });
-
+      const vegasTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
+      const manilaTime = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', ...options });
       document.getElementById('vegas-time').textContent = vegasTime;
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
-    updateTimeZones();
-    setInterval(updateTimeZones, 60000);
-
-    const hour = new Date().getHours();
-    let overlay = document.getElementById('overlay');
-    if (hour >= 5 && hour < 11) overlay.style.background = '#FFE7D6cc';
-    else if (hour >= 11 && hour < 17) overlay.style.background = '#D6FFE2cc';
-    else if (hour >= 17 && hour < 21) overlay.style.background = '#E8D6FFcc';
-    else overlay.style.background = '#2E005C99';
-
-    document.body.addEventListener('mousemove', e => {
-      const heart = document.createElement('div');
-      heart.textContent = '💜';
-      heart.style.position = 'absolute';
-      heart.style.left = e.pageX + 'px';
-      heart.style.top = e.pageY + 'px';
-      heart.style.pointerEvents = 'none';
-      heart.style.opacity = 1;
-      heart.style.fontSize = '16px';
-      heart.style.transition = 'transform 1s ease, opacity 1s ease';
-      document.body.appendChild(heart);
-      setTimeout(() => {
-        heart.style.transform = 'translateY(-30px)';
-        heart.style.opacity = 0;
-        setTimeout(() => heart.remove(), 1000);
-      }, 0);
-    });
-
-    setInterval(() => {
-      const fall = document.createElement('div');
-      fall.textContent = '💜';
-      fall.style.position = 'fixed';
-      fall.style.left = Math.random() * window.innerWidth + 'px';
-      fall.style.top = '-20px';
-      fall.style.fontSize = '18px';
-      fall.style.opacity = 0.5;
-      fall.style.pointerEvents = 'none';
-      fall.style.zIndex = 0;
-      fall.style.animation = 'fall 6s linear forwards';
-      document.body.appendChild(fall);
-      setTimeout(() => fall.remove(), 6000);
-    }, 500);
-  </script>
-  <style>
-    @keyframes fall {
-      to {
-        transform: translateY(120vh);
-        opacity: 0;
+    function updateCountdown() {
+      const anniversary = new Date('2025-10-13');
+      const today = new Date();
+      const diff = Math.ceil((anniversary - today) / (1000 * 60 * 60 * 24));
+      const box = document.getElementById('countdown-number');
+      if (diff > 0) {
+        box.textContent = `${diff} days`;
+      } else {
+        box.textContent = `Happy 💖`;
+        document.querySelectorAll('.count-label')[0].textContent = 'Anniversary';
+        document.querySelectorAll('.count-label')[1].textContent = '';
       }
     }
-  </style>
+
+    updateTimeZones();
+    updateCountdown();
+    setInterval(updateTimeZones, 60000);
+
+    // Cursor trailing hearts
+    const canvas = document.getElementById('heart-canvas');
+    const ctx = canvas.getContext('2d');
+    let hearts = [];
+
+    function resizeCanvas() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+
+    document.addEventListener('mousemove', e => {
+      for (let i = 0; i < 3; i++) {
+        hearts.push({
+          x: e.clientX,
+          y: e.clientY,
+          size: Math.random() * 8 + 4,
+          alpha: 1,
+          dx: (Math.random() - 0.5) * 2,
+          dy: Math.random() * -2 - 1,
+        });
+      }
+    });
+
+    function drawHearts() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      hearts.forEach((h, i) => {
+        ctx.globalAlpha = h.alpha;
+        ctx.font = `${h.size}px serif`;
+        ctx.fillStyle = 'pink';
+        ctx.fillText('❤', h.x, h.y);
+        h.x += h.dx;
+        h.y += h.dy;
+        h.alpha -= 0.02;
+        if (h.alpha <= 0) hearts.splice(i, 1);
+      });
+      requestAnimationFrame(drawHearts);
+    }
+    drawHearts();
+  </script>
 </body>
 </html>
