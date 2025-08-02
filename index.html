@@ -269,13 +269,13 @@ const hour = new Date(vegasTime).getHours();
       let color;
 
       if (hour >= 6 && hour < 12) {
-        color = 'rgba(255, 231, 214, 0.25)'; // Morning peach
+        color = 'rgba(255, 231, 214, 0.35)'; // Morning peach
       } else if (hour >= 12 && hour < 18) {
-        color = 'rgba(214, 255, 226, 0.25)'; // Afternoon mint (darker)
+        color = 'rgba(214, 255, 226, 0.35)'; // Afternoon mint (darker)
       } else if (hour >= 18 && hour < 22) {
-        color = 'rgba(232, 214, 255, 0.25)'; // Evening lavender
+        color = 'rgba(232, 214, 255, 0.35)'; // Evening lavender
       } else {
-        color = 'rgba(46, 0, 92, 0.25)'; // Night
+        color = 'rgba(10, 15, 60, 0.30)'; // Night (dark blue)
       }
 
       document.getElementById('mood-overlay').style.background = color;
