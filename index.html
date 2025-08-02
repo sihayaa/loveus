@@ -9,26 +9,18 @@
       margin: 0;
       padding: 0;
       height: 100%;
+      font-family: 'Segoe UI', sans-serif;
+      color: #fff;
+      text-align: center;
       overflow-x: hidden;
+      cursor: none;
     }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
       background: url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
       background-size: cover;
-      color: #fff;
-      text-align: center;
-      position: relative;
-    }
-
-    /* Mood overlay */
-    #mood-overlay {
-      position: fixed;
-      inset: 0;
-      background: transparent;
-      z-index: 0;
-      pointer-events: none;
-      transition: background 1s ease;
+      padding: 40px;
+      transition: background-color 1s ease;
     }
 
     h1 {
@@ -36,10 +28,7 @@
       font-size: 3.4em;
       color: white;
       text-shadow: 2px 2px 8px #8e5dd2;
-      margin-top: 40px;
       margin-bottom: 20px;
-      position: relative;
-      z-index: 1;
     }
 
     #duration-block {
@@ -48,14 +37,11 @@
       padding: 12px 20px;
       border-radius: 12px;
       margin-bottom: 30px;
-      position: relative;
-      z-index: 1;
     }
 
     #duration-label {
       font-family: 'Great Vibes', cursive;
       color: #111;
-      font-weight: normal;
       font-size: 1.9em;
       text-shadow: 0 0 6px #4fa981, 0 0 10px #4fa981;
     }
@@ -77,8 +63,6 @@
       cursor: pointer;
       transition: all 0.3s ease;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      position: relative;
-      z-index: 1;
     }
 
     button:hover {
@@ -103,7 +87,7 @@
 
     .album-icon:hover {
       transform: scale(1.07);
-      box-shadow: 0 0 15px #e43fec, 0 0 25px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
+      box-shadow: 0 0 15px #e43fec, 0 0 25px #d2b4de;
     }
 
     .album-icon img {
@@ -113,13 +97,6 @@
       object-fit: cover;
     }
 
-    /* Positioning */
-    .album-icon:nth-child(1) { top: 100px; }
-    .album-icon:nth-child(2) { top: 200px; }
-    .album-icon:nth-child(3) { top: 300px; }
-    .album-icon:nth-child(4) { top: 400px; }
-
-    /* Timezone box */
     #timezone-box {
       position: fixed;
       top: 40px;
@@ -129,9 +106,7 @@
       border-radius: 20px;
       padding: 18px 22px;
       width: 220px;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 0 12px #d2b4de;
       text-align: left;
       z-index: 5;
     }
@@ -139,7 +114,7 @@
     .tz-header {
       font-family: 'Great Vibes', cursive;
       font-size: 1.6em;
-      color: #ffffff;
+      color: #fff;
       text-shadow: 1px 1px 4px #8e5dd2;
       margin-bottom: 10px;
     }
@@ -148,55 +123,51 @@
       margin: 6px 0;
       font-size: 1em;
       color: #111;
-      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a;
+      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a;
     }
 
     .tz-label {
       font-weight: bold;
       color: #111;
-      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a;
+      text-shadow: 0 0 3px #4a004a;
     }
 
-    /* Anniversary countdown box */
     #countdown-box {
       position: fixed;
-      top: 180px;
+      top: 200px;
       right: 40px;
-      background: rgba(255,255,255,0.6);
-      backdrop-filter: blur(6px);
-      padding: 14px;
-      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.25);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 18px;
       width: 220px;
-      font-size: 1.2em;
-      color: #2c003e;
-      box-shadow: 0 0 12px #e476e9, 2px 2px 10px rgba(0,0,0,0.2);
-      line-height: 1.5;
+      box-shadow: 0 0 12px #d2b4de;
+      font-size: 1.3em;
+      line-height: 1.4em;
+      text-shadow: 0 0 6px #4a004a;
       font-weight: bold;
-      z-index: 5;
-      text-shadow: 0 0 3px #e43fec;
+      white-space: pre-line;
     }
 
-    /* Cursor Hearts */
+    /* Heart trail */
     .heart {
-      position: fixed;
-      width: 10px;
-      height: 10px;
-      background: pink;
-      border-radius: 50%;
+      position: absolute;
+      font-size: 14px;
       pointer-events: none;
-      z-index: 9999;
-      animation: floatUp 1s ease-out forwards;
+      color: #ff84b7;
+      opacity: 0.7;
+      animation: float 2s linear forwards;
     }
 
-    @keyframes floatUp {
-      0% { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-30px) scale(1.6); opacity: 0; }
+    @keyframes float {
+      to {
+        transform: translateY(-100px) scale(1.2);
+        opacity: 0;
+      }
     }
   </style>
 </head>
 <body>
-  <div id="mood-overlay"></div>
-
   <h1>Started Dating: October 13, 2024</h1>
 
   <div id="duration-block">
@@ -208,28 +179,28 @@
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Side Icons -->
-  <div class="album-icon" onclick="window.location.href='album.html'">
+  <!-- Sidebar Icons -->
+  <div class="album-icon" style="top: 100px;" onclick="window.location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
   </div>
-  <div class="album-icon" onclick="window.location.href='mandarin.html'">
+  <div class="album-icon" style="top: 200px;" onclick="window.location.href='mandarin.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
   </div>
-  <div class="album-icon" onclick="window.location.href='chatwall.html'">
+  <div class="album-icon" style="top: 300px;" onclick="window.location.href='chatwall.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
   </div>
-  <div class="album-icon" onclick="window.location.href='doctor.html'">
+  <div class="album-icon" style="top: 400px;" onclick="window.location.href='doctor.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
   </div>
 
-  <!-- Timezone Box -->
+  <!-- Timezone -->
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
     <div class="tz-line"><span class="tz-label">🌇 Manila:</span> <span id="manila-time">loading...</span></div>
   </div>
 
-  <!-- Anniversary Countdown -->
+  <!-- Countdown -->
   <div id="countdown-box">loading...</div>
 
   <script>
@@ -238,20 +209,22 @@
     const diffTime = today - startDate;
     const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    // Show duration
-    if (totalDays >= 365) {
-      const years = Math.floor(totalDays / 365);
-      const remaining = totalDays % 365;
-      const months = Math.floor(remaining / 30.44);
-      const days = Math.floor(remaining % 30.44);
-      document.getElementById('duration-value').textContent = `${years} year${years !== 1 ? 's' : ''} ${months} months ${days} days`;
-    } else {
-      const months = Math.floor(totalDays / 30.44);
-      const days = Math.floor(totalDays % 30.44);
-      document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+    // Duration display logic
+    function updateDuration() {
+      if (totalDays >= 365) {
+        const years = Math.floor(totalDays / 365);
+        const remainingDays = totalDays % 365;
+        const months = Math.floor(remainingDays / 30.44);
+        const days = Math.floor(remainingDays % 30.44);
+        document.getElementById('duration-value').textContent = `${years} year${years !== 1 ? 's' : ''} ${months} months ${days} days`;
+      } else {
+        const months = Math.floor(totalDays / 30.44);
+        const days = Math.floor(totalDays % 30.44);
+        document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+      }
     }
 
-    // Timezones
+    // Timezone display
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
       const vegasTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
@@ -259,31 +232,47 @@
       document.getElementById('vegas-time').textContent = vegasTime;
       document.getElementById('manila-time').textContent = manilaTime;
     }
+
+    // Anniversary countdown
+    function updateCountdown() {
+      const nextAnniversary = new Date('2025-10-13');
+      const today = new Date();
+      const diff = Math.ceil((nextAnniversary - today) / (1000 * 60 * 60 * 24));
+      document.getElementById('countdown-box').textContent = `${diff} days\nbefore\n1-year anniversary`;
+    }
+
+    // Background color by time of day
+    function updateBackgroundOverlay() {
+      const hour = new Date().getHours();
+      const body = document.body;
+      body.style.backgroundColor = '';
+
+      if (hour >= 5 && hour < 11) {
+        body.style.backgroundColor = "#FFE7D6";
+      } else if (hour >= 11 && hour < 17) {
+        body.style.backgroundColor = "#D6FFE2";
+      } else if (hour >= 17 && hour < 21) {
+        body.style.backgroundColor = "#E8D6FF";
+      } else {
+        body.style.backgroundColor = "rgba(46, 0, 92, 0.4)";
+      }
+    }
+
+    updateDuration();
     updateTimeZones();
+    updateCountdown();
+    updateBackgroundOverlay();
     setInterval(updateTimeZones, 60000);
 
-    // Countdown
-    const oneYearLater = new Date('2025-10-13');
-    const daysToAnniversary = Math.ceil((oneYearLater - today) / (1000 * 60 * 60 * 24));
-    document.getElementById('countdown-box').innerHTML = `${daysToAnniversary} days<br>before<br>1-year anniversary`;
-
-    // Mood Overlay by hour
-    const hour = new Date().getHours();
-    let overlayColor = 'transparent';
-    if (hour >= 5 && hour < 11) overlayColor = 'rgba(255, 231, 214, 0.4)';      // Morning
-    else if (hour >= 11 && hour < 17) overlayColor = 'rgba(214, 255, 226, 0.4)'; // Afternoon
-    else if (hour >= 17 && hour < 21) overlayColor = 'rgba(232, 214, 255, 0.4)'; // Evening
-    else overlayColor = 'rgba(46, 0, 92, 0.4)';                                  // Night
-    document.getElementById('mood-overlay').style.background = overlayColor;
-
-    // Heart cursor
-    document.addEventListener("mousemove", function(e) {
+    // Heart cursor trail
+    document.addEventListener("mousemove", (e) => {
       const heart = document.createElement("div");
-      heart.className = "heart";
+      heart.classList.add("heart");
       heart.style.left = `${e.clientX}px`;
       heart.style.top = `${e.clientY}px`;
+      heart.textContent = "💖";
       document.body.appendChild(heart);
-      setTimeout(() => heart.remove(), 1000);
+      setTimeout(() => heart.remove(), 2000);
     });
   </script>
 </body>
