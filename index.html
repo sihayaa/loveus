@@ -74,6 +74,12 @@
       padding: 6px;
       cursor: pointer;
       z-index: 10;
+      transition: all 0.3s ease;
+    }
+
+    .album-icon:hover {
+      transform: scale(1.07);
+      box-shadow: 0 0 15px #e43fec, 0 0 25px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
     }
 
     .album-icon img {
@@ -85,20 +91,20 @@
 
     /* TIME ZONE BOX */
     #timezone-box {
-  position: fixed;
-  top: 40px;
-  right: 40px;
-  background: rgba(255, 255, 255, 0.2);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 18px 22px;
-  width: 220px;
-  color: white;
-  font-family: 'Segoe UI', sans-serif;
-  box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3);
-  text-align: left;
-  z-index: 5;
-}
+      position: fixed;
+      top: 40px;
+      right: 40px;
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 18px 22px;
+      width: 220px;
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3);
+      text-align: left;
+      z-index: 5;
+    }
 
     .tz-header {
       font-family: 'Great Vibes', cursive;
@@ -109,23 +115,23 @@
     }
 
     .tz-line {
-  margin: 6px 0;
-  font-size: 1em;
-  color: #111; /* base black text */
-  text-shadow:
-    0 0 3px #4a004a,
-    0 0 6px #4a004a,
-    0 0 9px #4a004a;
-}
+      margin: 6px 0;
+      font-size: 1em;
+      color: #111;
+      text-shadow:
+        0 0 3px #4a004a,
+        0 0 6px #4a004a,
+        0 0 9px #4a004a;
+    }
 
-.tz-label {
-  font-weight: bold;
-  color: #111;
-  text-shadow:
-    0 0 3px #4a004a,
-    0 0 6px #4a004a,
-    0 0 9px #4a004a;
-}
+    .tz-label {
+      font-weight: bold;
+      color: #111;
+      text-shadow:
+        0 0 3px #4a004a,
+        0 0 6px #4a004a,
+        0 0 9px #4a004a;
+    }
   </style>
 </head>
 <body>
