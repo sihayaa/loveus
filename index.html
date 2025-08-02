@@ -264,7 +264,8 @@
     }
 
     function applyMoodOverlay() {
-      const hour = new Date().getHours();
+     const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+const hour = new Date(vegasTime).getHours();
       let color;
 
       if (hour >= 6 && hour < 12) {
