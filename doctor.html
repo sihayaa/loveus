@@ -10,7 +10,7 @@
       font-family: 'Patrick Hand', cursive;
       background: white;
       margin: 0;
-      padding: 40px;
+      padding: 120px 40px 40px;
       color: #333;
       display: flex;
       flex-direction: column;
@@ -21,6 +21,21 @@
       color: #2e3a59;
       font-size: 36px;
       margin-bottom: 20px;
+      margin-top: 0;
+    }
+
+    .fixed-form {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      z-index: 100;
+      padding: 20px 40px 10px;
+      border-bottom: 1px solid #ccc;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .checklist {
@@ -54,8 +69,7 @@
       padding: 10px;
       width: 100%;
       max-width: 600px;
-      margin-top: 20px;
-      margin-bottom: 10px;
+      margin-top: 10px;
       border: 1px solid #ccc;
       border-radius: 8px;
       font-family: 'Patrick Hand', cursive;
@@ -63,7 +77,7 @@
 
     button {
       padding: 8px 14px;
-      margin-left: 5px;
+      margin-top: 10px;
       background-color: #4f6cff;
       color: white;
       border: none;
@@ -77,35 +91,36 @@
     }
 
     .fall-item {
-  position: fixed;
-  font-size: 1.4em;
-  animation: fallItem var(--duration, 3s) ease-in forwards;
-  pointer-events: none;
-  z-index: 999;
-  opacity: 0.9;
-}
+      position: fixed;
+      font-size: 1.4em;
+      animation: fallItem var(--duration, 3s) ease-in forwards;
+      pointer-events: none;
+      z-index: 999;
+      opacity: 0.9;
+    }
 
-@keyframes fallItem {
-  0% {
-    transform: translateX(0) translateY(0) rotate(0);
-    opacity: 1;
-  }
-  100% {
-    transform: translateX(var(--drift, 0)) translateY(100vh) rotate(720deg);
-    opacity: 0;
-  }
-}
+    @keyframes fallItem {
+      0% {
+        transform: translateX(0) translateY(0) rotate(0);
+        opacity: 1;
+      }
+      100% {
+        transform: translateX(var(--drift, 0)) translateY(100vh) rotate(720deg);
+        opacity: 0;
+      }
+    }
   </style>
 </head>
 <body>
-  <h1>✅ What to Tell the Doctor</h1>
+  <div class="fixed-form">
+    <h1>✅ What to Tell the Doctor</h1>
+    <form onsubmit="addItem(event)">
+      <input type="text" id="newItem" placeholder="Add something to talk about...">
+      <button type="submit">Add</button>
+    </form>
+  </div>
 
   <div class="checklist" id="checklist"></div>
-
-  <form onsubmit="addItem(event)">
-    <input type="text" id="newItem" placeholder="Add something to talk about...">
-    <button type="submit">Add</button>
-  </form>
 
   <script>
     const client = window.supabase.createClient(
@@ -197,37 +212,28 @@
     }
 
     function dropEffect() {
-  const emojis = ['💊', '🧬', '🩺', '💉'];
-  const count = 30; // increase for denser effect
+      const emojis = ['💊', '🧬', '🩺', '💉'];
+      const count = 60; // denser effect
 
-  for (let i = 0; i < count; i++) {
-    const drop = document.createElement('div');
-    drop.className = 'fall-item';
-    drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      for (let i = 0; i < count; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'fall-item';
+        drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
 
-    // Random start X and Y
-    drop.style.left = Math.random() * 100 + 'vw';
-    drop.style.top = -Math.random() * 200 + 'px';
+        drop.style.left = Math.random() * 100 + 'vw';
+        drop.style.top = -Math.random() * 200 + 'px';
+        drop.style.transform = `rotate(${Math.random() * 360}deg)`;
+        const size = 16 + Math.random() * 30;
+        drop.style.fontSize = size + 'px';
+        const duration = 2 + Math.random() * 3;
+        drop.style.animationDuration = duration + 's';
+        drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 50}vw`);
 
-    // Random rotation and spin
-    drop.style.transform = `rotate(${Math.random() * 360}deg)`;
+        document.body.appendChild(drop);
+        setTimeout(() => drop.remove(), duration * 1000 + 1000);
+      }
+    }
 
-    // Random size
-    const size = 16 + Math.random() * 30;
-    drop.style.fontSize = size + 'px';
-
-    // Random animation duration and delay
-    const duration = 2 + Math.random() * 3;
-    drop.style.animationDuration = duration + 's';
-
-    // Slight side drift
-    drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 30}vw`);
-
-    document.body.appendChild(drop);
-
-    setTimeout(() => drop.remove(), duration * 1000 + 1000);
-  }
-}
     async function addItem(e) {
       e.preventDefault();
       const message = newItemInput.value.trim();
