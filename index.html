@@ -13,22 +13,25 @@
       color: #fff;
       text-align: center;
       overflow-x: hidden;
-      cursor: none;
     }
 
     body {
       background: url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
       background-size: cover;
       padding: 40px;
+      position: relative;
     }
 
-    body::before {
+    #overlay {
       content: "";
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      z-index: -1;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
       pointer-events: none;
+      background-color: transparent;
       transition: background-color 1s ease;
     }
 
@@ -38,6 +41,8 @@
       color: white;
       text-shadow: 2px 2px 8px #8e5dd2;
       margin-bottom: 20px;
+      position: relative;
+      z-index: 1;
     }
 
     #duration-block {
@@ -46,6 +51,8 @@
       padding: 12px 20px;
       border-radius: 12px;
       margin-bottom: 30px;
+      position: relative;
+      z-index: 1;
     }
 
     #duration-label {
@@ -72,6 +79,8 @@
       cursor: pointer;
       transition: all 0.3s ease;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      position: relative;
+      z-index: 1;
     }
 
     button:hover {
@@ -106,18 +115,30 @@
       object-fit: cover;
     }
 
-    #timezone-box {
+    #timezone-box, #countdown-box {
       position: fixed;
-      top: 40px;
       right: 40px;
       background: rgba(255, 255, 255, 0.2);
       backdrop-filter: blur(10px);
       border-radius: 20px;
-      padding: 18px 22px;
+      padding: 18px;
       width: 220px;
       box-shadow: 0 0 12px #d2b4de;
-      text-align: left;
+      font-size: 1.3em;
+      line-height: 1.4em;
+      text-shadow: 0 0 6px #4a004a;
+      font-weight: bold;
+      white-space: pre-line;
       z-index: 5;
+    }
+
+    #timezone-box {
+      top: 40px;
+      text-align: left;
+    }
+
+    #countdown-box {
+      top: 230px;
     }
 
     .tz-header {
@@ -132,94 +153,82 @@
       margin: 6px 0;
       font-size: 1em;
       color: #111;
-      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a;
+      text-shadow: 0 0 3px #4a004a;
     }
 
     .tz-label {
       font-weight: bold;
       color: #111;
-      text-shadow: 0 0 3px #4a004a;
     }
 
-    #countdown-box {
+    .cursor-heart {
       position: fixed;
-      top: 230px;
-      right: 40px;
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 18px;
-      width: 220px;
-      box-shadow: 0 0 12px #d2b4de;
-      font-size: 1.3em;
-      line-height: 1.4em;
-      text-shadow: 0 0 6px #4a004a;
-      font-weight: bold;
-      white-space: pre-line;
-    }
-
-    .heart-trail {
-      position: absolute;
-      width: 8px;
-      height: 8px;
+      width: 12px;
+      height: 12px;
+      pointer-events: none;
       background: radial-gradient(circle, #ffcfe2, #ffffff);
       border-radius: 50%;
-      pointer-events: none;
-      animation: floatUp 1.5s ease-out forwards;
+      animation: floatUp 1.2s ease-out forwards;
+      z-index: 999;
       opacity: 0.7;
     }
 
     @keyframes floatUp {
       to {
-        transform: translateY(-100px) scale(1.5);
+        transform: translateY(-60px) scale(1.4);
         opacity: 0;
+      }
+    }
+
+    .falling-heart {
+      position: fixed;
+      top: -20px;
+      font-size: 12px;
+      color: #ffdee9;
+      animation: fall 10s linear infinite;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.2;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(120vh);
       }
     }
   </style>
 </head>
 <body>
+  <div id="overlay"></div>
   <h1>Started Dating: October 13, 2024</h1>
-
   <div id="duration-block">
     <span id="duration-label">Together for: </span>
     <span id="duration-value">loading...</span>
   </div>
-
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Sidebar Icons -->
-  <div class="album-icon" style="top: 100px;" onclick="window.location.href='album.html'">
-    <img src="album-icon.png" alt="Album Icon">
-  </div>
-  <div class="album-icon" style="top: 200px;" onclick="window.location.href='mandarin.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
-  </div>
-  <div class="album-icon" style="top: 300px;" onclick="window.location.href='chatwall.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
-  </div>
-  <div class="album-icon" style="top: 400px;" onclick="window.location.href='doctor.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
-  </div>
+  <div class="album-icon" style="top: 100px;" onclick="window.location.href='album.html'"><img src="album-icon.png"></div>
+  <div class="album-icon" style="top: 200px;" onclick="window.location.href='mandarin.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png"></div>
+  <div class="album-icon" style="top: 300px;" onclick="window.location.href='chatwall.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png"></div>
+  <div class="album-icon" style="top: 400px;" onclick="window.location.href='doctor.html'"><img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png"></div>
 
-  <!-- Timezone Box -->
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
     <div class="tz-line"><span class="tz-label">🌇 Manila:</span> <span id="manila-time">loading...</span></div>
   </div>
 
-  <!-- Countdown -->
   <div id="countdown-box">loading...</div>
 
   <script>
     const startDate = new Date('2024-10-13');
-    const today = new Date();
-    const diffTime = today - startDate;
-    const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
     function updateDuration() {
+      const today = new Date();
+      const diffTime = today - startDate;
+      const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
       if (totalDays >= 365) {
         const years = Math.floor(totalDays / 365);
         const remainingDays = totalDays % 365;
@@ -250,31 +259,33 @@
 
     function updateOverlayColor() {
       const hour = new Date().getHours();
-      const overlay = document.body.querySelector("body::before");
-      let bg = "";
-      if (hour >= 5 && hour < 11) {
-        bg = "#FFE7D6";
-      } else if (hour >= 11 && hour < 17) {
-        bg = "#D6FFE2";
-      } else if (hour >= 17 && hour < 21) {
-        bg = "#E8D6FF";
-      } else {
-        bg = "rgba(46, 0, 92, 0.4)";
-      }
-      document.body.style.setProperty('--overlay', bg);
-      document.querySelector("body::before")?.style?.setProperty("background-color", bg);
+      const overlay = document.getElementById("overlay");
+      if (hour >= 5 && hour < 11) overlay.style.backgroundColor = "#FFE7D6";
+      else if (hour >= 11 && hour < 17) overlay.style.backgroundColor = "#D6FFE2";
+      else if (hour >= 17 && hour < 21) overlay.style.backgroundColor = "#E8D6FF";
+      else overlay.style.backgroundColor = "rgba(46, 0, 92, 0.4)";
     }
 
-    // Trail
     document.addEventListener("mousemove", (e) => {
       const heart = document.createElement("div");
-      heart.className = "heart-trail";
+      heart.className = "cursor-heart";
       heart.style.left = `${e.clientX}px`;
       heart.style.top = `${e.clientY}px`;
       document.body.appendChild(heart);
-      setTimeout(() => heart.remove(), 1500);
+      setTimeout(() => heart.remove(), 1200);
     });
 
+    function spawnFallingHearts() {
+      const heart = document.createElement("div");
+      heart.className = "falling-heart";
+      heart.textContent = "❤";
+      heart.style.left = Math.random() * 100 + "vw";
+      heart.style.fontSize = Math.random() * 10 + 10 + "px";
+      document.body.appendChild(heart);
+      setTimeout(() => heart.remove(), 12000);
+    }
+
+    setInterval(spawnFallingHearts, 800);
     updateDuration();
     updateTimeZones();
     updateCountdown();
