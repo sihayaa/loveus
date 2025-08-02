@@ -283,6 +283,17 @@
       }
     };
 
+    // Keyboard shortcuts: G for Godbrand 💜, S for Sihaya 💚
+    input.addEventListener('keydown', function (e) {
+      if (e.key.toLowerCase() === 'g') {
+        e.preventDefault();
+        addMessage('boy');
+      } else if (e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        addMessage('girl');
+      }
+    });
+
     client.channel('chatwall')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatwall' }, (payload) => {
         addMessageToDOM(payload.new);
@@ -301,4 +312,3 @@
   </script>
 </body>
 </html>
-
