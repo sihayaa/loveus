@@ -13,9 +13,20 @@
       margin: 0;
       padding: 40px;
       text-align: center;
+      overflow-x: hidden;
     }
 
-    /* enlarged the date started title */
+    /* mood overlay */
+    #overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      pointer-events: none;
+    }
+
     h1 {
       font-family: 'Great Vibes', cursive;
       font-size: 3.4em;
@@ -32,21 +43,30 @@
       margin-bottom: 30px;
     }
 
-    /* “Together for:” bigger with green glow */
     #duration-label {
       font-family: 'Great Vibes', cursive;
       color: #111;
       font-weight: normal;
       font-size: 1.9em;
-      text-shadow: 0 0 6px #4fa981, 0 0 10px #4fa981; /* green glow */
+      text-shadow: 0 0 6px #4fa981, 0 0 10px #4fa981;
     }
 
-    /* date value bigger with dark purple glow */
     #duration-value {
       color: #4fa981;
       font-weight: bold;
       font-size: 1.9em;
-      text-shadow: 0 0 6px #4a004a, 0 0 10px #4a004a; /* dark purple glow */
+      text-shadow: 0 0 6px #4a004a, 0 0 10px #4a004a;
+    }
+
+    #countdown-box {
+      margin-top: 20px;
+      background: rgba(255,255,255,0.2);
+      backdrop-filter: blur(10px);
+      padding: 10px 16px;
+      display: inline-block;
+      border-radius: 14px;
+      font-size: 1em;
+      box-shadow: 0 0 10px #d2b4de;
     }
 
     button {
@@ -67,10 +87,8 @@
       box-shadow: 0 0 15px #fff;
     }
 
-    /* icons hover grow + purple glow */
     .album-icon {
       position: fixed;
-      top: 100px;
       left: 20px;
       width: 80px;
       height: 80px;
@@ -95,7 +113,6 @@
       object-fit: cover;
     }
 
-    /* TIME ZONE BOX */
     #timezone-box {
       position: fixed;
       top: 40px;
@@ -141,36 +158,33 @@
   </style>
 </head>
 <body>
+  <div id="overlay"></div>
+
   <h1>Started Dating: October 13, 2024</h1>
   <div id="duration-block">
     <span id="duration-label">Together for: </span>
     <span id="duration-value">loading...</span>
   </div>
+
+  <div id="countdown-box">Loading countdown...</div>
+
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Album Icon -->
-  <div class="album-icon" onclick="window.location.href='album.html'">
+  <div class="album-icon" style="top: 100px;" onclick="window.location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
   </div>
-
-  <!-- Mandarin Icon -->
   <div class="album-icon" style="top: 200px;" onclick="window.location.href='mandarin.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
   </div>
-
-  <!-- Chat Wall Icon -->
   <div class="album-icon" style="top: 300px;" onclick="window.location.href='chatwall.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
   </div>
-  
-  <!-- Doctor Icon -->
   <div class="album-icon" style="top: 400px;" onclick="window.location.href='doctor.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
   </div>
 
-  <!-- Timezone Box -->
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
@@ -183,7 +197,6 @@
     const diffTime = today - startDate;
     const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
 
-    // if anniversary is reached (365+ days) → convert to years / months / days
     if (totalDays >= 365) {
       const years = Math.floor(totalDays / 365);
       const remainingDays = totalDays % 365;
@@ -191,23 +204,24 @@
       const days = Math.floor(remainingDays % 30.44);
       document.getElementById('duration-value').textContent = `${years} year${years !== 1 ? 's' : ''} ${months} months ${days} days`;
     } else {
-      // regular months + days
       const months = Math.floor(totalDays / 30.44);
       const days = Math.floor(totalDays % 30.44);
       document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
     }
 
+    const anniversaryDate = new Date('2025-10-13');
+    const daysLeft = Math.ceil((anniversaryDate - today) / (1000 * 60 * 60 * 24));
+    document.getElementById('countdown-box').textContent = daysLeft > 0 ? `${daysLeft} days before 1-year anniversary` : '🎉 1 year anniversary today!';
+
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
 
       const vegasTime = new Date().toLocaleString('en-US', {
-        timeZone: 'America/Los_Angeles',
-        ...options
+        timeZone: 'America/Los_Angeles', ...options
       });
 
       const manilaTime = new Date().toLocaleString('en-PH', {
-        timeZone: 'Asia/Manila',
-        ...options
+        timeZone: 'Asia/Manila', ...options
       });
 
       document.getElementById('vegas-time').textContent = vegasTime;
@@ -216,6 +230,54 @@
 
     updateTimeZones();
     setInterval(updateTimeZones, 60000);
+
+    const hour = new Date().getHours();
+    let overlay = document.getElementById('overlay');
+    if (hour >= 5 && hour < 11) overlay.style.background = '#FFE7D6cc';
+    else if (hour >= 11 && hour < 17) overlay.style.background = '#D6FFE2cc';
+    else if (hour >= 17 && hour < 21) overlay.style.background = '#E8D6FFcc';
+    else overlay.style.background = '#2E005C99';
+
+    document.body.addEventListener('mousemove', e => {
+      const heart = document.createElement('div');
+      heart.textContent = '💜';
+      heart.style.position = 'absolute';
+      heart.style.left = e.pageX + 'px';
+      heart.style.top = e.pageY + 'px';
+      heart.style.pointerEvents = 'none';
+      heart.style.opacity = 1;
+      heart.style.fontSize = '16px';
+      heart.style.transition = 'transform 1s ease, opacity 1s ease';
+      document.body.appendChild(heart);
+      setTimeout(() => {
+        heart.style.transform = 'translateY(-30px)';
+        heart.style.opacity = 0;
+        setTimeout(() => heart.remove(), 1000);
+      }, 0);
+    });
+
+    setInterval(() => {
+      const fall = document.createElement('div');
+      fall.textContent = '💜';
+      fall.style.position = 'fixed';
+      fall.style.left = Math.random() * window.innerWidth + 'px';
+      fall.style.top = '-20px';
+      fall.style.fontSize = '18px';
+      fall.style.opacity = 0.5;
+      fall.style.pointerEvents = 'none';
+      fall.style.zIndex = 0;
+      fall.style.animation = 'fall 6s linear forwards';
+      document.body.appendChild(fall);
+      setTimeout(() => fall.remove(), 6000);
+    }, 500);
   </script>
+  <style>
+    @keyframes fall {
+      to {
+        transform: translateY(120vh);
+        opacity: 0;
+      }
+    }
+  </style>
 </body>
 </html>
