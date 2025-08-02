@@ -2,230 +2,264 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mandarin Wall</title>
+  <title>Message Wall</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
     body {
-      font-family: 'Patrick Hand', cursive;
-      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mandabg.png') no-repeat center center fixed;
-      background-size: cover;
       margin: 0;
-      padding: 40px;
+      padding: 0;
+      font-family: 'Patrick Hand', cursive;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/main/ChatGPT%20Image%202023-12-26%20at%201.59.45%20AM.jpg') no-repeat center center fixed;
+      background-size: cover;
       color: #333;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 60px auto 0;
+      padding: 20px;
+      background-color: rgba(255, 255, 255, 0.85);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15);
     }
 
     h1 {
-      color: #8a3d1c;
-      font-size: 36px;
-      margin-bottom: 20px;
+      text-align: center;
+      font-size: 32px;
+      margin-bottom: 10px;
+      color: #6a1b9a;
     }
 
-    .chat-box {
-      width: 100%;
-      max-width: 700px;
-      padding: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      min-height: 200px;
-      margin-bottom: 20px;
-      overflow-y: auto;
-      max-height: 400px;
-
-      /* 👇 Added to hide scrollbar 👇 */
-      scrollbar-width: none;          /* Firefox */
-      -ms-overflow-style: none;       /* IE and Edge */
-    }
-
-    .chat-box::-webkit-scrollbar {
-      display: none;                  /* Chrome, Safari */
-    }
-
-    .chat-message {
-      position: relative;
+    #messages {
       margin-bottom: 15px;
-      padding: 10px 16px;
-      max-width: 80%;
-      word-wrap: break-word;
-      border-radius: 10px;
+      max-height: 400px;
+      overflow-y: auto;
     }
 
-    .boy {
-      color: #6e2fb9;
-      text-align: left;
-      align-self: flex-start;
-      background-color: #f3e7ff;
+    .message {
+      padding: 10px 14px;
+      border-radius: 20px;
+      margin: 8px 0;
+      max-width: 80%;
+      position: relative;
+      word-wrap: break-word;
+      white-space: pre-wrap;
     }
 
     .girl {
-      color: #28a745;
-      text-align: right;
-      align-self: flex-end;
-      background-color: #dcffec;
+      background-color: #d0f5c8;
+      align-self: flex-start;
     }
 
-    .chat-message .delete-btn {
+    .boy {
+      background-color: #e5ccff;
+      align-self: flex-end;
+      margin-left: auto;
+    }
+
+    .delete {
       position: absolute;
       top: 4px;
-      right: 6px;
-      background: transparent;
-      color: #ff5c5c;
-      border: none;
-      font-size: 16px;
-      font-weight: bold;
+      right: 10px;
+      font-size: 12px;
       cursor: pointer;
-      padding: 0;
-      line-height: 1;
-      display: none;
+      color: #888;
     }
 
-    .chat-message:hover .delete-btn {
-      display: block;
+    .input-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    textarea {
+      padding: 10px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      resize: none;
+      font-family: 'Patrick Hand', cursive;
     }
 
     .controls {
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
-      gap: 10px;
-    }
-
-    input {
-      padding: 10px;
-      width: 300px;
-      border: none;
-      border-radius: 8px;
-      font-family: 'Patrick Hand', cursive;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 10px;
     }
 
     button {
-      padding: 10px 20px;
-      background-color: #b065d9;
-      color: white;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
+      padding: 8px 20px;
+      font-size: 16px;
       font-family: 'Patrick Hand', cursive;
-      transition: background-color 0.2s ease;
+      border-radius: 20px;
+      border: none;
+      background-color: #ba68c8;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s;
     }
 
     button:hover {
-      background-color: #9a4bcc;
+      background-color: #9c27b0;
     }
 
-    .back-button {
+    .toggle-container {
+      display: flex;
+      justify-content: center;
+      margin-top: 8px;
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
       position: absolute;
-      top: 20px;
-      left: 20px;
-      background-color: #d1b3e0;
-      color: #4b2354;
-      padding: 8px 14px;
-      border-radius: 10px;
-      text-decoration: none;
+      cursor: pointer;
+      top: 0; left: 0;
+      right: 0; bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 30px;
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    .toggle-switch input:checked + .slider {
+      background-color: #a47cd4;
+    }
+
+    .toggle-switch input:checked + .slider:before {
+      transform: translateX(24px);
     }
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-button">← Back</a>
-  <h1>Mandarin Wall</h1>
-
-  <div class="chat-box" id="chatBox"></div>
-
-  <div class="controls">
-    <input type="text" id="input" placeholder="Type a message..." />
-    <div class="button-group">
-      <button onclick="addMessage('boy')">Send as Godbrand 💜</button>
-      <button onclick="addMessage('girl')">Send as Sihaya 💚</button>
+  <div class="container">
+    <h1>💬 Message Wall</h1>
+    <div id="messages"></div>
+    <div class="input-area">
+      <textarea id="input" rows="3" placeholder="Type a message..."></textarea>
+      <div class="controls">
+        <button onclick="addMessage('girl')">Send as Sihaya 💚</button>
+        <button onclick="addMessage('boy')">Send as Godbrand 💜</button>
+      </div>
+      <div class="toggle-container">
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggleSender">
+          <span class="slider"></span>
+        </label>
+      </div>
     </div>
   </div>
 
   <script>
-    window.onload = () => {
-      const client = window.supabase.createClient(
-        'https://tmjozxcjylcxgemffnoc.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-      );
+    const client = window.supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE2OTk2MzI0MDcsImV4cCI6MjAxNTEwODQwN30.nQdC5S8d9e-OmBrjMiZqYVxUe6_QeV6KjVE8C63MZ6k'
+    );
 
-      const chatBox = document.getElementById('chatBox');
-      const input = document.getElementById('input');
+    const input = document.getElementById('input');
+    const messagesDiv = document.getElementById('messages');
 
-      async function loadMessages() {
-        const { data, error } = await client
-          .from('mandarin_messages')
-          .select('*')
-          .order('created_at', { ascending: true });
+    function addMessageToDOM(msg) {
+      if (document.getElementById(`msg-${msg.id}`)) return;
 
-        if (error) {
-          console.error('Load error:', error);
-          return;
-        }
+      const div = document.createElement('div');
+      div.className = `message ${msg.sender}`;
+      div.id = `msg-${msg.id}`;
+      div.innerHTML = `
+        <span class="delete" onclick="deleteMessage('${msg.id}')">✕</span>
+        ${msg.content}
+      `;
+      messagesDiv.appendChild(div);
+      messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
 
-        chatBox.innerHTML = '';
-        data.forEach(msg => {
-          const div = document.createElement('div');
-          div.className = 'chat-message ' + msg.sender;
-          div.textContent = msg.content;
+    async function addMessage(sender) {
+      const content = input.value.trim();
+      if (!content) return;
 
-          const del = document.createElement('button');
-          del.className = 'delete-btn';
-          del.textContent = '×';
-          del.onclick = () => {
-            deleteMessage(msg.id);
-          };
-          div.appendChild(del);
+      const { data, error } = await client
+        .from('chatwall')
+        .insert([{ content, sender }])
+        .select()
+        .single();
 
-          chatBox.appendChild(div);
-        });
-
-        chatBox.scrollTop = chatBox.scrollHeight;
-      }
-
-      window.addMessage = async function (sender) {
-        const message = input.value.trim();
-        if (message === '') return;
-
-        const { error } = await client.from('mandarin_messages').insert([
-          { sender, content: message }
-        ]);
-
-        if (error) {
-          console.error('Send error:', error);
-        }
-
+      if (error) {
+        console.error('Insert error:', error);
+      } else {
+        addMessageToDOM(data);
         input.value = '';
-        await loadMessages();
-      };
-
-      async function deleteMessage(id) {
-        const { error } = await client
-          .from('mandarin_messages')
-          .delete()
-          .eq('id', id);
-
-        if (error) {
-          console.error('Delete error:', error);
-        }
       }
+    }
 
-      client.channel('realtime:mandarin_messages')
-        .on(
-          'postgres_changes',
-          { event: '*', schema: 'public', table: 'mandarin_messages' },
-          () => loadMessages()
-        )
-        .subscribe();
+    async function deleteMessage(id) {
+      const { error } = await client
+        .from('chatwall')
+        .delete()
+        .eq('id', id);
 
-      loadMessages();
-    };
+      if (error) {
+        console.error('Delete error:', error);
+      } else {
+        const msgElem = document.getElementById(`msg-${id}`);
+        if (msgElem) msgElem.remove();
+      }
+    }
+
+    async function loadMessages() {
+      const { data, error } = await client
+        .from('chatwall')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+      if (!error) {
+        data.forEach(addMessageToDOM);
+      }
+    }
+
+    client
+      .channel('chatwall-db-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'chatwall' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          addMessageToDOM(payload.new);
+        } else if (payload.eventType === 'DELETE') {
+          const msgElem = document.getElementById(`msg-${payload.old.id}`);
+          if (msgElem) msgElem.remove();
+        }
+      })
+      .subscribe();
+
+    // Toggle enter send behavior
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const isGodbrand = document.getElementById('toggleSender').checked;
+        addMessage(isGodbrand ? 'boy' : 'girl');
+      }
+    });
+
+    loadMessages();
   </script>
 </body>
 </html>
