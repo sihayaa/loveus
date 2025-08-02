@@ -239,15 +239,15 @@
     }
 
     async function deleteMessage(id) {
-  const { error } = await supabase
-    .from('messages')
+  const { error } = await client
+    .from('chatwall')
     .delete()
     .eq('id', id);
 
   if (error) {
     console.error('Delete error:', error);
   } else {
-    const msgElem = document.querySelector(`[data-id="${id}"]`);
+    const msgElem = document.getElementById(`msg-${id}`);
     if (msgElem) msgElem.remove();
   }
 }
