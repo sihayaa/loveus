@@ -283,30 +283,27 @@
       }
     };
 
-    // Keyboard shortcuts: G for Godbrand 💜, S for Sihaya 💚
-    input.addEventListener('keydown', function (e) {
-      if (e.key.toLowerCase() === 'g') {
-        e.preventDefault();
-        addMessage('boy');
-      } else if (e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        addMessage('girl');
-      }
-    });
+    // Toggle logic: press Enter to send as Godbrand if toggle ON, else Sihaya
+const toggleContainer = document.createElement('div');
+toggleContainer.style.marginTop = '6px';
+toggleContainer.style.display = 'flex';
+toggleContainer.style.alignItems = 'center';
+toggleContainer.style.justifyContent = 'center';
+toggleContainer.innerHTML = `
+  <label>
+    <input type="checkbox" id="toggleSender" style="margin-right: 8px;" />
+    Send as Godbrand 💜 when pressing Enter
+  </label>
+`;
+document.querySelector('.controls').appendChild(toggleContainer);
 
-    client.channel('chatwall')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chatwall' }, (payload) => {
-        addMessageToDOM(payload.new);
-      })
-      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chatwall' }, (payload) => {
-        const msgDiv = document.getElementById(`msg-${payload.old.id}`);
-        if (msgDiv) msgDiv.remove();
-      })
-      .subscribe((status) => {
-        if (status === 'SUBSCRIBED') {
-          console.log('✅ Subscribed to realtime chatwall');
-        }
-      });
+input.addEventListener('keydown', function (e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    const isGodbrand = document.getElementById('toggleSender').checked;
+    addMessage(isGodbrand ? 'boy' : 'girl');
+  }
+});
 
     loadMessages();
   </script>
