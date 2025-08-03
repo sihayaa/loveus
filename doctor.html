@@ -4,7 +4,9 @@
   <meta charset="UTF-8">
   <title>Doctor Checklist & Appointments</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <style>
     * { box-sizing: border-box; }
 
@@ -22,18 +24,13 @@
       top: 0;
       left: 0;
       right: 0;
-      background: transparent;
       padding: 20px 40px 10px;
       display: flex;
       flex-direction: column;
       align-items: center;
     }
 
-    h1 {
-      color: #2e3a59;
-      font-size: 36px;
-      margin: 0 0 10px;
-    }
+    h1 { color: #2e3a59; font-size: 36px; margin: 0 0 10px; }
 
     .back-button {
       position: fixed;
@@ -45,7 +42,6 @@
       border-radius: 10px;
       text-decoration: none;
       font-weight: bold;
-      z-index: 200;
     }
 
     .back-button:hover { background: #b085c6; }
@@ -76,7 +72,7 @@
 
     .checked span { text-decoration: line-through; color: #999; }
 
-    input[type="text"], input[type="datetime-local"] {
+    input[type="text"] {
       padding: 10px;
       width: 100%;
       max-width: 600px;
@@ -99,11 +95,10 @@
 
     .delete-btn { background-color: #ff5c5c; }
 
-    /* Appointments Box */
     .appointment-box {
       position: fixed;
       top: 140px;
-      right: 100px;
+      right: 60px; /* shifted inward */
       width: 320px;
       background: rgba(255,255,255,0.85);
       padding: 20px;
@@ -129,6 +124,16 @@
       margin-top: 8px;
     }
 
+    .flatpickr-confirm {
+      margin-top: 10px;
+      background: #4f6cff;
+      color: white;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      width: 100%;
+    }
   </style>
 </head>
 <body>
@@ -149,7 +154,7 @@
     <h2>📅 Doctor Appointments</h2>
     <form onsubmit="saveAppointment(event)">
       <input type="text" id="appointmentReason" placeholder="Appointment reason..." required>
-      <input type="datetime-local" id="appointmentDate" required>
+      <input type="text" id="appointmentDate" placeholder="Select Date & Time" required>
       <button type="submit">Save</button>
     </form>
     <div id="appointmentList" style="margin-top: 10px;"></div>
@@ -161,27 +166,44 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
-    // Checklist
+    // Initialize flatpickr with Confirm button
+    flatpickr("#appointmentDate", {
+      enableTime: true,
+      dateFormat: "Y-m-d H:i",
+      time_24hr: false,
+      minuteIncrement: 1,
+      onReady: function(selectedDates, dateStr, instance) {
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'flatpickr-confirm';
+
+        confirmBtn.addEventListener('click', () => {
+          instance.close();
+        });
+
+        instance.calendarContainer.appendChild(confirmBtn);
+      }
+    });
+
+    // Checklist logic
     const checklist = document.getElementById('checklist');
     const newItemInput = document.getElementById('newItem');
 
     async function loadItems() {
-      const { data, error } = await client
+      const { data } = await client
         .from('doctor_checklist')
         .select('*')
         .order('created_at', { ascending: true });
 
-      if (!error) {
-        checklist.innerHTML = '';
-        data.forEach(addItemToDOM);
-      }
+      checklist.innerHTML = '';
+      data.forEach(addItemToDOM);
     }
 
     async function addItem(e) {
       e.preventDefault();
       const message = newItemInput.value.trim();
       if (!message) return;
-
       await client.from('doctor_checklist').insert([{ message, checked: false }]);
       newItemInput.value = '';
       loadItems();
@@ -194,7 +216,7 @@
 
     async function editItem(id, currentMessage) {
       const newMessage = prompt("Edit this item:", currentMessage);
-      if (newMessage !== null && newMessage.trim() !== '') {
+      if (newMessage) {
         await client.from('doctor_checklist').update({ message: newMessage }).eq('id', id);
         loadItems();
       }
@@ -240,47 +262,44 @@
       checklist.appendChild(div);
     }
 
-    // Appointments
+    // Appointments logic
     const appointmentReasonInput = document.getElementById('appointmentReason');
     const appointmentDateInput = document.getElementById('appointmentDate');
     const appointmentList = document.getElementById('appointmentList');
     let editingAppointmentId = null;
 
     async function loadAppointments() {
-      const { data, error } = await client
+      const { data } = await client
         .from('doctor_appointments')
         .select('*')
         .order('datetime', { ascending: true });
 
-      if (!error) {
-        appointmentList.innerHTML = '';
-        if (data.length === 0) {
-          appointmentList.innerHTML = `<em>No appointments scheduled.</em>`;
-          return;
-        }
-
-        data.forEach(appt => {
-          const apptDiv = document.createElement('div');
-          apptDiv.className = 'appointment-item';
-
-          const apptTime = new Date(appt.datetime).toLocaleString();
-          apptDiv.innerHTML = `
-            <div><strong>${appt.reason}</strong></div>
-            <div>${apptTime}</div>
-            <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
-            <button class="delete-btn" onclick="deleteAppointment('${appt.id}')">Delete</button>
-          `;
-
-          appointmentList.appendChild(apptDiv);
-        });
+      appointmentList.innerHTML = '';
+      if (!data.length) {
+        appointmentList.innerHTML = `<em>No appointments scheduled.</em>`;
+        return;
       }
+
+      data.forEach(appt => {
+        const apptDiv = document.createElement('div');
+        apptDiv.className = 'appointment-item';
+        const apptTime = new Date(appt.datetime).toLocaleString();
+
+        apptDiv.innerHTML = `
+          <div><strong>${appt.reason}</strong></div>
+          <div>${apptTime}</div>
+          <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
+          <button class="delete-btn" onclick="deleteAppointment('${appt.id}')">Delete</button>
+        `;
+
+        appointmentList.appendChild(apptDiv);
+      });
     }
 
     async function saveAppointment(e) {
       e.preventDefault();
       const reason = appointmentReasonInput.value.trim();
       const datetime = appointmentDateInput.value;
-
       if (!reason || !datetime) return;
 
       if (editingAppointmentId) {
@@ -297,7 +316,7 @@
 
     function editAppointment(id, reason, datetime) {
       appointmentReasonInput.value = reason;
-      appointmentDateInput.value = datetime.slice(0, 16);
+      appointmentDateInput._flatpickr.setDate(datetime, true);
       editingAppointmentId = id;
     }
 
