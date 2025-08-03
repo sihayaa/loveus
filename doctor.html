@@ -2,13 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>What to Tell the Doctor</title>
+  <title>Doctor Checklist & Appointments</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       font-family: 'Patrick Hand', cursive;
@@ -25,7 +23,6 @@
       left: 0;
       right: 0;
       background: transparent;
-      z-index: 100;
       padding: 20px 40px 10px;
       display: flex;
       flex-direction: column;
@@ -35,8 +32,7 @@
     h1 {
       color: #2e3a59;
       font-size: 36px;
-      margin-bottom: 10px;
-      margin-top: 0;
+      margin: 0 0 10px;
     }
 
     .back-button {
@@ -49,13 +45,10 @@
       border-radius: 10px;
       text-decoration: none;
       font-weight: bold;
-      transition: background 0.3s ease;
       z-index: 200;
     }
 
-    .back-button:hover {
-      background: #b085c6;
-    }
+    .back-button:hover { background: #b085c6; }
 
     .checklist {
       width: 100%;
@@ -81,13 +74,9 @@
       flex-grow: 1;
     }
 
-    .checked span {
-      text-decoration: line-through;
-      color: #999;
-    }
+    .checked span { text-decoration: line-through; color: #999; }
 
-    input[type="text"],
-    input[type="datetime-local"] {
+    input[type="text"], input[type="datetime-local"] {
       padding: 10px;
       width: 100%;
       max-width: 600px;
@@ -108,37 +97,15 @@
       font-family: 'Patrick Hand', cursive;
     }
 
-    .delete-btn {
-      background-color: #ff5c5c;
-    }
+    .delete-btn { background-color: #ff5c5c; }
 
-    .fall-item {
-      position: fixed;
-      font-size: 1.4em;
-      animation: fallItem var(--duration, 3s) ease-in forwards;
-      pointer-events: none;
-      z-index: 999;
-      opacity: 0.9;
-    }
-
-    @keyframes fallItem {
-      0% {
-        transform: translateX(0) translateY(0) rotate(0);
-        opacity: 1;
-      }
-      100% {
-        transform: translateX(var(--drift, 0)) translateY(100vh) rotate(720deg);
-        opacity: 0;
-      }
-    }
-
-    /* APPOINTMENT BOX */
+    /* Appointments Box */
     .appointment-box {
       position: fixed;
       top: 140px;
       right: 20px;
-      width: 300px;
-      background: rgba(255, 255, 255, 0.8);
+      width: 320px;
+      background: rgba(255,255,255,0.85);
       padding: 20px;
       border-radius: 12px;
       box-shadow: 0 4px 8px rgba(0,0,0,0.1);
@@ -150,10 +117,18 @@
       color: #2e3a59;
     }
 
-    #appointmentDisplay button {
-      margin-right: 10px;
-      margin-top: 10px;
+    .appointment-item {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: #f0f4ff;
+      border-radius: 8px;
     }
+
+    .appointment-item button {
+      margin-right: 8px;
+      margin-top: 8px;
+    }
+
   </style>
 </head>
 <body>
@@ -169,14 +144,15 @@
 
   <div class="checklist" id="checklist"></div>
 
-  <!-- Appointment Box on Right -->
+  <!-- Appointments Panel -->
   <div class="appointment-box">
-    <h2>📅 Next Appointment</h2>
+    <h2>📅 Doctor Appointments</h2>
     <form onsubmit="saveAppointment(event)">
+      <input type="text" id="appointmentReason" placeholder="Appointment reason..." required>
       <input type="datetime-local" id="appointmentDate" required>
       <button type="submit">Save</button>
     </form>
-    <div id="appointmentDisplay" style="margin-top: 10px;"></div>
+    <div id="appointmentList" style="margin-top: 10px;"></div>
   </div>
 
   <script>
@@ -185,6 +161,7 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
+    // Checklist
     const checklist = document.getElementById('checklist');
     const newItemInput = document.getElementById('newItem');
 
@@ -200,31 +177,37 @@
       }
     }
 
-    async function toggleItem(id, current) {
-      await client
-        .from('doctor_checklist')
-        .update({ checked: !current })
-        .eq('id', id);
+    async function addItem(e) {
+      e.preventDefault();
+      const message = newItemInput.value.trim();
+      if (!message) return;
+
+      await client.from('doctor_checklist').insert([{ message, checked: false }]);
+      newItemInput.value = '';
+      loadItems();
     }
 
-    async function deleteItem(id) {
-      await client
-        .from('doctor_checklist')
-        .delete()
-        .eq('id', id);
+    async function toggleItem(id, current) {
+      await client.from('doctor_checklist').update({ checked: !current }).eq('id', id);
+      loadItems();
     }
 
     async function editItem(id, currentMessage) {
       const newMessage = prompt("Edit this item:", currentMessage);
       if (newMessage !== null && newMessage.trim() !== '') {
         await client.from('doctor_checklist').update({ message: newMessage }).eq('id', id);
+        loadItems();
       }
+    }
+
+    async function deleteItem(id) {
+      await client.from('doctor_checklist').delete().eq('id', id);
+      loadItems();
     }
 
     function addItemToDOM(item) {
       const div = document.createElement('div');
       div.className = 'checklist-item';
-      div.id = `item-${item.id}`;
       if (item.checked) div.classList.add('checked');
 
       const left = document.createElement('div');
@@ -233,10 +216,7 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.checked = item.checked;
-      checkbox.onclick = async () => {
-        await toggleItem(item.id, item.checked);
-        loadItems();
-      };
+      checkbox.onclick = () => toggleItem(item.id, item.checked);
 
       const span = document.createElement('span');
       span.textContent = item.message;
@@ -247,18 +227,12 @@
 
       const editBtn = document.createElement('button');
       editBtn.textContent = 'Edit';
-      editBtn.onclick = async () => {
-        await editItem(item.id, item.message);
-        loadItems();
-      };
+      editBtn.onclick = () => editItem(item.id, item.message);
 
       const delBtn = document.createElement('button');
       delBtn.textContent = 'Delete';
       delBtn.className = 'delete-btn';
-      delBtn.onclick = async () => {
-        await deleteItem(item.id);
-        loadItems();
-      };
+      delBtn.onclick = () => deleteItem(item.id);
 
       div.appendChild(editBtn);
       div.appendChild(delBtn);
@@ -266,107 +240,74 @@
       checklist.appendChild(div);
     }
 
-    function dropEffect() {
-      const emojis = ['💊', '🧬', '🩺', '💉'];
-      const count = 60;
-
-      for (let i = 0; i < count; i++) {
-        const drop = document.createElement('div');
-        drop.className = 'fall-item';
-        drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        drop.style.left = Math.random() * 100 + 'vw';
-        drop.style.top = -Math.random() * 200 + 'px';
-        drop.style.transform = `rotate(${Math.random() * 360}deg)`;
-        const size = 16 + Math.random() * 30;
-        drop.style.fontSize = size + 'px';
-        const duration = 2 + Math.random() * 3;
-        drop.style.animationDuration = duration + 's';
-        drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 50}vw`);
-        document.body.appendChild(drop);
-        setTimeout(() => drop.remove(), duration * 1000 + 1000);
-      }
-    }
-
-    async function addItem(e) {
-      e.preventDefault();
-      const message = newItemInput.value.trim();
-      if (!message) return;
-
-      const { error } = await client.from('doctor_checklist').insert([
-        { message, checked: false }
-      ]);
-
-      if (!error) {
-        dropEffect();
-        newItemInput.value = '';
-        loadItems();
-      }
-    }
-
-    // APPOINTMENT SYSTEM
+    // Appointments
+    const appointmentReasonInput = document.getElementById('appointmentReason');
     const appointmentDateInput = document.getElementById('appointmentDate');
-    const appointmentDisplay = document.getElementById('appointmentDisplay');
-    let currentAppointmentId = null;
+    const appointmentList = document.getElementById('appointmentList');
+    let editingAppointmentId = null;
 
-    async function loadAppointment() {
+    async function loadAppointments() {
       const { data, error } = await client
         .from('doctor_appointments')
         .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1);
+        .order('datetime', { ascending: true });
 
-      if (!error && data.length > 0) {
-        const appt = data[0];
-        currentAppointmentId = appt.id;
-        const formatted = new Date(appt.datetime).toLocaleString();
-        appointmentDisplay.innerHTML = `
-          <div><strong>${formatted}</strong></div>
-          <button onclick="editAppointment('${appt.id}', '${appt.datetime}')">Edit</button>
-          <button class="delete-btn" onclick="deleteAppointment('${appt.id}')">Delete</button>
-        `;
-      } else {
-        appointmentDisplay.innerHTML = `<em>No upcoming appointments.</em>`;
-        currentAppointmentId = null;
+      if (!error) {
+        appointmentList.innerHTML = '';
+        if (data.length === 0) {
+          appointmentList.innerHTML = `<em>No appointments scheduled.</em>`;
+          return;
+        }
+
+        data.forEach(appt => {
+          const apptDiv = document.createElement('div');
+          apptDiv.className = 'appointment-item';
+
+          const apptTime = new Date(appt.datetime).toLocaleString();
+          apptDiv.innerHTML = `
+            <div><strong>${appt.reason}</strong></div>
+            <div>${apptTime}</div>
+            <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
+            <button class="delete-btn" onclick="deleteAppointment('${appt.id}')">Delete</button>
+          `;
+
+          appointmentList.appendChild(apptDiv);
+        });
       }
     }
 
     async function saveAppointment(e) {
       e.preventDefault();
+      const reason = appointmentReasonInput.value.trim();
       const datetime = appointmentDateInput.value;
-      if (!datetime) return;
 
-      if (currentAppointmentId) {
-        await client.from('doctor_appointments').delete().eq('id', currentAppointmentId);
+      if (!reason || !datetime) return;
+
+      if (editingAppointmentId) {
+        await client.from('doctor_appointments').update({ reason, datetime }).eq('id', editingAppointmentId);
+        editingAppointmentId = null;
+      } else {
+        await client.from('doctor_appointments').insert([{ reason, datetime }]);
       }
 
-      const { error } = await client.from('doctor_appointments').insert([{ datetime }]);
-
-      if (!error) {
-        appointmentDateInput.value = '';
-        loadAppointment();
-      }
+      appointmentReasonInput.value = '';
+      appointmentDateInput.value = '';
+      loadAppointments();
     }
 
-    function editAppointment(id, datetime) {
-      appointmentDateInput.value = datetime.slice(0, 16); // remove seconds
-      currentAppointmentId = id;
+    function editAppointment(id, reason, datetime) {
+      appointmentReasonInput.value = reason;
+      appointmentDateInput.value = datetime.slice(0, 16);
+      editingAppointmentId = id;
     }
 
     async function deleteAppointment(id) {
-      const { error } = await client.from('doctor_appointments').delete().eq('id', id);
-      if (!error) {
-        appointmentDateInput.value = '';
-        loadAppointment();
-      }
+      await client.from('doctor_appointments').delete().eq('id', id);
+      loadAppointments();
     }
 
-    client
-      .channel('doctor_checklist')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
-      .subscribe();
-
     loadItems();
-    loadAppointment();
+    loadAppointments();
   </script>
 </body>
 </html>
