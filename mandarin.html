@@ -234,7 +234,7 @@
           if (containsChinese(msg.content)) {
             const pinyinDiv = document.createElement('div');
             pinyinDiv.className = 'pinyin-line';
-            pinyinDiv.textContent = window.pinyinPro.pinyin(msg.content, { toneType: 'marks' });
+            pinyinDiv.textContent = pinyinPro.pinyin(msg.content, { toneType: 'marks' });
             div.appendChild(pinyinDiv);
           }
 
