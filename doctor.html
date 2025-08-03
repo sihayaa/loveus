@@ -145,10 +145,29 @@
     }
 
     .appointment-item {
+      position: relative;
       margin-bottom: 10px;
-      padding: 10px;
+      padding: 10px 30px 10px 10px;
       background: #f0f4ff;
       border-radius: 8px;
+    }
+
+    .delete-x {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: none;
+      color: #ff4c4c;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+    }
+
+    .delete-x:hover {
+      color: #d11a2a;
     }
 
     .appointment-item button {
@@ -188,7 +207,6 @@
       border-top: 2px solid #AA20AB !important;
     }
 
-    /* Drop effect */
     @keyframes fall {
       to {
         transform: translateY(100vh) translateX(var(--drift)) rotate(720deg);
@@ -368,10 +386,10 @@
         const apptTime = new Date(appt.datetime).toLocaleString();
 
         apptDiv.innerHTML = `
+          <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
           <div><strong>${appt.reason}</strong></div>
           <div>${apptTime}</div>
           <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
-          <button class="delete-btn" onclick="deleteAppointment('${appt.id}')">Delete</button>
         `;
 
         appointmentList.appendChild(apptDiv);
