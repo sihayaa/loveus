@@ -5,16 +5,7 @@
   <title>Mandarin Wall</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
-
-  <!-- pinyin-pro script and style -->
   <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/pinyin-pro.min.js"></script>
-  <style>
-    .pinyin-line {
-      font-size: 12px;
-      color: #0F0C0C;
-      margin-top: 3px;
-    }
-  </style>
 
   <style>
     body {
@@ -178,6 +169,11 @@
       transform: translateX(26px);
       content: "💜";
     }
+    .pinyin-line {
+      font-size: 12px;
+      color: #0F0C0C;
+      margin-top: 3px;
+    }
   </style>
 </head>
 <body>
@@ -210,18 +206,8 @@
       const chatBox = document.getElementById('chatBox');
       const input = document.getElementById('input');
 
-      // Pinyin helper functions
       function containsChinese(str) {
         return /[\u3400-\u9FBF]/.test(str);
-      }
-
-      function attachPinyin(div, text) {
-        if (containsChinese(text)) {
-          const p = document.createElement('div');
-          p.className = 'pinyin-line';
-          p.textContent = window.pinyinPro.pinyin(text, { toneType: 'marks' });
-          div.appendChild(p);
-        }
       }
 
       async function loadMessages() {
@@ -241,12 +227,16 @@
           div.className = 'chat-message ' + msg.sender;
           div.setAttribute('data-id', msg.id);
 
-          // Wrap message content in a separate div so pinyin can be appended below
           const content = document.createElement('div');
           content.textContent = msg.content;
           div.appendChild(content);
 
-          attachPinyin(div, msg.content);
+          if (containsChinese(msg.content)) {
+            const pinyinDiv = document.createElement('div');
+            pinyinDiv.className = 'pinyin-line';
+            pinyinDiv.textContent = window.pinyinPro.pinyin(msg.content, { toneType: 'marks' });
+            div.appendChild(pinyinDiv);
+          }
 
           const del = document.createElement('button');
           del.className = 'delete-btn';
