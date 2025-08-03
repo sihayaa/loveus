@@ -41,11 +41,15 @@
     }
 
     #duration-value {
-      color: #4fa981;
-      font-weight: bold;
-      font-size: 1.9em;
-      text-shadow: 0 0 6px #4a004a, 0 0 10px #4a004a;
-    }
+  color: #4fa981;
+  font-weight: bold;
+  font-size: 1.9em;
+  text-shadow:
+    -1px -1px 0 #000, 1px -1px 0 #000,
+    -1px  1px 0 #000, 1px  1px 0 #000,
+    0 0 6px #4fa981, 0 0 10px #4fa981;
+  animation: pulseGlow 2s ease-in-out infinite;
+}
 
     /* Glowing outline + pulse for duration value */
 #duration-value {
