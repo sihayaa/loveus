@@ -20,19 +20,17 @@
     }
 
     .fixed-form {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: transparent; /* removes the white background */
-  z-index: 100;
-  padding: 20px 40px 10px;
-  border-bottom: none;     /* removes the grey line */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  backdrop-filter: blur(0px); /* optional: keeps background clear */
-}
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: transparent;
+      z-index: 100;
+      padding: 20px 40px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
 
     h1 {
       color: #2e3a59;
@@ -60,11 +58,11 @@
     }
 
     .checklist {
-  width: 100%;
-  max-width: 600px;
-  margin: 0 auto 40px;
-  padding: 200px 20px 0; /* adds space from the top */
-}
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto 40px;
+      padding: 200px 20px 0;
+    }
 
     .checklist-item {
       display: flex;
@@ -88,7 +86,8 @@
       color: #999;
     }
 
-    input[type="text"] {
+    input[type="text"],
+    input[type="datetime-local"] {
       padding: 10px;
       width: 100%;
       max-width: 600px;
@@ -132,6 +131,29 @@
         opacity: 0;
       }
     }
+
+    /* APPOINTMENT BOX */
+    .appointment-box {
+      position: fixed;
+      top: 140px;
+      right: 20px;
+      width: 300px;
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+
+    .appointment-box h2 {
+      margin-top: 0;
+      font-size: 22px;
+      color: #2e3a59;
+    }
+
+    #appointmentDisplay button {
+      margin-right: 10px;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -146,6 +168,16 @@
   </div>
 
   <div class="checklist" id="checklist"></div>
+
+  <!-- Appointment Box on Right -->
+  <div class="appointment-box">
+    <h2>📅 Next Appointment</h2>
+    <form onsubmit="saveAppointment(event)">
+      <input type="datetime-local" id="appointmentDate" required>
+      <button type="submit">Save</button>
+    </form>
+    <div id="appointmentDisplay" style="margin-top: 10px;"></div>
+  </div>
 
   <script>
     const client = window.supabase.createClient(
@@ -242,7 +274,6 @@
         const drop = document.createElement('div');
         drop.className = 'fall-item';
         drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-
         drop.style.left = Math.random() * 100 + 'vw';
         drop.style.top = -Math.random() * 200 + 'px';
         drop.style.transform = `rotate(${Math.random() * 360}deg)`;
@@ -251,7 +282,6 @@
         const duration = 2 + Math.random() * 3;
         drop.style.animationDuration = duration + 's';
         drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 50}vw`);
-
         document.body.appendChild(drop);
         setTimeout(() => drop.remove(), duration * 1000 + 1000);
       }
@@ -273,12 +303,70 @@
       }
     }
 
+    // APPOINTMENT SYSTEM
+    const appointmentDateInput = document.getElementById('appointmentDate');
+    const appointmentDisplay = document.getElementById('appointmentDisplay');
+    let currentAppointmentId = null;
+
+    async function loadAppointment() {
+      const { data, error } = await client
+        .from('doctor_appointments')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(1);
+
+      if (!error && data.length > 0) {
+        const appt = data[0];
+        currentAppointmentId = appt.id;
+        const formatted = new Date(appt.datetime).toLocaleString();
+        appointmentDisplay.innerHTML = `
+          <div><strong>${formatted}</strong></div>
+          <button onclick="editAppointment('${appt.id}', '${appt.datetime}')">Edit</button>
+          <button class="delete-btn" onclick="deleteAppointment('${appt.id}')">Delete</button>
+        `;
+      } else {
+        appointmentDisplay.innerHTML = `<em>No upcoming appointments.</em>`;
+        currentAppointmentId = null;
+      }
+    }
+
+    async function saveAppointment(e) {
+      e.preventDefault();
+      const datetime = appointmentDateInput.value;
+      if (!datetime) return;
+
+      if (currentAppointmentId) {
+        await client.from('doctor_appointments').delete().eq('id', currentAppointmentId);
+      }
+
+      const { error } = await client.from('doctor_appointments').insert([{ datetime }]);
+
+      if (!error) {
+        appointmentDateInput.value = '';
+        loadAppointment();
+      }
+    }
+
+    function editAppointment(id, datetime) {
+      appointmentDateInput.value = datetime.slice(0, 16); // remove seconds
+      currentAppointmentId = id;
+    }
+
+    async function deleteAppointment(id) {
+      const { error } = await client.from('doctor_appointments').delete().eq('id', id);
+      if (!error) {
+        appointmentDateInput.value = '';
+        loadAppointment();
+      }
+    }
+
     client
       .channel('doctor_checklist')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
       .subscribe();
 
     loadItems();
+    loadAppointment();
   </script>
 </body>
 </html>
