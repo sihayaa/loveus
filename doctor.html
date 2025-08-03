@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Doctor Checklist & Appointments</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Dancing+Script&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
@@ -30,7 +30,20 @@
       align-items: center;
     }
 
-    h1 { color: #2e3a59; font-size: 36px; margin: 0 0 10px; }
+    h1 { color: #2e3a59; font-size: 36px; margin: 0 0 5px; }
+
+    .glowpulse {
+      font-family: 'Dancing Script', cursive;
+      color: #34E371;
+      font-size: 24px;
+      text-align: center;
+      animation: glowPulse 2s infinite alternate;
+    }
+
+    @keyframes glowPulse {
+      0% { text-shadow: 0 0 5px #34E371, 0 0 10px #34E371; }
+      100% { text-shadow: 0 0 15px #34E371, 0 0 25px #34E371; }
+    }
 
     .back-button {
       position: fixed;
@@ -98,7 +111,7 @@
     .appointment-box {
       position: fixed;
       top: 140px;
-      right: 60px; /* shifted inward */
+      right: 110px;
       width: 320px;
       background: rgba(255,255,255,0.85);
       padding: 20px;
@@ -134,6 +147,23 @@
       cursor: pointer;
       width: 100%;
     }
+
+    /* Custom time selector color */
+    .flatpickr-time .numInput.cur-hour,
+    .flatpickr-time .numInput.cur-minute,
+    .flatpickr-time .flatpickr-am-pm.selected {
+      color: #AA20AB !important;
+      font-weight: bold;
+    }
+
+    .flatpickr-time input:focus {
+      border-color: #AA20AB !important;
+      box-shadow: 0 0 3px #AA20AB;
+    }
+
+    .flatpickr-time {
+      border-top: 2px solid #AA20AB !important;
+    }
   </style>
 </head>
 <body>
@@ -141,6 +171,7 @@
 
   <div class="fixed-form">
     <h1>✅ What to Tell the Doctor</h1>
+    <div class="glowpulse">💚 This is a reminder that I will always care for you 💚</div>
     <form onsubmit="addItem(event)">
       <input type="text" id="newItem" placeholder="Add something to talk about...">
       <button type="submit">Add</button>
@@ -149,7 +180,6 @@
 
   <div class="checklist" id="checklist"></div>
 
-  <!-- Appointments Panel -->
   <div class="appointment-box">
     <h2>📅 Doctor Appointments</h2>
     <form onsubmit="saveAppointment(event)">
@@ -166,7 +196,6 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
-    // Initialize flatpickr with Confirm button
     flatpickr("#appointmentDate", {
       enableTime: true,
       dateFormat: "Y-m-d H:i",
@@ -186,16 +215,11 @@
       }
     });
 
-    // Checklist logic
     const checklist = document.getElementById('checklist');
     const newItemInput = document.getElementById('newItem');
 
     async function loadItems() {
-      const { data } = await client
-        .from('doctor_checklist')
-        .select('*')
-        .order('created_at', { ascending: true });
-
+      const { data } = await client.from('doctor_checklist').select('*').order('created_at', { ascending: true });
       checklist.innerHTML = '';
       data.forEach(addItemToDOM);
     }
@@ -262,17 +286,13 @@
       checklist.appendChild(div);
     }
 
-    // Appointments logic
     const appointmentReasonInput = document.getElementById('appointmentReason');
     const appointmentDateInput = document.getElementById('appointmentDate');
     const appointmentList = document.getElementById('appointmentList');
     let editingAppointmentId = null;
 
     async function loadAppointments() {
-      const { data } = await client
-        .from('doctor_appointments')
-        .select('*')
-        .order('datetime', { ascending: true });
+      const { data } = await client.from('doctor_appointments').select('*').order('datetime', { ascending: true });
 
       appointmentList.innerHTML = '';
       if (!data.length) {
