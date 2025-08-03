@@ -17,6 +17,7 @@
       margin: 0;
       padding: 0;
       color: #333;
+      padding-top: 240px; /* Added to prevent overlap with fixed form */
     }
 
     .fixed-form {
@@ -70,7 +71,7 @@
     .checklist {
       width: 100%;
       max-width: 600px;
-      margin: 180px auto 40px; /* Prevent overlap with fixed form */
+      margin: 0 auto 40px; /* Removed margin-top since it's handled by body padding */
       padding: 0 20px;
     }
 
