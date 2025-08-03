@@ -6,7 +6,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
 
-  <!-- Pinyin converter + pinyin style -->
+  <!-- pinyin-pro script and style -->
   <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/pinyin-pro.min.js"></script>
   <style>
     .pinyin-line {
@@ -28,13 +28,11 @@
       flex-direction: column;
       align-items: center;
     }
-
     h1 {
       color: #8a3d1c;
       font-size: 36px;
       margin-bottom: 20px;
     }
-
     .chat-box {
       width: 100%;
       max-width: 700px;
@@ -49,11 +47,9 @@
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
-
     .chat-box::-webkit-scrollbar {
       display: none;
     }
-
     .chat-message {
       position: relative;
       margin-bottom: 15px;
@@ -62,21 +58,18 @@
       word-wrap: break-word;
       border-radius: 10px;
     }
-
     .boy {
       color: #6e2fb9;
       text-align: left;
       align-self: flex-start;
       background-color: #f3e7ff;
     }
-
     .girl {
       color: #28a745;
       text-align: right;
       align-self: flex-end;
       background-color: #dcffec;
     }
-
     .chat-message .delete-btn {
       position: absolute;
       top: 4px;
@@ -91,18 +84,15 @@
       line-height: 1;
       display: none;
     }
-
     .chat-message:hover .delete-btn {
       display: block;
     }
-
     .controls {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 10px;
     }
-
     input {
       padding: 10px;
       width: 300px;
@@ -110,14 +100,12 @@
       border-radius: 8px;
       font-family: 'Patrick Hand', cursive;
     }
-
     .button-group {
       display: flex;
       gap: 10px;
       align-items: center;
       justify-content: center;
     }
-
     button {
       padding: 10px 20px;
       background-color: #b065d9;
@@ -128,11 +116,9 @@
       font-family: 'Patrick Hand', cursive;
       transition: background-color 0.2s ease;
     }
-
     button:hover {
       background-color: #9a4bcc;
     }
-
     .back-button {
       position: absolute;
       top: 20px;
@@ -143,8 +129,6 @@
       border-radius: 10px;
       text-decoration: none;
     }
-
-    /* Toggle Switch (kept exactly the same) */
     .toggle-container {
       display: flex;
       align-items: center;
@@ -226,7 +210,7 @@
       const chatBox = document.getElementById('chatBox');
       const input = document.getElementById('input');
 
-      /* pinyin helper functions */
+      // insert #2: pinyin helpers
       function containsChinese(str) {
         return /[\u3400-\u9FBF]/.test(str);
       }
@@ -255,7 +239,7 @@
           const div = document.createElement('div');
           div.className = 'chat-message ' + msg.sender;
           div.textContent = msg.content;
-          attachPinyin(div, msg.content);  /* <--- pinyin line added */
+          attachPinyin(div, msg.content); // insert #3: adds pinyin below
 
           const del = document.createElement('button');
           del.className = 'delete-btn';
