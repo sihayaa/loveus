@@ -17,7 +17,7 @@
       margin: 0;
       padding: 0;
       color: #333;
-      padding-top: 240px; /* Added to prevent overlap with fixed form */
+      padding-top: 240px;
     }
 
     .fixed-form {
@@ -44,13 +44,20 @@
       color: #34E371;
       font-size: 24px;
       text-align: center;
-      animation: glowPulse 2s infinite alternate;
+      animation: glowPulse 2s ease-in-out infinite alternate,
+                 floatUp 3s ease-in-out infinite;
       margin-bottom: 10px;
     }
 
     @keyframes glowPulse {
       0% { text-shadow: 0 0 5px #34E371, 0 0 10px #34E371; }
       100% { text-shadow: 0 0 15px #34E371, 0 0 25px #34E371; }
+    }
+
+    @keyframes floatUp {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-5px); }
+      100% { transform: translateY(0px); }
     }
 
     .back-button {
@@ -71,7 +78,7 @@
     .checklist {
       width: 100%;
       max-width: 600px;
-      margin: 0 auto 40px; /* Removed margin-top since it's handled by body padding */
+      margin: 0 auto 40px;
       padding: 0 20px;
     }
 
@@ -143,15 +150,15 @@
       background: #f0f4ff;
       border-radius: 8px;
     }
-    
-    .appointment-item strong {
-    color: #6A1B9A;
-    font-size: 17px;
-   }
 
     .appointment-item button {
       margin-right: 8px;
       margin-top: 8px;
+    }
+
+    .appointment-item strong {
+      color: #6A1B9A;
+      font-size: 17px;
     }
 
     .flatpickr-confirm {
@@ -179,6 +186,22 @@
 
     .flatpickr-time {
       border-top: 2px solid #AA20AB !important;
+    }
+
+    /* Drop effect */
+    @keyframes fall {
+      to {
+        transform: translateY(100vh) translateX(var(--drift)) rotate(720deg);
+        opacity: 0;
+      }
+    }
+
+    .fall-item {
+      position: fixed;
+      z-index: 9999;
+      pointer-events: none;
+      user-select: none;
+      animation-fill-mode: forwards;
     }
   </style>
 </head>
@@ -230,6 +253,29 @@
     const checklist = document.getElementById('checklist');
     const newItemInput = document.getElementById('newItem');
 
+    function dropEffect() {
+      const emojis = ['💊', '🧬', '🩺', '💉'];
+      const count = 60;
+
+      for (let i = 0; i < count; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'fall-item';
+        drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+
+        drop.style.left = Math.random() * 100 + 'vw';
+        drop.style.top = -Math.random() * 200 + 'px';
+        drop.style.transform = `rotate(${Math.random() * 360}deg)`;
+        const size = 16 + Math.random() * 30;
+        drop.style.fontSize = size + 'px';
+        const duration = 2 + Math.random() * 3;
+        drop.style.animation = `fall ${duration}s ease-in forwards`;
+        drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 50}vw`);
+
+        document.body.appendChild(drop);
+        setTimeout(() => drop.remove(), duration * 1000 + 1000);
+      }
+    }
+
     async function loadItems() {
       const { data } = await client.from('doctor_checklist').select('*').order('created_at', { ascending: true });
       checklist.innerHTML = '';
@@ -240,9 +286,14 @@
       e.preventDefault();
       const message = newItemInput.value.trim();
       if (!message) return;
-      await client.from('doctor_checklist').insert([{ message, checked: false }]);
-      newItemInput.value = '';
-      loadItems();
+
+      const { error } = await client.from('doctor_checklist').insert([{ message, checked: false }]);
+
+      if (!error) {
+        dropEffect();
+        newItemInput.value = '';
+        loadItems();
+      }
     }
 
     async function toggleItem(id, current) {
@@ -355,6 +406,11 @@
       await client.from('doctor_appointments').delete().eq('id', id);
       loadAppointments();
     }
+
+    client
+      .channel('doctor_checklist')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
+      .subscribe();
 
     loadItems();
     loadAppointments();
