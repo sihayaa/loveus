@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Mandarin Wall</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
 
   <!-- pinyin-pro script and style -->
@@ -210,10 +210,11 @@
       const chatBox = document.getElementById('chatBox');
       const input = document.getElementById('input');
 
-      // insert #2: pinyin helpers
+      // Pinyin helper functions
       function containsChinese(str) {
         return /[\u3400-\u9FBF]/.test(str);
       }
+
       function attachPinyin(div, text) {
         if (containsChinese(text)) {
           const p = document.createElement('div');
@@ -238,8 +239,14 @@
         data.forEach(msg => {
           const div = document.createElement('div');
           div.className = 'chat-message ' + msg.sender;
-          div.textContent = msg.content;
-          attachPinyin(div, msg.content); // insert #3: adds pinyin below
+          div.setAttribute('data-id', msg.id);
+
+          // Wrap message content in a separate div so pinyin can be appended below
+          const content = document.createElement('div');
+          content.textContent = msg.content;
+          div.appendChild(content);
+
+          attachPinyin(div, msg.content);
 
           const del = document.createElement('button');
           del.className = 'delete-btn';
