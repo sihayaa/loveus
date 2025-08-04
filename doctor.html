@@ -11,14 +11,14 @@
     * { box-sizing: border-box; }
 
     body {
-      font-family: 'Patrick Hand', cursive;
-      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor.bg.jpg') no-repeat center center fixed;
-      background-size: 110%;
-      margin: 0;
-      padding: 0;
-      color: #333;
-      padding-top: 240px;
-    }
+  font-family: 'Patrick Hand', cursive;
+  background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor.bg.jpg') no-repeat center center fixed;
+  background-size: 100% auto;
+  margin: 0;
+  padding: 0;
+  color: #333;
+  padding-top: 240px;
+}
 
     .fixed-form {
       position: fixed;
@@ -274,12 +274,10 @@
     function dropEffect() {
       const emojis = ['💊', '🧬', '🩺', '💉'];
       const count = 60;
-
       for (let i = 0; i < count; i++) {
         const drop = document.createElement('div');
         drop.className = 'fall-item';
         drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-
         drop.style.left = Math.random() * 100 + 'vw';
         drop.style.top = -Math.random() * 200 + 'px';
         drop.style.transform = `rotate(${Math.random() * 360}deg)`;
@@ -288,7 +286,6 @@
         const duration = 2 + Math.random() * 3;
         drop.style.animation = `fall ${duration}s ease-in forwards`;
         drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 50}vw`);
-
         document.body.appendChild(drop);
         setTimeout(() => drop.remove(), duration * 1000 + 1000);
       }
@@ -304,9 +301,7 @@
       e.preventDefault();
       const message = newItemInput.value.trim();
       if (!message) return;
-
       const { error } = await client.from('doctor_checklist').insert([{ message, checked: false }]);
-
       if (!error) {
         dropEffect();
         newItemInput.value = '';
@@ -379,19 +374,16 @@
         appointmentList.innerHTML = `<em>No appointments scheduled.</em>`;
         return;
       }
-
       data.forEach(appt => {
         const apptDiv = document.createElement('div');
         apptDiv.className = 'appointment-item';
         const apptTime = new Date(appt.datetime).toLocaleString();
-
         apptDiv.innerHTML = `
           <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
           <div><strong>${appt.reason}</strong></div>
           <div>${apptTime}</div>
           <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
         `;
-
         appointmentList.appendChild(apptDiv);
       });
     }
@@ -401,37 +393,11 @@
       const reason = appointmentReasonInput.value.trim();
       const datetime = appointmentDateInput.value;
       if (!reason || !datetime) return;
-
       if (editingAppointmentId) {
         await client.from('doctor_appointments').update({ reason, datetime }).eq('id', editingAppointmentId);
         editingAppointmentId = null;
       } else {
         await client.from('doctor_appointments').insert([{ reason, datetime }]);
       }
-
       appointmentReasonInput.value = '';
-      appointmentDateInput.value = '';
-      loadAppointments();
-    }
-
-    function editAppointment(id, reason, datetime) {
-      appointmentReasonInput.value = reason;
-      appointmentDateInput._flatpickr.setDate(datetime, true);
-      editingAppointmentId = id;
-    }
-
-    async function deleteAppointment(id) {
-      await client.from('doctor_appointments').delete().eq('id', id);
-      loadAppointments();
-    }
-
-    client
-      .channel('doctor_checklist')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
-      .subscribe();
-
-    loadItems();
-    loadAppointments();
-  </script>
-</body>
-</html>
+      appointmentDate
