@@ -211,6 +211,7 @@
 </head>
 <body>
   <a href="index.html" class="back-button">&larr; Back to Home</a>
+
   <div class="fixed-form">
     <h1>✅ What to Tell the Doctor</h1>
     <div class="glowpulse">💚 This is a reminder that I will always care for you 💚</div>
@@ -219,7 +220,9 @@
       <button type="submit">Add</button>
     </form>
   </div>
+
   <div class="checklist" id="checklist"></div>
+
   <div class="appointment-box">
     <h2>📅 Doctor Appointments</h2>
     <form onsubmit="saveAppointment(event)">
@@ -229,26 +232,12 @@
     </form>
     <div id="appointmentList" style="margin-top: 10px;"></div>
   </div>
+
   <script>
     const client = window.supabase.createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
-
-    flatpickr("#appointmentDate", {
-      enableTime: true,
-      dateFormat: "Y-m-d H:i",
-      time_24hr: false,
-      minuteIncrement: 1,
-      onReady: function(selectedDates, dateStr, instance) {
-        const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = 'Confirm';
-        confirmBtn.type = 'button';
-        confirmBtn.className = 'flatpickr-confirm';
-        confirmBtn.addEventListener('click', () => instance.close());
-        instance.calendarContainer.appendChild(confirmBtn);
-      }
-    });
 
     async function loadAppointments() {
       const { data } = await client.from('doctor_appointments').select('*').order('datetime', { ascending: true });
@@ -257,7 +246,7 @@
 
       data.forEach(appt => {
         const vegasTime = new Date(new Date(appt.datetime).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
-        const localTime = new Date(appt.datetime);
+        const phTime = new Date(new Date(appt.datetime).toLocaleString('en-US', { timeZone: 'Asia/Manila' }));
 
         const vegasStr = vegasTime.toLocaleString('en-US', {
           year: 'numeric', month: 'numeric', day: 'numeric',
@@ -265,7 +254,7 @@
           hour12: true
         });
 
-        const localStr = localTime.toLocaleString('en-US', {
+        const phStr = phTime.toLocaleString('en-US', {
           month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true
         });
 
@@ -275,35 +264,12 @@
           <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
           <div><strong>${appt.reason}</strong></div>
           <div style="font-size: 16px; font-weight: bold;">${vegasStr}</div>
-          <div class="timezone-secondary">(${localStr})</div>
+          <div class="timezone-secondary">(${phStr})</div>
           <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
         `;
 
         appointmentList.appendChild(div);
       });
-    }
-
-    async function saveAppointment(e) {
-      e.preventDefault();
-      const reason = document.getElementById('appointmentReason').value.trim();
-      const datetime = document.getElementById('appointmentDate').value;
-      if (!reason || !datetime) return;
-
-      await client.from('doctor_appointments').insert([{ reason, datetime }]);
-      document.getElementById('appointmentReason').value = '';
-      document.getElementById('appointmentDate').value = '';
-      loadAppointments();
-    }
-
-    async function deleteAppointment(id) {
-      await client.from('doctor_appointments').delete().eq('id', id);
-      loadAppointments();
-    }
-
-    async function editAppointment(id, reason, datetime) {
-      document.getElementById('appointmentReason').value = reason;
-      document.getElementById('appointmentDate')._flatpickr.setDate(datetime);
-      await client.from('doctor_appointments').delete().eq('id', id);
     }
 
     loadAppointments();
