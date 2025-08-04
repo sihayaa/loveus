@@ -11,14 +11,14 @@
     * { box-sizing: border-box; }
 
     body {
-  font-family: 'Patrick Hand', cursive;
-  background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor.bg.jpg') no-repeat center center fixed;
-  background-size: 100% auto;
-  margin: 0;
-  padding: 0;
-  color: #333;
-  padding-top: 240px;
-}
+      font-family: 'Patrick Hand', cursive;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor.bg.jpg') no-repeat center center fixed;
+      background-size: 100% auto;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      padding-top: 240px;
+    }
 
     .fixed-form {
       position: fixed;
@@ -177,6 +177,11 @@
       font-size: 17px;
     }
 
+    .appointment-item .timezone-secondary {
+      font-size: 12px;
+      color: #888;
+    }
+
     .flatpickr-confirm {
       margin-top: 10px;
       background: #4f6cff;
@@ -186,22 +191,6 @@
       border-radius: 6px;
       cursor: pointer;
       width: 100%;
-    }
-
-    .flatpickr-time .numInput.cur-hour,
-    .flatpickr-time .numInput.cur-minute,
-    .flatpickr-time .flatpickr-am-pm.selected {
-      color: #AA20AB !important;
-      font-weight: bold;
-    }
-
-    .flatpickr-time input:focus {
-      border-color: #AA20AB !important;
-      box-shadow: 0 0 3px #AA20AB;
-    }
-
-    .flatpickr-time {
-      border-top: 2px solid #AA20AB !important;
     }
 
     @keyframes fall {
@@ -222,7 +211,6 @@
 </head>
 <body>
   <a href="index.html" class="back-button">&larr; Back to Home</a>
-
   <div class="fixed-form">
     <h1>✅ What to Tell the Doctor</h1>
     <div class="glowpulse">💚 This is a reminder that I will always care for you 💚</div>
@@ -231,9 +219,7 @@
       <button type="submit">Add</button>
     </form>
   </div>
-
   <div class="checklist" id="checklist"></div>
-
   <div class="appointment-box">
     <h2>📅 Doctor Appointments</h2>
     <form onsubmit="saveAppointment(event)">
@@ -243,7 +229,6 @@
     </form>
     <div id="appointmentList" style="margin-top: 10px;"></div>
   </div>
-
   <script>
     const client = window.supabase.createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
@@ -265,151 +250,49 @@
       }
     });
 
-    const checklist = document.getElementById('checklist');
-    const newItemInput = document.getElementById('newItem');
-
-    function dropEffect() {
-      const emojis = ['💊', '🧬', '🩺', '💉'];
-      const count = 60;
-      for (let i = 0; i < count; i++) {
-        const drop = document.createElement('div');
-        drop.className = 'fall-item';
-        drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-        drop.style.left = Math.random() * 100 + 'vw';
-        drop.style.top = -Math.random() * 200 + 'px';
-        drop.style.transform = `rotate(${Math.random() * 360}deg)`;
-        const size = 16 + Math.random() * 30;
-        drop.style.fontSize = size + 'px';
-        const duration = 2 + Math.random() * 3;
-        drop.style.animation = `fall ${duration}s ease-in forwards`;
-        drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 50}vw`);
-        document.body.appendChild(drop);
-        setTimeout(() => drop.remove(), duration * 1000 + 1000);
-      }
-    }
-
-    async function loadItems() {
-      const { data } = await client.from('doctor_checklist').select('*').order('created_at', { ascending: true });
-      checklist.innerHTML = '';
-      data.forEach(addItemToDOM);
-    }
-
-    async function addItem(e) {
-      e.preventDefault();
-      const message = newItemInput.value.trim();
-      if (!message) return;
-      const { error } = await client.from('doctor_checklist').insert([{ message, checked: false }]);
-      if (!error) {
-        dropEffect();
-        newItemInput.value = '';
-        loadItems();
-      }
-    }
-
-    async function toggleItem(id, current) {
-      await client.from('doctor_checklist').update({ checked: !current }).eq('id', id);
-      loadItems();
-    }
-
-    async function editItem(id, currentMessage) {
-      const newMessage = prompt("Edit this item:", currentMessage);
-      if (newMessage) {
-        await client.from('doctor_checklist').update({ message: newMessage }).eq('id', id);
-        loadItems();
-      }
-    }
-
-    async function deleteItem(id) {
-      await client.from('doctor_checklist').delete().eq('id', id);
-      loadItems();
-    }
-
-    function addItemToDOM(item) {
-      const div = document.createElement('div');
-      div.className = 'checklist-item';
-      if (item.checked) div.classList.add('checked');
-
-      const left = document.createElement('div');
-      left.className = 'checklist-left';
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = item.checked;
-      checkbox.onclick = () => toggleItem(item.id, item.checked);
-
-      const span = document.createElement('span');
-      span.textContent = item.message;
-
-      left.appendChild(checkbox);
-      left.appendChild(span);
-      div.appendChild(left);
-
-      const editBtn = document.createElement('button');
-      editBtn.textContent = 'Edit';
-      editBtn.onclick = () => editItem(item.id, item.message);
-
-      const delBtn = document.createElement('button');
-      delBtn.textContent = 'Delete';
-      delBtn.className = 'delete-btn';
-      delBtn.onclick = () => deleteItem(item.id);
-
-      div.appendChild(editBtn);
-      div.appendChild(delBtn);
-
-      checklist.appendChild(div);
-    }
-
-    const appointmentReasonInput = document.getElementById('appointmentReason');
-    const appointmentDateInput = document.getElementById('appointmentDate');
-    const appointmentList = document.getElementById('appointmentList');
-    let editingAppointmentId = null;
-
     async function loadAppointments() {
       const { data } = await client.from('doctor_appointments').select('*').order('datetime', { ascending: true });
+      const appointmentList = document.getElementById('appointmentList');
       appointmentList.innerHTML = '';
-      if (!data.length) {
-        appointmentList.innerHTML = `<em>No appointments scheduled.</em>`;
-        return;
-      }
 
       data.forEach(appt => {
-        const apptDiv = document.createElement('div');
-        apptDiv.className = 'appointment-item';
-        const apptTime = new Date(appt.datetime).toLocaleString();
+        const vegasTime = new Date(new Date(appt.datetime).toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+        const localTime = new Date(appt.datetime);
 
-        apptDiv.innerHTML = `
+        const vegasStr = vegasTime.toLocaleString('en-US', {
+          year: 'numeric', month: 'numeric', day: 'numeric',
+          hour: 'numeric', minute: 'numeric', second: 'numeric',
+          hour12: true
+        });
+
+        const localStr = localTime.toLocaleString('en-US', {
+          month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', hour12: true
+        });
+
+        const div = document.createElement('div');
+        div.className = 'appointment-item';
+        div.innerHTML = `
           <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
           <div><strong>${appt.reason}</strong></div>
-          <div>${apptTime}</div>
+          <div style="font-size: 16px; font-weight: bold;">${vegasStr}</div>
+          <div class="timezone-secondary">(${localStr})</div>
           <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
         `;
 
-        appointmentList.appendChild(apptDiv);
+        appointmentList.appendChild(div);
       });
     }
 
     async function saveAppointment(e) {
       e.preventDefault();
-      const reason = appointmentReasonInput.value.trim();
-      const datetime = appointmentDateInput.value;
+      const reason = document.getElementById('appointmentReason').value.trim();
+      const datetime = document.getElementById('appointmentDate').value;
       if (!reason || !datetime) return;
 
-      if (editingAppointmentId) {
-        await client.from('doctor_appointments').update({ reason, datetime }).eq('id', editingAppointmentId);
-        editingAppointmentId = null;
-      } else {
-        await client.from('doctor_appointments').insert([{ reason, datetime }]);
-      }
-
-      appointmentReasonInput.value = '';
-      appointmentDateInput.value = '';
+      await client.from('doctor_appointments').insert([{ reason, datetime }]);
+      document.getElementById('appointmentReason').value = '';
+      document.getElementById('appointmentDate').value = '';
       loadAppointments();
-    }
-
-    function editAppointment(id, reason, datetime) {
-      appointmentReasonInput.value = reason;
-      appointmentDateInput._flatpickr.setDate(datetime, true);
-      editingAppointmentId = id;
     }
 
     async function deleteAppointment(id) {
@@ -417,12 +300,12 @@
       loadAppointments();
     }
 
-    client
-      .channel('doctor_checklist')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
-      .subscribe();
+    async function editAppointment(id, reason, datetime) {
+      document.getElementById('appointmentReason').value = reason;
+      document.getElementById('appointmentDate')._flatpickr.setDate(datetime);
+      await client.from('doctor_appointments').delete().eq('id', id);
+    }
 
-    loadItems();
     loadAppointments();
   </script>
 </body>
