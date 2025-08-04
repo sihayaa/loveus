@@ -425,6 +425,11 @@
       .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_checklist' }, () => loadItems())
       .subscribe();
 
+    client
+  .channel('doctor_appointments')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_appointments' }, () => loadAppointments())
+  .subscribe();
+
     loadItems();
     loadAppointments();
   </script>
