@@ -375,7 +375,16 @@
       data.forEach(appt => {
         const apptDiv = document.createElement('div');
         apptDiv.className = 'appointment-item';
-        const apptTime = appt.datetime;
+        const dateObj = new Date(appt.datetime);
+const options = {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  hour12: true
+};
+const apptTime = dateObj.toLocaleString(undefined, options);
 
         apptDiv.innerHTML = `
           <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
