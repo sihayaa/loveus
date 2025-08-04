@@ -216,12 +216,32 @@
   <script>
     const client = window.supabase.createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...your key...'
+      'YOUR_PUBLIC_SUPABASE_KEY'
     );
 
     const localTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
     const PH_TIMEZONE = 'Asia/Manila';
     const VEGAS_TIMEZONE = 'America/Los_Angeles';
+
+    function dropEffect() {
+      const emojis = ['💊', '🧬', '🩺', '💉'];
+      const count = 60;
+      for (let i = 0; i < count; i++) {
+        const drop = document.createElement('div');
+        drop.className = 'fall-item';
+        drop.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        drop.style.left = Math.random() * 100 + 'vw';
+        drop.style.top = -Math.random() * 200 + 'px';
+        drop.style.transform = `rotate(${Math.random() * 360}deg)`;
+        const size = 16 + Math.random() * 30;
+        drop.style.fontSize = size + 'px';
+        const duration = 2 + Math.random() * 3;
+        drop.style.animation = `fall ${duration}s ease-in forwards`;
+        drop.style.setProperty('--drift', `${(Math.random() - 0.5) * 50}vw`);
+        document.body.appendChild(drop);
+        setTimeout(() => drop.remove(), duration * 1000 + 1000);
+      }
+    }
 
     flatpickr("#appointmentDate", {
       enableTime: true,
@@ -260,7 +280,7 @@
         editingAppointmentId = null;
       } else {
         await client.from('doctor_appointments').insert([data]);
-        dropEffect(); // ✅ Added animation effect on save
+        dropEffect();
       }
 
       appointmentReasonInput.value = '';
@@ -270,7 +290,12 @@
 
     async function loadAppointments() {
       const { DateTime } = luxon;
-      const { data } = await client.from('doctor_appointments').select('*').order('datetime', { ascending: true });
+      const { data } = await client
+        .from('doctor_appointments')
+        .select('*', { count: 'exact' })
+        .order('datetime', { ascending: true })
+        .limit(1000); // or higher if needed
+
       appointmentList.innerHTML = '';
       if (!data.length) {
         appointmentList.innerHTML = `<em>No appointments scheduled.</em>`;
@@ -298,6 +323,19 @@
         appointmentList.appendChild(apptDiv);
       });
     }
+
+    function editAppointment(id, reason, datetime) {
+      appointmentReasonInput.value = reason;
+      appointmentDateInput._flatpickr.setDate(datetime, true);
+      editingAppointmentId = id;
+    }
+
+    async function deleteAppointment(id) {
+      await client.from('doctor_appointments').delete().eq('id', id);
+      loadAppointments();
+    }
+
+    loadAppointments();
   </script>
 </body>
 </html>
