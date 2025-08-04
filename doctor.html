@@ -252,8 +252,9 @@
 
     flatpickr("#appointmentDate", {
   enableTime: true,
-  dateFormat: "Y-m-d h:i K",  // 🔥 use lowercase `h` for 12-hour and `K` for AM/PM
+  dateFormat: "Y-m-d h:i K",
   time_24hr: false,
+  allowInput: true,
   minuteIncrement: 1,
   onReady: function(selectedDates, dateStr, instance) {
     const confirmBtn = document.createElement('button');
