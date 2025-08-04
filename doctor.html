@@ -205,7 +205,7 @@
   </div>
   <div class="checklist" id="checklist"></div>
   <div class="appointment-box">
-    <h2>🗕️ Doctor Appointments</h2>
+    <h2>📅 Doctor Appointments</h2>
     <form onsubmit="saveAppointment(event)">
       <input type="text" id="appointmentReason" placeholder="Appointment reason..." required>
       <input type="text" id="appointmentDate" placeholder="Select Date & Time" required>
@@ -260,6 +260,7 @@
         editingAppointmentId = null;
       } else {
         await client.from('doctor_appointments').insert([data]);
+        dropEffect(); // ✅ Added animation effect on save
       }
 
       appointmentReasonInput.value = '';
