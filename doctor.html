@@ -251,19 +251,19 @@
     );
 
     flatpickr("#appointmentDate", {
-      enableTime: true,
-      dateFormat: "Y-m-d H:i",
-      time_24hr: false,
-      minuteIncrement: 1,
-      onReady: function(selectedDates, dateStr, instance) {
-        const confirmBtn = document.createElement('button');
-        confirmBtn.textContent = 'Confirm';
-        confirmBtn.type = 'button';
-        confirmBtn.className = 'flatpickr-confirm';
-        confirmBtn.addEventListener('click', () => instance.close());
-        instance.calendarContainer.appendChild(confirmBtn);
-      }
-    });
+  enableTime: true,
+  dateFormat: "Y-m-d h:i K",  // 🔥 use lowercase `h` for 12-hour and `K` for AM/PM
+  time_24hr: false,
+  minuteIncrement: 1,
+  onReady: function(selectedDates, dateStr, instance) {
+    const confirmBtn = document.createElement('button');
+    confirmBtn.textContent = 'Confirm';
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'flatpickr-confirm';
+    confirmBtn.addEventListener('click', () => instance.close());
+    instance.calendarContainer.appendChild(confirmBtn);
+  }
+});
 
     const checklist = document.getElementById('checklist');
     const newItemInput = document.getElementById('newItem');
@@ -375,16 +375,7 @@
       data.forEach(appt => {
         const apptDiv = document.createElement('div');
         apptDiv.className = 'appointment-item';
-        const dateObj = new Date(appt.datetime);
-const options = {
-  year: 'numeric',
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-  hour12: true
-};
-const apptTime = dateObj.toLocaleString(undefined, options);
+        const apptTime = appt.datetime;
 
         apptDiv.innerHTML = `
           <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
