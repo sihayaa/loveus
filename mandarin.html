@@ -5,6 +5,7 @@
   <title>Mandarin Wall</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/pinyin-pro.min.js"></script>
   <style>
     body {
       font-family: 'Patrick Hand', cursive;
@@ -223,79 +224,82 @@
       const input = document.getElementById('input');
 
       async function loadMessages() {
-  const { data, error } = await client
-    .from('mandarin_messages')
-    .select('*')
-    .order('created_at', { ascending: true });
+        const { data, error } = await client
+          .from('mandarin_messages')
+          .select('*')
+          .order('created_at', { ascending: true });
 
-  if (error) {
-    console.error('Load error:', error);
-    return;
-  }
+        if (error) {
+          console.error('Load error:', error);
+          return;
+        }
 
-  chatBox.innerHTML = '';
+        chatBox.innerHTML = '';
 
-  for (const msg of data) {
-    const div = document.createElement('div');
-    div.className = 'chat-message ' + msg.sender;
+        for (const msg of data) {
+          const div = document.createElement('div');
+          div.className = 'chat-message ' + msg.sender;
 
-    const mandarinText = document.createElement('div');
-    mandarinText.textContent = msg.content;
-    mandarinText.style.whiteSpace = 'pre-wrap';
-    div.appendChild(mandarinText);
+          const mandarinText = document.createElement('div');
+          mandarinText.textContent = msg.content;
+          mandarinText.style.whiteSpace = 'pre-wrap';
+          div.appendChild(mandarinText);
 
-    if (msg.sender === 'girl') {
-      const pinyin = window.pinyinPro.pinyin(msg.content || '', { toneType: 'mark' });
-      console.log('Pinyin:', pinyin);
+          if (msg.sender === 'girl') {
+            let pinyin = '';
+            try {
+              if (window.pinyinPro && typeof window.pinyinPro.pinyin === 'function') {
+                pinyin = window.pinyinPro.pinyin(msg.content, { toneType: 'mark' });
+              }
+            } catch (e) {
+              console.warn('Pinyin error:', e);
+            }
 
-      try {
-        const res = await fetch('https://libretranslate.de/translate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            q: msg.content,
-            source: 'zh',
-            target: 'en',
-            format: 'text'
-          })
-        });
+            try {
+              const res = await fetch('https://libretranslate.de/translate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  q: msg.content,
+                  source: 'zh',
+                  target: 'en',
+                  format: 'text'
+                })
+              });
 
-        const result = await res.json();
-        console.log('Translation result:', result);
+              const result = await res.json();
+              const english = result?.translatedText ?? '';
 
-        const english = result.translatedText || '...';
+              const translationLine = document.createElement('div');
+              translationLine.textContent = `${msg.content} / ${english}`;
+              translationLine.style.marginTop = '6px';
+              translationLine.style.color = '#fff';
 
-        const translationLine = document.createElement('div');
-        translationLine.textContent = `${msg.content} / ${english}`;
-        translationLine.style.marginTop = '6px';
-        translationLine.style.color = '#fff';
+              const pinyinLine = document.createElement('div');
+              pinyinLine.textContent = pinyin;
+              pinyinLine.style.fontSize = '0.9em';
+              pinyinLine.style.color = 'black';
 
-        const pinyinLine = document.createElement('div');
-        pinyinLine.textContent = pinyin;
-        pinyinLine.style.fontSize = '0.9em';
-        pinyinLine.style.color = 'black';
+              div.appendChild(translationLine);
+              if (pinyin) div.appendChild(pinyinLine);
+            } catch (e) {
+              console.warn('Translation fetch failed:', e);
+            }
+          }
 
-        div.appendChild(translationLine);
-        div.appendChild(pinyinLine);
-      } catch (e) {
-        console.error('Translation fetch failed:', e);
+          const del = document.createElement('button');
+          del.className = 'delete-btn';
+          del.textContent = '×';
+          del.onclick = () => {
+            deleteMessage(msg.id);
+          };
+          div.appendChild(del);
+
+          chatBox.appendChild(div);
+        }
+
+        chatBox.scrollTop = chatBox.scrollHeight;
       }
-    }
-
-    const del = document.createElement('button');
-    del.className = 'delete-btn';
-    del.textContent = '×';
-    del.onclick = () => {
-      deleteMessage(msg.id);
-    };
-    div.appendChild(del);
-
-    chatBox.appendChild(div);
-  }
-
-  chatBox.scrollTop = chatBox.scrollHeight;
-}
-
 
       window.addMessage = async function (sender) {
         const message = input.value.trim();
@@ -343,7 +347,12 @@
         )
         .subscribe();
 
-      loadMessages();
+      const waitForPinyin = setInterval(() => {
+        if (window.pinyinPro) {
+          clearInterval(waitForPinyin);
+          loadMessages();
+        }
+      }, 100);
     };
   </script>
 </body>
