@@ -223,35 +223,79 @@
       const input = document.getElementById('input');
 
       async function loadMessages() {
-        const { data, error } = await client
-          .from('mandarin_messages')
-          .select('*')
-          .order('created_at', { ascending: true });
+  const { data, error } = await client
+    .from('mandarin_messages')
+    .select('*')
+    .order('created_at', { ascending: true });
 
-        if (error) {
-          console.error('Load error:', error);
-          return;
-        }
+  if (error) {
+    console.error('Load error:', error);
+    return;
+  }
 
-        chatBox.innerHTML = '';
-        data.forEach(msg => {
-          const div = document.createElement('div');
-          div.className = 'chat-message ' + msg.sender;
-          div.textContent = msg.content;
+  chatBox.innerHTML = '';
 
-          const del = document.createElement('button');
-          del.className = 'delete-btn';
-          del.textContent = '×';
-          del.onclick = () => {
-            deleteMessage(msg.id);
-          };
-          div.appendChild(del);
+  for (const msg of data) {
+    const div = document.createElement('div');
+    div.className = 'chat-message ' + msg.sender;
 
-          chatBox.appendChild(div);
+    const mandarinText = document.createElement('div');
+    mandarinText.textContent = msg.content;
+    mandarinText.style.whiteSpace = 'pre-wrap';
+    div.appendChild(mandarinText);
+
+    if (msg.sender === 'girl') {
+      const pinyin = window.pinyinPro.pinyin(msg.content || '', { toneType: 'mark' });
+      console.log('Pinyin:', pinyin);
+
+      try {
+        const res = await fetch('https://libretranslate.de/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            q: msg.content,
+            source: 'zh',
+            target: 'en',
+            format: 'text'
+          })
         });
 
-        chatBox.scrollTop = chatBox.scrollHeight;
+        const result = await res.json();
+        console.log('Translation result:', result);
+
+        const english = result.translatedText || '...';
+
+        const translationLine = document.createElement('div');
+        translationLine.textContent = `${msg.content} / ${english}`;
+        translationLine.style.marginTop = '6px';
+        translationLine.style.color = '#fff';
+
+        const pinyinLine = document.createElement('div');
+        pinyinLine.textContent = pinyin;
+        pinyinLine.style.fontSize = '0.9em';
+        pinyinLine.style.color = 'black';
+
+        div.appendChild(translationLine);
+        div.appendChild(pinyinLine);
+      } catch (e) {
+        console.error('Translation fetch failed:', e);
       }
+    }
+
+    const del = document.createElement('button');
+    del.className = 'delete-btn';
+    del.textContent = '×';
+    del.onclick = () => {
+      deleteMessage(msg.id);
+    };
+    div.appendChild(del);
+
+    chatBox.appendChild(div);
+  }
+
+  chatBox.scrollTop = chatBox.scrollHeight;
+}
+
 
       window.addMessage = async function (sender) {
         const message = input.value.trim();
