@@ -51,7 +51,6 @@
   animation: pulseGlow 2s ease-in-out infinite;
 }
 
-    /* Glowing outline + pulse for duration value */
 #duration-value {
   color: #4fa981;
   font-weight: bold;
@@ -196,7 +195,6 @@
       pointer-events: none;
     }
 
-    /* Mood Overlay */
 #mood-overlay {
   position: fixed;
   top: 0;
@@ -204,7 +202,7 @@
   width: 100%;
   height: 100%;
   pointer-events: none;
-  z-index: 0; /* changed from 1 to 0 to stay behind content */
+  z-index: 0; 
 }
   </style>
 </head>
@@ -220,7 +218,6 @@
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Aligned Sidebar Icons -->
   <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
   </div>
@@ -234,24 +231,20 @@
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
   </div>
 
-  <!-- Time Zones -->
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
     <div class="tz-line"><span class="tz-label">🌇 Manila:</span> <span id="manila-time">loading...</span></div>
   </div>
 
-  <!-- Countdown -->
   <div id="countdown-box">
     <div class="count-number" id="countdown-number">loading...</div>
     <div class="count-label">before</div>
     <div class="count-label">1-year anniversary</div>
   </div>
 
-  <!-- Hearts Canvas -->
   <canvas id="heart-canvas"></canvas>
 
-  <!-- Mood Overlay -->
   <div id="mood-overlay"></div>
 
   <script>
@@ -300,13 +293,13 @@ const hour = new Date(vegasTime).getHours();
       let color;
 
       if (hour >= 6 && hour < 12) {
-        color = 'rgba(255, 231, 214, 0.35)'; // Morning peach
+        color = 'rgba(255, 231, 214, 0.35)'; 
       } else if (hour >= 12 && hour < 18) {
-        color = 'rgba(214, 255, 226, 0.35)'; // Afternoon mint (darker)
+        color = 'rgba(214, 255, 226, 0.35)'; 
       } else if (hour >= 18 && hour < 22) {
-        color = 'rgba(232, 214, 255, 0.35)'; // Evening lavender
+        color = 'rgba(232, 214, 255, 0.35)'; 
       } else {
-        color = 'rgba(10, 15, 60, 0.30)'; // Night (dark blue)
+        color = 'rgba(10, 15, 60, 0.30)'; 
       }
 
       document.getElementById('mood-overlay').style.background = color;
@@ -317,9 +310,8 @@ const hour = new Date(vegasTime).getHours();
     applyMoodOverlay();
 
     setInterval(updateTimeZones, 60000);
-    setInterval(applyMoodOverlay, 60 * 60 * 1000); // hourly update
+    setInterval(applyMoodOverlay, 60 * 60 * 1000); 
 
-    // Soft heart trail
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
     let hearts = [];
