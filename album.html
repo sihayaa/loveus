@@ -59,6 +59,7 @@
       justify-content: center;
       gap: 15px;
       flex-wrap: wrap;
+      align-items: center;
     }
 
     .custom-button {
@@ -199,9 +200,10 @@
   <div class="upload-section">
     <label for="upload" class="custom-button">📷 Pick a Memory</label>
     <input type="file" id="upload" accept="image/*" style="display:none">
+    <!-- THUMBNAIL PREVIEW ADDED -->
+    <img id="preview-thumb" style="width:60px;height:60px;border-radius:10px;object-fit:cover;display:none;margin-left:10px;">
     <input type="text" id="caption" placeholder="Add a sweet caption..." class="caption-input">
     <button id="uploadBtn" class="custom-button">💞 Seal the Memory</button>
-    <!-- ADDED DROPDOWN HERE -->
     <select id="orderSelect" style="border-radius:20px;padding:5px 10px;">
       <option value="asc">Oldest First</option>
       <option value="desc">Newest First</option>
@@ -234,6 +236,7 @@
       const imageUrl = supabase.storage.from('memories').getPublicUrl(filePath).data.publicUrl;
       await supabase.from('memories').insert([{ image_url: imageUrl, caption, file_path: filePath }]);
       document.getElementById('caption').value = '';
+      document.getElementById('preview-thumb').style.display = 'none';
       loadGallery();
     }
 
@@ -297,6 +300,11 @@
     document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
     document.querySelector('input[type="file"]').addEventListener('change', (e) => {
       document.getElementById('upload').files = e.target.files;
+      const preview = document.getElementById('preview-thumb');
+      if (e.target.files && e.target.files[0]) {
+        preview.src = URL.createObjectURL(e.target.files[0]);
+        preview.style.display = 'inline-block';
+      }
     });
     document.getElementById('orderSelect').addEventListener('change', loadGallery);
     loadGallery();
@@ -305,4 +313,3 @@
 </body>
 
 </html>
-
