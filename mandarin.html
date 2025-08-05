@@ -46,7 +46,7 @@
 
     .chat-message {
       position: relative;
-      margin-bottom: 15px;
+      margin-bottom: 5px;
       padding: 10px 16px;
       max-width: 80%;
       word-wrap: break-word;
@@ -237,16 +237,16 @@
         chatBox.innerHTML = '';
 
         for (const msg of data) {
+          const wrapper = document.createElement('div'); // wraps bubble + black text
+
+          // Green or purple bubble
           const div = document.createElement('div');
           div.className = 'chat-message ' + msg.sender;
+          div.textContent = msg.content;
+          div.style.whiteSpace = 'pre-wrap';
+          wrapper.appendChild(div);
 
-          if (msg.sender === 'boy') {
-            const boyText = document.createElement('div');
-            boyText.textContent = msg.content;
-            boyText.style.whiteSpace = 'pre-wrap';
-            div.appendChild(boyText);
-          }
-
+          // Translation + Pinyin only for girl
           if (msg.sender === 'girl') {
             let pinyin = '';
             let english = '';
@@ -260,7 +260,7 @@
             }
 
             try {
-              const res = await fetch('https://corsproxy.io/?https://libretranslate.de/translate', {
+              const res = await fetch('https://translate.argosopentech.com/translate', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -277,30 +277,24 @@
               console.warn('Translation error:', e);
             }
 
-            const translationLine = document.createElement('div');
-            translationLine.textContent = english ? `${msg.content} / ${english}` : msg.content;
-            translationLine.style.color = 'black';
-            translationLine.style.whiteSpace = 'pre-wrap';
-            div.appendChild(translationLine);
+            if (english) {
+              const translationLine = document.createElement('div');
+              translationLine.textContent = english;
+              translationLine.style.color = 'black';
+              translationLine.style.marginTop = '4px';
+              wrapper.appendChild(translationLine);
+            }
 
             if (pinyin) {
               const pinyinLine = document.createElement('div');
               pinyinLine.textContent = pinyin;
               pinyinLine.style.fontSize = '0.9em';
               pinyinLine.style.color = 'black';
-              div.appendChild(pinyinLine);
+              wrapper.appendChild(pinyinLine);
             }
           }
 
-          const del = document.createElement('button');
-          del.className = 'delete-btn';
-          del.textContent = '×';
-          del.onclick = () => {
-            deleteMessage(msg.id);
-          };
-          div.appendChild(del);
-
-          chatBox.appendChild(div);
+          chatBox.appendChild(wrapper);
         }
 
         chatBox.scrollTop = chatBox.scrollHeight;
