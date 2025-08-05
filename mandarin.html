@@ -1,11 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Mandarin Wall</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/pinyin-pro.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body {
       font-family: 'Patrick Hand', cursive;
@@ -18,223 +19,240 @@
       flex-direction: column;
       align-items: center;
     }
-
     h1 {
       color: #8a3d1c;
       font-size: 36px;
       margin-bottom: 20px;
     }
-
     .chat-box {
       width: 100%;
       max-width: 700px;
       padding: 20px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      overflow-y: auto;
-      max-height: 60vh;
+      align-items: flex-start;
+      min-height: 200px;
       margin-bottom: 20px;
+      overflow-y: auto;
+      max-height: 400px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
-
+    .chat-box::-webkit-scrollbar { display: none; }
     .chat-message {
-      max-width: 75%;
-      padding: 10px 14px;
-      border-radius: 15px;
-      white-space: pre-wrap;
+      position: relative;
+      margin-bottom: 15px;
+      padding: 10px 16px;
+      max-width: 80%;
+      word-wrap: break-word;
+      border-radius: 10px;
     }
-
-    .girl {
-      background-color: #d4fcdc;
-      align-self: flex-end;
-      color: #207a1e;
-    }
-
     .boy {
-      background-color: #e6d6ff;
+      color: #6e2fb9;
+      text-align: left;
       align-self: flex-start;
-      color: #4b2354;
+      background-color: #f3e7ff;
     }
-
-    .translation-line {
-      color: black;
-      font-size: 1em;
-      margin-top: 2px;
+    .girl {
+      color: #28a745;
       text-align: right;
+      align-self: flex-end;
+      background-color: #dcffec;
     }
-
-    .pinyin-line {
-      color: black;
-      font-size: 0.85em;
-      text-align: right;
+    .chat-message .delete-btn {
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      background: transparent;
+      color: #ff5c5c;
+      border: none;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      display: none;
     }
-
-    .controls {
+    .chat-message:hover .delete-btn { display: block; }
+    .translation { color: black; font-size: 14px; margin-top: 4px; }
+    .pinyin { font-size: 12px; color: black; margin-top: 2px; }
+    .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+    input {
+      padding: 10px;
+      width: 300px;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Patrick Hand', cursive;
+    }
+    .button-group {
       display: flex;
       gap: 10px;
       align-items: center;
       justify-content: center;
     }
-
-    input[type="text"] {
-      padding: 10px;
-      font-size: 16px;
-      border-radius: 10px;
-      border: 1px solid #ccc;
-      width: 300px;
-    }
-
     button {
-      padding: 10px 16px;
-      font-size: 14px;
+      padding: 10px 20px;
+      background-color: #b065d9;
+      color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
+      font-family: 'Patrick Hand', cursive;
+      transition: background-color 0.2s ease;
     }
-
-    .send-girl {
-      background-color: #c184e7;
-      color: white;
-    }
-
-    .send-boy {
-      background-color: #c184e7;
-      color: white;
-    }
-
-    .heart {
-      font-size: 24px;
-      background-color: white;
-      border: 2px solid #67e4ca;
-      border-radius: 50%;
-      padding: 2px 10px;
-      cursor: default;
-    }
-
+    button:hover { background-color: #9a4bcc; }
     .back-button {
-      color: #8a3d1c;
-      text-decoration: none;
-      font-weight: bold;
       position: absolute;
-      top: 10px;
-      left: 10px;
+      top: 20px;
+      left: 20px;
+      background-color: #d1b3e0;
+      color: #4b2354;
+      padding: 8px 14px;
+      border-radius: 10px;
+      text-decoration: none;
+    }
+    .toggle-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 60px;
+      height: 32px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: #28a745;
+      transition: 0.4s;
+      border-radius: 34px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "\1F49A";
+      height: 26px; width: 26px;
+      left: 4px; bottom: 3px;
+      background-color: white;
+      border-radius: 50%;
+      transition: 0.4s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .toggle-switch input:checked + .slider { background-color: #6e2fb9; }
+    .toggle-switch input:checked + .slider:before {
+      transform: translateX(26px);
+      content: "\1F49C";
     }
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-button">← Back</a>
+  <a href="index.html" class="back-button">\u2190 Back</a>
   <h1>Mandarin Wall</h1>
-
   <div class="chat-box" id="chatBox"></div>
-
   <div class="controls">
-    <input type="text" id="messageInput" placeholder="Type a message..." />
-    <button class="send-boy" onclick="sendMessage('boy')">Send as Godbrand</button>
-    <span class="heart">💚</span>
-    <button class="send-girl" onclick="sendMessage('girl')">Send as Sihaya</button>
+    <input type="text" id="input" placeholder="Type a message..." />
+    <div class="button-group">
+      <button onclick="addMessage('boy')">Send as Godbrand</button>
+      <div class="toggle-container">
+        <label class="toggle-switch">
+          <input type="checkbox" id="toggleSender" />
+          <span class="slider"></span>
+        </label>
+      </div>
+      <button onclick="addMessage('girl')">Send as Sihaya</button>
+    </div>
   </div>
-
   <script>
-    const client = supabase.createClient(
-      'https://tmjozxcjylcxgemffnoc.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-    );
-
-    const chatBox = document.getElementById('chatBox');
-
-    async function sendMessage(sender) {
-      const input = document.getElementById('messageInput');
-      const content = input.value.trim();
-      if (content === '') return;
-
-      await client.from('mandarin_messages').insert([{ content, sender }]);
-      input.value = '';
-      loadMessages();
-    }
-
-    async function loadMessages() {
-      const { data, error } = await client
-        .from('mandarin_messages')
-        .select('*')
-        .order('created_at', { ascending: true });
-
-      if (error) {
-        console.error('Load error:', error);
-        return;
-      }
-
-      chatBox.innerHTML = '';
-
-      for (const msg of data) {
-        const messageWrapper = document.createElement('div');
-        messageWrapper.style.display = 'flex';
-        messageWrapper.style.flexDirection = 'column';
-        messageWrapper.style.alignItems = msg.sender === 'girl' ? 'flex-end' : 'flex-start';
-
-        const bubble = document.createElement('div');
-        bubble.className = 'chat-message ' + msg.sender;
-        bubble.textContent = msg.content;
-
-        messageWrapper.appendChild(bubble);
-
-        if (msg.sender === 'girl') {
-          let pinyin = '';
-          let english = '';
-
-          try {
-            if (window.pinyinPro?.pinyin) {
-              pinyin = window.pinyinPro.pinyin(msg.content, { toneType: 'mark' });
-            }
-          } catch (e) {
-            console.warn('Pinyin failed:', e);
-          }
-
-          try {
-            const res = await fetch('https://translate.argosopentech.com/translate', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                q: msg.content,
-                source: 'zh',
-                target: 'en',
-                format: 'text'
-              })
-            });
-
-            const result = await res.json();
-            english = result?.translatedText || '';
-          } catch (e) {
-            console.warn('Translation failed:', e);
-          }
-
-          if (english) {
-            const translationLine = document.createElement('div');
-            translationLine.textContent = english;
-            translationLine.className = 'translation-line';
-            messageWrapper.appendChild(translationLine);
-          }
-
-          if (pinyin) {
-            const pinyinLine = document.createElement('div');
-            pinyinLine.textContent = pinyin;
-            pinyinLine.className = 'pinyin-line';
-            messageWrapper.appendChild(pinyinLine);
-          }
-        }
-
-        chatBox.appendChild(messageWrapper);
-      }
-
-      chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
     window.onload = () => {
-      const wait = setInterval(() => {
-        if (window.pinyinPro) {
-          clearInterval(wait);
-          loadMessages();
+      const client = window.supabase.createClient(
+        'https://tmjozxcjylcxgemffnoc.supabase.co',
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+      );
+
+      const chatBox = document.getElementById('chatBox');
+      const input = document.getElementById('input');
+
+      async function loadMessages() {
+        const { data, error } = await client
+          .from('mandarin_messages')
+          .select('*')
+          .order('created_at', { ascending: true });
+
+        if (error) return;
+
+        chatBox.innerHTML = '';
+        for (const msg of data) {
+          const div = document.createElement('div');
+          div.className = 'chat-message ' + msg.sender;
+          const mandarin = document.createElement('div');
+          mandarin.textContent = msg.content;
+          div.appendChild(mandarin);
+
+          if (msg.sender === 'girl') {
+            const translation = await translateText(msg.content);
+            const translationDiv = document.createElement('div');
+            translationDiv.className = 'translation';
+            translationDiv.textContent = translation;
+            div.appendChild(translationDiv);
+
+            const pinyin = document.createElement('div');
+            pinyin.className = 'pinyin';
+            pinyin.textContent = window.pinyinPro.pinyin(msg.content, { toneType: 'marks' });
+            div.appendChild(pinyin);
+          }
+
+          const del = document.createElement('button');
+          del.className = 'delete-btn';
+          del.textContent = '\u00D7';
+          del.onclick = () => deleteMessage(msg.id);
+          div.appendChild(del);
+
+          chatBox.appendChild(div);
         }
-      }, 100);
+        chatBox.scrollTop = chatBox.scrollHeight;
+      }
+
+      async function translateText(text) {
+        try {
+          const res = await axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=zh-CN|en`);
+          return res.data.responseData.translatedText;
+        } catch {
+          return '(Translation failed)';
+        }
+      }
+
+      window.addMessage = async function (sender) {
+        const message = input.value.trim();
+        if (!message) return;
+        const { error } = await client.from('mandarin_messages').insert([{ sender, content: message }]);
+        if (!error) input.value = '';
+        await loadMessages();
+      };
+
+      async function deleteMessage(id) {
+        await client.from('mandarin_messages').delete().eq('id', id);
+        await loadMessages();
+      }
+
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          const isGodbrand = document.getElementById('toggleSender').checked;
+          addMessage(isGodbrand ? 'boy' : 'girl');
+        }
+      });
+
+      client.channel('realtime:mandarin_messages')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mandarin_messages' }, loadMessages)
+        .subscribe();
+
+      loadMessages();
     };
   </script>
 </body>
