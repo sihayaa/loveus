@@ -105,11 +105,12 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      background-color: #d1b3e0;
-      color: #4b2354;
+      background-color: #b065d9;
+      color: white;
       padding: 8px 14px;
       border-radius: 10px;
       text-decoration: none;
+      font-family: 'Patrick Hand', cursive;
     }
     .toggle-container {
       display: flex;
@@ -152,7 +153,7 @@
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-button">\u2190 Back</a>
+  <a href="index.html" class="back-button">← Back</a>
   <h1>Mandarin Wall</h1>
   <div class="chat-box" id="chatBox"></div>
   <div class="controls">
@@ -195,15 +196,18 @@
           div.appendChild(mandarin);
 
           if (msg.sender === 'girl') {
-            const translation = await translateText(msg.content);
-            const translationDiv = document.createElement('div');
-            translationDiv.className = 'translation';
-            translationDiv.textContent = translation;
-            div.appendChild(translationDiv);
+            const translation = document.createElement('div');
+            translation.className = 'translation';
+            translation.textContent = msg.translation || '';
+            div.appendChild(translation);
 
             const pinyin = document.createElement('div');
             pinyin.className = 'pinyin';
-            pinyin.textContent = window.pinyinPro.pinyin(msg.content, { toneType: 'marks' });
+            try {
+              pinyin.textContent = window.pinyinPro.pinyin(msg.content, { toneType: 'marks' });
+            } catch (e) {
+              pinyin.textContent = '';
+            }
             div.appendChild(pinyin);
           }
 
@@ -216,15 +220,6 @@
           chatBox.appendChild(div);
         }
         chatBox.scrollTop = chatBox.scrollHeight;
-      }
-
-      async function translateText(text) {
-        try {
-          const res = await axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=zh-CN|en`);
-          return res.data.responseData.translatedText;
-        } catch {
-          return '(Translation failed)';
-        }
       }
 
       window.addMessage = async function (sender) {
