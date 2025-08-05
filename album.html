@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <title>Our Memories</title>
@@ -18,9 +19,17 @@
     }
 
     @keyframes gradientShift {
-      0% { background-position: 0% 50%; }
-      50% { background-position: 100% 50%; }
-      100% { background-position: 0% 50%; }
+      0% {
+        background-position: 0% 50%;
+      }
+
+      50% {
+        background-position: 100% 50%;
+      }
+
+      100% {
+        background-position: 0% 50%;
+      }
     }
 
     h1 {
@@ -60,7 +69,7 @@
       border: none;
       border-radius: 40px;
       padding: 10px 25px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       transition: all 0.3s ease;
       cursor: pointer;
       display: inline-block;
@@ -78,7 +87,7 @@
       border: none;
       border-radius: 40px;
       padding: 10px 25px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       transition: all 0.3s ease;
     }
 
@@ -160,8 +169,29 @@
       text-align: center;
       color: white;
     }
+
+    .delete-btn,
+    .edit-btn {
+      position: absolute;
+      top: 5px;
+      font-size: 0.7em;
+      padding: 2px 4px;
+      cursor: pointer;
+      background: #fff;
+      border-radius: 50%;
+      border: 1px solid #ccc;
+    }
+
+    .delete-btn {
+      right: 5px;
+    }
+
+    .edit-btn {
+      right: 25px;
+    }
   </style>
 </head>
+
 <body>
   <a href="index.html" class="back-button">← Back to Home</a>
   <h1>Our Memories 📷</h1>
@@ -171,6 +201,11 @@
     <input type="file" id="upload" accept="image/*" style="display:none">
     <input type="text" id="caption" placeholder="Add a sweet caption..." class="caption-input">
     <button id="uploadBtn" class="custom-button">💞 Seal the Memory</button>
+    <!-- ADDED DROPDOWN HERE -->
+    <select id="orderSelect" style="border-radius:20px;padding:5px 10px;">
+      <option value="asc">Oldest First</option>
+      <option value="desc">Newest First</option>
+    </select>
   </div>
 
   <div class="gallery" id="gallery"></div>
@@ -190,29 +225,21 @@
       const file = document.getElementById('upload').files[0];
       const caption = document.getElementById('caption').value;
       if (!file) return;
-
       const filePath = `${Date.now()}_${file.name}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage.from('memories').upload(filePath, file);
-
+      const { error: uploadError } = await supabase.storage.from('memories').upload(filePath, file);
       if (uploadError) {
         console.error('Upload error:', uploadError);
         return;
       }
-
-      const { data: urlData } = supabase.storage.from('memories').getPublicUrl(filePath);
-      const imageUrl = urlData.publicUrl;
-
-      const { error: insertError } = await supabase.from('memories').insert([{ image_url: imageUrl, caption, file_path: filePath }]);
-      if (insertError) {
-        console.error('Insert error:', insertError);
-      } else {
-        document.getElementById('caption').value = '';
-        loadGallery();
-      }
+      const imageUrl = supabase.storage.from('memories').getPublicUrl(filePath).data.publicUrl;
+      await supabase.from('memories').insert([{ image_url: imageUrl, caption, file_path: filePath }]);
+      document.getElementById('caption').value = '';
+      loadGallery();
     }
 
     async function loadGallery() {
-      const { data, error } = await supabase.from('memories').select('*').order('id', { ascending: true });
+      const order = document.getElementById('orderSelect').value || 'asc';
+      const { data, error } = await supabase.from('memories').select('*').order('created_at', { ascending: order === 'asc' });
       const gallery = document.getElementById('gallery');
       gallery.innerHTML = '';
       if (error) {
@@ -233,12 +260,29 @@
         });
 
         block.innerHTML = `
+          <span class="delete-btn" onclick="deletePhoto('${item.id}')">✖</span>
+          <span class="edit-btn" onclick="editCaption('${item.id}','${item.caption || ''}')">✎</span>
           <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}', \`${item.caption || ''}\`)">
           <div class="timestamp">${timestamp}</div>
           <p>${item.caption || ''}</p>
         `;
         gallery.appendChild(block);
       });
+    }
+
+    async function deletePhoto(id) {
+      if (confirm('Delete this photo?')) {
+        await supabase.from('memories').delete().eq('id', id);
+        loadGallery();
+      }
+    }
+
+    async function editCaption(id, oldcap) {
+      const newCap = prompt('Edit caption:', oldcap);
+      if (newCap != null) {
+        await supabase.from('memories').update({ caption: newCap }).eq('id', id);
+        loadGallery();
+      }
     }
 
     function showLightbox(src, caption) {
@@ -254,8 +298,11 @@
     document.querySelector('input[type="file"]').addEventListener('change', (e) => {
       document.getElementById('upload').files = e.target.files;
     });
-
+    document.getElementById('orderSelect').addEventListener('change', loadGallery);
     loadGallery();
   </script>
+
 </body>
+
 </html>
+
