@@ -178,7 +178,6 @@
       right: 25px;
     }
 
-    /* MODAL STYLING */
     #modalOverlay {
       position: fixed;
       top: 0;
@@ -238,7 +237,6 @@
     <div id="lightbox-caption"></div>
   </div>
 
-  <!-- ✨ CUSTOM MODAL POPUP ✨ -->
   <div id="modalOverlay">
     <div id="modalBox">
       <h3 id="modalTitle" style="margin-top:0;font-family:'Great Vibes', cursive;font-size:2em;">Are you sure?</h3>
@@ -307,7 +305,6 @@
       });
     }
 
-    // ---- custom modal logic -----
     function openModal(title, message, showTextarea, callback) {
       document.getElementById('modalTitle').textContent = title;
       document.getElementById('modalText').textContent = message;
@@ -340,7 +337,6 @@
       document.getElementById('modalTextarea').value = oldCap;
     }
 
-    // ---- continue original functions ----
     function showLightbox(src, caption) {
       const lightbox = document.getElementById('lightbox');
       const lightboxImg = document.getElementById('lightbox-img');
