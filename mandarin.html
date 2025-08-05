@@ -240,13 +240,17 @@
           const div = document.createElement('div');
           div.className = 'chat-message ' + msg.sender;
 
-          const mandarinText = document.createElement('div');
-          mandarinText.textContent = msg.content;
-          mandarinText.style.whiteSpace = 'pre-wrap';
-          div.appendChild(mandarinText);
+          if (msg.sender === 'boy') {
+            const boyText = document.createElement('div');
+            boyText.textContent = msg.content;
+            boyText.style.whiteSpace = 'pre-wrap';
+            div.appendChild(boyText);
+          }
 
           if (msg.sender === 'girl') {
             let pinyin = '';
+            let english = '';
+
             try {
               if (window.pinyinPro && typeof window.pinyinPro.pinyin === 'function') {
                 pinyin = window.pinyinPro.pinyin(msg.content, { toneType: 'mark' });
@@ -268,22 +272,23 @@
               });
 
               const result = await res.json();
-              const english = result?.translatedText ?? '';
+              if (result?.translatedText) english = result.translatedText;
+            } catch (e) {
+              console.warn('Translation error:', e);
+            }
 
-              const translationLine = document.createElement('div');
-              translationLine.textContent = `${msg.content} / ${english}`;
-              translationLine.style.marginTop = '6px';
-              translationLine.style.color = '#fff';
+            const translationLine = document.createElement('div');
+            translationLine.textContent = english ? `${msg.content} / ${english}` : msg.content;
+            translationLine.style.color = 'black';
+            translationLine.style.whiteSpace = 'pre-wrap';
+            div.appendChild(translationLine);
 
+            if (pinyin) {
               const pinyinLine = document.createElement('div');
               pinyinLine.textContent = pinyin;
               pinyinLine.style.fontSize = '0.9em';
               pinyinLine.style.color = 'black';
-
-              div.appendChild(translationLine);
-              if (pinyin) div.appendChild(pinyinLine);
-            } catch (e) {
-              console.warn('Translation fetch failed:', e);
+              div.appendChild(pinyinLine);
             }
           }
 
