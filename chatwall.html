@@ -286,7 +286,6 @@
       }
     };
 
-    // Create styled toggle switch between the name tags
 const toggleWrap = document.createElement('div');
 toggleWrap.style.display = 'flex';
 toggleWrap.style.justifyContent = 'center';
@@ -341,11 +340,9 @@ toggleWrap.innerHTML = `
   </style>
 `;
 
-// Insert between name buttons
 const controls = document.querySelector('.controls');
 controls.insertBefore(toggleWrap, controls.children[2]);
 
-// Toggle-based sender logic
 input.addEventListener('keydown', function (e) {
   if (e.key === 'Enter' && !e.shiftKey) {
     e.preventDefault();
