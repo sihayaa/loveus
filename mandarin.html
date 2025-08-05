@@ -237,16 +237,19 @@
         chatBox.innerHTML = '';
 
         for (const msg of data) {
-          const wrapper = document.createElement('div'); // wraps bubble + black text
+          const messageWrapper = document.createElement('div');
+          messageWrapper.style.display = 'flex';
+          messageWrapper.style.flexDirection = 'column';
+          messageWrapper.style.alignItems = msg.sender === 'girl' ? 'flex-end' : 'flex-start';
+          messageWrapper.style.marginBottom = '10px';
 
-          // Green or purple bubble
           const div = document.createElement('div');
           div.className = 'chat-message ' + msg.sender;
           div.textContent = msg.content;
           div.style.whiteSpace = 'pre-wrap';
-          wrapper.appendChild(div);
 
-          // Translation + Pinyin only for girl
+          messageWrapper.appendChild(div);
+
           if (msg.sender === 'girl') {
             let pinyin = '';
             let english = '';
@@ -281,20 +284,23 @@
               const translationLine = document.createElement('div');
               translationLine.textContent = english;
               translationLine.style.color = 'black';
+              translationLine.style.fontSize = '1em';
               translationLine.style.marginTop = '4px';
-              wrapper.appendChild(translationLine);
+              translationLine.style.textAlign = 'right';
+              messageWrapper.appendChild(translationLine);
             }
 
             if (pinyin) {
               const pinyinLine = document.createElement('div');
               pinyinLine.textContent = pinyin;
-              pinyinLine.style.fontSize = '0.9em';
               pinyinLine.style.color = 'black';
-              wrapper.appendChild(pinyinLine);
+              pinyinLine.style.fontSize = '0.85em';
+              pinyinLine.style.textAlign = 'right';
+              messageWrapper.appendChild(pinyinLine);
             }
           }
 
-          chatBox.appendChild(wrapper);
+          chatBox.appendChild(messageWrapper);
         }
 
         chatBox.scrollTop = chatBox.scrollHeight;
