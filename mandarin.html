@@ -6,7 +6,6 @@
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/pinyin-pro@3.26.0/dist/pinyin-pro.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
   <style>
     body {
       font-family: 'Patrick Hand', cursive;
@@ -19,11 +18,13 @@
       flex-direction: column;
       align-items: center;
     }
+
     h1 {
       color: #8a3d1c;
       font-size: 36px;
       margin-bottom: 20px;
     }
+
     .chat-box {
       width: 100%;
       max-width: 700px;
@@ -38,7 +39,11 @@
       scrollbar-width: none;
       -ms-overflow-style: none;
     }
-    .chat-box::-webkit-scrollbar { display: none; }
+
+    .chat-box::-webkit-scrollbar {
+      display: none;
+    }
+
     .chat-message {
       position: relative;
       margin-bottom: 15px;
@@ -47,18 +52,28 @@
       word-wrap: break-word;
       border-radius: 10px;
     }
+
     .boy {
       color: #6e2fb9;
       text-align: left;
       align-self: flex-start;
       background-color: #f3e7ff;
     }
+
     .girl {
       color: #28a745;
       text-align: right;
       align-self: flex-end;
       background-color: #dcffec;
     }
+
+    .translation {
+      font-size: 14px;
+      color: black;
+      margin-top: 5px;
+      white-space: pre-wrap;
+    }
+
     .chat-message .delete-btn {
       position: absolute;
       top: 4px;
@@ -73,10 +88,18 @@
       line-height: 1;
       display: none;
     }
-    .chat-message:hover .delete-btn { display: block; }
-    .translation { color: black; font-size: 14px; margin-top: 4px; }
-    .pinyin { font-size: 12px; color: black; margin-top: 2px; }
-    .controls { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+
+    .chat-message:hover .delete-btn {
+      display: block;
+    }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+
     input {
       padding: 10px;
       width: 300px;
@@ -84,12 +107,14 @@
       border-radius: 8px;
       font-family: 'Patrick Hand', cursive;
     }
+
     .button-group {
       display: flex;
       gap: 10px;
       align-items: center;
       justify-content: center;
     }
+
     button {
       padding: 10px 20px;
       background-color: #b065d9;
@@ -100,7 +125,11 @@
       font-family: 'Patrick Hand', cursive;
       transition: background-color 0.2s ease;
     }
-    button:hover { background-color: #9a4bcc; }
+
+    button:hover {
+      background-color: #9a4bcc;
+    }
+
     .back-button {
       position: absolute;
       top: 20px;
@@ -111,31 +140,45 @@
       border-radius: 10px;
       text-decoration: none;
     }
+
     .toggle-container {
       display: flex;
       align-items: center;
       justify-content: center;
     }
+
     .toggle-switch {
       position: relative;
       display: inline-block;
       width: 60px;
       height: 32px;
     }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
     .slider {
       position: absolute;
       cursor: pointer;
-      top: 0; left: 0; right: 0; bottom: 0;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background-color: #28a745;
       transition: 0.4s;
       border-radius: 34px;
     }
+
     .slider:before {
       position: absolute;
-      content: "\1F49A";
-      height: 26px; width: 26px;
-      left: 4px; bottom: 3px;
+      content: "💚";
+      height: 26px;
+      width: 26px;
+      left: 4px;
+      bottom: 3px;
       background-color: white;
       border-radius: 50%;
       transition: 0.4s;
@@ -144,116 +187,133 @@
       justify-content: center;
       font-size: 16px;
     }
-    .toggle-switch input:checked + .slider { background-color: #6e2fb9; }
+
+    .toggle-switch input:checked + .slider {
+      background-color: #6e2fb9;
+    }
+
     .toggle-switch input:checked + .slider:before {
       transform: translateX(26px);
-      content: "\1F49C";
+      content: "💜";
     }
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-button">\u2190 Back</a>
+  <a href="index.html" class="back-button">← Back</a>
   <h1>Mandarin Wall</h1>
+
   <div class="chat-box" id="chatBox"></div>
+
   <div class="controls">
     <input type="text" id="input" placeholder="Type a message..." />
     <div class="button-group">
       <button onclick="addMessage('boy')">Send as Godbrand</button>
+
       <div class="toggle-container">
         <label class="toggle-switch">
           <input type="checkbox" id="toggleSender" />
           <span class="slider"></span>
         </label>
       </div>
+
       <button onclick="addMessage('girl')">Send as Sihaya</button>
     </div>
   </div>
+
   <script>
-    window.onload = () => {
-      const client = window.supabase.createClient(
-        'https://tmjozxcjylcxgemffnoc.supabase.co',
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
-      );
+    const client = window.supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
 
-      const chatBox = document.getElementById('chatBox');
-      const input = document.getElementById('input');
+    const chatBox = document.getElementById('chatBox');
+    const input = document.getElementById('input');
 
-      async function loadMessages() {
-        const { data, error } = await client
-          .from('mandarin_messages')
-          .select('*')
-          .order('created_at', { ascending: true });
+    async function loadMessages() {
+      const { data, error } = await client
+        .from('mandarin_messages')
+        .select('*')
+        .order('created_at', { ascending: true });
 
-        if (error) return;
-
-        chatBox.innerHTML = '';
-        for (const msg of data) {
-          const div = document.createElement('div');
-          div.className = 'chat-message ' + msg.sender;
-          const mandarin = document.createElement('div');
-          mandarin.textContent = msg.content;
-          div.appendChild(mandarin);
-
-          if (msg.sender === 'girl') {
-            const translation = await translateText(msg.content);
-            const translationDiv = document.createElement('div');
-            translationDiv.className = 'translation';
-            translationDiv.textContent = translation;
-            div.appendChild(translationDiv);
-
-            const pinyin = document.createElement('div');
-            pinyin.className = 'pinyin';
-            pinyin.textContent = window.pinyinPro.pinyin(msg.content, { toneType: 'marks' });
-            div.appendChild(pinyin);
-          }
-
-          const del = document.createElement('button');
-          del.className = 'delete-btn';
-          del.textContent = '\u00D7';
-          del.onclick = () => deleteMessage(msg.id);
-          div.appendChild(del);
-
-          chatBox.appendChild(div);
-        }
-        chatBox.scrollTop = chatBox.scrollHeight;
+      if (error) {
+        console.error('Load error:', error);
+        return;
       }
 
-      async function translateText(text) {
-        try {
-          const res = await axios.get(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=zh-CN|en`);
-          return res.data.responseData.translatedText;
-        } catch {
-          return '(Translation failed)';
+      chatBox.innerHTML = '';
+      data.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = 'chat-message ' + msg.sender;
+        div.setAttribute('data-id', msg.id);
+
+        const contentEl = document.createElement('div');
+        contentEl.textContent = msg.content;
+        div.appendChild(contentEl);
+
+        if (msg.sender === 'girl') {
+          const pinyin = window.pinyinPro.pinyin(msg.content, { toneType: 'mark' });
+          const english = "Translation not available"; // You can plug in API later if needed
+          const trans = document.createElement('div');
+          trans.className = 'translation';
+          trans.innerHTML = `${pinyin}\n${english}`;
+          div.appendChild(trans);
         }
-      }
 
-      window.addMessage = async function (sender) {
-        const message = input.value.trim();
-        if (!message) return;
-        const { error } = await client.from('mandarin_messages').insert([{ sender, content: message }]);
-        if (!error) input.value = '';
-        await loadMessages();
-      };
+        const del = document.createElement('button');
+        del.className = 'delete-btn';
+        del.textContent = '×';
+        del.onclick = () => deleteMessage(msg.id);
+        div.appendChild(del);
 
-      async function deleteMessage(id) {
-        await client.from('mandarin_messages').delete().eq('id', id);
-        await loadMessages();
-      }
-
-      input.addEventListener('keydown', function (e) {
-        if (e.key === 'Enter' && !e.shiftKey) {
-          e.preventDefault();
-          const isGodbrand = document.getElementById('toggleSender').checked;
-          addMessage(isGodbrand ? 'boy' : 'girl');
-        }
+        chatBox.appendChild(div);
       });
 
-      client.channel('realtime:mandarin_messages')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'mandarin_messages' }, loadMessages)
-        .subscribe();
+      chatBox.scrollTop = chatBox.scrollHeight;
+    }
 
-      loadMessages();
-    };
+    async function addMessage(sender) {
+      const message = input.value.trim();
+      if (message === '') return;
+
+      const { error } = await client
+        .from('mandarin_messages')
+        .insert([{ sender, content: message }]);
+
+      if (error) {
+        console.error('Send error:', error);
+      }
+
+      input.value = '';
+      await loadMessages();
+    }
+
+    async function deleteMessage(id) {
+      const { error } = await client
+        .from('mandarin_messages')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        const msgElem = document.querySelector(`[data-id="${id}"]`);
+        if (msgElem) msgElem.remove();
+      } else {
+        console.error('Delete error:', error);
+      }
+    }
+
+    input.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        const isGodbrand = document.getElementById('toggleSender').checked;
+        addMessage(isGodbrand ? 'boy' : 'girl');
+      }
+    });
+
+    client.channel('realtime:mandarin_messages')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'mandarin_messages' }, loadMessages)
+      .subscribe();
+
+    loadMessages();
   </script>
 </body>
 </html>
