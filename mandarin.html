@@ -76,11 +76,11 @@
     .chat-message:hover .delete-btn { display: block; }
     .translation-line {
       color: black;
-      font-size: 14px;
+      font-size: 16px;
       margin-top: 4px;
     }
     .pinyin {
-      font-size: 12px;
+      font-size: 14px;
       color: black;
       margin-top: 2px;
     }
@@ -204,21 +204,20 @@
           div.className = 'chat-message ' + msg.sender;
 
           if (msg.sender === 'girl') {
-  const mandarinWithTranslation = document.createElement('div');
-  mandarinWithTranslation.className = 'translation-line';
-  mandarinWithTranslation.textContent = `${msg.content} (${msg.translation || ''})`;
-  div.appendChild(mandarinWithTranslation);
+            const mandarinLine = document.createElement('div');
+            mandarinLine.className = 'translation-line';
+            mandarinLine.textContent = `${msg.content} (${msg.translation || ''})`;
+            div.appendChild(mandarinLine);
 
-  const pinyin = document.createElement('div');
-  pinyin.className = 'pinyin';
-  pinyin.textContent = msg.pinyin || '';
-  div.appendChild(pinyin);
-} else {
-
-  const boyMessage = document.createElement('div');
-  boyMessage.textContent = msg.content;
-  div.appendChild(boyMessage);
-}
+            const pinyin = document.createElement('div');
+            pinyin.className = 'pinyin';
+            pinyin.textContent = msg.pinyin || '';
+            div.appendChild(pinyin);
+          } else {
+            const boyMessage = document.createElement('div');
+            boyMessage.textContent = msg.content;
+            div.appendChild(boyMessage);
+          }
 
           const del = document.createElement('button');
           del.className = 'delete-btn';
