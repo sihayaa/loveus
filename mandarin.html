@@ -178,6 +178,16 @@
 
       const chatBox = document.getElementById('chatBox');
       const input = document.getElementById('input');
+      const toggleInput = document.getElementById('toggleSender');
+
+      // Restore toggle state from localStorage
+      const savedState = localStorage.getItem('senderToggle');
+      toggleInput.checked = savedState === 'true';
+
+      // Save state on toggle change
+      toggleInput.addEventListener('change', () => {
+        localStorage.setItem('senderToggle', toggleInput.checked);
+      });
 
       async function loadMessages() {
         const { data, error } = await client
@@ -238,7 +248,7 @@
       input.addEventListener('keydown', function (e) {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
-          const isGodbrand = document.getElementById('toggleSender').checked;
+          const isGodbrand = toggleInput.checked;
           addMessage(isGodbrand ? 'boy' : 'girl');
         }
       });
