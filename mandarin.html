@@ -178,6 +178,9 @@
 
       const chatBox = document.getElementById('chatBox');
       const input = document.getElementById('input');
+      const toggle = document.getElementById('toggleSender');
+      toggle.checked = localStorage.getItem('mandarin_toggle') === 'true';
+      toggle.addEventListener('change', () => localStorage.setItem('mandarin_toggle', toggle.checked));
 
       async function loadMessages() {
         const { data, error } = await client
@@ -237,7 +240,11 @@
 
         if (sender === 'girl') {
           translation = await translateText(message);
-          pinyin = window.pinyinPro.pinyin(message, { toneType: 'marks' });
+          try {
+            pinyin = window.pinyinPro.pinyin(message, { toneType: 'marks' });
+          } catch {
+            pinyin = '';
+          }
         }
 
         const { error } = await client.from('mandarin_messages').insert([
