@@ -1,17 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Wish List</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&family=Great+Vibes&family=Freestyle+Script&family=Brush+Script+MT&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&family=Freestyle+Script&family=Brush+Script+MT&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Dreaming+Outloud+Pro&display=swap');
-    @keyframes pulse {
-      0% { transform: scale(1); opacity: 1; }
-      50% { transform: scale(1.05); opacity: 0.85; }
-      100% { transform: scale(1); opacity: 1; }
-    }
+    @keyframes pulse { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.05);opacity:.9} 100%{transform:scale(1);opacity:1} }
 
     body {
       font-family: 'Patrick Hand', cursive;
@@ -25,237 +20,182 @@
       color: #333;
     }
 
-    h1 {
-      color: #62B9CC;
-      font-size: 64px;
-      margin-bottom: 10px;
-      font-family: 'Brush Script MT', cursive;
-    }
+    h1 { color:#62B9CC; font-size:64px; margin:0 0 10px; font-family:'Brush Script MT', cursive; }
+    h3.subtitle { font-family:'Freestyle Script', cursive; color:#458A99; font-size:28px; margin-top:-4px; animation:pulse 2.5s infinite; }
 
-    h3.subtitle {
-      font-family: 'Freestyle Script', cursive;
-      color: #458A99;
-      font-size: 28px;
-      margin-top: -5px;
-      animation: pulse 2.5s infinite;
-    }
+    .container { display:flex; gap:50px; width:100%; justify-content:center; flex-wrap:wrap; }
 
-    .container {
-      display: flex;
-      gap: 50px;
-      width: 100%;
-      justify-content: center;
-    }
+    .wishlist { background:rgba(255,255,255,.65); padding:20px; border-radius:16px; width:45%; min-width:320px; box-shadow:0 4px 10px rgba(0,0,0,.15); display:flex; flex-direction:column; align-items:center; }
+    .wishlist h2 { font-family:'Freestyle Script', cursive; font-size:36px; margin:0 0 10px; }
+    #godbrand-list h2 { color:#A581DB; }
+    #sihaya-list h2 { color:#81DBAA; }
 
-    .wishlist {
-      background: rgba(255, 255, 255, 0.65);
-      padding: 20px;
-      border-radius: 16px;
-      width: 45%;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
+    .wishlist input[type="text"] { width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #ccc; font-family:'Patrick Hand', cursive; font-size:16px; }
+    .wishlist input[type="file"] { margin:10px 0; font-family:'Patrick Hand', cursive; }
+    .wishlist button { padding:10px 16px; background:#e898d2; color:#fff; border:none; cursor:pointer; border-radius:10px; font-family:'Fredoka One', cursive; font-size:14px; box-shadow:2px 2px 6px rgba(0,0,0,.1); transition:background .2s ease; align-self:center; }
+    .wishlist button:hover { background:#c46eb5; }
 
-    .wishlist h2 {
-      font-family: 'Freestyle Script', cursive;
-      font-size: 36px;
-      margin-bottom: 10px;
-    }
+    ul { list-style:none; padding:0; width:100%; }
+    li { display:flex; align-items:center; gap:10px; margin:10px 0; }
+    li.checked span { text-decoration:line-through; opacity:.6; }
+    li img { width:40px; height:40px; object-fit:cover; cursor:pointer; border:2px solid #ccc; border-radius:6px; }
 
-    #godbrand-list h2 { color: #A581DB; }
-    #sihaya-list h2 { color: #81DBAA; }
+    .zoomed { position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; justify-content:center; align-items:center; z-index:100; }
+    .zoomed img { max-width:90%; max-height:90%; border-radius:10px; }
 
-    .wishlist input[type="text"] {
-      width: 100%;
-      padding: 8px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-family: 'Patrick Hand', cursive;
-    }
+    .back-btn { position:absolute; top:20px; left:20px; background:#f7b7ea; color:#4b2354; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; box-shadow:1px 1px 5px rgba(0,0,0,.1); }
 
-    .wishlist input[type="file"] {
-      margin: 10px 0;
-      font-family: 'Patrick Hand', cursive;
-    }
-
-    .wishlist button {
-      padding: 8px 14px;
-      background: #e898d2;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 10px;
-      font-family: 'Fredoka One', cursive;
-      font-size: 14px;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
-      transition: background 0.2s ease;
-      align-self: center;
-    }
-
-    .wishlist button:hover {
-      background: #c46eb5;
-    }
-
-    ul {
-      list-style-type: none;
-      padding: 0;
-      width: 100%;
-    }
-
-    li {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-
-    li.checked span {
-      text-decoration: line-through;
-      opacity: 0.5;
-    }
-
-    li img {
-      width: 40px;
-      height: 40px;
-      object-fit: cover;
-      cursor: pointer;
-      border: 2px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .zoomed {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-
-    .zoomed img {
-      max-width: 90%;
-      max-height: 90%;
-      border-radius: 10px;
-    }
-
-    .back-btn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: #f7b7ea;
-      color: #4b2354;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
-    }
-
-    .edit-btn, .delete-btn {
-      cursor: pointer;
-      font-size: 16px;
-      margin-left: auto;
-    }
-
-    .edit-btn { color: #555; }
-    .delete-btn { color: red; }
+    .icon { cursor:pointer; margin-left:auto; font-size:18px; user-select:none; }
+    .icon.edit { color:#555; }
+    .icon.delete { color:#c0392b; margin-left:6px; }
   </style>
 </head>
 <body>
   <a href="index.html" class="back-btn">⬅ Back Home</a>
   <h1>Our Wish List</h1>
   <h3 class="subtitle">Where wishes may come true 🍀</h3>
+
   <div class="container">
     <div class="wishlist" id="godbrand-list">
       <h2>Godbrand's Wish</h2>
-      <input type="text" placeholder="Add a wish..." id="godbrand-input">
-      <input type="file" id="godbrand-file">
+      <input type="text" placeholder="Add a wish..." id="godbrand-input" />
+      <input type="file" id="godbrand-file" accept="image/*" />
       <button onclick="addWish('godbrand')">Wish it</button>
       <ul id="godbrand-ul"></ul>
     </div>
+
     <div class="wishlist" id="sihaya-list">
       <h2>Sihaya's Wish</h2>
-      <input type="text" placeholder="Add a wish..." id="sihaya-input">
-      <input type="file" id="sihaya-file">
+      <input type="text" placeholder="Add a wish..." id="sihaya-input" />
+      <input type="file" id="sihaya-file" accept="image/*" />
       <button onclick="addWish('sihaya')">Wish it</button>
       <ul id="sihaya-ul"></ul>
     </div>
   </div>
-  <div id="zoomed-view" class="zoomed" style="display: none;" onclick="this.style.display='none'"><img id="zoom-img"></div>
+
+  <div id="zoomed-view" class="zoomed" onclick="this.style.display='none'">
+    <img id="zoom-img" alt="zoom" />
+  </div>
+
   <script>
-    const { createClient } = supabase;
+  
     const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
     const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
-    const supabaseClient = createClient(supabaseUrl, supabaseKey);
+    const db = window.supabase.createClient(supabaseUrl, supabaseKey);
 
-    async function addWish(owner) {
-      const input = document.getElementById(`${owner}-input`);
-      const fileInput = document.getElementById(`${owner}-file`);
-      const text = input.value.trim();
-      const file = fileInput.files[0];
-
-      if (!text && !file) return;
-
-      let imageUrl = null;
-      if (file) {
-        const fileName = `${Date.now()}_${file.name}`;
-        const { data, error } = await supabaseClient.storage.from('wish_list').upload(fileName, file);
-        if (error) {
-          alert('Upload error');
-          return;
-        }
-        imageUrl = `https://tmjozxcjylcxgemffnoc.supabase.co/storage/v1/object/public/wish_list/${fileName}`;
-      }
-
-      const { error: insertError } = await supabaseClient.from('wish_list').insert([{ owner, text, image_url: imageUrl }]);
-      if (insertError) {
-        alert('Insert error');
-        return;
-      }
-      input.value = '';
-      fileInput.value = '';
-      loadWishes();
-    }
-
-    async function loadWishes() {
-      const { data, error } = await supabaseClient.from('wish_list').select('*').order('id', { ascending: false });
-      if (error) return;
-
-      document.getElementById('godbrand-ul').innerHTML = '';
-      document.getElementById('sihaya-ul').innerHTML = '';
-
-      data.forEach(item => {
-        const li = document.createElement('li');
-        if (item.image_url) {
-          const img = document.createElement('img');
-          img.src = item.image_url;
-          img.onclick = () => zoomImage(item.image_url);
-          li.appendChild(img);
-        }
-        const span = document.createElement('span');
-        span.textContent = item.text;
-        li.appendChild(span);
-
-        const ul = document.getElementById(`${item.owner}-ul`);
-        ul.appendChild(li);
+    function toBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
       });
     }
 
-    function zoomImage(url) {
-      const zoomed = document.getElementById('zoomed-view');
-      const img = document.getElementById('zoom-img');
-      img.src = url;
-      zoomed.style.display = 'flex';
+    function zoom(url) {
+      const z = document.getElementById('zoomed-view');
+      document.getElementById('zoom-img').src = url;
+      z.style.display = 'flex';
     }
 
-    loadWishes();
+    function makeItem(wish) {
+      const li = document.createElement('li');
+
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!wish.checked;
+      cb.onchange = async () => {
+        li.classList.toggle('checked', cb.checked);
+        await db.from('wish_list').update({ checked: cb.checked }).eq('id', wish.id);
+      };
+
+      const span = document.createElement('span');
+      span.textContent = wish.text;
+
+      li.appendChild(cb);
+      li.appendChild(span);
+
+      if (wish.image) {
+        const img = document.createElement('img');
+        img.src = wish.image; // base64 data URL
+        img.alt = 'wish image';
+        img.onclick = () => zoom(wish.image);
+        img.onerror = () => (img.style.display = 'none');
+        li.appendChild(img);
+      }
+
+      const edit = document.createElement('span');
+      edit.textContent = '✎';
+      edit.className = 'icon edit';
+      edit.onclick = async () => {
+        const newText = prompt('Edit your wish:', span.textContent);
+        if (newText && newText.trim()) {
+          span.textContent = newText.trim();
+          await db.from('wish_list').update({ text: newText.trim() }).eq('id', wish.id);
+        }
+      };
+
+      const del = document.createElement('span');
+      del.textContent = '✖';
+      del.className = 'icon delete';
+      del.onclick = async () => {
+        if (!confirm('Delete this wish?')) return;
+        await db.from('wish_list').delete().eq('id', wish.id);
+        li.remove();
+      };
+
+      li.appendChild(edit);
+      li.appendChild(del);
+      li.classList.toggle('checked', !!wish.checked);
+      return li;
+    }
+
+    async function addWish(userKey) {
+      const input = document.getElementById(`${userKey}-input`);
+      const fileInput = document.getElementById(`${userKey}-file`);
+      const text = input.value.trim();
+      if (!text && !fileInput.files[0]) return;
+
+      let imageData = '';
+      if (fileInput.files[0]) {
+        try { imageData = await toBase64(fileInput.files[0]); } catch(e) { console.error(e); }
+      }
+
+      const { data, error } = await db
+        .from('wish_list')
+        .insert([{ user: userKey, text, image: imageData, checked: false }])
+        .select();
+
+      if (error) {
+        console.error(error);
+        alert('Could not save wish. Check table / policies.');
+        return;
+      }
+
+      const ul = document.getElementById(`${userKey}-ul`);
+      ul.appendChild(makeItem(data[0]));
+      input.value = '';
+      fileInput.value = '';
+    }
+
+    async function loadAll() {
+      const { data, error } = await db.from('wish_list').select('*').order('id');
+      if (error) { console.error(error); return; }
+      document.getElementById('godbrand-ul').innerHTML = '';
+      document.getElementById('sihaya-ul').innerHTML = '';
+      data.forEach(w => {
+        const ul = document.getElementById(`${w.user}-ul`);
+        if (ul) ul.appendChild(makeItem(w));
+      });
+    }
+
+    ['godbrand','sihaya'].forEach(u => {
+      document.getElementById(`${u}-input`).addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); addWish(u); }
+      });
+    });
+
+    loadAll();
   </script>
 </body>
 </html>
