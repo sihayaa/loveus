@@ -60,6 +60,15 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
+    async function convertToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = error => reject(error);
+        reader.readAsDataURL(file);
+      });
+    }
+
     async function addWish(user) {
       const input = document.getElementById(`${user}-input`);
       const fileInput = document.getElementById(`${user}-file`);
@@ -67,19 +76,20 @@
       const text = input.value.trim();
       if (!text) return;
 
-      let imgUrl = '';
+      let imgBase64 = '';
       const file = fileInput.files[0];
       if (file) {
-        const fileExt = file.name.split('.').pop();
-        const filePath = `wishlist/${user}/${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
-        if (!uploadError) {
-          const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
-          imgUrl = data.publicUrl;
+        try {
+          imgBase64 = await convertToBase64(file);
+        } catch (error) {
+          console.error('Image conversion failed', error);
         }
       }
 
-      const { data: inserted, error } = await supabase.from('wish_list').insert([{ user, text, image: imgUrl, checked: false }]).select();
+      const { data: inserted, error } = await supabase.from('wish_list').insert([
+        { user, text, image: imgBase64, checked: false }
+      ]).select();
+
       if (!error && inserted.length > 0) displayWish(inserted[0], ul);
 
       input.value = '';
@@ -106,7 +116,7 @@
         img.onclick = () => {
           document.getElementById('zoom-img').src = wish.image;
           document.getElementById('zoomed-view').style.display = 'flex';
-        }
+        };
         li.appendChild(img);
       }
 
