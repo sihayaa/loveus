@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Wish List</title>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <style>
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish_bg.png') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #333;
+    }
+
+    h1 {
+      color: #9a1047;
+      font-size: 40px;
+      margin-bottom: 20px;
+    }
+
+    .container {
+      display: flex;
+      gap: 50px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .wishlist {
+      background: rgba(255, 255, 255, 0.8);
+      padding: 20px;
+      border-radius: 12px;
+      width: 45%;
+    }
+
+    .wishlist h2 {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    .wishlist input[type="text"] {
+      width: calc(100% - 100px);
+      padding: 8px;
+      margin-bottom: 10px;
+    }
+
+    .wishlist input[type="file"] {
+      margin: 10px 0;
+    }
+
+    .wishlist button {
+      padding: 8px 14px;
+      background: #9a1047;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 6px;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    li.checked span {
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+
+    li img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .zoomed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .zoomed img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #dcb3db;
+      color: #4b2354;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-btn">Back Home</a>
+  <h1>Our Wish Lists</h1>
+  <div class="container">
+    <div class="wishlist" id="godbrand-list">
+      <h2>Godbrand</h2>
+      <input type="text" placeholder="Add a wish..." id="godbrand-input">
+      <input type="file" id="godbrand-file">
+      <button onclick="addWish('godbrand')">Wish it</button>
+      <ul id="godbrand-ul"></ul>
+    </div>
+
+    <div class="wishlist" id="sihaya-list">
+      <h2>Sihaya</h2>
+      <input type="text" placeholder="Add a wish..." id="sihaya-input">
+      <input type="file" id="sihaya-file">
+      <button onclick="addWish('sihaya')">Wish it</button>
+      <ul id="sihaya-ul"></ul>
+    </div>
+  </div>
+
+  <div id="zoomed-view" class="zoomed" style="display: none;" onclick="this.style.display='none'"><img id="zoom-img"></div>
+
+  <script>
+    const supabase = window.supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
+
+    async function addWish(user) {
+      const input = document.getElementById(`${user}-input`);
+      const fileInput = document.getElementById(`${user}-file`);
+      const ul = document.getElementById(`${user}-ul`);
+      const text = input.value.trim();
+      if (!text) return;
+
+      let imgUrl = '';
+      const file = fileInput.files[0];
+      if (file) {
+        const filePath = `${user}/${Date.now()}_${file.name}`;
+        await supabase.storage.from('wishlist-images').upload(filePath, file);
+        const { data } = supabase.storage.from('wishlist-images').getPublicUrl(filePath);
+        imgUrl = data.publicUrl;
+      }
+
+      const li = document.createElement('li');
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      const span = document.createElement('span');
+      span.textContent = text;
+      li.appendChild(checkbox);
+      li.appendChild(span);
+
+      if (imgUrl) {
+        const img = document.createElement('img');
+        img.src = imgUrl;
+        img.onclick = () => {
+          document.getElementById('zoom-img').src = imgUrl;
+          document.getElementById('zoomed-view').style.display = 'flex';
+        }
+        li.appendChild(img);
+      }
+
+      checkbox.addEventListener('change', () => {
+        li.classList.toggle('checked', checkbox.checked);
+      });
+
+      ul.appendChild(li);
+      input.value = '';
+      fileInput.value = '';
+    }
+
+    ['godbrand', 'sihaya'].forEach(user => {
+      document.getElementById(`${user}-input`).addEventListener('keypress', e => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          addWish(user);
+        }
+      });
+    });
+  </script>
+</body>
+</html>
