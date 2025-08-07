@@ -6,61 +6,71 @@
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&family=Freestyle+Script&family=Great+Vibes&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
-    @keyframes pulse { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.05);opacity:.9} 100%{transform:scale(1);opacity:1} }
-    :root{ --btn-bg:#129CA6; --title:#8451DB; --subtitle:#E831B0; --sihaya:#458565; }
-    body { font-family:'Patrick Hand',cursive; background:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish_bg.png') no-repeat center center fixed; background-size:cover; margin:0; padding:40px; display:flex; flex-direction:column; align-items:center; color:#333; }
-    h1 { color:var(--title); font-size:64px; margin:0 0 10px; font-family:'Brush Script MT',cursive; text-shadow: 0 0 6px rgba(132,81,219,.65), 0 0 18px rgba(132,81,219,.35); }
-    h3.subtitle { font-family:'Freestyle Script',cursive; color:var(--subtitle); font-size:32px; margin-top:-4px; animation:pulse 2.5s infinite; }
-    .container { display:grid; grid-template-columns:repeat(auto-fit,minmax(350px,1fr)); gap:40px; width:100%; align-items:start; }
-    .wishlist { background:rgba(255,255,255,.65); padding:20px; border-radius:16px; box-shadow:0 4px 10px rgba(0,0,0,.15); display:flex; flex-direction:column; align-items:center; min-width:0; }
-    .wishlist h2 { font-family:'Freestyle Script',cursive; font-size:36px; margin:0 0 10px; }
-    #godbrand-list h2{ color:#A581DB; } #sihaya-list h2{ color:var(--sihaya); }
-    .wishlist input[type="text"],.wishlist input[type="file"]{ width:100%; padding:10px; margin-bottom:10px; border-radius:8px; border:1px solid #ccc; font-family:'Patrick Hand',cursive; font-size:16px; }
-    .wishlist button{ padding:10px 22px; background:var(--btn-bg); color:#000; border:none; cursor:pointer; border-radius:12px; font-family:'Edwardian Script ITC','Great Vibes',cursive; font-size:28px; line-height:1; box-shadow:2px 2px 6px rgba(0,0,0,.1); transition:transform .15s ease, filter .15s ease; }
-    .wishlist button:hover{ transform:translateY(-1px); filter:brightness(1.05); }
-    .items{ overflow-y:auto; width:100%; padding-right:6px; margin-top:8px; max-height:52vh; }
-    ul{ list-style:none; padding:0; margin:0; width:100%; }
-    li{ display:flex; align-items:center; gap:10px; margin:10px 0; }
-    li.checked span{ text-decoration:line-through; opacity:.6; }
-    li img{ width:40px; height:40px; object-fit:cover; cursor:pointer; border:2px solid #ccc; border-radius:6px; }
-    .zoomed{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:none; justify-content:center; align-items:center; z-index:100; }
-    .zoomed img{ max-width:90%; max-height:90%; border-radius:10px; }
-    .back-btn{ position:absolute; top:20px; left:20px; background:#f7b7ea; color:#4b2354; padding:10px 20px; border-radius:8px; text-decoration:none; font-weight:bold; box-shadow:1px 1px 5px rgba(0,0,0,.1); }
-    .icon{ cursor:pointer; margin-left:auto; font-size:18px; user-select:none; }
-    .icon.edit{ color:#555; } .icon.delete{ color:#c0392b; margin-left:6px; }
-    .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.4); display:none; align-items:center; justify-content:center; z-index:120; }
-    .cloud{ background:linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.9)); padding:24px 22px; border-radius:40px; box-shadow:0 10px 30px rgba(0,0,0,.25); min-width:320px; max-width:90vw; text-align:center; position:relative; }
-    .cloud h4{ margin:0 0 10px; font-family:'Freestyle Script',cursive; font-size:28px; color:#6d4ea6; }
-    .cloud input[type="text"]{ width:100%; padding:10px; border-radius:10px; border:1px solid #ccc; font-family:'Patrick Hand',cursive; font-size:16px; }
-    .actions{ margin-top:16px; display:flex; gap:10px; justify-content:center; }
-    .btn{ padding:10px 18px; border:none; border-radius:12px; cursor:pointer; font-family:'Fredoka One',sans-serif; }
-    .btn.primary{ background:var(--btn-bg); color:#000; }
-    .btn.ghost{ background:#f3e7ff; color:#5a3bc6; }
+    :root{--btn-bg:#129CA6;--title:#8451DB;--subtitle:#E831B0;--sihaya:#458565}
+    @keyframes pulse{0%{transform:scale(1)}50%{transform:scale(1.05)}100%{transform:scale(1)}}
+    body{font-family:'Patrick Hand',cursive;background:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish_bg.png') no-repeat center/cover fixed;margin:0;padding:40px;display:flex;flex-direction:column;align-items:center;color:#333}
+    h1{color:var(--title);font-size:64px;margin:0 0 10px;font-family:'Brush Script MT',cursive;text-shadow:0 0 6px rgba(132,81,219,.65),0 0 18px rgba(132,81,219,.35)}
+    h3.subtitle{font-family:'Freestyle Script',cursive;color:var(--subtitle);font-size:34px;margin-top:-4px;animation:pulse 2.5s infinite}
+    .back-btn{position:absolute;top:20px;left:20px;background:#f7b7ea;color:#4b2354;padding:10px 20px;border-radius:8px;text-decoration:none;font-weight:700;box-shadow:1px 1px 5px rgba(0,0,0,.1)}
+    .container{display:grid;grid-template-columns:repeat(auto-fit,minmax(360px,1fr));gap:40px;width:100%;align-items:start}
+    .wishlist{background:rgba(255,255,255,.65);padding:20px;border-radius:16px;box-shadow:0 4px 10px rgba(0,0,0,.15);display:flex;flex-direction:column;align-items:center}
+    .wishlist h2{font-family:'Freestyle Script',cursive;font-size:36px;margin:0 0 10px}
+    #godbrand-list h2{color:#A581DB}
+    #sihaya-list h2{color:var(--sihaya)}
+    .wishlist input[type=text]{width:100%;padding:10px;border-radius:8px;border:1px solid #ccc;font-size:16px}
+    .file-row{display:flex;justify-content:center;align-items:center;gap:12px;width:100%;margin:8px 0}
+    .wishlist input[type=file]{display:block;margin:0 auto;padding:8px 10px;width:auto;border:1px solid #ccc;border-radius:10px;background:#fff}
+    .wishlist button{display:block;margin:6px auto 0;padding:8px 16px;background:var(--btn-bg);color:#000;border:none;border-radius:10px;font-family:'Edwardian Script ITC','Great Vibes',cursive;font-size:20px;line-height:1;cursor:pointer;box-shadow:2px 2px 6px rgba(0,0,0,.1)}
+    .items{overflow-y:auto;width:100%;padding-right:6px;margin-top:8px;max-height:52vh}
+    ul{list-style:none;padding:0;margin:0;width:100%}
+    li{display:flex;align-items:center;gap:10px;margin:10px 0}
+    li.checked span{text-decoration:line-through;opacity:.6}
+    li img{width:40px;height:40px;object-fit:cover;cursor:pointer;border:2px solid #ccc;border-radius:6px}
+    .icon{cursor:pointer;margin-left:auto;font-size:18px}
+    .icon.edit{color:#555}.icon.delete{color:#c0392b;margin-left:6px}
+    .zoomed{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;justify-content:center;align-items:center;z-index:100}
+    .zoomed img{max-width:90%;max-height:90%;border-radius:10px}
+    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:120}
+    .cloud{background:linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.9));padding:24px 22px;border-radius:40px;box-shadow:0 10px 30px rgba(0,0,0,.25);min-width:320px;max-width:90vw;text-align:center;display:flex;flex-direction:column;align-items:center}
+    .cloud h4{margin:0 0 10px;font-family:'Freestyle Script',cursive;font-size:28px;color:#6d4ea6}
+    .cloud input[type=text]{width:90%;padding:12px;border-radius:12px;border:1px solid #ccc;font-size:16px;margin:8px auto 0}
+    .actions{margin-top:16px;display:flex;gap:12px;justify-content:center;align-items:center}
+    .btn{padding:10px 18px;border:none;border-radius:12px;cursor:pointer;font-family:'Fredoka One',sans-serif}
+    .btn.primary{background:var(--btn-bg);color:#000}
+    .btn.ghost{background:#f3e7ff;color:#5a3bc6}
   </style>
 </head>
 <body>
   <a href="index.html" class="back-btn">⬅ Back Home</a>
   <h1>Our Wish List</h1>
   <h3 class="subtitle">Where wishes may come true 🍀</h3>
+
   <div class="container">
     <div class="wishlist" id="godbrand-list">
       <h2>Godbrand's Wish</h2>
       <input type="text" placeholder="Add a wish..." id="godbrand-input" />
-      <input type="file" id="godbrand-file" accept="image/*" />
-      <button onclick="addWish('godbrand')">Wish it</button>
+      <div class="file-row">
+        <input type="file" id="godbrand-file" accept="image/*" />
+        <button onclick="addWish('godbrand')">Wish it</button>
+      </div>
       <div class="items"><ul id="godbrand-ul"></ul></div>
     </div>
+
     <div class="wishlist" id="sihaya-list">
       <h2>Sihaya's Wish</h2>
       <input type="text" placeholder="Add a wish..." id="sihaya-input" />
-      <input type="file" id="sihaya-file" accept="image/*" />
-      <button onclick="addWish('sihaya')">Wish it</button>
+      <div class="file-row">
+        <input type="file" id="sihaya-file" accept="image/*" />
+        <button onclick="addWish('sihaya')">Wish it</button>
+      </div>
       <div class="items"><ul id="sihaya-ul"></ul></div>
     </div>
   </div>
-  <div id="zoomed-view" class="zoomed" onclick="this.style.display='none'"><img id="zoom-img" alt="zoom" /></div>
+
+  <div id="zoomed-view" class="zoomed"><img id="zoom-img" alt="zoom"></div>
+
   <div id="overlay" class="overlay">
-    <div class="cloud" id="modal-edit" style="display:none;">
+    <div class="cloud" id="modal-edit">
       <h4>Edit your wish</h4>
       <input type="text" id="edit-input" />
       <div class="actions">
@@ -76,68 +86,139 @@
       </div>
     </div>
   </div>
+
   <script>
-    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
-    const db = window.supabase.createClient(supabaseUrl, supabaseKey);
-    function toBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
-    function zoom(url){ const z=document.getElementById('zoomed-view'); document.getElementById('zoom-img').src=url; z.style.display='flex'; }
-    const overlay = document.getElementById('overlay');
-    const modalEdit = document.getElementById('modal-edit');
-    const modalConfirm = document.getElementById('modal-confirm');
-    const editInput = document.getElementById('edit-input');
-    function openEditModal(initial, onSave){
-      editInput.value = initial || '';
+    const db = window.supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
+
+    function toBase64(file){
+      return new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(r.result);
+        r.onerror=rej;
+        r.readAsDataURL(file);
+      });
+    }
+
+    function zoom(url){
+      document.getElementById('zoom-img').src=url;
+      document.getElementById('zoomed-view').style.display='flex';
+    }
+
+    const overlay=document.getElementById('overlay');
+    const modalEdit=document.getElementById('modal-edit');
+    const modalConfirm=document.getElementById('modal-confirm');
+    const editInput=document.getElementById('edit-input');
+
+    function closeModal(){ overlay.style.display='none'; }
+
+    function openEditModal(initial,onSave){
+      editInput.value=initial||'';
       overlay.style.display='flex';
       modalConfirm.style.display='none';
-      modalEdit.style.display='block';
-      document.getElementById('edit-save').onclick = () => { onSave(editInput.value.trim()); closeModal(); };
-      document.getElementById('edit-cancel').onclick = closeModal;
+      modalEdit.style.display='flex';
+      document.getElementById('edit-save').onclick=()=>{ onSave(editInput.value.trim()); closeModal(); };
+      document.getElementById('edit-cancel').onclick=closeModal;
       editInput.focus();
     }
-    function openConfirmModal(text, onYes){
-      document.getElementById('confirm-text').textContent = text;
+
+    function openConfirmModal(text,onYes){
+      document.getElementById('confirm-text').textContent=text;
       overlay.style.display='flex';
       modalEdit.style.display='none';
-      modalConfirm.style.display='block';
-      document.getElementById('confirm-yes').onclick = () => { onYes(); closeModal(); };
-      document.getElementById('confirm-no').onclick = closeModal;
+      modalConfirm.style.display='flex';
+      document.getElementById('confirm-yes').onclick=()=>{ onYes(); closeModal(); };
+      document.getElementById('confirm-no').onclick=closeModal;
     }
-    function closeModal(){ overlay.style.display='none'; }
-    function makeItem(wish){
+
+    function makeItem(w){
       const li=document.createElement('li');
-      const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!wish.checked;
-      cb.onchange=async()=>{ li.classList.toggle('checked',cb.checked); await db.from('wish_list').update({checked:cb.checked}).eq('id',wish.id); };
-      const span=document.createElement('span'); span.textContent=wish.text;
+
+      const cb=document.createElement('input');
+      cb.type='checkbox';
+      cb.checked=!!w.checked;
+      cb.onchange=async()=>{
+        li.classList.toggle('checked',cb.checked);
+        await db.from('wish_list').update({checked:cb.checked}).eq('id',w.id);
+      };
+
+      const span=document.createElement('span');
+      span.textContent=w.text;
+
       li.append(cb,span);
-      if(wish.image){ const img=document.createElement('img'); img.src=wish.image; img.onclick=()=>zoom(wish.image); img.onerror=()=>img.remove(); li.appendChild(img); }
-      const edit=document.createElement('span'); edit.textContent='✎'; edit.className='icon edit';
-      edit.onclick=()=>openEditModal(span.textContent, async (newText)=>{ if(!newText) return; span.textContent=newText; await db.from('wish_list').update({text:newText}).eq('id',wish.id); });
-      const del=document.createElement('span'); del.textContent='✖'; del.className='icon delete';
-      del.onclick=()=>openConfirmModal('Delete this wish?', async ()=>{ await db.from('wish_list').delete().eq('id',wish.id); li.remove(); });
+
+      if(w.image){
+        const img=document.createElement('img');
+        img.src=w.image;
+        img.onclick=()=>zoom(w.image);
+        img.onerror=()=>img.remove();
+        li.appendChild(img);
+      }
+
+      const edit=document.createElement('span');
+      edit.textContent='✎';
+      edit.className='icon edit';
+      edit.onclick=()=>openEditModal(span.textContent,async t=>{
+        if(!t)return;
+        span.textContent=t;
+        await db.from('wish_list').update({text:t}).eq('id',w.id);
+      });
+
+      const del=document.createElement('span');
+      del.textContent='✖';
+      del.className='icon delete';
+      del.onclick=()=>openConfirmModal('Delete this wish?',async()=>{
+        await db.from('wish_list').delete().eq('id',w.id);
+        li.remove();
+      });
+
       li.append(edit,del);
-      li.classList.toggle('checked', !!wish.checked);
+      li.classList.toggle('checked',!!w.checked);
       return li;
     }
-    async function addWish(userKey){
-      const input=document.getElementById(`${userKey}-input`);
-      const fileInput=document.getElementById(`${userKey}-file`);
+
+    async function addWish(user){
+      const input=document.getElementById(`${user}-input`);
+      const file=document.getElementById(`${user}-file`).files[0];
       const text=input.value.trim();
-      if(!text && !fileInput.files[0]) return;
-      let imageData=''; if(fileInput.files[0]){ try{ imageData=await toBase64(fileInput.files[0]); }catch(e){ console.error(e); }}
-      const {data,error}=await db.from('wish_list').insert([{user:userKey,text, image:imageData, checked:false}]).select();
-      if(error){ console.error(error); alert('Could not save wish.'); return; }
-      document.getElementById(`${userKey}-ul`).appendChild(makeItem(data[0]));
-      input.value=''; fileInput.value='';
+      if(!text&&!file) return;
+
+      let img='';
+      if(file){
+        try{ img=await toBase64(file); }catch(e){}
+      }
+
+      const {data,error}=await db
+        .from('wish_list')
+        .insert([{user,text,image:img,checked:false}])
+        .select();
+
+      if(error){ alert('Could not save wish.'); return; }
+
+      document.getElementById(`${user}-ul`).appendChild(makeItem(data[0]));
+      input.value='';
+      document.getElementById(`${user}-file`).value='';
     }
+
     async function loadAll(){
       const {data,error}=await db.from('wish_list').select('*').order('id');
-      if(error){ console.error(error); return; }
+      if(error) return;
       document.getElementById('godbrand-ul').innerHTML='';
       document.getElementById('sihaya-ul').innerHTML='';
-      data.forEach(w=>{ const ul=document.getElementById(`${w.user}-ul`); if(ul) ul.appendChild(makeItem(w)); });
+      data.forEach(w=>{
+        const ul=document.getElementById(`${w.user}-ul`);
+        if(ul) ul.appendChild(makeItem(w));
+      });
     }
-    ['godbrand','sihaya'].forEach(u=>{ document.getElementById(`${u}-input`).addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); addWish(u);} });});
+
+    ['godbrand','sihaya'].forEach(u=>{
+      document.getElementById(`${u}-input`).addEventListener('keydown',e=>{
+        if(e.key==='Enter'){ e.preventDefault(); addWish(u); }
+      });
+    });
+
     loadAll();
   </script>
 </body>
