@@ -9,7 +9,17 @@
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
-    /* ...style unchanged for brevity... */
+    .edit-btn, .delete-btn {
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: auto;
+    }
+    .edit-btn {
+      color: #555;
+    }
+    .delete-btn {
+      color: red;
+    }
   </style>
 </head>
 <body>
@@ -54,20 +64,19 @@
       const file = fileInput.files[0];
       if (file) {
         const fileExt = file.name.split('.').pop();
-        const filePath = `${user}/${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage.from('wishlist-images').upload(filePath, file);
+        const filePath = `wishlist/${user}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('uploads').upload(filePath, file);
         if (!uploadError) {
-          const { data } = supabase.storage.from('wishlist-images').getPublicUrl(filePath);
+          const { data } = supabase.storage.from('uploads').getPublicUrl(filePath);
           imgUrl = data.publicUrl;
         }
       }
 
-      // Save to Supabase DB
       const { data: inserted, error } = await supabase.from('wish_list').insert([
         { user, text, image: imgUrl, checked: false }
-      ]);
+      ]).select();
 
-      if (!error) displayWish({ user, text, image: imgUrl, checked: false }, ul);
+      if (!error && inserted.length > 0) displayWish(inserted[0], ul);
 
       input.value = '';
       fileInput.value = '';
@@ -97,14 +106,36 @@
         li.appendChild(img);
       }
 
-      checkbox.addEventListener('change', async () => {
+      const edit = document.createElement('span');
+      edit.textContent = '✎';
+      edit.className = 'edit-btn';
+      edit.onclick = async () => {
+        const newText = prompt('Edit your wish:', span.textContent);
+        if (newText) {
+          span.textContent = newText;
+          await supabase.from('wish_list')
+            .update({ text: newText })
+            .eq('id', wish.id);
+        }
+      };
+
+      const del = document.createElement('span');
+      del.textContent = '✖';
+      del.className = 'delete-btn';
+      del.onclick = async () => {
+        li.remove();
+        await supabase.from('wish_list').delete().eq('id', wish.id);
+      };
+
+      checkbox.addEventListener('change', () => {
         li.classList.toggle('checked', checkbox.checked);
-        await supabase.from('wish_list')
+        supabase.from('wish_list')
           .update({ checked: checkbox.checked })
-          .eq('user', wish.user)
-          .eq('text', wish.text);
+          .eq('id', wish.id);
       });
 
+      li.appendChild(edit);
+      li.appendChild(del);
       ul.appendChild(li);
     }
 
