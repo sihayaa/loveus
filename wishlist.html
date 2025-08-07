@@ -95,51 +95,69 @@
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
     );
 
-    function uniquePath(user, file){
-      const clean = (file.name || 'image').replace(/[^a-zA-Z0-9._-]/g,'_');
-      return `wishlist/${user}/${Date.now()}_${clean}`;
+    function toBase64(file){
+      return new Promise((res,rej)=>{
+        const r=new FileReader();
+        r.onload=()=>res(r.result);
+        r.onerror=rej;
+        r.readAsDataURL(file);
+      });
     }
 
-    async function uploadToAnyBucket(file, path){
-      const buckets = ['wishlist-images','uploads','images'];
-      for (const b of buckets){
-        const up = await db.storage.from(b).upload(path, file, { upsert: false, cacheControl: '3600' });
-        if (!up.error){
-          const { data } = db.storage.from(b).getPublicUrl(path);
-          return data.publicUrl;
-        }
-      }
-      return null;
+    function compressImage(file, maxDim = 640, quality = 0.8){
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        const url = URL.createObjectURL(file);
+        img.onload = () => {
+          let { width, height } = img;
+          const scale = Math.min(1, maxDim / Math.max(width, height));
+          width = Math.round(width * scale);
+          height = Math.round(height * scale);
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          try {
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            URL.revokeObjectURL(url);
+            resolve(dataUrl);
+          } catch (e) { reject(e); }
+        };
+        img.onerror = reject;
+        img.src = url;
+      });
     }
 
-    async function addWish(user){
-      const input = document.getElementById(`${user}-input`);
-      const fileEl = document.getElementById(`${user}-file`);
-      const text = input.value.trim();
-      const file = fileEl.files[0];
+    function zoom(url){
+      document.getElementById('zoom-img').src=url;
+      document.getElementById('zoomed-view').style.display='flex';
+    }
 
-      if(!text && !file) return;
+    const overlay=document.getElementById('overlay');
+    const modalEdit=document.getElementById('modal-edit');
+    const modalConfirm=document.getElementById('modal-confirm');
+    const editInput=document.getElementById('edit-input');
 
-      let imageUrl = '';
-      if (file){
-        const path = uniquePath(user, file);
-        imageUrl = await uploadToAnyBucket(file, path);
-        if (!imageUrl){
-          alert('Upload failed. Tell me your exact bucket name and I’ll set it.');
-          return;
-        }
-      }
+    function closeModal(){ overlay.style.display='none'; }
 
-      const { data, error } = await db
-        .from('wish_list')
-        .insert([{ user, text, image: imageUrl, checked: false }])
-        .select();
+    function openEditModal(initial,onSave){
+      editInput.value=initial||'';
+      overlay.style.display='flex';
+      modalConfirm.style.display='none';
+      modalEdit.style.display='flex';
+      document.getElementById('edit-save').onclick=()=>{ onSave(editInput.value.trim()); closeModal(); };
+      document.getElementById('edit-cancel').onclick=closeModal;
+      editInput.focus();
+    }
 
-      if (error){ alert('Could not save wish.'); return; }
-
-      document.getElementById(`${user}-ul`).appendChild(makeItem(data[0]));
-      input.value = '';
-      fileEl.value = '';
+    function openConfirmModal(text,onYes){
+      document.getElementById('confirm-text').textContent=text;
+      overlay.style.display='flex';
+      modalEdit.style.display='none';
+      modalConfirm.style.display='flex';
+      document.getElementById('confirm-yes').onclick=()=>{ onYes(); closeModal(); };
+      document.getElementById('confirm-no').onclick=closeModal;
     }
 
     function makeItem(w){
@@ -188,35 +206,34 @@
       return li;
     }
 
-    function zoom(url){
-      document.getElementById('zoom-img').src=url;
-      document.getElementById('zoomed-view').style.display='flex';
-    }
+    async function addWish(user){
+      const input=document.getElementById(`${user}-input`);
+      const fileEl=document.getElementById(`${user}-file`);
+      const text=input.value.trim();
+      const file=fileEl.files[0];
+      if(!text && !file) return;
 
-    const overlay=document.getElementById('overlay');
-    const modalEdit=document.getElementById('modal-edit');
-    const modalConfirm=document.getElementById('modal-confirm');
-    const editInput=document.getElementById('edit-input');
+      let img='';
+      if(file){
+        try{
+          // compress image before saving to DB to speed things up
+          img = await compressImage(file, 640, 0.8);
+        }catch(e){
+          // fall back to raw base64 if compression fails
+          try{ img = await toBase64(file); }catch(_){}
+        }
+      }
 
-    function closeModal(){ overlay.style.display='none'; }
+      const {data,error}=await db
+        .from('wish_list')
+        .insert([{user,text,image:img,checked:false}])
+        .select();
 
-    function openEditModal(initial,onSave){
-      editInput.value=initial||'';
-      overlay.style.display='flex';
-      modalConfirm.style.display='none';
-      modalEdit.style.display='flex';
-      document.getElementById('edit-save').onclick=()=>{ onSave(editInput.value.trim()); closeModal(); };
-      document.getElementById('edit-cancel').onclick=closeModal;
-      editInput.focus();
-    }
+      if(error){ alert('Could not save wish.'); return; }
 
-    function openConfirmModal(text,onYes){
-      document.getElementById('confirm-text').textContent=text;
-      overlay.style.display='flex';
-      modalEdit.style.display='none';
-      modalConfirm.style.display='flex';
-      document.getElementById('confirm-yes').onclick=()=>{ onYes(); closeModal(); };
-      document.getElementById('confirm-no').onclick=closeModal;
+      document.getElementById(`${user}-ul`).appendChild(makeItem(data[0]));
+      input.value='';
+      fileEl.value='';
     }
 
     async function loadAll(){
