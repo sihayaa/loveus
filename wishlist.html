@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Wish List</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&family=Great+Vibes&family=Freestyle+Script&family=Brush+Script+MT&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Dreaming+Outloud+Pro&display=swap');
     @keyframes pulse {
@@ -11,47 +12,176 @@
       50% { transform: scale(1.05); opacity: 0.85; }
       100% { transform: scale(1); opacity: 1; }
     }
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
-  <style>
-    body { font-family: 'Patrick Hand', cursive; background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish_bg.png') no-repeat center center fixed; background-size: cover; margin: 0; padding: 40px; display: flex; flex-direction: column; align-items: center; color: #333; }
-    h1 { color: #62B9CC; font-size: 62px; margin-bottom: 10px; font-family: 'Brush Script MT', cursive; }
-    h3.subtitle { font-family: 'Freestyle Script', cursive; color: #458A99; font-size: 22px; margin-top: -5px; animation: pulse 2.5s infinite; }
-    .container { display: flex; gap: 50px; width: 100%; justify-content: center; }
-    .wishlist { background: rgba(255, 255, 255, 0.65); padding: 20px; border-radius: 16px; width: 45%; box-shadow: 0 4px 10px rgba(0,0,0,0.15); display: flex; flex-direction: column; align-items: center; }
-    .wishlist h2 { font-family: 'Freestyle Script', cursive; font-size: 30px; margin-bottom: 10px; }
+
+    body {
+      font-family: 'Patrick Hand', cursive;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish_bg.png') no-repeat center center fixed;
+      background-size: cover;
+      margin: 0;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      color: #333;
+    }
+
+    h1 {
+      color: #62B9CC;
+      font-size: 64px;
+      margin-bottom: 10px;
+      font-family: 'Brush Script MT', cursive;
+    }
+
+    h3.subtitle {
+      font-family: 'Freestyle Script', cursive;
+      color: #458A99;
+      font-size: 28px;
+      margin-top: -5px;
+      animation: pulse 2.5s infinite;
+    }
+
+    .container {
+      display: flex;
+      gap: 50px;
+      width: 100%;
+      justify-content: center;
+    }
+
+    .wishlist {
+      background: rgba(255, 255, 255, 0.65);
+      padding: 20px;
+      border-radius: 16px;
+      width: 45%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .wishlist h2 {
+      font-family: 'Freestyle Script', cursive;
+      font-size: 36px;
+      margin-bottom: 10px;
+    }
+
     #godbrand-list h2 { color: #A581DB; }
     #sihaya-list h2 { color: #81DBAA; }
-    .wishlist input[type="text"] { width: 100%; padding: 8px; margin-bottom: 10px; border-radius: 8px; border: 1px solid #ccc; font-family: 'Patrick Hand', cursive; }
-    .wishlist input[type="file"] { margin: 10px 0; font-family: 'Patrick Hand', cursive; }
-    .wishlist button { padding: 8px 14px; background: #e898d2; color: white; border: none; cursor: pointer; border-radius: 10px; font-family: 'Fredoka One', cursive; font-size: 14px; box-shadow: 2px 2px 6px rgba(0,0,0,0.1); transition: background 0.2s ease; align-self: center; }
-    .wishlist button:hover { background: #c46eb5; }
-    ul { list-style-type: none; padding: 0; width: 100%; }
-    li { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
-    li.checked span { text-decoration: line-through; opacity: 0.5; }
-    li img { width: 40px; height: 40px; object-fit: cover; cursor: pointer; border: 2px solid #ccc; border-radius: 5px; }
-    .zoomed { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100; }
-    .zoomed img { max-width: 90%; max-height: 90%; border-radius: 10px; }
-    .back-btn { position: absolute; top: 20px; left: 20px; background: #f7b7ea; color: #4b2354; padding: 10px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; box-shadow: 1px 1px 5px rgba(0,0,0,0.1); }
-    .edit-btn, .delete-btn { cursor: pointer; font-size: 16px; margin-left: auto; }
+
+    .wishlist input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    .wishlist input[type="file"] {
+      margin: 10px 0;
+      font-family: 'Patrick Hand', cursive;
+    }
+
+    .wishlist button {
+      padding: 8px 14px;
+      background: #e898d2;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 10px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 14px;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+      transition: background 0.2s ease;
+      align-self: center;
+    }
+
+    .wishlist button:hover {
+      background: #c46eb5;
+    }
+
+    ul {
+      list-style-type: none;
+      padding: 0;
+      width: 100%;
+    }
+
+    li {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    li.checked span {
+      text-decoration: line-through;
+      opacity: 0.5;
+    }
+
+    li img {
+      width: 40px;
+      height: 40px;
+      object-fit: cover;
+      cursor: pointer;
+      border: 2px solid #ccc;
+      border-radius: 5px;
+    }
+
+    .zoomed {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0,0,0,0.8);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 100;
+    }
+
+    .zoomed img {
+      max-width: 90%;
+      max-height: 90%;
+      border-radius: 10px;
+    }
+
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      background: #f7b7ea;
+      color: #4b2354;
+      padding: 10px 20px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: bold;
+      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
+    }
+
+    .edit-btn, .delete-btn {
+      cursor: pointer;
+      font-size: 16px;
+      margin-left: auto;
+    }
+
     .edit-btn { color: #555; }
     .delete-btn { color: red; }
   </style>
 </head>
 <body>
   <a href="index.html" class="back-btn">⬅ Back Home</a>
-  <h1>Our Wish Lists</h1>
+  <h1>Our Wish List</h1>
   <h3 class="subtitle">Where wishes may come true 🍀</h3>
   <div class="container">
     <div class="wishlist" id="godbrand-list">
-      <h2>Godbrand</h2>
+      <h2>Godbrand's Wish</h2>
       <input type="text" placeholder="Add a wish..." id="godbrand-input">
       <input type="file" id="godbrand-file">
       <button onclick="addWish('godbrand')">Wish it</button>
       <ul id="godbrand-ul"></ul>
     </div>
     <div class="wishlist" id="sihaya-list">
-      <h2>Sihaya</h2>
+      <h2>Sihaya's Wish</h2>
       <input type="text" placeholder="Add a wish..." id="sihaya-input">
       <input type="file" id="sihaya-file">
       <button onclick="addWish('sihaya')">Wish it</button>
@@ -60,96 +190,72 @@
   </div>
   <div id="zoomed-view" class="zoomed" style="display: none;" onclick="this.style.display='none'"><img id="zoom-img"></div>
   <script>
-    const supabase = supabase.createClient('https://tmjozxcjylcxgemffnoc.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI');
+    const { createClient } = supabase;
+    const supabaseUrl = 'https://tmjozxcjylcxgemffnoc.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI';
+    const supabaseClient = createClient(supabaseUrl, supabaseKey);
 
-    async function fetchWishes(user) {
-      const { data, error } = await supabase.from('wish_list').select('*').eq('user', user).order('created_at');
-      const ul = document.getElementById(`${user}-ul`);
-      ul.innerHTML = '';
+    async function addWish(owner) {
+      const input = document.getElementById(`${owner}-input`);
+      const fileInput = document.getElementById(`${owner}-file`);
+      const text = input.value.trim();
+      const file = fileInput.files[0];
+
+      if (!text && !file) return;
+
+      let imageUrl = null;
+      if (file) {
+        const fileName = `${Date.now()}_${file.name}`;
+        const { data, error } = await supabaseClient.storage.from('wish_list').upload(fileName, file);
+        if (error) {
+          alert('Upload error');
+          return;
+        }
+        imageUrl = `https://tmjozxcjylcxgemffnoc.supabase.co/storage/v1/object/public/wish_list/${fileName}`;
+      }
+
+      const { error: insertError } = await supabaseClient.from('wish_list').insert([{ owner, text, image_url: imageUrl }]);
+      if (insertError) {
+        alert('Insert error');
+        return;
+      }
+      input.value = '';
+      fileInput.value = '';
+      loadWishes();
+    }
+
+    async function loadWishes() {
+      const { data, error } = await supabaseClient.from('wish_list').select('*').order('id', { ascending: false });
       if (error) return;
-      data.forEach(wish => {
+
+      document.getElementById('godbrand-ul').innerHTML = '';
+      document.getElementById('sihaya-ul').innerHTML = '';
+
+      data.forEach(item => {
         const li = document.createElement('li');
-        if (wish.checked) li.classList.add('checked');
-
-        const checkbox = document.createElement('input');
-        checkbox.type = 'checkbox';
-        checkbox.checked = wish.checked;
-        checkbox.onchange = () => toggleCheck(wish.id, checkbox.checked);
-
+        if (item.image_url) {
+          const img = document.createElement('img');
+          img.src = item.image_url;
+          img.onclick = () => zoomImage(item.image_url);
+          li.appendChild(img);
+        }
         const span = document.createElement('span');
-        span.textContent = wish.text;
+        span.textContent = item.text;
+        li.appendChild(span);
 
-        const img = document.createElement('img');
-        img.src = wish.image;
-        img.onclick = () => zoomImage(wish.image);
-
-        const edit = document.createElement('span');
-        edit.className = 'edit-btn';
-        edit.innerHTML = '✏️';
-        edit.onclick = () => editWish(wish);
-
-        const del = document.createElement('span');
-        del.className = 'delete-btn';
-        del.innerHTML = '❌';
-        del.onclick = () => deleteWish(wish.id);
-
-        li.append(checkbox, span, img, edit, del);
+        const ul = document.getElementById(`${item.owner}-ul`);
         ul.appendChild(li);
       });
     }
 
-    async function addWish(user) {
-      const input = document.getElementById(`${user}-input`);
-      const fileInput = document.getElementById(`${user}-file`);
-      const file = fileInput.files[0];
-      let imageURL = '';
-
-      if (file) {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}.${fileExt}`;
-        const { data, error } = await supabase.storage.from('wish-images').upload(fileName, file);
-        if (!error) {
-          imageURL = `https://tmjozxcjylcxgemffnoc.supabase.co/storage/v1/object/public/wish-images/${fileName}`;
-        }
-      }
-
-      await supabase.from('wish_list').insert({ user, text: input.value, image: imageURL });
-      input.value = '';
-      fileInput.value = '';
-      fetchWishes(user);
-    }
-
-    async function deleteWish(id) {
-      await supabase.from('wish_list').delete().eq('id', id);
-      fetchWishes('godbrand');
-      fetchWishes('sihaya');
-    }
-
-    async function toggleCheck(id, checked) {
-      await supabase.from('wish_list').update({ checked }).eq('id', id);
-      fetchWishes('godbrand');
-      fetchWishes('sihaya');
-    }
-
     function zoomImage(url) {
-      const view = document.getElementById('zoomed-view');
+      const zoomed = document.getElementById('zoomed-view');
       const img = document.getElementById('zoom-img');
       img.src = url;
-      view.style.display = 'flex';
+      zoomed.style.display = 'flex';
     }
 
-    function editWish(wish) {
-      const newText = prompt('Edit your wish:', wish.text);
-      if (newText) {
-        supabase.from('wish_list').update({ text: newText }).eq('id', wish.id).then(() => {
-          fetchWishes('godbrand');
-          fetchWishes('sihaya');
-        });
-      }
-    }
-
-    fetchWishes('godbrand');
-    fetchWishes('sihaya');
+    loadWishes();
   </script>
 </body>
 </html>
