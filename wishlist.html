@@ -67,7 +67,10 @@
     </div>
   </div>
 
-  <div id="zoomed-view" class="zoomed"><img id="zoom-img" alt="zoom"></div>
+  <!-- Zoom view -->
+  <div id="zoomed-view" class="zoomed" onclick="this.style.display='none'">
+    <img id="zoom-img" alt="zoom" onclick="event.stopPropagation()">
+  </div>
 
   <div id="overlay" class="overlay">
     <div class="cloud" id="modal-edit">
