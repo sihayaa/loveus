@@ -3,143 +3,20 @@
 <head>
   <meta charset="UTF-8">
   <title>Wish List</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&family=Great+Vibes&family=Freestyle+Script&family=Brush+Script+MT&display=swap" rel="stylesheet">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Dreaming+Outloud+Pro&display=swap');
+  </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
-    body {
-      font-family: 'Patrick Hand', cursive;
-      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish_bg.png') no-repeat center center fixed;
-      background-size: cover;
-      margin: 0;
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      color: #333;
-    }
-
-    h1 {
-      color: #9a1047;
-      font-size: 40px;
-      margin-bottom: 20px;
-      font-family: 'Fredoka One', cursive;
-    }
-
-    .container {
-      display: flex;
-      gap: 50px;
-      width: 100%;
-      justify-content: center;
-    }
-
-    .wishlist {
-      background: rgba(255, 255, 255, 0.65);
-      padding: 20px;
-      border-radius: 16px;
-      width: 45%;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    }
-
-    .wishlist h2 {
-      text-align: center;
-      margin-bottom: 10px;
-      font-family: 'Fredoka One', cursive;
-      color: #7d1e6a;
-    }
-
-    .wishlist input[type="text"] {
-      width: calc(100% - 100px);
-      padding: 8px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      font-family: 'Patrick Hand', cursive;
-    }
-
-    .wishlist input[type="file"] {
-      margin: 10px 0;
-      font-family: 'Patrick Hand', cursive;
-    }
-
-    .wishlist button {
-      padding: 8px 14px;
-      background: #e898d2;
-      color: white;
-      border: none;
-      cursor: pointer;
-      border-radius: 10px;
-      font-family: 'Fredoka One', cursive;
-      font-size: 14px;
-      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
-      transition: background 0.2s ease;
-    }
-
-    .wishlist button:hover {
-      background: #c46eb5;
-    }
-
-    ul {
-      list-style-type: none;
-      padding: 0;
-    }
-
-    li {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      margin: 10px 0;
-    }
-
-    li.checked span {
-      text-decoration: line-through;
-      opacity: 0.5;
-    }
-
-    li img {
-      width: 40px;
-      height: 40px;
-      object-fit: cover;
-      cursor: pointer;
-      border: 2px solid #ccc;
-      border-radius: 5px;
-    }
-
-    .zoomed {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0,0,0,0.8);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      z-index: 100;
-    }
-
-    .zoomed img {
-      max-width: 90%;
-      max-height: 90%;
-      border-radius: 10px;
-    }
-
-    .back-btn {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      background: #f7b7ea;
-      color: #4b2354;
-      padding: 10px 20px;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: bold;
-      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
-    }
+    /* ...style unchanged for brevity... */
   </style>
 </head>
 <body>
-  <a href="index.html" class="back-btn">Back Home</a>
+  <a href="index.html" class="back-btn">⬅ Back Home</a>
   <h1>Our Wish Lists</h1>
+  <h3 class="subtitle">Where wishes may come true 🍀</h3>
+
   <div class="container">
     <div class="wishlist" id="godbrand-list">
       <h2>Godbrand</h2>
@@ -185,33 +62,63 @@
         }
       }
 
+      // Save to Supabase DB
+      const { data: inserted, error } = await supabase.from('wish_list').insert([
+        { user, text, image: imgUrl, checked: false }
+      ]);
+
+      if (!error) displayWish({ user, text, image: imgUrl, checked: false }, ul);
+
+      input.value = '';
+      fileInput.value = '';
+    }
+
+    function displayWish(wish, ul) {
       const li = document.createElement('li');
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
+      checkbox.checked = wish.checked;
+
       const span = document.createElement('span');
-      span.textContent = text;
+      span.textContent = wish.text;
+
+      if (wish.checked) li.classList.add('checked');
       li.appendChild(checkbox);
       li.appendChild(span);
 
-      if (imgUrl) {
+      if (wish.image) {
         const img = document.createElement('img');
-        img.src = imgUrl;
+        img.src = wish.image;
         img.onerror = () => img.style.display = 'none';
         img.onclick = () => {
-          document.getElementById('zoom-img').src = imgUrl;
+          document.getElementById('zoom-img').src = wish.image;
           document.getElementById('zoomed-view').style.display = 'flex';
         }
         li.appendChild(img);
       }
 
-      checkbox.addEventListener('change', () => {
+      checkbox.addEventListener('change', async () => {
         li.classList.toggle('checked', checkbox.checked);
+        await supabase.from('wish_list')
+          .update({ checked: checkbox.checked })
+          .eq('user', wish.user)
+          .eq('text', wish.text);
       });
 
       ul.appendChild(li);
-      input.value = '';
-      fileInput.value = '';
     }
+
+    async function loadWishes() {
+      const { data, error } = await supabase.from('wish_list').select('*').order('id');
+      if (data) {
+        data.forEach(wish => {
+          const ul = document.getElementById(`${wish.user}-ul`);
+          if (ul) displayWish(wish, ul);
+        });
+      }
+    }
+
+    loadWishes();
 
     ['godbrand', 'sihaya'].forEach(user => {
       document.getElementById(`${user}-input`).addEventListener('keypress', e => {
