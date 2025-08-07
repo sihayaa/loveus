@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Wish List</title>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Fredoka+One&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
     body {
@@ -22,6 +22,7 @@
       color: #9a1047;
       font-size: 40px;
       margin-bottom: 20px;
+      font-family: 'Fredoka One', cursive;
     }
 
     .container {
@@ -32,34 +33,49 @@
     }
 
     .wishlist {
-      background: rgba(255, 255, 255, 0.8);
+      background: rgba(255, 255, 255, 0.65);
       padding: 20px;
-      border-radius: 12px;
+      border-radius: 16px;
       width: 45%;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
 
     .wishlist h2 {
       text-align: center;
       margin-bottom: 10px;
+      font-family: 'Fredoka One', cursive;
+      color: #7d1e6a;
     }
 
     .wishlist input[type="text"] {
       width: calc(100% - 100px);
       padding: 8px;
       margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      font-family: 'Patrick Hand', cursive;
     }
 
     .wishlist input[type="file"] {
       margin: 10px 0;
+      font-family: 'Patrick Hand', cursive;
     }
 
     .wishlist button {
       padding: 8px 14px;
-      background: #9a1047;
+      background: #e898d2;
       color: white;
       border: none;
       cursor: pointer;
-      border-radius: 6px;
+      border-radius: 10px;
+      font-family: 'Fredoka One', cursive;
+      font-size: 14px;
+      box-shadow: 2px 2px 6px rgba(0,0,0,0.1);
+      transition: background 0.2s ease;
+    }
+
+    .wishlist button:hover {
+      background: #c46eb5;
     }
 
     ul {
@@ -111,12 +127,13 @@
       position: absolute;
       top: 20px;
       left: 20px;
-      background: #dcb3db;
+      background: #f7b7ea;
       color: #4b2354;
       padding: 10px 20px;
       border-radius: 8px;
       text-decoration: none;
       font-weight: bold;
+      box-shadow: 1px 1px 5px rgba(0,0,0,0.1);
     }
   </style>
 </head>
@@ -159,10 +176,13 @@
       let imgUrl = '';
       const file = fileInput.files[0];
       if (file) {
-        const filePath = `${user}/${Date.now()}_${file.name}`;
-        await supabase.storage.from('wishlist-images').upload(filePath, file);
-        const { data } = supabase.storage.from('wishlist-images').getPublicUrl(filePath);
-        imgUrl = data.publicUrl;
+        const fileExt = file.name.split('.').pop();
+        const filePath = `${user}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage.from('wishlist-images').upload(filePath, file);
+        if (!uploadError) {
+          const { data } = supabase.storage.from('wishlist-images').getPublicUrl(filePath);
+          imgUrl = data.publicUrl;
+        }
       }
 
       const li = document.createElement('li');
@@ -176,6 +196,7 @@
       if (imgUrl) {
         const img = document.createElement('img');
         img.src = imgUrl;
+        img.onerror = () => img.style.display = 'none';
         img.onclick = () => {
           document.getElementById('zoom-img').src = imgUrl;
           document.getElementById('zoomed-view').style.display = 'flex';
