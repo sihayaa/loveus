@@ -8,35 +8,44 @@
   <style>
     body{
       font-family:'Patrick Hand',cursive;
-      background:white;
-      margin:0;padding:40px;
-      color:#333;display:flex;flex-direction:column;align-items:center;
+      background:white;margin:0;padding:40px;color:#333;
+      display:flex;flex-direction:column;align-items:center;
     }
     h1{color:#4fa981;font-size:36px;margin:0 0 20px;text-shadow:0 0 5px #fff;}
     form{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
     input{
       padding:8px;border:2px solid #4fa981;border-radius:8px;font-size:16px;width:240px
     }
-    button{
-      background:#4fa981;color:#fff;border:none;padding:8px 16px;border-radius:8px;
-      font-size:16px;cursor:pointer;transition:.2s
-    }
-    button:hover{transform:scale(1.03)}
+    button{cursor:pointer}
+
     ul{list-style:none;padding:0;margin:0;width:100%;max-width:640px}
     li{
       background:rgba(255,255,255,.88);
-      border:1px solid #e6f4ef;
-      padding:10px 12px;margin:8px 0;border-radius:10px;
+      border:1px solid #e6f4ef;border-radius:10px;
+      padding:10px 12px;margin:8px 0;
       display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap
     }
     .left{display:flex;align-items:center;gap:10px;min-width:220px}
-    .desc{
-      font-weight:700;color:#2b7a6b;text-decoration:none;word-break:break-word;
-    }
+    .desc{font-weight:700;color:#2b7a6b;text-decoration:none;word-break:break-word;}
     .received .desc{color:gray;text-decoration:line-through}
-    .right{display:flex;gap:6px}
-    .mark-btn{background:#a372d1}
-    .delete-btn{background:#e0576a}
+
+    .mini-btn{
+      border:1px solid #bfa7e4;background:#ede6f8;color:#523b77;
+      padding:4px 10px;border-radius:8px;font-size:14px;line-height:1;transition:.15s;
+    }
+    .mini-btn:hover{transform:translateY(-1px)}
+    .mini-btn.invert{border-color:#a6d6c6;background:#e9f6f2;color:#2e6b5e}
+
+    .icon-btn{
+      border:1px solid #e5e5e5;background:#fff;border-radius:8px;
+      padding:4px 8px;font-size:14px;line-height:1;display:flex;align-items:center;gap:6px;
+    }
+    .icon-btn:hover{background:#f7f7f7}
+    .icon-red{border-color:#f5c5cc;color:#b82a3a;background:#fdecee}
+    .icon-red:hover{background:#fbd9de}
+    .icon-gray{color:#444}
+
+    .right{display:flex;gap:6px;align-items:center}
     .hint{opacity:.75;font-size:14px;margin-top:10px}
   </style>
 </head>
@@ -46,10 +55,10 @@
   <form id="tracking-form">
     <input type="text" id="description" placeholder="Description (e.g., Birthday gift)" required />
     <input type="url" id="link" placeholder="Tracking Link (https://…)" required />
-    <button type="submit">Add</button>
+    <button type="submit" class="mini-btn invert">Add</button>
   </form>
 
-  <div class="hint">Tip: paste the courier’s tracking URL (UPS/USPS/FedEx/LBC/etc.). Click “Mark Received” to cross it out.</div>
+  <div class="hint">Tip: paste the courier’s tracking URL (UPS/USPS/FedEx/LBC/etc.). Click “Receive” to cross it out.</div>
 
   <ul id="tracking-list"></ul>
 
@@ -68,58 +77,77 @@
       const { data, error } = await supabaseClient
         .from("tracking_links")
         .select("*")
-        .order("received", { ascending: true })  
+        .order("received", { ascending: true })
         .order("id", { ascending: false });
 
       if (error) { console.error(error); return; }
 
       const list = document.getElementById("tracking-list");
       list.innerHTML = "";
-      data.forEach(item => {
-        const li = document.createElement("li");
-        if (item.received) li.classList.add("received");
+      data.forEach(item => list.appendChild(renderItem(item)));
+    }
 
-        const left = document.createElement("div");
-        left.className = "left";
+    function renderItem(item){
+      const li = document.createElement("li");
+      if (item.received) li.classList.add("received");
 
-        const a = document.createElement("a");
-        a.href = item.link;
-        a.target = "_blank";
-        a.rel = "noopener";
-        a.className = "desc";
-        a.textContent = item.description;
+      const left = document.createElement("div");
+      left.className = "left";
 
-        left.appendChild(a);
+      const a = document.createElement("a");
+      a.href = item.link; a.target = "_blank"; a.rel = "noopener";
+      a.className = "desc"; a.textContent = item.description;
+      left.appendChild(a);
 
-        const right = document.createElement("div");
-        right.className = "right";
+      const right = document.createElement("div");
+      right.className = "right";
 
-        const markBtn = document.createElement("button");
-        markBtn.className = "mark-btn";
-        markBtn.textContent = item.received ? "Undo" : "Mark Received";
-        markBtn.onclick = async () => {
-          await supabaseClient.from("tracking_links")
-            .update({ received: !item.received })
-            .eq("id", item.id);
-        };
+      const receiveBtn = document.createElement("button");
+      receiveBtn.className = "mini-btn";
+      receiveBtn.textContent = item.received ? "Undo" : "Receive";
+      receiveBtn.title = item.received ? "Mark as not received" : "Mark as received";
+      receiveBtn.onclick = async () => {
+        await supabaseClient.from("tracking_links")
+          .update({ received: !item.received })
+          .eq("id", item.id);
+      };
 
-        const delBtn = document.createElement("button");
-        delBtn.className = "delete-btn";
-        delBtn.textContent = "Delete";
-        delBtn.onclick = async () => {
-          if (!confirm("Delete this entry?")) return;
-          await supabaseClient.from("tracking_links")
-            .delete()
-            .eq("id", item.id);
-        };
+      const editBtn = document.createElement("button");
+      editBtn.className = "icon-btn icon-gray";
+      editBtn.setAttribute("aria-label","Edit");
+      editBtn.title = "Edit";
+      editBtn.innerHTML = "✏️";
+      editBtn.onclick = async () => {
+        const newDesc = prompt("Edit description:", item.description);
+        if (newDesc === null) return; // cancelled
+        const newLinkRaw = prompt("Edit link:", item.link);
+        if (newLinkRaw === null) return;
+        const newLink = normalizeUrl(newLinkRaw.trim());
+        const { error } = await supabaseClient.from("tracking_links")
+          .update({ description: newDesc.trim(), link: newLink })
+          .eq("id", item.id);
+        if (error) alert("Update failed.");
+      };
 
-        right.appendChild(markBtn);
-        right.appendChild(delBtn);
+      const delBtn = document.createElement("button");
+      delBtn.className = "icon-btn icon-red";
+      delBtn.setAttribute("aria-label","Delete");
+      delBtn.title = "Delete";
+      delBtn.innerHTML = "🗑️";
+      delBtn.onclick = async () => {
+        if (!confirm("Delete this entry?")) return;
+        await supabaseClient.from("tracking_links")
+          .delete()
+          .eq("id", item.id);
+      };
 
-        li.appendChild(left);
-        li.appendChild(right);
-        list.appendChild(li);
-      });
+      right.appendChild(receiveBtn);
+      right.appendChild(editBtn);
+      right.appendChild(delBtn);
+
+      li.appendChild(left);
+      li.appendChild(right);
+      return li;
     }
 
     document.getElementById("tracking-form").addEventListener("submit", async (e)=>{
@@ -127,7 +155,6 @@
       const description = document.getElementById("description").value.trim();
       let link = document.getElementById("link").value.trim();
       if (!description || !link) return;
-
       link = normalizeUrl(link);
 
       const { error } = await supabaseClient
