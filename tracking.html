@@ -19,6 +19,24 @@
       font-family:'Patrick Hand',cursive;
       background:white;margin:0;padding:40px;color:#333;
       display:flex;flex-direction:column;align-items:center;
+      position: relative;
+    }
+    #back-home {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: var(--green);
+      text-decoration: none;
+      font-size: 18px;
+      background: var(--glass);
+      padding: 6px 12px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      transition: 0.15s;
+    }
+    #back-home:hover {
+      transform: translateY(-1px);
+      background: rgba(255,255,255,0.2);
     }
     h1{color:var(--green);font-size:36px;margin:0 0 20px;text-shadow:0 0 5px #fff;}
     form{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
@@ -105,6 +123,7 @@
   </style>
 </head>
 <body>
+  <a href="index.html" id="back-home">← Back Home</a>
   <h1>📦 Package Tracking</h1>
   <form id="tracking-form">
     <input type="text" id="description" placeholder="Description (e.g., Birthday gift)" required />
