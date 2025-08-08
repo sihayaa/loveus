@@ -10,9 +10,9 @@
       --green:#4fa981;
       --green-ink:#2e6b5e;
       --purple:#a372d1;
-      --card:#ffffff;
-      --glass: rgba(255,255,255,0.75);
-      --shadow: 0 10px 30px rgba(0,0,0,.12);
+      --glass: rgba(0,0,0,0.55);
+      --shadow: 0 10px 30px rgba(0,0,0,.25);
+      --manila:#17BD8D;
     }
     *{box-sizing:border-box}
     body{
@@ -30,14 +30,22 @@
     li{
       background:var(--glass);
       backdrop-filter: blur(8px);
-      border:1px solid #e6f4ef;border-radius:12px;
+      border:1px solid rgba(255,255,255,.18);
+      border-radius:12px;
       padding:12px 14px;margin:10px 0;
       display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;
       box-shadow: var(--shadow);
     }
-    .left{display:flex;align-items:center;gap:10px;min-width:220px}
-    .desc{font-weight:700;color:var(--green-ink);text-decoration:none;word-break:break-word;}
-    .received .desc{color:gray;text-decoration:line-through}
+    .left{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:220px}
+    .desc{font-weight:700;color:#FFFFFF;text-decoration:none;word-break:break-word;}
+    .received .desc{color:#cfcfcf;text-decoration:line-through}
+    .time-info{
+      font-size:12px;opacity:0.95;white-space:nowrap;
+      display:flex;gap:8px;align-items:center;
+    }
+    .v-time{color:#000; text-shadow:0 0 4px #8e5dd2, 0 0 7px #8e5dd2}
+    .m-time{color:var(--manila)}
+    .divider{opacity:.5;color:#ddd}
     .mini-btn{
       border:1px solid #bfa7e4;background:#ede6f8;color:#523b77;
       padding:4px 10px;border-radius:8px;font-size:14px;line-height:1;transition:.15s;
@@ -103,7 +111,7 @@
     <input type="url" id="link" placeholder="Tracking Link (https://…)" required />
     <button type="submit" class="mini-btn invert">Add</button>
   </form>
-  <div class="hint">Tip: paste the courier’s tracking URL (UPS/USPS/FedEx/LBC/etc.). Click “Receive” to cross it out.</div>
+  <div class="hint">Tip: paste the courier’s tracking URL. Click “Receive” to cross it out.</div>
   <ul id="tracking-list"></ul>
   <div class="backdrop" id="edit-backdrop">
     <div class="modal">
@@ -144,6 +152,12 @@
       if (!/^https?:\/\//i.test(u)) return "https://" + u;
       return u;
     }
+    function getTimeInZones(){
+      const options = { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit', hour12:true };
+      const vegas = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
+      const manila = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', ...options });
+      return { vegas, manila };
+    }
     async function loadTracking(){
       const { data, error } = await supabaseClient
         .from("tracking_links")
@@ -153,39 +167,42 @@
       if (error) return;
       const list = $("tracking-list");
       list.innerHTML = "";
-      data.forEach(item => list.appendChild(renderItem(item)));
-    }
-    function renderItem(item){
-      const li = document.createElement("li");
-      if (item.received) li.classList.add("received");
-      const left = document.createElement("div");
-      left.className = "left";
-      const a = document.createElement("a");
-      a.href = item.link; a.target = "_blank"; a.rel = "noopener";
-      a.className = "desc"; a.textContent = item.description;
-      left.appendChild(a);
-      const right = document.createElement("div");
-      right.className = "right";
-      const receiveBtn = document.createElement("button");
-      receiveBtn.className = "mini-btn";
-      receiveBtn.textContent = item.received ? "Undo" : "Receive";
-      receiveBtn.onclick = async () => {
-        await supabaseClient.from("tracking_links").update({ received: !item.received }).eq("id", item.id);
-      };
-      const editBtn = document.createElement("button");
-      editBtn.className = "icon-btn";
-      editBtn.innerHTML = "✏️";
-      editBtn.onclick = () => openEditModal(item);
-      const delBtn = document.createElement("button");
-      delBtn.className = "icon-btn icon-red";
-      delBtn.innerHTML = "🗑️";
-      delBtn.onclick = () => openDeleteModal(item);
-      right.appendChild(receiveBtn);
-      right.appendChild(editBtn);
-      right.appendChild(delBtn);
-      li.appendChild(left);
-      li.appendChild(right);
-      return li;
+      data.forEach(item => {
+        const li = document.createElement("li");
+        if (item.received) li.classList.add("received");
+        const left = document.createElement("div");
+        left.className = "left";
+        const a = document.createElement("a");
+        a.href = item.link; a.target = "_blank"; a.rel = "noopener";
+        a.className = "desc"; a.textContent = item.description;
+        left.appendChild(a);
+        const times = document.createElement("div");
+        times.className = "time-info";
+        times.innerHTML = `<span class="v-time">Vegas: ${item.vegas_time}</span><span class="divider">|</span><span class="m-time">Manila: ${item.manila_time}</span>`;
+        left.appendChild(times);
+        const right = document.createElement("div");
+        right.className = "right";
+        const receiveBtn = document.createElement("button");
+        receiveBtn.className = "mini-btn";
+        receiveBtn.textContent = item.received ? "Undo" : "Receive";
+        receiveBtn.onclick = async () => {
+          await supabaseClient.from("tracking_links").update({ received: !item.received }).eq("id", item.id);
+        };
+        const editBtn = document.createElement("button");
+        editBtn.className = "icon-btn";
+        editBtn.innerHTML = "✏️";
+        editBtn.onclick = () => openEditModal(item);
+        const delBtn = document.createElement("button");
+        delBtn.className = "icon-btn icon-red";
+        delBtn.innerHTML = "🗑️";
+        delBtn.onclick = () => openDeleteModal(item);
+        right.appendChild(receiveBtn);
+        right.appendChild(editBtn);
+        right.appendChild(delBtn);
+        li.appendChild(left);
+        li.appendChild(right);
+        list.appendChild(li);
+      });
     }
     $("tracking-form").addEventListener("submit", async (e)=>{
       e.preventDefault();
@@ -193,7 +210,8 @@
       let link = $("link").value.trim();
       if (!description || !link) return;
       link = normalizeUrl(link);
-      const { error } = await supabaseClient.from("tracking_links").insert([{ description, link, received: false }]);
+      const { vegas, manila } = getTimeInZones();
+      const { error } = await supabaseClient.from("tracking_links").insert([{ description, link, received: false, vegas_time: vegas, manila_time: manila }]);
       if (!error) e.target.reset();
     });
     function openEditModal(item){
