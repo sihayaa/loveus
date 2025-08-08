@@ -201,6 +201,7 @@
       $("edit-desc").value = item.description || "";
       $("edit-link").value = item.link || "";
       $("edit-backdrop").classList.add("show");
+      $("edit-desc").focus();
     }
     function closeEditModal(){
       $("edit-backdrop").classList.remove("show");
@@ -215,6 +216,18 @@
       const { error } = await supabaseClient.from("tracking_links").update({ description:newDesc, link:newLink }).eq("id", editingItem.id);
       if (!error) closeEditModal();
     };
+    $("edit-desc").addEventListener("keydown", (e)=>{
+      if (e.key === "Enter") {
+        e.preventDefault();
+        $("edit-save").click();
+      }
+    });
+    $("edit-link").addEventListener("keydown", (e)=>{
+      if (e.key === "Enter") {
+        e.preventDefault();
+        $("edit-save").click();
+      }
+    });
     $("edit-backdrop").addEventListener("click", (e)=>{
       if (e.target.id === "edit-backdrop") closeEditModal();
     });
