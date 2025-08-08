@@ -26,7 +26,6 @@
       padding:8px;border:2px solid var(--green);border-radius:8px;font-size:16px;width:240px
     }
     button{cursor:pointer}
-
     ul{list-style:none;padding:0;margin:0;width:100%;max-width:680px}
     li{
       background:var(--glass);
@@ -39,14 +38,12 @@
     .left{display:flex;align-items:center;gap:10px;min-width:220px}
     .desc{font-weight:700;color:var(--green-ink);text-decoration:none;word-break:break-word;}
     .received .desc{color:gray;text-decoration:line-through}
-
     .mini-btn{
       border:1px solid #bfa7e4;background:#ede6f8;color:#523b77;
       padding:4px 10px;border-radius:8px;font-size:14px;line-height:1;transition:.15s;
     }
     .mini-btn:hover{transform:translateY(-1px)}
     .mini-btn.invert{border-color:#a6d6c6;background:#e9f6f2;color:var(--green-ink)}
-
     .icon-btn{
       border:1px solid #e5e5e5;background:#fff;border-radius:10px;
       padding:6px 8px;display:flex;align-items:center;justify-content:center;
@@ -57,13 +54,11 @@
     .icon-red:hover{background:#fbd9de}
     .right{display:flex;gap:8px;align-items:center}
     .hint{opacity:.75;font-size:14px;margin-top:10px}
-
     .backdrop{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:rgba(0,0,0,.35); z-index:1000;
     }
     .backdrop.show{display:flex;}
-
     .modal{
       width:min(92vw,520px);
       border-radius:16px;
@@ -98,26 +93,21 @@
     .btn-secondary{ background:#ede6f8; color:#523b77; border-color:#bfa7e4;}
     .btn-danger{ background:#e0576a; color:#fff; }
     .btn:hover{transform:translateY(-1px)}
-
     .modal p{margin:10px 0 0}
   </style>
 </head>
 <body>
   <h1>📦 Package Tracking</h1>
-
   <form id="tracking-form">
     <input type="text" id="description" placeholder="Description (e.g., Birthday gift)" required />
     <input type="url" id="link" placeholder="Tracking Link (https://…)" required />
     <button type="submit" class="mini-btn invert">Add</button>
   </form>
-
   <div class="hint">Tip: paste the courier’s tracking URL (UPS/USPS/FedEx/LBC/etc.). Click “Receive” to cross it out.</div>
-
   <ul id="tracking-list"></ul>
-
-  <div class="backdrop" id="edit-backdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="edit-title">
-      <h2 id="edit-title">Edit entry</h2>
+  <div class="backdrop" id="edit-backdrop">
+    <div class="modal">
+      <h2>Edit entry</h2>
       <div class="row">
         <label for="edit-desc">Description</label>
         <input id="edit-desc" type="text" />
@@ -132,10 +122,9 @@
       </div>
     </div>
   </div>
-
-  <div class="backdrop" id="delete-backdrop" aria-hidden="true">
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delete-title">
-      <h2 id="delete-title">Delete entry?</h2>
+  <div class="backdrop" id="delete-backdrop">
+    <div class="modal">
+      <h2>Delete entry?</h2>
       <p>This can’t be undone.</p>
       <div class="actions">
         <button class="btn btn-secondary" id="delete-cancel">Cancel</button>
@@ -143,119 +132,75 @@
       </div>
     </div>
   </div>
-
   <script>
-
     const supabaseUrl = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
-
+    let editingItem = null;
+    let deletingItem = null;
+    function $(id){ return document.getElementById(id); }
     function normalizeUrl(u){
       if (!u) return "";
       if (!/^https?:\/\//i.test(u)) return "https://" + u;
       return u;
     }
-
-    let editingItem = null;
-    let deletingItem = null;
-
-    function $(id){ return document.getElementById(id); }
-
     async function loadTracking(){
       const { data, error } = await supabaseClient
         .from("tracking_links")
         .select("*")
         .order("received", { ascending: true })
         .order("id", { ascending: false });
-
-      if (error) { console.error(error); return; }
-
+      if (error) return;
       const list = $("tracking-list");
       list.innerHTML = "";
       data.forEach(item => list.appendChild(renderItem(item)));
     }
-
     function renderItem(item){
       const li = document.createElement("li");
       if (item.received) li.classList.add("received");
-
       const left = document.createElement("div");
       left.className = "left";
-
       const a = document.createElement("a");
       a.href = item.link; a.target = "_blank"; a.rel = "noopener";
       a.className = "desc"; a.textContent = item.description;
       left.appendChild(a);
-
       const right = document.createElement("div");
       right.className = "right";
-
       const receiveBtn = document.createElement("button");
       receiveBtn.className = "mini-btn";
       receiveBtn.textContent = item.received ? "Undo" : "Receive";
-      receiveBtn.title = item.received ? "Mark as not received" : "Mark as received";
       receiveBtn.onclick = async () => {
-        await supabaseClient.from("tracking_links")
-          .update({ received: !item.received })
-          .eq("id", item.id);
+        await supabaseClient.from("tracking_links").update({ received: !item.received }).eq("id", item.id);
       };
-)
       const editBtn = document.createElement("button");
       editBtn.className = "icon-btn";
-      editBtn.setAttribute("aria-label","Edit");
-      editBtn.title = "Edit";
-      editBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="#444" stroke-width="1.5" fill="#fff"/>
-          <path d="M14.06 6.19l3.75 3.75 1.69-1.69a1.5 1.5 0 0 0 0-2.12l-1.63-1.63a1.5 1.5 0 0 0-2.12 0l-1.69 1.69z" fill="#a372d1"/>
-        </svg>`;
+      editBtn.innerHTML = "✏️";
       editBtn.onclick = () => openEditModal(item);
-
       const delBtn = document.createElement("button");
       delBtn.className = "icon-btn icon-red";
-      delBtn.setAttribute("aria-label","Delete");
-      delBtn.title = "Delete";
-      delBtn.innerHTML = `
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-          <path d="M9 3h6m-9 4h12M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="#b82a3a" stroke-width="1.6"/>
-          <rect x="9" y="11" width="2" height="7" fill="#b82a3a"/><rect x="13" y="11" width="2" height="7" fill="#b82a3a"/>
-        </svg>`;
+      delBtn.innerHTML = "🗑️";
       delBtn.onclick = () => openDeleteModal(item);
-
       right.appendChild(receiveBtn);
       right.appendChild(editBtn);
       right.appendChild(delBtn);
-
       li.appendChild(left);
       li.appendChild(right);
       return li;
     }
-
     $("tracking-form").addEventListener("submit", async (e)=>{
       e.preventDefault();
       const description = $("description").value.trim();
       let link = $("link").value.trim();
       if (!description || !link) return;
       link = normalizeUrl(link);
-
-      const { error } = await supabaseClient
-        .from("tracking_links")
-        .insert([{ description, link, received: false }]);
-
-      if (!error){
-        e.target.reset();
-      } else {
-        console.error(error);
-        alert("Failed to add. Please try again.");
-      }
+      const { error } = await supabaseClient.from("tracking_links").insert([{ description, link, received: false }]);
+      if (!error) e.target.reset();
     });
-
     function openEditModal(item){
       editingItem = item;
       $("edit-desc").value = item.description || "";
       $("edit-link").value = item.link || "";
       $("edit-backdrop").classList.add("show");
-      $("edit-desc").focus();
     }
     function closeEditModal(){
       $("edit-backdrop").classList.remove("show");
@@ -267,24 +212,12 @@
       const newDesc = $("edit-desc").value.trim();
       let newLink = normalizeUrl($("edit-link").value.trim());
       if (!newDesc || !newLink) return;
-      const { error } = await supabaseClient.from("tracking_links")
-        .update({ description:newDesc, link:newLink })
-        .eq("id", editingItem.id);
-      if (error) { alert("Update failed."); return; }
-      closeEditModal();
+      const { error } = await supabaseClient.from("tracking_links").update({ description:newDesc, link:newLink }).eq("id", editingItem.id);
+      if (!error) closeEditModal();
     };
-
     $("edit-backdrop").addEventListener("click", (e)=>{
       if (e.target.id === "edit-backdrop") closeEditModal();
     });
-
-    document.addEventListener("keydown", (e)=>{
-      if (e.key === "Escape"){
-        if ($("edit-backdrop").classList.contains("show")) closeEditModal();
-        if ($("delete-backdrop").classList.contains("show")) closeDeleteModal();
-      }
-    });
-
     function openDeleteModal(item){
       deletingItem = item;
       $("delete-backdrop").classList.add("show");
@@ -302,12 +235,13 @@
     $("delete-backdrop").addEventListener("click", (e)=>{
       if (e.target.id === "delete-backdrop") closeDeleteModal();
     });
-
-    supabaseClient
-      .channel("tracking_changes")
-      .on("postgres_changes", { event: "*", schema: "public", table: "tracking_links" }, loadTracking)
-      .subscribe();
-
+    document.addEventListener("keydown", (e)=>{
+      if (e.key === "Escape"){
+        if ($("edit-backdrop").classList.contains("show")) closeEditModal();
+        if ($("delete-backdrop").classList.contains("show")) closeDeleteModal();
+      }
+    });
+    supabaseClient.channel("tracking_changes").on("postgres_changes", { event: "*", schema: "public", table: "tracking_links" }, loadTracking).subscribe();
     loadTracking();
   </script>
 </body>
