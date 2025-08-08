@@ -17,9 +17,23 @@
     *{box-sizing:border-box}
     body{
       font-family:'Patrick Hand',cursive;
-      background:white;margin:0;padding:40px;color:#333;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-bg%20.png') no-repeat center center fixed;
+      background-size: cover;
+      margin:0;padding:40px;color:#333;
       display:flex;flex-direction:column;align-items:center;
       position: relative;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at center, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.55) 100%);
+      z-index: 0;
+      pointer-events: none;
+    }
+    body > * {
+      position: relative;
+      z-index: 1;
     }
     #back-home {
       position: absolute;
@@ -135,6 +149,7 @@
     <button id="sort-toggle" class="mini-btn invert">Sort: Oldest → Newest</button>
   </div>
   <ul id="tracking-list"></ul>
+
   <div class="backdrop" id="edit-backdrop">
     <div class="modal">
       <h2>Edit entry</h2>
@@ -152,6 +167,7 @@
       </div>
     </div>
   </div>
+
   <div class="backdrop" id="delete-backdrop">
     <div class="modal">
       <h2>Delete entry?</h2>
@@ -162,6 +178,7 @@
       </div>
     </div>
   </div>
+
   <script>
     const supabaseUrl = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
