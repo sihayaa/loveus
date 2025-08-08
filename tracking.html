@@ -61,7 +61,7 @@
     .icon-red{border-color:#f5c5cc;background:#fdecee}
     .icon-red:hover{background:#fbd9de}
     .right{display:flex;gap:8px;align-items:center}
-    .hint{opacity:.75;font-size:14px;margin-top:10px}
+    .hint{opacity:.75;font-size:14px;margin-top:10px;text-align:center}
     .backdrop{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:rgba(0,0,0,.35); z-index:1000;
@@ -112,6 +112,9 @@
     <button type="submit" class="mini-btn invert">Add</button>
   </form>
   <div class="hint">Tip: paste the courier’s tracking URL. Click “Receive” to cross it out.</div>
+  <div style="text-align:center; margin:10px 0;">
+    <button id="sort-toggle" class="mini-btn invert">Sort: Oldest → Newest</button>
+  </div>
   <ul id="tracking-list"></ul>
   <div class="backdrop" id="edit-backdrop">
     <div class="modal">
@@ -146,6 +149,7 @@
     const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
     let editingItem = null;
     let deletingItem = null;
+    let sortOrder = 'asc';
     function $(id){ return document.getElementById(id); }
     function normalizeUrl(u){
       if (!u) return "";
@@ -163,7 +167,7 @@
         .from("tracking_links")
         .select("*")
         .order("received", { ascending: true })
-        .order("id", { ascending: false });
+        .order("id", { ascending: sortOrder === 'asc' });
       if (error) return;
       const list = $("tracking-list");
       list.innerHTML = "";
@@ -271,6 +275,12 @@
         if ($("edit-backdrop").classList.contains("show")) closeEditModal();
         if ($("delete-backdrop").classList.contains("show")) closeDeleteModal();
       }
+    });
+    document.getElementById("sort-toggle").addEventListener("click", () => {
+      sortOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+      document.getElementById("sort-toggle").textContent =
+        sortOrder === 'asc' ? "Sort: Oldest → Newest" : "Sort: Newest → Oldest";
+      loadTracking();
     });
     supabaseClient.channel("tracking_changes").on("postgres_changes", { event: "*", schema: "public", table: "tracking_links" }, loadTracking).subscribe();
     loadTracking();
