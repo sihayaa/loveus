@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Package Tracking</title>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
+  <style>
+    body{
+      font-family:'Patrick Hand',cursive;
+      background:white;
+      margin:0;padding:40px;
+      color:#333;display:flex;flex-direction:column;align-items:center;
+    }
+    h1{color:#4fa981;font-size:36px;margin:0 0 20px;text-shadow:0 0 5px #fff;}
+    form{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;justify-content:center}
+    input{
+      padding:8px;border:2px solid #4fa981;border-radius:8px;font-size:16px;width:240px
+    }
+    button{
+      background:#4fa981;color:#fff;border:none;padding:8px 16px;border-radius:8px;
+      font-size:16px;cursor:pointer;transition:.2s
+    }
+    button:hover{transform:scale(1.03)}
+    ul{list-style:none;padding:0;margin:0;width:100%;max-width:640px}
+    li{
+      background:rgba(255,255,255,.88);
+      border:1px solid #e6f4ef;
+      padding:10px 12px;margin:8px 0;border-radius:10px;
+      display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap
+    }
+    .left{display:flex;align-items:center;gap:10px;min-width:220px}
+    .desc{
+      font-weight:700;color:#2b7a6b;text-decoration:none;word-break:break-word;
+    }
+    .received .desc{color:gray;text-decoration:line-through}
+    .right{display:flex;gap:6px}
+    .mark-btn{background:#a372d1}
+    .delete-btn{background:#e0576a}
+    .hint{opacity:.75;font-size:14px;margin-top:10px}
+  </style>
+</head>
+<body>
+  <h1>📦 Package Tracking</h1>
+
+  <form id="tracking-form">
+    <input type="text" id="description" placeholder="Description (e.g., Birthday gift)" required />
+    <input type="url" id="link" placeholder="Tracking Link (https://…)" required />
+    <button type="submit">Add</button>
+  </form>
+
+  <div class="hint">Tip: paste the courier’s tracking URL (UPS/USPS/FedEx/LBC/etc.). Click “Mark Received” to cross it out.</div>
+
+  <ul id="tracking-list"></ul>
+
+  <script>
+
+    const supabaseUrl = "https://tmjozxcjylcxgemffnoc.supabase.co";
+    const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
+    const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+    function normalizeUrl(u){
+      if (!/^https?:\/\//i.test(u)) return "https://" + u;
+      return u;
+    }
+
+    async function loadTracking(){
+      const { data, error } = await supabaseClient
+        .from("tracking_links")
+        .select("*")
+        .order("received", { ascending: true })  
+        .order("id", { ascending: false });
+
+      if (error) { console.error(error); return; }
+
+      const list = document.getElementById("tracking-list");
+      list.innerHTML = "";
+      data.forEach(item => {
+        const li = document.createElement("li");
+        if (item.received) li.classList.add("received");
+
+        const left = document.createElement("div");
+        left.className = "left";
+
+        const a = document.createElement("a");
+        a.href = item.link;
+        a.target = "_blank";
+        a.rel = "noopener";
+        a.className = "desc";
+        a.textContent = item.description;
+
+        left.appendChild(a);
+
+        const right = document.createElement("div");
+        right.className = "right";
+
+        const markBtn = document.createElement("button");
+        markBtn.className = "mark-btn";
+        markBtn.textContent = item.received ? "Undo" : "Mark Received";
+        markBtn.onclick = async () => {
+          await supabaseClient.from("tracking_links")
+            .update({ received: !item.received })
+            .eq("id", item.id);
+        };
+
+        const delBtn = document.createElement("button");
+        delBtn.className = "delete-btn";
+        delBtn.textContent = "Delete";
+        delBtn.onclick = async () => {
+          if (!confirm("Delete this entry?")) return;
+          await supabaseClient.from("tracking_links")
+            .delete()
+            .eq("id", item.id);
+        };
+
+        right.appendChild(markBtn);
+        right.appendChild(delBtn);
+
+        li.appendChild(left);
+        li.appendChild(right);
+        list.appendChild(li);
+      });
+    }
+
+    document.getElementById("tracking-form").addEventListener("submit", async (e)=>{
+      e.preventDefault();
+      const description = document.getElementById("description").value.trim();
+      let link = document.getElementById("link").value.trim();
+      if (!description || !link) return;
+
+      link = normalizeUrl(link);
+
+      const { error } = await supabaseClient
+        .from("tracking_links")
+        .insert([{ description, link, received: false }]);
+
+      if (!error){
+        e.target.reset();
+      } else {
+        console.error(error);
+        alert("Failed to add. Please try again.");
+      }
+    });
+
+    supabaseClient
+      .channel("tracking_changes")
+      .on("postgres_changes", { event: "*", schema: "public", table: "tracking_links" }, loadTracking)
+      .subscribe();
+
+    loadTracking();
+  </script>
+</body>
+</html>
