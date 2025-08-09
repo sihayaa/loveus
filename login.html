@@ -7,7 +7,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Uncial+Antiqua&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Uncial+Antiqua&family=Lobster&display=swap" rel="stylesheet" />
 
   <style>
     *, *::before, *::after { box-sizing: border-box; }
@@ -179,10 +179,14 @@
   <canvas id="me-fx" style="position:fixed;inset:0;pointer-events:none;z-index:1"></canvas>
   <div id="quote-pop"
        style="position:fixed;left:-9999px;top:-9999px;max-width:min(80vw,520px);
-              padding:10px 14px;border-radius:12px;
-              background:rgba(20,26,18,.82);color:#f4e3c1;font:14px/1.35 'Uncial Antiqua', serif;
-              box-shadow:0 0 14px rgba(212,175,55,.35), inset 0 0 0 1px rgba(212,175,55,.35);
-              transform:translate(-50%,-140%);opacity:0;transition:opacity .35s ease;z-index:2">
+              padding:14px 18px;border-radius:12px;
+              background:rgba(10,14,10,0.88);
+              backdrop-filter: blur(4px);
+              color:#f4e3c1;
+              font:20px/1.5 'Forte','Lobster',cursive;
+              box-shadow:0 0 12px rgba(212,175,55,.4), inset 0 0 0 1px rgba(212,175,55,.35);
+              transform:translate(-50%,-140%);
+              opacity:0;transition:opacity .45s ease;z-index:2">
   </div>
 
   <script>
@@ -245,10 +249,14 @@
     }
     function showQuote(x,y){
       quote.textContent = QUOTES[(Math.random()*QUOTES.length)|0];
-      quote.style.left = x+'px'; quote.style.top = y+'px';
+      quote.style.left = x+'px'; 
+      quote.style.top = y+'px';
       quote.style.opacity = '1';
       clearTimeout(showQuote._t);
-      showQuote._t = setTimeout(()=>quote.style.opacity='0', 2200);
+      // show ~4.2s before fading
+      showQuote._t = setTimeout(()=>{
+        quote.style.opacity='0';
+      }, 4200);
     }
     addEventListener('click', (e)=>{
       const t = e.target.tagName;
