@@ -2,43 +2,68 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Sign in | our private space</title>
+  <title>Sign in | Beyond the Shire</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Patrick+Hand&display=swap" rel="stylesheet" />
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&family=Uncial+Antiqua&display=swap" rel="stylesheet" />
 
   <style>
-    :root{ --primary:#7a4bd8; --accent:#67e4ca; --ink:#2f2a38; --muted:#7b7b88; --card:#fff; }
+    :root{ --primary:#7a4bd8; --accent:#67e4ca; --ink:#2f2a38; --muted:#7b7b88; --card:rgba(255,255,255,0.15); }
     body{
       margin:0; min-height:100vh; display:grid; place-items:center;
-      background:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png') no-repeat center/cover fixed;
-      font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Patrick Hand", sans-serif; color:var(--ink);
+      background:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/login-bg.png') no-repeat center/cover fixed;
+      font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color:var(--ink);
     }
     .wrap{ width:min(92vw,360px); display:flex; flex-direction:column; align-items:center; gap:14px; }
-    .title{ font-family:'Great Vibes',cursive; font-size:44px; line-height:1; color:var(--primary); text-shadow:0 4px 18px rgba(0,0,0,.10); margin:0 0 6px; user-select:none; }
-    .subtitle{ font-family:'Patrick Hand',cursive; font-size:18px; margin:0 0 10px; text-align:center; user-select:none; }
-    .card{ width:100%; background:var(--card); border-radius:16px; box-shadow:0 12px 40px rgba(0,0,0,.12); padding:20px 18px 18px; position:relative; overflow:hidden; }
+    .title{ 
+      font-family: 'Cinzel Decorative', serif;
+      font-size:44px; 
+      line-height:1; 
+      color:#d4af37; 
+      text-shadow:0 0 10px rgba(212,175,55,0.7), 0 4px 18px rgba(0,0,0,.5); 
+      margin:0 0 6px; 
+      user-select:none;
+    }
+    .subtitle{ 
+      font-family:'Uncial Antiqua', serif; 
+      font-size:18px; 
+      margin:0 0 10px; 
+      text-align:center; 
+      user-select:none; 
+      color:#3c5e4c;
+      text-shadow:0 1px 6px rgba(0,0,0,.4);
+    }
+    .card{
+      width:100%;
+      background:var(--card);
+      border-radius:16px;
+      box-shadow:0 0 12px rgba(212,175,55,0.8), 0 0 25px rgba(212,175,55,0.4);
+      padding:20px 18px 18px;
+      position:relative;
+      overflow:hidden;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(212,175,55,0.6);
+    }
     .card::before,.card::after{ content:"💚 💜"; position:absolute; font-size:14px; opacity:.25; animation:float 6s linear infinite; left:14px; top:12px; }
     .card::after{ left:auto; right:14px; bottom:12px; top:auto; animation-duration:7.2s; }
     @keyframes float{0%{transform:translateY(0)}50%{transform:translateY(-6px)}100%{transform:translateY(0)}}
     label{ display:block; font-size:12px; color:var(--muted); margin:10px 2px 6px; font-weight:600; letter-spacing:.2px; }
-    input{ width:100%; border:1px solid #e5e5ee; border-radius:10px; padding:12px; font-size:14px; outline:none; }
+    input{ width:100%; border:1px solid #e5e5ee; border-radius:10px; padding:12px; font-size:14px; outline:none; background:rgba(255,255,255,0.85); }
     input:focus{ border-color:var(--primary); box-shadow:0 0 0 3px rgba(122,75,216,.12); }
     .actions{ display:flex; gap:10px; align-items:center; margin-top:14px; }
     button{ flex:1; border:0; border-radius:10px; padding:12px 14px; font-weight:700; cursor:pointer; background:linear-gradient(135deg,var(--primary),var(--accent)); color:white; }
     button:disabled{ opacity:.6; cursor:not-allowed; }
     .error{ min-height:18px; color:#b00020; font-size:12px; margin-top:8px; white-space:pre-wrap; }
-    .hint{ text-align:center; font-size:12px; color:var(--muted); margin-top:10px; user-select:none; }
-    .footer{ margin-top:14px; font-size:11px; color:#666; text-align:center; user-select:none; }
-    .link{ color:var(--primary); text-decoration:none; border-bottom:1px dashed rgba(122,75,216,.5); }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <h1 class="title">our secret door</h1>
-    <p class="subtitle">💚 sihaya & godbrand only 💜</p>
+    <h1 class="title">Beyond the Shire</h1>
+    <p class="subtitle">🗝️ Keep it secret, keep it safe 🔒</p>
 
     <div class="card">
       <form id="loginForm" autocomplete="on">
@@ -53,11 +78,7 @@
         </div>
         <div id="err" class="error"></div>
       </form>
-
-      <p class="hint">press <b>Enter</b> to sign in · only our two emails will work</p>
     </div>
-
-    <div class="footer">trouble signing in? <a class="link" href="mailto:you@example.com">email me</a></div>
   </div>
 
   <script>
@@ -66,7 +87,6 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ALLOW = ["gokumeng48@gmail.com","micdmick@gmail.com"].map(e => e.toLowerCase());
-
     const AFTER_LOGIN = "/loveus/index.html";
 
     (async () => {
@@ -126,4 +146,3 @@
   </script>
 </body>
 </html>
-
