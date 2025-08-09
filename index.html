@@ -3,6 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Love Space</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+  <script>
+    const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    const ALLOW = ["hokumeng48@gmail.com","micdmick@gmail.com"];
+
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { location.href = "login.html"; return; }
+      const email = (user.email || "").toLowerCase();
+      if (!ALLOW.includes(email)) {
+        await supabase.auth.signOut();
+        document.body.innerHTML = "<p style='font:16px system-ui;padding:24px'>Not authorized.</p>";
+      }
+    })();
+  </script>
+
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
   <style>
     body {
@@ -41,41 +61,30 @@
     }
 
     #duration-value {
-  color: #4fa981;
-  font-weight: bold;
-  font-size: 1.9em;
-  text-shadow:
-    -1px -1px 0 #000, 1px -1px 0 #000,
-    -1px  1px 0 #000, 1px  1px 0 #000,
-    0 0 6px #4fa981, 0 0 10px #4fa981;
-  animation: pulseGlow 2s ease-in-out infinite;
-}
+      color: #4fa981;
+      font-weight: bold;
+      font-size: 1.9em;
+      text-shadow:
+        -1px -1px 0 #000, 1px -1px 0 #000,
+        -1px  1px 0 #000, 1px  1px 0 #000,
+        0 0 6px #4fa981, 0 0 10px #4fa981;
+      animation: pulseGlow 2s ease-in-out infinite;
+    }
 
-#duration-value {
-  color: #4fa981;
-  font-weight: bold;
-  font-size: 1.9em;
-  text-shadow:
-    -1px -1px 0 #000, 1px -1px 0 #000,
-    -1px  1px 0 #000, 1px  1px 0 #000,
-    0 0 6px #4fa981, 0 0 10px #4fa981;
-  animation: pulseGlow 2s ease-in-out infinite;
-}
-
-@keyframes pulseGlow {
-  0%, 100% {
-    text-shadow:
-      -1px -1px 0 #000, 1px -1px 0 #000,
-      -1px 1px 0 #000, 1px 1px 0 #000,
-      0 0 4px #4fa981, 0 0 8px #4fa981;
-  }
-  50% {
-    text-shadow:
-      -1px -1px 0 #000, 1px -1px 0 #000,
-      -1px 1px 0 #000, 1px 1px 0 #000,
-      0 0 10px #4fa981, 0 0 18px #4fa981;
-  }
-}
+    @keyframes pulseGlow {
+      0%, 100% {
+        text-shadow:
+          -1px -1px 0 #000, 1px -1px 0 #000,
+          -1px 1px 0 #000, 1px 1px 0 #000,
+          0 0 4px #4fa981, 0 0 8px #4fa981;
+      }
+      50% {
+        text-shadow:
+          -1px -1px 0 #000, 1px -1px 0 #000,
+          -1px 1px 0 #000, 1px 1px 0 #000,
+          0 0 10px #4fa981, 0 0 18px #4fa981;
+      }
+    }
 
     button {
       padding: 10px 20px;
@@ -195,15 +204,15 @@
       pointer-events: none;
     }
 
-#mood-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: 0; 
-}
+    #mood-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
   </style>
 </head>
 <body>
@@ -230,12 +239,12 @@
   <div class="album-icon" style="top: 400px;" onclick="location.href='doctor.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
   </div>
-<div class="album-icon" style="top: 500px;" onclick="location.href='wishlist.html'">
-  <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish-icon.png" alt="Wishlist Icon">
-</div>
+  <div class="album-icon" style="top: 500px;" onclick="location.href='wishlist.html'">
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish-icon.png" alt="Wishlist Icon">
+  </div>
   <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
-  <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
-</div>
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
+  </div>
   
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
@@ -294,8 +303,8 @@
     }
 
     function applyMoodOverlay() {
-     const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-const hour = new Date(vegasTime).getHours();
+      const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
+      const hour = new Date(vegasTime).getHours();
       let color;
 
       if (hour >= 6 && hour < 12) {
