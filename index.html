@@ -413,6 +413,57 @@
       filter: drop-shadow(0 0 3px #000);
     }
     .delete-btn:hover { transform: scale(1.08); }
+
+    /* Secret video feature styles */
+    .secret-heart {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      font-size: 18px;
+      opacity: .25;
+      transition: transform .15s ease, opacity .15s ease;
+      cursor: pointer;
+      user-select: none;
+      z-index: 9998;
+    }
+    .secret-heart:hover { opacity: .6; transform: scale(1.1); }
+    .secret-heart:active { transform: scale(.95); }
+
+    .secret-backdrop {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      display: grid;
+      place-items: center;
+      opacity: 0; pointer-events: none;
+      transition: opacity .22s ease;
+      z-index: 9999;
+    }
+    .secret-backdrop.show { opacity: 1; pointer-events: auto; }
+
+    .secret-modal {
+      width: min(92vw, 920px);
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.35);
+      overflow: hidden;
+      transform: translateY(8px) scale(.985);
+      opacity: 0;
+      transition: transform .22s ease, opacity .22s ease;
+      position: relative;
+    }
+    .secret-backdrop.show .secret-modal {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    .secret-close {
+      position: absolute; top: 8px; right: 10px;
+      font-size: 22px; line-height: 1;
+      background: #fff; border: 2px solid #e43fec;
+      color: #e43fec; border-radius: 999px;
+      width: 34px; height: 34px; display: grid; place-items: center;
+      cursor: pointer;
+    }
+    .secret-frame { width: 100%; height: clamp(220px, 56vw, 520px); display:block; }
   </style>
 </head>
 <body>
@@ -472,6 +523,25 @@
   <canvas id="heart-canvas"></canvas>
 
   <div id="mood-overlay"></div>
+
+  <!-- Secret video trigger + modal -->
+  <div class="secret-heart" id="secretHeart" title=" ">
+    💚
+  </div>
+  <div class="secret-backdrop" id="secretBackdrop" aria-hidden="true">
+    <div class="secret-modal" role="dialog" aria-modal="true" aria-label="Surprise video">
+      <button class="secret-close" id="secretClose" aria-label="Close">×</button>
+      <iframe
+        id="secretFrame"
+        class="secret-frame"
+        src="https://www.youtube.com/embed/5hfmJ41hpi8?autoplay=1&rel=0&modestbranding=1&playsinline=1"
+        title="Surprise Video"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
+    </div>
+  </div>
 
   <script>
     const startDate = new Date('2024-10-13');
@@ -766,7 +836,7 @@
         del.className = 'delete-btn';
         del.title = 'Delete';
         del.setAttribute('aria-label','Delete reminder');
-        del.innerText = '×'; // small red X
+        del.innerText = '×';
         del.addEventListener('click', () => deleteReminder(r.id));
 
         item.appendChild(cb);
@@ -809,6 +879,58 @@
       if (e.key === 'Enter') addReminder();
     });
 
+  </script>
+
+  <!-- Secret video script -->
+  <script>
+    (() => {
+      const heart = document.getElementById('secretHeart');
+      const backdrop = document.getElementById('secretBackdrop');
+      const closeBtn = document.getElementById('secretClose');
+      const iframe = document.getElementById('secretFrame');
+
+      [heart, backdrop].forEach(el => el.addEventListener('click', e => e.stopPropagation(), true));
+      [heart, backdrop].forEach(el => el.addEventListener('touchstart', e => e.stopPropagation(), { passive: true, capture: true }));
+
+      let pressTimer;
+      const startPress = (e) => { e.stopPropagation(); clearTimeout(pressTimer); pressTimer = setTimeout(openModal, 2000); };
+      const cancelPress = (e) => { e.stopPropagation(); clearTimeout(pressTimer); };
+      heart.addEventListener('mousedown', startPress);
+      heart.addEventListener('touchstart', startPress, {passive:true});
+      ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev => heart.addEventListener(ev, cancelPress));
+
+      let buffer = '';
+      window.addEventListener('keydown', (e) => {
+        if (e.key.length === 1 && /\d/.test(e.key)) {
+          buffer = (buffer + e.key).slice(-4);
+          if (buffer === '1013') { openModal(); buffer=''; }
+        } else if (e.key === 'Escape' && backdrop.classList.contains('show')) {
+          closeModal();
+        }
+      });
+
+      function openModal() {
+        if (!backdrop.classList.contains('show')) {
+          backdrop.classList.add('show');
+          backdrop.setAttribute('aria-hidden','false');
+          document.body.style.overflow = 'hidden';
+          const url = iframe.src;
+          iframe.src = url;
+        }
+      }
+      function closeModal() {
+        backdrop.classList.remove('show');
+        backdrop.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+        const url = iframe.src;
+        iframe.src = url;
+      }
+
+      backdrop.addEventListener('click', (e) => {
+        if (e.target === backdrop) closeModal();
+      }, true);
+      closeBtn.addEventListener('click', (e)=> { e.stopPropagation(); closeModal(); });
+    })();
   </script>
 </body>
 </html>
