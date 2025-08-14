@@ -11,6 +11,7 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ALLOW = ["gokumeng48@gmail.com","micdmick@gmail.com"];
+    const ROOM_KEY = 'couple'; // 🔁 shared room so both of you see the same reminders
 
     let CURRENT_USER = null;
 
@@ -27,9 +28,10 @@
 
       loadReminders();
 
+      // Realtime: listen by room_key (shared)
       supabase
         .channel('reminders-feed')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders', filter: `user_id=eq.${user.id}` }, loadReminders)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders', filter: `room_key=eq.${ROOM_KEY}` }, loadReminders)
         .subscribe();
     })();
   </script>
@@ -40,6 +42,9 @@
       --quote-green:#246B3E;
       --quote-blue:#27658A;
       --quote-purple:#453299;
+
+      /* 🔶 change this to red: #ff2e2e if you want red glow */
+      --alert:#ff8c00; 
     }
 
     body {
@@ -286,6 +291,7 @@
       transform: translate(-50%,-48%);
     }
 
+    /* ===================== Reminders ===================== */
     #reminder-box {
       position: fixed;
       top: 330px;            
@@ -340,7 +346,7 @@
     #add-reminder-btn:hover { background: #8fc6bb; }
 
     #reminder-list {
-      max-height: 300px;   
+      max-height: 300px;   /* ~5 entries before scroll */
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -359,14 +365,15 @@
       min-height: 52px;
     }
 
+    /* left accent bar uses --alert */
     .reminder-item::before{
       content:"";
       position:absolute;
       left:-1px; top:0; bottom:0;
       width:4px;
       border-radius:12px 0 0 12px;
-      background: var(--pop, #67e4ca);
-      box-shadow: 0 0 10px var(--pop, #67e4ca);
+      background: var(--alert);
+      box-shadow: 0 0 10px var(--alert);
     }
 
     .warn {
@@ -385,12 +392,12 @@
       flex: 1;
       font-size: 18px;
       font-weight: 800;
-      color: #A6402D;
+      color: var(--alert);              /* text color */
       letter-spacing: 0.2px;
-      -webkit-text-stroke: 0.4px #000; 
+      -webkit-text-stroke: 0.4px #000;  /* outline for contrast */
       text-shadow:
-        0 0 8px var(--pop, #67e4ca),
-        0 0 16px var(--pop, #67e4ca);
+        0 0 8px var(--alert),
+        0 0 16px var(--alert);          /* glow color */
       word-break: break-word;
     }
     .reminder-text.done{
@@ -532,14 +539,14 @@
     <div class="secret-modal" role="dialog" aria-modal="true" aria-label="Surprise video">
       <button class="secret-close" id="secretClose" aria-label="Close">×</button>
       <iframe
-  id="secretFrame"
-  class="secret-frame"
-  src="https://www.youtube.com/embed/5hfmJ41hpi8?rel=0&modestbranding=1&playsinline=1"
-  title="Surprise Video"
-  frameborder="0"
-  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-  allowfullscreen
-></iframe>
+        id="secretFrame"
+        class="secret-frame"
+        src="https://www.youtube.com/embed/5hfmJ41hpi8?rel=0&modestbranding=1&playsinline=1"
+        title="Surprise Video"
+        frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        allowfullscreen
+      ></iframe>
     </div>
   </div>
 
@@ -786,14 +793,12 @@
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
 
-    const popColors = ['#67e4ca','#e43fec','#a372d1','#4fa981','#7cd4ff'];
-
     async function loadReminders() {
       if (!CURRENT_USER) return;
       const { data, error } = await supabase
         .from('reminders')
         .select('*')
-        .eq('user_id', CURRENT_USER.id)
+        .eq('room_key', ROOM_KEY)                         // 🔁 shared room
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -813,11 +818,8 @@
       }
 
       rows.forEach(r => {
-        const pop = popColors[Math.floor(Math.random()*popColors.length)];
-
         const item = document.createElement('div');
         item.className = 'reminder-item';
-        item.style.setProperty('--pop', pop);
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
@@ -854,7 +856,7 @@
 
       inputEl.value = '';
       const { error } = await supabase.from('reminders').insert({
-        user_id: CURRENT_USER.id,
+        room_key: ROOM_KEY,                                 // 🔁 shared room
         text,
         done: false
       });
@@ -910,19 +912,19 @@
       });
 
       function openModal() {
-  if (!backdrop.classList.contains('show')) {
-    backdrop.classList.add('show');
-    backdrop.setAttribute('aria-hidden','false');
-    document.body.style.overflow = 'hidden';
-    iframe.src = "https://www.youtube.com/embed/5hfmJ41hpi8?autoplay=1&rel=0&modestbranding=1&playsinline=1";
-  }
-}
+        if (!backdrop.classList.contains('show')) {
+          backdrop.classList.add('show');
+          backdrop.setAttribute('aria-hidden','false');
+          document.body.style.overflow = 'hidden';
+          iframe.src = "https://www.youtube.com/embed/5hfmJ41hpi8?autoplay=1&rel=0&modestbranding=1&playsinline=1";
+        }
+      }
       function closeModal() {
-  backdrop.classList.remove('show');
-  backdrop.setAttribute('aria-hidden','true');
-  document.body.style.overflow = '';
-  iframe.src = "";
-}
+        backdrop.classList.remove('show');
+        backdrop.setAttribute('aria-hidden','true');
+        document.body.style.overflow = '';
+        iframe.src = "";
+      }
 
       backdrop.addEventListener('click', (e) => {
         if (e.target === backdrop) closeModal();
