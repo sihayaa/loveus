@@ -532,14 +532,14 @@
     <div class="secret-modal" role="dialog" aria-modal="true" aria-label="Surprise video">
       <button class="secret-close" id="secretClose" aria-label="Close">×</button>
       <iframe
-        id="secretFrame"
-        class="secret-frame"
-        src="https://www.youtube.com/embed/5hfmJ41hpi8?autoplay=1&rel=0&modestbranding=1&playsinline=1"
-        title="Surprise Video"
-        frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-        allowfullscreen
-      ></iframe>
+  id="secretFrame"
+  class="secret-frame"
+  src="https://www.youtube.com/embed/5hfmJ41hpi8?rel=0&modestbranding=1&playsinline=1"
+  title="Surprise Video"
+  frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+  allowfullscreen
+></iframe>
     </div>
   </div>
 
@@ -910,21 +910,19 @@
       });
 
       function openModal() {
-        if (!backdrop.classList.contains('show')) {
-          backdrop.classList.add('show');
-          backdrop.setAttribute('aria-hidden','false');
-          document.body.style.overflow = 'hidden';
-          const url = iframe.src;
-          iframe.src = url;
-        }
-      }
+  if (!backdrop.classList.contains('show')) {
+    backdrop.classList.add('show');
+    backdrop.setAttribute('aria-hidden','false');
+    document.body.style.overflow = 'hidden';
+    iframe.src = "https://www.youtube.com/embed/5hfmJ41hpi8?autoplay=1&rel=0&modestbranding=1&playsinline=1";
+  }
+}
       function closeModal() {
-        backdrop.classList.remove('show');
-        backdrop.setAttribute('aria-hidden','true');
-        document.body.style.overflow = '';
-        const url = iframe.src;
-        iframe.src = url;
-      }
+  backdrop.classList.remove('show');
+  backdrop.setAttribute('aria-hidden','true');
+  document.body.style.overflow = '';
+  iframe.src = "";
+}
 
       backdrop.addEventListener('click', (e) => {
         if (e.target === backdrop) closeModal();
