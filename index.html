@@ -11,7 +11,7 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ALLOW = ["gokumeng48@gmail.com","micdmick@gmail.com"];
-    const ROOM_KEY = "couple";
+    const ROOM_KEY = "couple"; // shared room so both of you see the same reminders
 
     let CURRENT_USER = null;
 
@@ -28,6 +28,7 @@
 
       loadReminders();
 
+      // Realtime subscription by room_key (shared)
       supabase
         .channel('reminders-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders', filter: `room_key=eq.${ROOM_KEY}` }, loadReminders)
@@ -41,7 +42,7 @@
       --quote-green:#246B3E;
       --quote-blue:#27658A;
       --quote-purple:#453299;
-      --teal:#67e4ca;
+      --teal:#67e4ca; /* teal glow you liked */
     }
 
     body {
@@ -264,7 +265,7 @@
       max-width: min(780px, 86vw);
       padding: 16px 24px;
       border-radius: 16px;
-      background: rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.22);   
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.45);
@@ -282,9 +283,10 @@
     .quote-box.show { opacity: 1; transform: translate(-50%,-50%); }
     .quote-box.fade-out { opacity: 0; transform: translate(-50%,-48%); }
 
+    /* ===================== Reminders ===================== */
     #reminder-box {
       position: fixed;
-      top: 330px;
+      top: 330px;            
       right: 40px;
       width: 260px;
       padding: 14px;
@@ -336,7 +338,7 @@
     #add-reminder-btn:hover { background: #8fc6bb; }
 
     #reminder-list {
-      max-height: 300px;
+      max-height: 300px;   /* ~5 entries before scroll */
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -355,6 +357,7 @@
       min-height: 52px;
     }
 
+    /* left accent bar — fixed teal */
     .reminder-item::before{
       content:"";
       position:absolute;
@@ -381,10 +384,12 @@
       flex: 1;
       font-size: 18px;
       font-weight: 800;
-      color: #fff;
+      color: #fff;                 /* back to white text */
       letter-spacing: 0.2px;
-      -webkit-text-stroke: 0.4px #000;
-      text-shadow: 0 0 5px var(--teal), 0 0 10px var(--teal);
+      -webkit-text-stroke: 0.4px #000; 
+      text-shadow:
+        0 0 5px var(--teal),       /* teal glow */
+        0 0 10px var(--teal);      /* teal glow */
       word-break: break-word;
     }
     .reminder-text.done{
@@ -408,6 +413,7 @@
     }
     .delete-btn:hover { transform: scale(1.08); }
 
+    /* Secret video feature styles */
     .secret-heart {
       position: fixed;
       right: 16px;
@@ -474,8 +480,9 @@
   <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
   </div>
-  <div class="album-icon" style="top: 200px;" onclick="location.href='mandarin.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
+<div class="album-icon" style="top: 200px;" onclick="location.href='mandarin.html'">
+  <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
+</div>
   </div>
   <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
@@ -489,7 +496,7 @@
   <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
   </div>
-
+  
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
@@ -536,31 +543,24 @@
     </div>
   </div>
 
-  <!-- Vegas-based date math (fixed) -->
+  <!-- ===== Vegas-based date math (Intl API; fixes off-by-one) ===== -->
   <script>
     const TZ = 'America/Los_Angeles';
     const MS_DAY = 24 * 60 * 60 * 1000;
 
-    function nowInVegas() {
-      return new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
+    // Vegas calendar date parts for "now"
+    function vegasTodayParts() {
+      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+      const parts = fmt.formatToParts(new Date());
+      const y = +parts.find(p => p.type === 'year').value;
+      const m = +parts.find(p => p.type === 'month').value; // 1..12
+      const d = +parts.find(p => p.type === 'day').value;   // 1..31
+      return { y, m0: m - 1, d };
     }
 
-    function vegasMidnight(year, month0, day) {
-      const local = new Date(
-        new Date(`${year}-${String(month0+1).padStart(2,'0')}-${String(day).padStart(2,'0')}T00:00:00`)
-          .toLocaleString('en-US', { timeZone: TZ })
-      );
-      return new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
-    }
-
-    function asUTCDateOnly(d) {
-      return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
-    }
-
-    function monthsAndDaysSince(startY, startM0, startD, ref = nowInVegas()) {
-      let y = ref.getFullYear();
-      let m0 = ref.getMonth();
-      let d = ref.getDate();
+    // months + leftover whole days since DOM (Vegas calendar)
+    function monthsAndDaysSince(startY, startM0, startD) {
+      const { y, m0, d } = vegasTodayParts();
 
       let months = (y - startY) * 12 + (m0 - startM0);
       if (d < startD) months--;
@@ -569,14 +569,15 @@
       let anchorM0 = (startM0 + months) % 12;
       if (anchorM0 < 0) { anchorM0 += 12; anchorY--; }
 
-      const anchorUTC = vegasMidnight(anchorY, anchorM0, startD);
-      const todayUTC  = asUTCDateOnly(nowInVegas());
+      const anchorUTC = Date.UTC(anchorY, anchorM0, startD);
+      const todayUTC  = Date.UTC(y, m0, d);
 
-      const days = Math.max(0, Math.floor((todayUTC - anchorUTC) / MS_DAY)); // floor = whole days only
+      const days = Math.max(0, Math.floor((todayUTC - anchorUTC) / MS_DAY)); // whole days only
       return { months: Math.max(months, 0), days };
     }
 
     function updateDurationAndCountdown() {
+      // Together for:
       const { months, days } = monthsAndDaysSince(2024, 9, 13); // Oct = 9
       const years = Math.floor(months / 12);
       const remMonths = months % 12;
@@ -588,9 +589,11 @@
         durEl.textContent = `${remMonths} month${remMonths!==1?'s':''} and ${days} day${days!==1?'s':''}`;
       }
 
-      const todayUTC = asUTCDateOnly(nowInVegas());
-      const annivUTC = vegasMidnight(2025, 9, 13);
-      const diffDays = Math.max(0, Math.ceil((annivUTC - todayUTC) / MS_DAY));
+      // Countdown to 2025-10-13 (Vegas) — pure whole-day diff (exclusive of target day)
+      const { y, m0, d } = vegasTodayParts();
+      const todayUTC = Date.UTC(y, m0, d);
+      const annivUTC = Date.UTC(2025, 9, 13);
+      const diffDays = Math.max(0, Math.floor((annivUTC - todayUTC) / MS_DAY));
 
       const box = document.getElementById('countdown-number');
       if (diffDays > 0) {
@@ -604,7 +607,7 @@
       }
     }
 
-    // time zone display
+    // ---- Time zone display boxes (Vegas + Manila) ----
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
       const vegasTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
@@ -613,20 +616,20 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
-    // mood overlay driven by Vegas hour
+    // ---- Mood overlay driven by Vegas hour (same logic, Vegas-based) ----
     function applyMoodOverlay() {
       const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
       const hour = new Date(vegasTime).getHours();
       let color;
 
       if (hour >= 6 && hour < 12) {
-        color = 'rgba(255, 231, 214, 0.35)';
+        color = 'rgba(255, 231, 214, 0.35)'; 
       } else if (hour >= 12 && hour < 18) {
-        color = 'rgba(214, 255, 226, 0.35)';
+        color = 'rgba(214, 255, 226, 0.35)'; 
       } else if (hour >= 18 && hour < 22) {
-        color = 'rgba(232, 214, 255, 0.35)';
+        color = 'rgba(232, 214, 255, 0.35)'; 
       } else {
-        color = 'rgba(10, 15, 60, 0.30)';
+        color = 'rgba(10, 15, 60, 0.30)'; 
       }
 
       document.getElementById('mood-overlay').style.background = color;
@@ -637,7 +640,7 @@
     applyMoodOverlay();
 
     setInterval(updateTimeZones, 60000);
-    setInterval(applyMoodOverlay, 60 * 60 * 1000);
+    setInterval(applyMoodOverlay, 60 * 60 * 1000); 
   </script>
 
   <!-- Hearts + reminders + quotes + logout -->
@@ -651,6 +654,7 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
+
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -681,6 +685,7 @@
       });
       requestAnimationFrame(drawHearts);
     }
+
     drawHearts();
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -825,7 +830,7 @@
       const { data, error } = await supabase
         .from('reminders')
         .select('*')
-        .eq('room_key', ROOM_KEY)
+        .eq('room_key', ROOM_KEY) // shared room filter
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -883,7 +888,7 @@
 
       inputEl.value = '';
       const { error } = await supabase.from('reminders').insert({
-        room_key: ROOM_KEY,
+        room_key: ROOM_KEY,   // write to shared room
         text,
         done: false
       });
@@ -958,4 +963,3 @@
   </script>
 </body>
 </html>
-
