@@ -357,7 +357,6 @@
       min-height: 52px;
     }
 
-    /* left accent bar — fixed teal */
     .reminder-item::before{
       content:"";
       position:absolute;
@@ -384,12 +383,12 @@
       flex: 1;
       font-size: 18px;
       font-weight: 800;
-      color: #fff;                 /* back to white text */
+      color: #fff;
       letter-spacing: 0.2px;
       -webkit-text-stroke: 0.4px #000; 
       text-shadow:
-        0 0 5px var(--teal),       /* teal glow */
-        0 0 10px var(--teal);      /* teal glow */
+        0 0 5px var(--teal),
+        0 0 10px var(--teal);
       word-break: break-word;
     }
     .reminder-text.done{
@@ -480,9 +479,8 @@
   <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
   </div>
-<div class="album-icon" style="top: 200px;" onclick="location.href='mandarin.html'">
-  <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
-</div>
+  <div class="album-icon" style="top: 200px;" onclick="location.href='mandarin.html'">
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
   </div>
   <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
@@ -544,23 +542,77 @@
   </div>
 
   <script>
-    const startDate = new Date('2024-10-13');
-    const today = new Date();
-    const diffTime = today - startDate;
-    const totalDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    // ---- Timezone helpers (Las Vegas) ----
+    const TZ = 'America/Los_Angeles';
+    const MS_DAY = 1000 * 60 * 60 * 24;
 
-    if (totalDays >= 365) {
-      const years = Math.floor(totalDays / 365);
-      const remainingDays = totalDays % 365;
-      const months = Math.floor(remainingDays / 30.44);
-      const days = Math.floor(remainingDays % 30.44);
-      document.getElementById('duration-value').textContent = `${years} year${years !== 1 ? 's' : ''} ${months} months ${days} days`;
-    } else {
-      const months = Math.floor(totalDays / 30.44);
-      const days = Math.floor(totalDays % 30.44);
-      document.getElementById('duration-value').textContent = `${months} months and ${days} days`;
+    function nowInVegas() {
+      return new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
     }
 
+    function vegasMidnight(year, month0, day) {
+      const d = new Date(new Date(`${year}-${String(month0+1).padStart(2,'0')}-${String(day).padStart(2,'0')}T00:00:00`)
+        .toLocaleString('en-US', { timeZone: TZ }));
+      return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    }
+
+    function asUTCDateOnly(d) {
+      return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+    }
+
+    function monthsAndDaysSince(startY, startM0, startD, refDate = nowInVegas()) {
+      let y = refDate.getFullYear();
+      let m0 = refDate.getMonth();
+      let d = refDate.getDate();
+
+      let months = (y - startY) * 12 + (m0 - startM0);
+      if (d < startD) months--;
+
+      let anchorY = startY + Math.floor((startM0 + months) / 12);
+      let anchorM0 = (startM0 + months) % 12;
+      if (anchorM0 < 0) { anchorM0 += 12; anchorY--; }
+
+      const anchor = vegasMidnight(anchorY, anchorM0, startD);
+      const todayUTC = asUTCDateOnly(nowInVegas());
+      const days = Math.round((todayUTC - anchor) / MS_DAY);
+
+      return { months: Math.max(months, 0), days: Math.max(days, 0) };
+    }
+
+    // ===== Duration + Countdown based on Las Vegas midnight =====
+    function updateDurationAndCountdown() {
+      const start = vegasMidnight(2024, 9, 13); // Oct is 9 (0-indexed)
+      const todayUTC = asUTCDateOnly(nowInVegas());
+
+      // "Together for"
+      const { months, days } = monthsAndDaysSince(2024, 9, 13);
+      const years = Math.floor(months / 12);
+      const remMonths = months % 12;
+      const durEl = document.getElementById('duration-value');
+
+      if (years > 0) {
+        durEl.textContent = `${years} year${years!==1?'s':''} ${remMonths} month${remMonths!==1?'s':''} ${days} day${days!==1?'s':''}`;
+      } else {
+        durEl.textContent = `${remMonths} month${remMonths!==1?'s':''} and ${days} day${days!==1?'s':''}`;
+      }
+
+      // Countdown to 1-year anniversary (Las Vegas midnight of 2025-10-13)
+      const anniv = vegasMidnight(2025, 9, 13);
+      const diffDays = Math.max(0, Math.ceil((anniv - todayUTC) / MS_DAY));
+      const box = document.getElementById('countdown-number');
+
+      if (diffDays > 0) {
+        box.textContent = `${diffDays} days`;
+        document.querySelectorAll('.count-label')[0].textContent = 'before';
+        document.querySelectorAll('.count-label')[1].textContent = '1-year anniversary';
+      } else {
+        box.textContent = `Happy 💖`;
+        document.querySelectorAll('.count-label')[0].textContent = 'Anniversary';
+        document.querySelectorAll('.count-label')[1].textContent = '';
+      }
+    }
+
+    // ---- Time zone display boxes (Vegas + Manila) ----
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
       const vegasTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
@@ -569,20 +621,7 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
-    function updateCountdown() {
-      const anniversary = new Date('2025-10-13');
-      const today = new Date();
-      const diff = Math.ceil((anniversary - today) / (1000 * 60 * 60 * 24));
-      const box = document.getElementById('countdown-number');
-      if (diff > 0) {
-        box.textContent = `${diff} days`;
-      } else {
-        box.textContent = `Happy 💖`;
-        document.querySelectorAll('.count-label')[0].textContent = 'Anniversary';
-        document.querySelectorAll('.count-label')[1].textContent = '';
-      }
-    }
-
+    // ---- Mood overlay driven by Vegas hour (unchanged logic, Vegas-based) ----
     function applyMoodOverlay() {
       const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
       const hour = new Date(vegasTime).getHours();
@@ -602,12 +641,15 @@
     }
 
     updateTimeZones();
-    updateCountdown();
+    updateDurationAndCountdown();
     applyMoodOverlay();
 
     setInterval(updateTimeZones, 60000);
     setInterval(applyMoodOverlay, 60 * 60 * 1000); 
+  </script>
 
+  <script>
+    // hearts trail
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
     let hearts = [];
@@ -655,7 +697,7 @@
       location.href = "login.html";
     });
 
-
+    // quotes
     const sweetQuotes = [
       "You make ordinary moments feel special.",
       "Your laugh is my favorite sound.",
@@ -792,7 +834,7 @@
       const { data, error } = await supabase
         .from('reminders')
         .select('*')
-        .eq('room_key', ROOM_KEY) // shared room filter
+        .eq('room_key', ROOM_KEY)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -850,7 +892,7 @@
 
       inputEl.value = '';
       const { error } = await supabase.from('reminders').insert({
-        room_key: ROOM_KEY,   // write to shared room
+        room_key: ROOM_KEY,
         text,
         done: false
       });
@@ -872,7 +914,6 @@
 
     addBtn.addEventListener('click', addReminder);
     inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') addReminder(); });
-
   </script>
 
   <!-- Secret video script -->
