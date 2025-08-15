@@ -11,7 +11,7 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ALLOW = ["gokumeng48@gmail.com","micdmick@gmail.com"];
-    const ROOM_KEY = "couple"; // 🔁 shared room so both of you see the same reminders
+    const ROOM_KEY = "couple";
 
     let CURRENT_USER = null;
 
@@ -28,7 +28,6 @@
 
       loadReminders();
 
-      // Realtime subscription by room_key (shared)
       supabase
         .channel('reminders-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders', filter: `room_key=eq.${ROOM_KEY}` }, loadReminders)
@@ -42,7 +41,7 @@
       --quote-green:#246B3E;
       --quote-blue:#27658A;
       --quote-purple:#453299;
-      --teal:#67e4ca; /* teal glow you liked */
+      --teal:#67e4ca;
     }
 
     body {
@@ -265,7 +264,7 @@
       max-width: min(780px, 86vw);
       padding: 16px 24px;
       border-radius: 16px;
-      background: rgba(255,255,255,0.22);   
+      background: rgba(255,255,255,0.22);
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.45);
@@ -283,10 +282,9 @@
     .quote-box.show { opacity: 1; transform: translate(-50%,-50%); }
     .quote-box.fade-out { opacity: 0; transform: translate(-50%,-48%); }
 
-    /* ===================== Reminders ===================== */
     #reminder-box {
       position: fixed;
-      top: 330px;            
+      top: 330px;
       right: 40px;
       width: 260px;
       padding: 14px;
@@ -338,7 +336,7 @@
     #add-reminder-btn:hover { background: #8fc6bb; }
 
     #reminder-list {
-      max-height: 300px;   /* ~5 entries before scroll */
+      max-height: 300px;
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -385,10 +383,8 @@
       font-weight: 800;
       color: #fff;
       letter-spacing: 0.2px;
-      -webkit-text-stroke: 0.4px #000; 
-      text-shadow:
-        0 0 5px var(--teal),
-        0 0 10px var(--teal);
+      -webkit-text-stroke: 0.4px #000;
+      text-shadow: 0 0 5px var(--teal), 0 0 10px var(--teal);
       word-break: break-word;
     }
     .reminder-text.done{
@@ -412,7 +408,6 @@
     }
     .delete-btn:hover { transform: scale(1.08); }
 
-    /* Secret video feature styles */
     .secret-heart {
       position: fixed;
       right: 16px;
@@ -494,7 +489,7 @@
   <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
   </div>
-  
+
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
@@ -541,29 +536,31 @@
     </div>
   </div>
 
+  <!-- Vegas-based date math (fixed) -->
   <script>
-    // ---- Timezone helpers (Las Vegas) ----
     const TZ = 'America/Los_Angeles';
-    const MS_DAY = 1000 * 60 * 60 * 24;
+    const MS_DAY = 24 * 60 * 60 * 1000;
 
     function nowInVegas() {
       return new Date(new Date().toLocaleString('en-US', { timeZone: TZ }));
     }
 
     function vegasMidnight(year, month0, day) {
-      const d = new Date(new Date(`${year}-${String(month0+1).padStart(2,'0')}-${String(day).padStart(2,'0')}T00:00:00`)
-        .toLocaleString('en-US', { timeZone: TZ }));
-      return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const local = new Date(
+        new Date(`${year}-${String(month0+1).padStart(2,'0')}-${String(day).padStart(2,'0')}T00:00:00`)
+          .toLocaleString('en-US', { timeZone: TZ })
+      );
+      return new Date(Date.UTC(local.getFullYear(), local.getMonth(), local.getDate()));
     }
 
     function asUTCDateOnly(d) {
       return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
     }
 
-    function monthsAndDaysSince(startY, startM0, startD, refDate = nowInVegas()) {
-      let y = refDate.getFullYear();
-      let m0 = refDate.getMonth();
-      let d = refDate.getDate();
+    function monthsAndDaysSince(startY, startM0, startD, ref = nowInVegas()) {
+      let y = ref.getFullYear();
+      let m0 = ref.getMonth();
+      let d = ref.getDate();
 
       let months = (y - startY) * 12 + (m0 - startM0);
       if (d < startD) months--;
@@ -572,35 +569,30 @@
       let anchorM0 = (startM0 + months) % 12;
       if (anchorM0 < 0) { anchorM0 += 12; anchorY--; }
 
-      const anchor = vegasMidnight(anchorY, anchorM0, startD);
-      const todayUTC = asUTCDateOnly(nowInVegas());
-      const days = Math.floor((todayUTC - anchor) / MS_DAY);
+      const anchorUTC = vegasMidnight(anchorY, anchorM0, startD);
+      const todayUTC  = asUTCDateOnly(nowInVegas());
 
-      return { months: Math.max(months, 0), days: Math.max(days, 0) };
+      const days = Math.max(0, Math.floor((todayUTC - anchorUTC) / MS_DAY)); // floor = whole days only
+      return { months: Math.max(months, 0), days };
     }
 
-    // ===== Duration + Countdown based on Las Vegas midnight =====
     function updateDurationAndCountdown() {
-      const start = vegasMidnight(2024, 9, 13); // Oct is 9 (0-indexed)
-      const todayUTC = asUTCDateOnly(nowInVegas());
-
-      // "Together for"
-      const { months, days } = monthsAndDaysSince(2024, 9, 13);
+      const { months, days } = monthsAndDaysSince(2024, 9, 13); // Oct = 9
       const years = Math.floor(months / 12);
       const remMonths = months % 12;
-      const durEl = document.getElementById('duration-value');
 
+      const durEl = document.getElementById('duration-value');
       if (years > 0) {
         durEl.textContent = `${years} year${years!==1?'s':''} ${remMonths} month${remMonths!==1?'s':''} ${days} day${days!==1?'s':''}`;
       } else {
         durEl.textContent = `${remMonths} month${remMonths!==1?'s':''} and ${days} day${days!==1?'s':''}`;
       }
 
-      // Countdown to 1-year anniversary (Las Vegas midnight of 2025-10-13)
-      const anniv = vegasMidnight(2025, 9, 13);
-      const diffDays = Math.max(0, Math.ceil((anniv - todayUTC) / MS_DAY));
-      const box = document.getElementById('countdown-number');
+      const todayUTC = asUTCDateOnly(nowInVegas());
+      const annivUTC = vegasMidnight(2025, 9, 13);
+      const diffDays = Math.max(0, Math.ceil((annivUTC - todayUTC) / MS_DAY));
 
+      const box = document.getElementById('countdown-number');
       if (diffDays > 0) {
         box.textContent = `${diffDays} days`;
         document.querySelectorAll('.count-label')[0].textContent = 'before';
@@ -612,7 +604,7 @@
       }
     }
 
-    // ---- Time zone display boxes (Vegas + Manila) ----
+    // time zone display
     function updateTimeZones() {
       const options = { hour: '2-digit', minute: '2-digit', hour12: true };
       const vegasTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
@@ -621,20 +613,20 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
-    // ---- Mood overlay driven by Vegas hour (unchanged logic, Vegas-based) ----
+    // mood overlay driven by Vegas hour
     function applyMoodOverlay() {
       const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
       const hour = new Date(vegasTime).getHours();
       let color;
 
       if (hour >= 6 && hour < 12) {
-        color = 'rgba(255, 231, 214, 0.35)'; 
+        color = 'rgba(255, 231, 214, 0.35)';
       } else if (hour >= 12 && hour < 18) {
-        color = 'rgba(214, 255, 226, 0.35)'; 
+        color = 'rgba(214, 255, 226, 0.35)';
       } else if (hour >= 18 && hour < 22) {
-        color = 'rgba(232, 214, 255, 0.35)'; 
+        color = 'rgba(232, 214, 255, 0.35)';
       } else {
-        color = 'rgba(10, 15, 60, 0.30)'; 
+        color = 'rgba(10, 15, 60, 0.30)';
       }
 
       document.getElementById('mood-overlay').style.background = color;
@@ -645,9 +637,10 @@
     applyMoodOverlay();
 
     setInterval(updateTimeZones, 60000);
-    setInterval(applyMoodOverlay, 60 * 60 * 1000); 
+    setInterval(applyMoodOverlay, 60 * 60 * 1000);
   </script>
 
+  <!-- Hearts + reminders + quotes + logout -->
   <script>
     // hearts trail
     const canvas = document.getElementById('heart-canvas');
@@ -658,7 +651,6 @@
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
     }
-
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
@@ -689,7 +681,6 @@
       });
       requestAnimationFrame(drawHearts);
     }
-
     drawHearts();
 
     document.getElementById('logout-btn').addEventListener('click', async () => {
@@ -967,3 +958,4 @@
   </script>
 </body>
 </html>
+
