@@ -574,7 +574,7 @@
 
       const anchor = vegasMidnight(anchorY, anchorM0, startD);
       const todayUTC = asUTCDateOnly(nowInVegas());
-      const days = Math.round((todayUTC - anchor) / MS_DAY);
+      const days = Math.floor((todayUTC - anchor) / MS_DAY);
 
       return { months: Math.max(months, 0), days: Math.max(days, 0) };
     }
