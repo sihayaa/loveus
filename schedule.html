@@ -53,6 +53,7 @@
     .btn.save{ background:#bbf7d0 }
     .btn.reset{ background:#fecaca }
 
+    /* Sihaya note chip (small, right side, same cell) */
     .cell-flex{ display:flex; gap:12px; align-items:flex-start; justify-content:space-between; }
     .note-side{ display:flex; align-items:flex-start; gap:6px; }
     .note-chip{
@@ -68,9 +69,10 @@
 </head>
 <body>
   <div class="schedule-container">
+    <!-- Godbrand -->
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
-      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save.</div>
+      <div class="hint">Use ↑/↓ for time fields, ←/→ toggles Date↔Time. Press Enter to save.</div>
       <table><tbody id="gbBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="godbrand">Edit</button>
@@ -79,9 +81,10 @@
       </div>
     </section>
 
+    <!-- Sihaya -->
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
-      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save.</div>
+      <div class="hint">Use ↑/↓ for time fields, ←/→ toggles Date↔Time. Press Enter to save.</div>
       <table><tbody id="shBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="sihaya">Edit</button>
@@ -92,10 +95,12 @@
   </div>
 
   <script>
+    // ----- Supabase -----
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // ----- Timezones (Luxon) -----
     const { DateTime } = luxon;
     const vegasTZ = 'America/Los_Angeles';
     const manilaTZ = 'Asia/Manila';
@@ -103,6 +108,7 @@
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
+    // Build rows
     function rowHTML(day, person){
       const tag = person==='godbrand'
         ? '<span class="tag manila">Manila Time</span>'
@@ -139,6 +145,7 @@
           </tr>`;
       }
 
+      // Sihaya with tiny note chip on right
       return `
         <tr>
           <th>
@@ -178,6 +185,7 @@
       document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
     }
 
+    // ----- Edit toggles -----
     function setEditMode(person, on){
       DAYS.forEach(day=>{
         const editRow = document.getElementById(`edit-${person}-${day}`);
@@ -203,6 +211,7 @@
       });
     }
 
+    // ----- Keyboard + Enter-to-save-anywhere -----
     const timeOrder = ['start-hm','start-am','end-hm','end-am'];
     function idFor(role, person, day){ return role==='date' ? `input-${day}` : `${role}-${person}-${day}`; }
     function focusEl(role, person, dayIdx){
@@ -225,32 +234,36 @@
     }
     function dateToTime(day){ focusEl('start-hm', 'godbrand', dayIndex[day]); }
 
-    document.addEventListener('keydown', async (e)=>{
+    // unified keydown: arrows for date/time; Enter saves from any input/select/textarea
+    document.addEventListener('keydown', async (e) => {
       const t = e.target;
       const isDate = t.classList.contains('date-input');
       const isTime = t.classList.contains('hm') || t.classList.contains('ampm');
-      const isNote = t.classList.contains('note-input');
-      if(!isDate && !isTime && !isNote) return;
 
-      const role   = (t.getAttribute('data-role') || (isDate ? 'date' : isTime ? 'start-hm' : 'note')).toLowerCase();
-      const person = t.getAttribute('data-person') || (isDate ? 'godbrand' : isTime ? t.getAttribute('data-person') : 'sihaya');
-      const day    = t.getAttribute('data-day') || (isDate ? t.id.replace('input-','') : (isTime ? t.getAttribute('data-day') : t.id.replace('note-input-sihaya-','')));
-      const dIdx   = dayIndex[day];
+      if (isDate || isTime) {
+        const role   = (t.getAttribute('data-role') || (isDate ? 'date' : 'start-hm')).toLowerCase();
+        const person = t.getAttribute('data-person') || (isDate ? 'godbrand' : t.getAttribute('data-person'));
+        const day    = t.getAttribute('data-day') || (isDate ? t.id.replace('input-','') : t.getAttribute('data-day'));
+        const dIdx   = dayIndex[day];
 
-      if(isTime || isDate){
-        if(e.key==='ArrowUp'){   e.preventDefault(); moveVertical(person, dIdx, role, -1); return; }
-        if(e.key==='ArrowDown'){ e.preventDefault(); moveVertical(person, dIdx, role, +1); return; }
-        if(e.key==='ArrowLeft'){ e.preventDefault(); timeToDate(day); return; }
-        if(e.key==='ArrowRight'){e.preventDefault(); if(isDate) dateToTime(day); else timeToDate(day); return; }
+        if (e.key === 'ArrowUp')   { e.preventDefault(); moveVertical(person, dIdx, role, -1); return; }
+        if (e.key === 'ArrowDown') { e.preventDefault(); moveVertical(person, dIdx, role, +1); return; }
+        if (e.key === 'ArrowLeft') { e.preventDefault(); timeToDate(day); return; }
+        if (e.key === 'ArrowRight'){ e.preventDefault(); if (isDate) dateToTime(day); else timeToDate(day); return; }
       }
 
-      if(e.key==='Enter'){
+      if (
+        e.key === 'Enter' &&
+        e.target.closest('.schedule-container') &&
+        ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)
+      ) {
         e.preventDefault();
         await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya'), saveNotes() ]);
         recalc('godbrand'); recalc('sihaya');
       }
     });
 
+    // Live convert as you type
     document.addEventListener('input', (e)=>{
       const t = e.target;
       if(t.classList.contains('hm') || t.classList.contains('ampm')){
@@ -260,6 +273,7 @@
       }
     });
 
+    // Buttons (Edit/Save/Reset)
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.btn'); if(!btn) return;
       const person = btn.dataset.person;
@@ -276,12 +290,13 @@
         recalc('godbrand'); recalc('sihaya');
       }
       if(btn.classList.contains('reset')){
-        const ok = confirm(`Clear all ${person === 'godbrand' ? "Godbrand's" : "Sihaya's"} entries? This won't touch the dates.`);
+        const ok = confirm(`Clear all ${person === 'godbrand' ? "Godbrand's" : "Sihaya's"} entries? Dates won't change.`);
         if(!ok) return;
         await resetColumn(person);
       }
     });
 
+    // ----- Load data -----
     async function loadAll(){
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
@@ -311,6 +326,7 @@
       recalc('godbrand'); recalc('sihaya');
     }
 
+    // ----- Save helpers -----
     async function saveDates(){
       const rows = [];
       for(const day of DAYS){
@@ -362,6 +378,7 @@
       if(person==='sihaya'){ await supabase.from('couple_notes').delete().eq('person','sihaya'); }
     }
 
+    // ----- Helpers -----
     function collectContent(person, day){
       const row = document.getElementById(`edit-${person}-${day}`);
       if(row && row.style.display!=='none'){
@@ -413,11 +430,13 @@
       .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_notes' }, onNoteChange)
       .subscribe();
 
-    function mondayInVegas(){
+    // >>> FIXED Monday anchor (no extra day shift)
+    function mondayInVegas() {
       const now = DateTime.now().setZone(vegasTZ);
-      const monday = now.startOf('week').plus({ days:1 });
-      return monday.startOf('day');
+      const daysFromMonday = (now.weekday + 6) % 7; // Mon=0 … Sun=6
+      return now.startOf('day').minus({ days: daysFromMonday });
     }
+
     function parseHM(str){
       const m = String(str).trim().match(/^(\d{1,2})(?::?(\d{1,2}))?$/);
       if(!m) return null;
@@ -471,6 +490,7 @@
       out.textContent = person==='godbrand' ? fmtRange(start,end,manilaTZ) : fmtRange(start,end,vegasTZ);
     }
 
+    // Init
     buildTables();
     loadAll();
   </script>
