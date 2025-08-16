@@ -11,7 +11,7 @@
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
     const ALLOW = ["gokumeng48@gmail.com","micdmick@gmail.com"];
-    const ROOM_KEY = "couple"; 
+    const ROOM_KEY = "couple";
 
     let CURRENT_USER = null;
 
@@ -41,7 +41,7 @@
       --quote-green:#246B3E;
       --quote-blue:#27658A;
       --quote-purple:#453299;
-      --teal:#67e4ca; 
+      --teal:#67e4ca;
     }
 
     body {
@@ -135,6 +135,9 @@
       cursor: pointer;
       z-index: 10;
       transition: all 0.3s ease;
+      display: grid;
+      place-items: center;
+      text-decoration: none;
     }
 
     .album-icon:hover {
@@ -147,13 +150,26 @@
       height: 100%;
       border-radius: 12px;
       object-fit: cover;
+      display: block;
     }
 
-    #work-schedule-btn{
-      position: fixed;
-      top: 100px;   
-      left: 200px;  
-      z-index: 11; 
+    .album-icon .icon-label{
+      width: 100%;
+      height: 100%;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      text-align: center;
+      font-family: 'Patrick Hand', cursive;
+      font-weight: 800;
+      font-size: 14px;
+      line-height: 1.1;
+      color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,.6);
+      background: rgba(255,255,255,0.06);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
     }
 
     #timezone-box {
@@ -343,7 +359,7 @@
     #add-reminder-btn:hover { background: #8fc6bb; }
 
     #reminder-list {
-      max-height: 300px; 
+      max-height: 300px;  
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -388,12 +404,12 @@
       flex: 1;
       font-size: 18px;
       font-weight: 800;
-      color: #fff;                
+      color: #fff;            
       letter-spacing: 0.2px;
       -webkit-text-stroke: 0.4px #000; 
       text-shadow:
-        0 0 5px var(--teal),       
-        0 0 10px var(--teal);      
+        0 0 5px var(--teal),     
+        0 0 10px var(--teal);   
       word-break: break-word;
     }
     .reminder-text.done{
@@ -483,10 +499,17 @@
   <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
     <img src="album-icon.png" alt="Album Icon">
   </div>
+
+  <div class="album-icon" style="top: 100px; left: 200px;" onclick="location.href='schedule.html'" title="Work Schedule">
+    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule-icon.png"
+         alt="Work Schedule Icon"
+         onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
+  </div>
+
   <div class="album-icon" style="top: 200px;" onclick="location.href='mandarin.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
   </div>
-  </div>
+
   <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
   </div>
@@ -499,8 +522,6 @@
   <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
   </div>
-
-  <button id="work-schedule-btn" onclick="location.href='schedule.html'">🗓️ Work Schedule</button>
   
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
@@ -529,6 +550,10 @@
 
   <div id="mood-overlay"></div>
 
+  <template id="work-schedule-label-template">
+    <div class="icon-label">🗓<br>Schedule</div>
+  </template>
+
   <div class="secret-heart" id="secretHeart" title=" ">
     💚
   </div>
@@ -556,7 +581,7 @@
       const parts = fmt.formatToParts(new Date());
       const y = +parts.find(p => p.type === 'year').value;
       const m = +parts.find(p => p.type === 'month').value; 
-      const d = +parts.find(p => p.type === 'day').value;  
+      const d = +parts.find(p => p.type === 'day').value;   
       return { y, m0: m - 1, d };
     }
 
@@ -578,7 +603,7 @@
     }
 
     function updateDurationAndCountdown() {
-      const { months, days } = monthsAndDaysSince(2024, 9, 13); 
+      const { months, days } = monthsAndDaysSince(2024, 9, 13);
       const years = Math.floor(months / 12);
       const remMonths = months % 12;
 
@@ -823,7 +848,7 @@
       const { data, error } = await supabase
         .from('reminders')
         .select('*')
-        .eq('room_key', ROOM_KEY) // shared room filter
+        .eq('room_key', ROOM_KEY) 
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -881,7 +906,7 @@
 
       inputEl.value = '';
       const { error } = await supabase.from('reminders').insert({
-        room_key: ROOM_KEY,   // write to shared room
+        room_key: ROOM_KEY,  
         text,
         done: false
       });
