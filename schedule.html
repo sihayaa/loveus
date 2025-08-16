@@ -24,7 +24,6 @@
     th{ width:120px; background:#f3f4f6; padding:8px; text-align:left; font-size:14px }
     td{ padding:8px }
 
-    /* time UI */
     .display-text{ font-size:14px; min-height:24px; padding:4px; white-space:pre-line }
     .time-edit{ display:none }
     .time-group{ display:flex; align-items:center; gap:6px; background:var(--blue); padding:6px; border-radius:8px; flex-wrap:wrap }
@@ -41,7 +40,6 @@
     .tag.manila{ background:#d7fbef; color:#0c5d49 }
     .tag.vegas{ background:#efe7ff; color:#3f2c85 }
 
-    /* dates */
     .date-wrap{ display:block; margin-top:3px }
     .date-label,.date-labelR{ font-size:12px; opacity:.8 }
     .date-input{
@@ -53,8 +51,8 @@
     .btn{ border:none; padding:7px 12px; border-radius:8px; cursor:pointer; font-size:14px; margin:0 6px }
     .btn.edit{ background:#dbeafe }
     .btn.save{ background:#bbf7d0 }
+    .btn.reset{ background:#fecaca }
 
-    /* Sihaya note chip (small, on the right inside the same cell) */
     .cell-flex{ display:flex; gap:12px; align-items:flex-start; justify-content:space-between; }
     .note-side{ display:flex; align-items:flex-start; gap:6px; }
     .note-chip{
@@ -70,36 +68,34 @@
 </head>
 <body>
   <div class="schedule-container">
-    <!-- Godbrand (Vegas input → Manila convert) -->
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
-      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save everything.</div>
+      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save.</div>
       <table><tbody id="gbBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="godbrand">Edit</button>
         <button class="btn save" data-person="godbrand">Save</button>
+        <button class="btn reset" data-person="godbrand">Reset</button>
       </div>
     </section>
 
-    <!-- Sihaya (Manila input → Vegas convert) -->
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
-      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save everything.</div>
+      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save.</div>
       <table><tbody id="shBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="sihaya">Edit</button>
         <button class="btn save" data-person="sihaya">Save</button>
+        <button class="btn reset" data-person="sihaya">Reset</button>
       </div>
     </section>
   </div>
 
   <script>
-    // ----- Supabase -----
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ----- Timezones (Luxon) -----
     const { DateTime } = luxon;
     const vegasTZ = 'America/Los_Angeles';
     const manilaTZ = 'Asia/Manila';
@@ -107,15 +103,13 @@
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
-    // Build rows: Godbrand standard; Sihaya has a small right note chip inside same cell
     function rowHTML(day, person){
       const tag = person==='godbrand'
         ? '<span class="tag manila">Manila Time</span>'
         : '<span class="tag vegas">Vegas Time</span>';
-
       const dateBits = (person==='godbrand')
         ? `<span class="date-label" id="label-${day}"></span>
-           <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" placeholder="Aug 18" />`
+           <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" placeholder="" />`
         : `<span class="date-labelR" id="labelR-${day}"></span>`;
 
       if (person === 'godbrand') {
@@ -129,12 +123,12 @@
               <div class="display-text" id="disp-${person}-${day}"></div>
               <div class="time-edit" id="edit-${person}-${day}">
                 <div class="time-group">
-                  <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="10:00" />
+                  <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="" />
                   <select class="ampm" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am">
                     <option>AM</option><option>PM</option>
                   </select>
                   <span class="dash">–</span>
-                  <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="6:00" />
+                  <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="" />
                   <select class="ampm" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am">
                     <option>AM</option><option>PM</option>
                   </select>
@@ -145,7 +139,6 @@
           </tr>`;
       }
 
-      // Sihaya: single cell with left content + tiny note chip on the right
       return `
         <tr>
           <th>
@@ -158,12 +151,12 @@
                 <div class="display-text" id="disp-${person}-${day}"></div>
                 <div class="time-edit" id="edit-${person}-${day}">
                   <div class="time-group">
-                    <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="10:00" />
+                    <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="" />
                     <select class="ampm" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am">
                       <option>AM</option><option>PM</option>
                     </select>
                     <span class="dash">–</span>
-                    <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="6:00" />
+                    <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="" />
                     <select class="ampm" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am">
                       <option>AM</option><option>PM</option>
                     </select>
@@ -171,10 +164,9 @@
                 </div>
                 <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
               </div>
-
               <div class="note-side">
                 <div class="note-chip" id="note-chip-sihaya-${day}"></div>
-                <input class="note-input" id="note-input-sihaya-${day}" placeholder="Note…" />
+                <input class="note-input" id="note-input-sihaya-${day}" placeholder="" />
               </div>
             </div>
           </td>
@@ -186,7 +178,6 @@
       document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
     }
 
-    // ----- Edit toggles -----
     function setEditMode(person, on){
       DAYS.forEach(day=>{
         const editRow = document.getElementById(`edit-${person}-${day}`);
@@ -212,8 +203,7 @@
       });
     }
 
-    // ----- Keyboard navigation & Enter-to-save-all -----
-    const timeOrder = ['start-hm','start-am','end-hm','end-am']; // vertical order
+    const timeOrder = ['start-hm','start-am','end-hm','end-am'];
     function idFor(role, person, day){ return role==='date' ? `input-${day}` : `${role}-${person}-${day}`; }
     function focusEl(role, person, dayIdx){
       const day = DAYS[Math.max(0, Math.min(DAYS.length-1, dayIdx))];
@@ -239,18 +229,20 @@
       const t = e.target;
       const isDate = t.classList.contains('date-input');
       const isTime = t.classList.contains('hm') || t.classList.contains('ampm');
-      if(!isDate && !isTime) return;
+      const isNote = t.classList.contains('note-input');
+      if(!isDate && !isTime && !isNote) return;
 
-      const role   = (t.getAttribute('data-role') || (isDate ? 'date' : 'start-hm')).toLowerCase();
-      const person = t.getAttribute('data-person') || (isDate ? 'godbrand' : null);
-      const day    = t.getAttribute('data-day') || (isDate ? t.id.replace('input-','') : null);
+      const role   = (t.getAttribute('data-role') || (isDate ? 'date' : isTime ? 'start-hm' : 'note')).toLowerCase();
+      const person = t.getAttribute('data-person') || (isDate ? 'godbrand' : isTime ? t.getAttribute('data-person') : 'sihaya');
+      const day    = t.getAttribute('data-day') || (isDate ? t.id.replace('input-','') : (isTime ? t.getAttribute('data-day') : t.id.replace('note-input-sihaya-','')));
       const dIdx   = dayIndex[day];
 
-      if(e.key==='ArrowUp'){   e.preventDefault(); moveVertical(person, dIdx, role, -1); return; }
-      if(e.key==='ArrowDown'){ e.preventDefault(); moveVertical(person, dIdx, role, +1); return; }
-
-      if(e.key==='ArrowLeft'){ e.preventDefault(); timeToDate(day); return; }
-      if(e.key==='ArrowRight'){e.preventDefault(); if(isDate) dateToTime(day); else timeToDate(day); return; }
+      if(isTime || isDate){
+        if(e.key==='ArrowUp'){   e.preventDefault(); moveVertical(person, dIdx, role, -1); return; }
+        if(e.key==='ArrowDown'){ e.preventDefault(); moveVertical(person, dIdx, role, +1); return; }
+        if(e.key==='ArrowLeft'){ e.preventDefault(); timeToDate(day); return; }
+        if(e.key==='ArrowRight'){e.preventDefault(); if(isDate) dateToTime(day); else timeToDate(day); return; }
+      }
 
       if(e.key==='Enter'){
         e.preventDefault();
@@ -259,7 +251,6 @@
       }
     });
 
-    // Live convert as you type
     document.addEventListener('input', (e)=>{
       const t = e.target;
       if(t.classList.contains('hm') || t.classList.contains('ampm')){
@@ -269,7 +260,6 @@
       }
     });
 
-    // Buttons
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.btn'); if(!btn) return;
       const person = btn.dataset.person;
@@ -285,9 +275,13 @@
         setEditMode('sihaya', false);
         recalc('godbrand'); recalc('sihaya');
       }
+      if(btn.classList.contains('reset')){
+        const ok = confirm(`Clear all ${person === 'godbrand' ? "Godbrand's" : "Sihaya's"} entries? This won't touch the dates.`);
+        if(!ok) return;
+        await resetColumn(person);
+      }
     });
 
-    // ----- Load data -----
     async function loadAll(){
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
@@ -317,7 +311,6 @@
       recalc('godbrand'); recalc('sihaya');
     }
 
-    // ----- Save helpers -----
     async function saveDates(){
       const rows = [];
       for(const day of DAYS){
@@ -352,7 +345,23 @@
       if(rows.length) await supabase.from('couple_notes').upsert(rows, { onConflict:'person,day' });
     }
 
-    // ----- Helpers -----
+    async function resetColumn(person){
+      for (const day of DAYS){
+        document.getElementById(`disp-${person}-${day}`).textContent = '';
+        const out = document.getElementById(`out-${person}-${day}`); if(out) out.textContent='';
+        const ids = ['start-hm','end-hm','start-am','end-am'].map(r=>`${r}-${person}-${day}`);
+        ids.forEach(id=>{ const el=document.getElementById(id); if(el){ el.value=''; }});
+        if(person==='sihaya'){
+          const chip=document.getElementById(`note-chip-sihaya-${day}`);
+          const input=document.getElementById(`note-input-sihaya-${day}`);
+          if(chip) chip.textContent='';
+          if(input) input.value='';
+        }
+      }
+      await supabase.from('couple_schedule').delete().eq('person', person);
+      if(person==='sihaya'){ await supabase.from('couple_notes').delete().eq('person','sihaya'); }
+    }
+
     function collectContent(person, day){
       const row = document.getElementById(`edit-${person}-${day}`);
       if(row && row.style.display!=='none'){
@@ -462,7 +471,6 @@
       out.textContent = person==='godbrand' ? fmtRange(start,end,manilaTZ) : fmtRange(start,end,vegasTZ);
     }
 
-    // Init
     buildTables();
     loadAll();
   </script>
