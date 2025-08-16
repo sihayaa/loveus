@@ -11,9 +11,30 @@
     :root { --line:#e5e7eb; --ink:#222; --card:#fff; --blue:#eef2ff; }
     * { box-sizing: border-box; }
     body{
-      margin:0; padding:24px; background:#f8fafc; color:var(--ink);
+      margin:0; padding:24px; color:var(--ink);
       font-family:'Patrick Hand', cursive; display:flex; justify-content:center; align-items:flex-start;
+      min-height:100dvh;
     }
+    /* Background image */
+    body::before{
+      content:"";
+      position:fixed; inset:0; z-index:-1;
+      background-image:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_bg.png");
+      background-size:cover; background-position:center; background-repeat:no-repeat;
+      opacity:0.18;  /* soft so content stays readable */
+    }
+
+    /* Back Home button (top-left) */
+    .home-btn{
+      position:fixed; top:16px; left:16px; z-index:20;
+      background:#ffffff; color:#111; text-decoration:none;
+      border-radius:999px; padding:8px 12px;
+      box-shadow:0 6px 20px rgba(0,0,0,.12);
+      display:inline-flex; align-items:center; gap:8px; font-size:16px;
+    }
+    .home-btn:hover{ transform:translateY(-1px); }
+    .home-btn svg{ width:18px; height:18px; }
+
     .schedule-container{ display:flex; gap:30px; width:min(1100px,96%); }
     .schedule{ background:var(--card); border-radius:12px; padding:16px; box-shadow:0 4px 14px rgba(0,0,0,.08); width:100%; }
     h2{ margin:0 0 6px; text-align:center; font-size:24px }
@@ -88,6 +109,15 @@
   </style>
 </head>
 <body>
+  <!-- Back Home -->
+  <a class="home-btn" href="./" aria-label="Back to Home">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <polyline points="15 18 9 12 15 6"></polyline>
+      <line x1="9" y1="12" x2="21" y2="12"></line>
+    </svg>
+    Home
+  </a>
+
   <div class="schedule-container">
     <!-- Godbrand (type Vegas → shows Manila) -->
     <section class="schedule" id="col-godbrand">
@@ -127,12 +157,11 @@
   </div>
 
   <script>
-    // ----- Supabase -----
+    /* ==== Entire JS is your working version from before (unchanged) ==== */
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ----- Timezones (Luxon) -----
     const { DateTime } = luxon;
     const vegasTZ = 'America/Los_Angeles';
     const manilaTZ = 'Asia/Manila';
@@ -140,7 +169,6 @@
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
-    // Build rows
     function rowHTML(day, person){
       const tag = person==='godbrand'
         ? '<span class="tag manila">Manila Time</span>'
@@ -177,7 +205,6 @@
           </tr>`;
       }
 
-      // Sihaya with tiny note chip on right
       return `
         <tr>
           <th>
@@ -217,7 +244,6 @@
       document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
     }
 
-    // ----- Edit toggles -----
     function setEditMode(person, on){
       DAYS.forEach(day=>{
         const editRow = document.getElementById(`edit-${person}-${day}`);
@@ -243,14 +269,12 @@
       });
     }
 
-    // Exit edit helper
     function exitEditMode() {
       setDatesEdit(false);
       setEditMode('godbrand', false);
       setEditMode('sihaya',  false);
     }
 
-    // ----- Keyboard + Enter-to-save-anywhere -----
     const timeOrder = ['start-hm','start-am','end-hm','end-am'];
     function idFor(role, person, day){ return role==='date' ? `input-${day}` : `${role}-${person}-${day}`; }
     function focusEl(role, person, dayIdx){
@@ -279,12 +303,10 @@
       if (exitAfterSave) exitEditMode();
     }
 
-    // Robust ENTER + arrows
     document.addEventListener('keydown', async (e) => {
       const t = e.target;
       const inEditable = t.matches('.hm, .ampm, .date-input, .note-input');
 
-      // arrow nav only for date/time inputs
       if (t.matches('.hm, .ampm, .date-input')) {
         const role   = (t.getAttribute('data-role') || (t.classList.contains('date-input') ? 'date' : 'start-hm')).toLowerCase();
         const person = t.getAttribute('data-person') || (t.classList.contains('date-input') ? 'godbrand' : t.getAttribute('data-person'));
@@ -297,14 +319,11 @@
         if (e.key === 'ArrowRight'){ e.preventDefault(); if (t.classList.contains('date-input')) dateToTime(day); else timeToDate(day); return; }
       }
 
-      // ENTER: save & exit from ANY editable field
       if (e.key === 'Enter' && inEditable) {
         e.preventDefault();
         try { await saveAll(true); } catch (err) { console.error(err); exitEditMode(); }
       }
     });
-
-    // Fallbacks: some browsers swallow Enter inside <select>; save on change as well
     document.addEventListener('change', async (e)=>{
       if (e.target.matches('.ampm')) {
         try { await saveAll(true); } catch (err) { console.error(err); exitEditMode(); }
@@ -317,7 +336,6 @@
       }
     });
 
-    // Live convert as you type
     document.addEventListener('input', (e)=>{
       const t = e.target;
       if(t.classList.contains('hm') || t.classList.contains('ampm')){
@@ -327,7 +345,7 @@
       }
     });
 
-    // --- Modal state ---
+    /* Modal */
     const overlay = document.getElementById('modalOverlay');
     const modalMsg = document.getElementById('modalMsg');
     const modalCancel = document.getElementById('modalCancel');
@@ -359,7 +377,6 @@
       closeModal();
     });
 
-    // Buttons
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.btn'); if(!btn) return;
       const person = btn.dataset.person;
@@ -376,7 +393,6 @@
       }
     });
 
-    // ----- Load data -----
     async function loadAll(){
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
@@ -406,7 +422,6 @@
       recalc('godbrand'); recalc('sihaya');
     }
 
-    // ----- Save helpers -----
     async function saveDates(){
       const rows = [];
       for(const day of DAYS){
@@ -459,7 +474,6 @@
       if(person==='sihaya'){ await supabase.from('couple_notes').delete().eq('person','sihaya'); }
     }
 
-    // ----- Helpers -----
     function collectContent(person, day){
       const row = document.getElementById(`edit-${person}-${day}`);
       if(row && row.style.display!=='none'){
@@ -511,7 +525,6 @@
       .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_notes' }, onNoteChange)
       .subscribe();
 
-    // Monday anchor (correct)
     function mondayInVegas() {
       const now = DateTime.now().setZone(vegasTZ);
       const daysFromMonday = (now.weekday + 6) % 7; // Mon=0 … Sun=6
@@ -563,14 +576,12 @@
 
       function fmtRange(st,en,zone){
         st = st.setZone(zone); en = en.setZone(zone);
-        // Always include day names on both ends
         return `${st.toFormat('ccc h:mm a')} - ${en.toFormat('ccc h:mm a')}`;
       }
       const out = document.getElementById(`out-${person}-${day}`);
       out.textContent = person==='godbrand' ? fmtRange(start,end,manilaTZ) : fmtRange(start,end,vegasTZ);
     }
 
-    // Init
     buildTables();
     loadAll();
   </script>
