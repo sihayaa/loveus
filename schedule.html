@@ -33,10 +33,16 @@
       border-radius:6px; padding:3px 6px; font-family:'Patrick Hand', cursive; font-size:12px
     }
     .display-text { font-size:14px; min-height:24px; padding:4px; white-space:pre-line }
-    textarea {
-      width:100%; border:1px dashed #9bb7ff; background:var(--blue);
-      border-radius:6px; padding:6px; font-family:'Patrick Hand', cursive; font-size:14px; display:none; resize:vertical
+    .time-edit { display:none }
+    .time-group { display:flex; align-items:center; gap:6px; background:var(--blue); padding:6px; border-radius:8px; flex-wrap:wrap }
+    .hm {
+      width:82px; padding:6px 8px; border:1px dashed #9bb7ff; border-radius:6px;
+      background:#fff; font-family:'Patrick Hand', cursive; font-size:14px;
     }
+    .ampm {
+      padding:6px 8px; border:1px dashed #9bb7ff; border-radius:6px; background:#fff; font-size:14px;
+    }
+    .dash { opacity:.7; padding:0 4px }
     .sub { font-size:13px; margin-top:6px }
     .tag { padding:2px 8px; border-radius:999px; font-size:12px }
     .tag.manila{ background:#d7fbef; color:#0c5d49 }
@@ -51,7 +57,7 @@
   <div class="schedule-container">
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
-      <div class="hint">Example: 10 pm – 6 am</div>
+      <div class="hint">Type times, press <b>Enter</b> to save the row. Example: 10:00 PM – 6:00 AM</div>
       <table><tbody id="gbBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="godbrand">Edit</button>
@@ -61,7 +67,7 @@
 
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
-      <div class="hint">Example: 1 pm – 9 pm</div>
+      <div class="hint">Type times, press <b>Enter</b> to save the row. Example: 1:00 PM – 9:00 PM</div>
       <table><tbody id="shBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="sihaya">Edit</button>
@@ -82,8 +88,9 @@
     const manilaTZ = 'Asia/Manila';
 
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
-    // Build rows with conversion line
+    // Build rows with split inputs
     function rowHTML(day, person) {
       const tag = person === 'godbrand'
         ? '<span class="tag manila">Manila Time</span>'
@@ -99,7 +106,21 @@
           </th>
           <td>
             <div class="display-text" id="disp-${person}-${day}"></div>
-            <textarea id="ta-${person}-${day}" placeholder=""></textarea>
+
+            <div class="time-edit" id="edit-${person}-${day}">
+              <div class="time-group">
+                <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" inputmode="numeric" placeholder="10:00" />
+                <select class="ampm" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}">
+                  <option>AM</option><option>PM</option>
+                </select>
+                <span class="dash">–</span>
+                <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" inputmode="numeric" placeholder="6:00" />
+                <select class="ampm" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}">
+                  <option>AM</option><option>PM</option>
+                </select>
+              </div>
+            </div>
+
             <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
           </td>
         </tr>`;
@@ -110,58 +131,64 @@
       document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
     }
 
-    // Edit modes
+    // --- Edit modes (columns share date editor) ---
     function setEditMode(person, on) {
       DAYS.forEach(day => {
-        const ta = document.getElementById(`ta-${person}-${day}`);
+        const editRow = document.getElementById(`edit-${person}-${day}`);
         const disp = document.getElementById(`disp-${person}-${day}`);
-        ta.style.display = on ? 'block' : 'none';
+        editRow.style.display = on ? 'block' : 'none';
         disp.style.display = on ? 'none' : 'block';
+
+        // when entering edit: prefill split inputs from display text if possible
+        if (on) prefillRowFromText(person, day);
       });
     }
     function setDatesEdit(on) {
       DAYS.forEach(day => {
         const label = document.getElementById(`label-${day}`);
         const input = document.getElementById(`input-${day}`);
-        if (on) {
-          input.style.display = 'inline-block';
-          label.style.display = 'none';
-          input.value = label.textContent;
-        } else {
-          input.style.display = 'none';
-          label.style.display = 'inline';
-        }
+        if (on) { input.style.display='inline-block'; label.style.display='none'; input.value = label.textContent; }
+        else    { input.style.display='none'; label.style.display='inline'; }
       });
     }
 
-    // Button behavior: bottom Edit/Save also controls dates + conversion
-    document.addEventListener('click', async (e) => {
-      const btn = e.target.closest('.btn'); if (!btn) return;
-      const person = btn.dataset.person;
+    // --- Keyboard: Enter saves current row and jumps to next day
+    document.addEventListener('keydown', async (e) => {
+      if (e.key !== 'Enter') return;
+      const target = e.target;
+      if (!(target.classList.contains('hm') || target.classList.contains('ampm') || target.classList.contains('date-input'))) return;
+      e.preventDefault();
 
-      if (btn.classList.contains('edit')) {
-        setEditMode(person, true);
-        setDatesEdit(true);
+      if (target.classList.contains('date-input')) {
+        await saveDates();                    // Enter in date input saves all visible date inputs
+        return;
       }
 
-      if (btn.classList.contains('save')) {
-        await saveDates();
-        await saveColumn(person);
-        setDatesEdit(false);
-        setEditMode(person, false);
-        recalc('godbrand'); recalc('sihaya');
-      }
+      const person = target.getAttribute('data-person');
+      const day = target.getAttribute('data-day');
+      if (!person || !day) return;
+
+      await saveRow(person, day);             // save just this row
+      focusNext(person, day);                 // move to next day start input
     });
 
-    // Live conversion while typing
+    function focusNext(person, day){
+      const i = dayIndex[day];
+      const nextDay = DAYS[Math.min(i+1, DAYS.length-1)];
+      const el = document.getElementById(`start-hm-${person}-${nextDay}`);
+      if (el) el.focus();
+    }
+
+    // --- Input change → live convert
     document.addEventListener('input', (e) => {
-      if (e.target.tagName === 'TEXTAREA') {
-        const person = e.target.id.includes('godbrand') ? 'godbrand' : 'sihaya';
-        recalc(person);
+      if (e.target.classList.contains('hm') || e.target.classList.contains('ampm')) {
+        const person = e.target.getAttribute('data-person');
+        const day = e.target.getAttribute('data-day');
+        recalcRow(person, day);
       }
     });
 
-    // Load from Supabase
+    // --- Load from Supabase
     async function loadAll() {
       const d = await supabase.from('couple_schedule_dates').select('*');
       if (!d.error) d.data.forEach(r => {
@@ -171,44 +198,73 @@
       const c = await supabase.from('couple_schedule').select('*');
       if (!c.error) c.data.forEach(r => {
         const disp = document.getElementById(`disp-${r.person}-${r.day}`);
-        const ta = document.getElementById(`ta-${r.person}-${r.day}`);
         if (disp) disp.textContent = r.content || '';
-        if (ta) ta.value = r.content || '';
       });
 
       recalc('godbrand'); recalc('sihaya');
     }
 
-    // Save to Supabase
-    async function saveDates() {
-      for (const day of DAYS) {
+    // --- Save (batched for speed)
+    async function saveDates(){
+      const rows = [];
+      for (const day of DAYS){
         const inp = document.getElementById(`input-${day}`);
         if (!inp || inp.style.display === 'none') continue;
         const val = (inp.value || '').trim();
         document.getElementById(`label-${day}`).textContent = val;
-        await supabase.from('couple_schedule_dates').upsert({ day, label: val });
+        rows.push({ day, label: val });
       }
-    }
-    async function saveColumn(person) {
-      for (const day of DAYS) {
-        const ta = document.getElementById(`ta-${person}-${day}`);
-        const disp = document.getElementById(`disp-${person}-${day}`);
-        const text = (ta.value || '').trim();
-        disp.textContent = text;
-        await supabase
-          .from('couple_schedule')
-          .upsert({ person, day, content: text }, { onConflict: 'person,day' });
-      }
+      if (rows.length) await supabase.from('couple_schedule_dates').upsert(rows);
     }
 
-    // Realtime
+    async function saveColumn(person){
+      const rows = [];
+      for (const day of DAYS){
+        const content = collectContent(person, day);             // from inputs if visible, else from display
+        document.getElementById(`disp-${person}-${day}`).textContent = content;
+        rows.push({ person, day, content });
+      }
+      if (rows.length) await supabase.from('couple_schedule').upsert(rows, { onConflict:'person,day' });
+    }
+
+    async function saveRow(person, day){
+      const content = collectContent(person, day);
+      document.getElementById(`disp-${person}-${day}`).textContent = content;
+      await supabase.from('couple_schedule').upsert([{ person, day, content }], { onConflict:'person,day' });
+      recalcRow(person, day);
+    }
+
+    function collectContent(person, day){
+      // If edit UI visible, build from split inputs; otherwise keep display text
+      const row = document.getElementById(`edit-${person}-${day}`);
+      if (row && row.style.display !== 'none'){
+        const sHM = document.getElementById(`start-hm-${person}-${day}`).value.trim();
+        const sAP = document.getElementById(`start-am-${person}-${day}`).value.trim();
+        const eHM = document.getElementById(`end-hm-${person}-${day}`).value.trim();
+        const eAP = document.getElementById(`end-am-${person}-${day}`).value.trim();
+        if (!sHM || !eHM) return '';
+        return `${normalizeHM(sHM)} ${sAP.toLowerCase()} - ${normalizeHM(eHM)} ${eAP.toLowerCase()}`;
+      }
+      return document.getElementById(`disp-${person}-${day}`).textContent || '';
+    }
+
+    // Prefill split inputs from existing display text
+    function prefillRowFromText(person, day){
+      const txt = (document.getElementById(`disp-${person}-${day}`).textContent || '').toLowerCase();
+      const m = txt.replace(/\s+/g,'').match(/^([0-9]{1,2}(?::[0-9]{2})?)(am|pm)-([0-9]{1,2}(?::[0-9]{2})?)(am|pm)$/);
+      if (!m) return;
+      document.getElementById(`start-hm-${person}-${day}`).value = m[1].replace(':',':');
+      document.getElementById(`start-am-${person}-${day}`).value = m[2].toUpperCase();
+      document.getElementById(`end-hm-${person}-${day}`).value = m[3].replace(':',':');
+      document.getElementById(`end-am-${person}-${day}`).value = m[4].toUpperCase();
+    }
+
+    // Realtime listeners
     function onContentChange(payload) {
       const r = payload.new; if (!r) return;
       const disp = document.getElementById(`disp-${r.person}-${r.day}`);
-      const ta = document.getElementById(`ta-${r.person}-${r.day}`);
       if (disp) disp.textContent = r.content || '';
-      if (ta && ta.style.display === 'block') ta.value = r.content || '';
-      recalc(r.person);
+      recalcRow(r.person, r.day);
     }
     function onDateChange(payload) {
       const r = payload.new; if (!r) return;
@@ -230,45 +286,101 @@
       const monday = now.startOf('week').plus({ days:1 }); // Luxon week starts Sunday
       return monday.startOf('day');
     }
-    function parseRange(input, zone, baseDay){
-      if(!input) return null;
-      const s = String(input).replace(/\s+/g,'').toLowerCase();
-      const m = s.match(/^([0-9]{1,2})(?::([0-9]{2}))?(am|pm)?-([0-9]{1,2})(?::([0-9]{2}))?(am|pm)?$/);
-      if(!m) return null;
-      const h1 = parseInt(m[1],10), min1 = parseInt(m[2]||'0',10), ap1 = m[3];
-      const h2 = parseInt(m[4],10), min2 = parseInt(m[5]||'0',10), ap2 = m[6];
-      const to24 = (h,ap)=> ap==='am' ? h%12 : ap==='pm' ? (h%12)+12 : h;
-      const H1 = to24(h1,ap1), H2 = to24(h2,ap2);
-      let start = baseDay.set({hour:H1, minute:min1, second:0, millisecond:0}).setZone(zone, { keepLocalTime:true });
-      let end   = baseDay.set({hour:H2, minute:min2, second:0, millisecond:0}).setZone(zone, { keepLocalTime:true });
-      if(end <= start) end = end.plus({ days:1 });
-      return { start, end };
+    function parseHM(str){
+      // accepts "10", "10:00", "9:5" → returns {h, m} or null
+      const m = String(str).trim().match(/^(\d{1,2})(?::?(\d{1,2}))?$/);
+      if (!m) return null;
+      let h = parseInt(m[1],10); let mi = parseInt(m[2] || '0',10);
+      if (h<1 || h>12 || mi<0 || mi>59) return null;
+      return {h, m:mi};
     }
-    function fmtRange(r, zone){
-      if(!r) return '';
-      const s = r.start.setZone(zone), e = r.end.setZone(zone);
-      const same = s.hasSame(e,'day');
-      const note = same ? '' : ` (→ ${e.toFormat('ccc')})`;
-      return `${s.toFormat('h:mm a')} - ${e.toFormat('h:mm a')}${note}`;
+    function normalizeHM(str){
+      const p = parseHM(str); if(!p) return str;
+      const mm = String(p.m).padStart(2,'0');
+      return `${p.h}:${mm}`;
     }
+    function to24(h, ampm){ return ampm === 'AM' ? (h%12) : (h%12)+12; }
+
     function recalc(person){
-      const baseMondayV = mondayInVegas();
-      for (let i=0;i<DAYS.length;i++){
-        const day = DAYS[i];
-        const baseV = baseMondayV.plus({days:i}).setZone(vegasTZ).startOf('day');
-        const baseM = baseV.setZone(manilaTZ);
-        const ta = document.getElementById(`ta-${person}-${day}`);
-        const out = document.getElementById(`out-${person}-${day}`);
-        let r = null;
-        if (person === 'godbrand') {
-          r = parseRange(ta.value, vegasTZ, baseV);          // entered in Vegas → show Manila
-          out.textContent = r ? fmtRange(r, manilaTZ) : '';
+      for (const day of DAYS) recalcRow(person, day);
+    }
+
+    function recalcRow(person, day){
+      // Build range either from edit inputs (if visible) or parse the display text
+      const idx = dayIndex[day];
+      const baseV = mondayInVegas().plus({days:idx}).setZone(vegasTZ).startOf('day');
+      const baseM = baseV.setZone(manilaTZ);
+
+      let startHM, startAP, endHM, endAP;
+
+      const on = document.getElementById(`edit-${person}-${day}`).style.display !== 'none';
+      if (on){
+        startHM = document.getElementById(`start-hm-${person}-${day}`).value;
+        startAP = document.getElementById(`start-am-${person}-${day}`).value;
+        endHM   = document.getElementById(`end-hm-${person}-${day}`).value;
+        endAP   = document.getElementById(`end-am-${person}-${day}`).value;
+      } else {
+        const txt = (document.getElementById(`disp-${person}-${day}`).textContent || '').toLowerCase().replace(/\s+/g,'');
+        const m = txt.match(/^([0-9]{1,2}(?::[0-9]{2})?)(am|pm)-([0-9]{1,2}(?::[0-9]{2})?)(am|pm)$/);
+        if (m){
+          startHM = m[1]; startAP = m[2].toUpperCase();
+          endHM = m[3];   endAP = m[4].toUpperCase();
         } else {
-          r = parseRange(ta.value, manilaTZ, baseM);         // entered in Manila → show Vegas
-          out.textContent = r ? fmtRange(r, vegasTZ) : '';
+          document.getElementById(`out-${person}-${day}`).textContent = '';
+          return;
         }
       }
+
+      const s = parseHM(startHM), e = parseHM(endHM);
+      if(!s || !e){ document.getElementById(`out-${person}-${day}`).textContent = ''; return; }
+
+      const sHour24 = to24(s.h, startAP), eHour24 = to24(e.h, endAP);
+      const sMin = s.m, eMin = e.m;
+
+      let start = (person==='godbrand' ? baseV : baseM).set({hour:sHour24, minute:sMin});
+      let end   = (person==='godbrand' ? baseV : baseM).set({hour:eHour24, minute:eMin});
+      if (end <= start) end = end.plus({ days:1 });
+
+      function fmtRange(st, en, zone){
+        st = st.setZone(zone); en = en.setZone(zone);
+        const same = st.hasSame(en,'day');
+        const note = same ? '' : ` (→ ${en.toFormat('ccc')})`;
+        return `${st.toFormat('h:mm a')} - ${en.toFormat('h:mm a')}${note}`;
+      }
+
+      const outEl = document.getElementById(`out-${person}-${day}`);
+      if (person==='godbrand') outEl.textContent = fmtRange(start, end, manilaTZ);
+      else                     outEl.textContent = fmtRange(start, end, vegasTZ);
     }
+
+    // Buttons: edit/save entire column + dates
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn'); if (!btn) return;
+      const person = btn.dataset.person;
+
+      if (btn.classList.contains('edit')) {
+        setEditMode(person, true);
+        setDatesEdit(true);
+        // focus Monday start
+        const f = document.getElementById(`start-hm-${person}-Mon`); if (f) f.focus();
+      }
+
+      if (btn.classList.contains('save')) {
+        await saveDates();
+        await saveColumn(person);
+        setDatesEdit(false);
+        setEditMode(person, false);
+        recalc('godbrand'); recalc('sihaya');
+      }
+    });
+
+    // Realtime wire-up
+    supabase.channel('sched_rt')
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'couple_schedule' }, onContentChange)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_schedule' }, onContentChange)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'couple_schedule_dates' }, onDateChange)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_schedule_dates' }, onDateChange)
+      .subscribe();
 
     // Init
     buildTables();
