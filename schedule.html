@@ -3,89 +3,66 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Weekly Schedule — Realtime (Editable Dates)</title>
+  <title>Our Weekly Schedule — Realtime</title>
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
   <style>
-    :root{ --green:#67e4ca; --purple:#8a6ee8; --line:#e5e7eb; --ink:#222; --card:#fff; --blue:#e8f0ff; }
-    *{box-sizing:border-box}
-    body{ margin:0; padding:24px; font-family:'Patrick Hand',cursive; background:#f8fafc; color:var(--ink); display:flex; justify-content:center; align-items:flex-start }
-    .wrap{ width:min(1100px,96%); }
-    header{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:12px }
-    h1{ margin:0; font-size:28px }
-    .dates-bar{ display:flex; gap:8px; align-items:center }
-    .btn{ border:1px solid var(--line); background:#fff; padding:7px 12px; border-radius:10px; cursor:pointer; font-size:16px }
-    .btn.primary{ background:#dbeafe }
-    .btn.good{ background:#bbf7d0 }
-
-    .cols{ display:grid; grid-template-columns: 1fr 1fr; gap:18px; }
-    .panel{ background:var(--card); border-radius:14px; padding:14px; box-shadow:0 8px 24px rgba(0,0,0,.08) }
-    .panel h2{ margin:0 0 8px; text-align:center; font-size:22px }
-
-    table{ width:100%; border-collapse:collapse }
-    th,td{ border:1px solid var(--line); vertical-align:top }
-    th{ width:120px; background:#f3f4f6; padding:8px; text-align:left; font-size:14px }
-    td{ padding:8px }
-
-    .day{ font-size:16px }
-    .date-wrap{ display:block; margin-top:2px }
-    .date-label{ font-size:12px; opacity:.8 }
-    .date-input{ display:none; width:90px; border:1px dashed #9bb7ff; background:#fff; border-radius:6px; padding:4px; font-family:'Patrick Hand',cursive; font-size:12px }
-
-    .display-text{ font-size:14px; min-height:40px; padding:4px; white-space:pre-line }
-    textarea{ width:100%; border:1px dashed #9bb7ff; background:var(--blue); border-radius:8px; padding:6px; font-family:'Patrick Hand',cursive; font-size:14px; display:none }
-
-    .controls{ margin-top:10px; text-align:center }
-    .small{ font-size:12px; opacity:.8 }
-    .btn-row{ display:flex; justify-content:center; gap:8px; flex-wrap:wrap }
-
-    .sub{ font-size:13px; margin-top:6px }
-    .tag{ padding:2px 8px; border-radius:999px; font-size:12px }
-    .manila{ background:#d7fbef; color:#0c5d49 }
-    .vegas{ background:#efe7ff; color:#3f2c85 }
-
-    .notice{ margin-top:8px; background:rgba(0,0,0,.55); color:#fff; padding:6px 10px; border-radius:10px; display:none }
+    :root { --line:#e5e7eb; --ink:#222; --card:#fff; --blue:#eef2ff; }
+    * { box-sizing: border-box; }
+    body {
+      margin:0; padding:24px; background:#f8fafc; color:var(--ink);
+      font-family:'Patrick Hand', cursive; display:flex; justify-content:center; align-items:flex-start;
+    }
+    .schedule-container { display:flex; gap:30px; width:min(1100px,96%); }
+    .schedule {
+      background:var(--card); border-radius:12px; padding:16px;
+      box-shadow:0 4px 14px rgba(0,0,0,.08); width:100%;
+    }
+    h2 { margin:0 0 6px; text-align:center; font-size:24px }
+    .hint { text-align:center; font-size:13px; opacity:.75; margin:0 0 10px }
+    table { width:100%; border-collapse:collapse }
+    th, td { border:1px solid var(--line); vertical-align:top }
+    th { width:120px; background:#f3f4f6; padding:8px; text-align:left; font-size:14px }
+    td { padding:8px }
+    .day { font-size:16px }
+    .date-wrap { display:block; margin-top:3px }
+    .date-label { font-size:12px; opacity:.8 }
+    .date-input {
+      display:none; width:92px; border:1px dashed #9bb7ff; background:#fff;
+      border-radius:6px; padding:3px 6px; font-family:'Patrick Hand', cursive; font-size:12px
+    }
+    .display-text { font-size:14px; min-height:40px; padding:4px; white-space:pre-line }
+    textarea {
+      width:100%; border:1px dashed #9bb7ff; background:var(--blue);
+      border-radius:6px; padding:6px; font-family:'Patrick Hand', cursive; font-size:14px; display:none; resize:vertical
+    }
+    .controls { margin-top:10px; text-align:center }
+    .btn { border:none; padding:7px 12px; border-radius:8px; cursor:pointer; font-size:14px; margin:0 6px }
+    .btn.edit { background:#dbeafe }
+    .btn.save { background:#bbf7d0 }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header>
-      <h1>Our Weekly Schedule</h1>
-      <div class="dates-bar">
-        <button id="editDates" class="btn primary">Edit Dates</button>
-        <button id="saveDates" class="btn good">Save Dates</button>
-        <button id="useThisWeek" class="btn">Use This Week's Dates (Vegas)</button>
+  <div class="schedule-container">
+    <section class="schedule" id="col-godbrand">
+      <h2>💜 Godbrand's Schedule</h2>
+      <div class="hint">Example: 10 pm – 6 am</div>
+      <table><tbody id="gbBody"></tbody></table>
+      <div class="controls">
+        <button class="btn edit" data-person="godbrand">Edit</button>
+        <button class="btn save" data-person="godbrand">Save</button>
       </div>
-    </header>
+    </section>
 
-    <div class="cols">
-      <section class="panel" id="col-gb">
-        <h2>💜 Godbrand's schedule</h2>
-        <table><tbody id="gbBody"></tbody></table>
-        <div class="controls">
-          <div class="btn-row">
-            <button class="btn primary edit" data-person="godbrand">Edit</button>
-            <button class="btn good save" data-person="godbrand">Save</button>
-          </div>
-          <div class="small">Type ranges like <b>10 pm - 6 am</b> (Vegas time)</div>
-        </div>
-      </section>
-
-      <section class="panel" id="col-sh">
-        <h2>💚 Sihaya's schedule</h2>
-        <table><tbody id="shBody"></tbody></table>
-        <div class="controls">
-          <div class="btn-row">
-            <button class="btn primary edit" data-person="sihaya">Edit</button>
-            <button class="btn good save" data-person="sihaya">Save</button>
-          </div>
-          <div class="small">Type ranges like <b>1 pm - 9 pm</b> (Manila time)</div>
-        </div>
-      </section>
-    </div>
-
-    <div id="status" class="notice"></div>
+    <section class="schedule" id="col-sihaya">
+      <h2>💚 Sihaya's Schedule</h2>
+      <div class="hint">Example: 1 pm – 9 pm</div>
+      <table><tbody id="shBody"></tbody></table>
+      <div class="controls">
+        <button class="btn edit" data-person="sihaya">Edit</button>
+        <button class="btn save" data-person="sihaya">Save</button>
+      </div>
+    </section>
   </div>
 
   <script>
@@ -93,222 +70,137 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    const { DateTime } = luxon;
-    const vegasTZ = 'America/Los_Angeles';
-    const manilaTZ = 'Asia/Manila';
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
 
-    const gbBody = document.getElementById('gbBody');
-    const shBody = document.getElementById('shBody');
-
-    function mondayInVegas(){
-      const now = DateTime.now().setZone(vegasTZ);
-      const monday = now.startOf('week').plus({ days:1 }); 
-      return monday.startOf('day');
+    function rowHTML(day, person) {
+      return `
+        <tr>
+          <th>
+            <div class="day">${day}</div>
+            <span class="date-wrap">
+              <span class="date-label" id="label-${day}"></span>
+              <input class="date-input" id="input-${day}" placeholder="Aug 18" />
+            </span>
+          </th>
+          <td>
+            <div class="display-text" id="disp-${person}-${day}"></div>
+            <textarea id="ta-${person}-${day}" placeholder=""></textarea>
+          </td>
+        </tr>`;
     }
 
-    function rowTemplate(day){
-      return `<tr>
-        <th>
-          <div class="day">${day}</div>
-          <span class="date-wrap">
-            <span class="date-label" id="label-${day}"></span>
-            <input class="date-input" id="input-${day}" placeholder="Aug 18" />
-          </span>
-        </th>
-        <td>
-          <div class="display-text" id="disp-godbrand-${day}"></div>
-          <textarea id="ta-godbrand-${day}" placeholder="e.g. 10 pm - 6 am"></textarea>
-          <div class="sub"><span class="tag manila">Manila Time</span> <span id="out-godbrand-${day}"></span></div>
-        </td>
-      </tr>`;
-    }
-    function rowTemplateSh(day){
-      return `<tr>
-        <th>
-          <div class="day">${day}</div>
-          <span class="date-wrap">
-            <span class="date-label" id="label2-${day}"></span>
-            <input class="date-input" id="input2-${day}" placeholder="Aug 18" />
-          </span>
-        </th>
-        <td>
-          <div class="display-text" id="disp-sihaya-${day}"></div>
-          <textarea id="ta-sihaya-${day}" placeholder="e.g. 1 pm - 9 pm"></textarea>
-          <div class="sub"><span class="tag vegas">Vegas Time</span> <span id="out-sihaya-${day}"></span></div>
-        </td>
-      </tr>`;
+    function buildTables() {
+      document.getElementById('gbBody').innerHTML = DAYS.map(d => rowHTML(d,'godbrand')).join('');
+      document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
     }
 
-    function buildTables(){
-      gbBody.innerHTML = DAYS.map(rowTemplate).join('');
-      shBody.innerHTML = DAYS.map(rowTemplateSh).join('');
-      hookEvents();
-    }
-
-    function parseRange(input, zone, baseDay){
-      if(!input) return null;
-      const s = String(input).replace(/\s+/g,'').toLowerCase();
-      const m = s.match(/^([0-9]{1,2})(?::([0-9]{2}))?(am|pm)?-([0-9]{1,2})(?::([0-9]{2}))?(am|pm)?$/);
-      if(!m) return null;
-      const h1 = parseInt(m[1],10); const min1 = parseInt(m[2]||'0',10); const ap1 = m[3];
-      const h2 = parseInt(m[4],10); const min2 = parseInt(m[5]||'0',10); const ap2 = m[6];
-      function to24(h,ap){ if(ap==='am') return h%12; if(ap==='pm') return h%12+12; return h; }
-      const H1 = to24(h1,ap1), H2 = to24(h2,ap2);
-      let start = baseDay.set({hour:H1, minute:min1, second:0, millisecond:0}).setZone(zone, { keepLocalTime:true });
-      let end   = baseDay.set({hour:H2, minute:min2, second:0, millisecond:0}).setZone(zone, { keepLocalTime:true });
-      if(end <= start) end = end.plus({ days:1 });
-      return { start, end };
-    }
-    function fmtRange(r, zone){
-      if(!r) return '';
-      const s = r.start.setZone(zone); const e = r.end.setZone(zone);
-      const same = s.hasSame(e,'day');
-      const note = same ? '' : ` (→ ${e.toFormat('ccc')})`;
-      return `${s.toFormat('h:mm a')} - ${e.toFormat('h:mm a')}${note}`;
-    }
-
-    function recalc(person){
-      const isGb = person==='godbrand';
-      const targetTZ = isGb ? manilaTZ : vegasTZ;
-      const baseMondayV = mondayInVegas();
-      for(const day of DAYS){
-        const idx = DAYS.indexOf(day);
-        const baseV = baseMondayV.plus({days:idx}).setZone(vegasTZ).startOf('day');
-        const baseM = baseV.setZone(manilaTZ);
-        const ta = document.getElementById(`ta-${person}-${day}`);
-        const out = document.getElementById(`out-${person}-${day}`);
-        const r = isGb ? parseRange(ta.value, vegasTZ, baseV) : parseRange(ta.value, manilaTZ, baseM);
-        out.textContent = r ? fmtRange(r, targetTZ) : '';
-      }
-    }
-
-    function setEditMode(person, on){
-      for(const day of DAYS){
+    function setEditMode(person, on) {
+      DAYS.forEach(day => {
         const ta = document.getElementById(`ta-${person}-${day}`);
         const disp = document.getElementById(`disp-${person}-${day}`);
-        if(on){ ta.style.display='block'; disp.style.display='none'; ta.value = disp.textContent; }
-        else { ta.style.display='none'; disp.style.display='block'; }
-      }
+        ta.style.display = on ? 'block' : 'none';
+        disp.style.display = on ? 'none' : 'block';
+      });
     }
 
-    function hookEvents(){
-      document.querySelectorAll('.edit').forEach(btn=>btn.addEventListener('click',()=>{
-        const person = btn.dataset.person; setEditMode(person, true);
-      }));
-      document.querySelectorAll('.save').forEach(btn=>btn.addEventListener('click', async ()=>{
-        const person = btn.dataset.person; await saveColumn(person); setEditMode(person, false);
-      }));
-      document.body.addEventListener('input', (e)=>{
-        if(e.target.tagName==='TEXTAREA'){
-          const person = e.target.id.includes('godbrand') ? 'godbrand' : 'sihaya';
-          recalc(person);
+    function setDatesEdit(on) {
+      DAYS.forEach(day => {
+        const label = document.getElementById(`label-${day}`);
+        const input = document.getElementById(`input-${day}`);
+        if (on) {
+          input.style.display = 'inline-block';
+          label.style.display = 'none';
+          input.value = label.textContent;
+        } else {
+          input.style.display = 'none';
+          label.style.display = 'inline';
         }
       });
-
-      document.getElementById('editDates').addEventListener('click',()=> setDatesEdit(true));
-      document.getElementById('saveDates').addEventListener('click', async()=>{ await saveDates(); setDatesEdit(false); });
-      document.getElementById('useThisWeek').addEventListener('click', ()=> fillDatesFromThisWeek());
     }
 
-    function setDatesEdit(on){
-      for(const day of DAYS){
-        const lab1 = document.getElementById(`label-${day}`);
-        const lab2 = document.getElementById(`label2-${day}`);
-        const inp1 = document.getElementById(`input-${day}`);
-        const inp2 = document.getElementById(`input2-${day}`);
-        if(on){ inp1.style.display=inp2.style.display='inline-block'; lab1.style.display=lab2.style.display='none'; inp1.value = lab1.textContent; inp2.value = lab2.textContent; }
-        else{ inp1.style.display=inp2.style.display='none'; lab1.style.display=lab2.style.display='inline'; }
+    document.addEventListener('click', async (e) => {
+      const btn = e.target.closest('.btn'); if (!btn) return;
+      const person = btn.dataset.person;
+
+      if (btn.classList.contains('edit')) {
+        setEditMode(person, true);
+        setDatesEdit(true);
       }
-    }
 
-    async function saveDates(){
-      for(const day of DAYS){
-        const v = document.getElementById(`input-${day}`).value.trim();
-        document.getElementById(`label-${day}`).textContent = v;
-        document.getElementById(`label2-${day}`).textContent = v;
-        await supabase.from('couple_schedule_dates').upsert({ day, label: v });
+      if (btn.classList.contains('save')) {
+        await saveDates();
+        await saveColumn(person);
+        setDatesEdit(false);
+        setEditMode(person, false);
       }
-      flash('Dates saved ✓');
-    }
+    });
 
-    function fillDatesFromThisWeek(){
-      const base = mondayInVegas();
-      DAYS.forEach((day,i)=>{
-        const d = base.plus({days:i});
-        const label = d.toFormat('LLL dd');
-        document.getElementById(`label-${day}`).textContent = label;
-        document.getElementById(`label2-${day}`).textContent = label;
-        document.getElementById(`input-${day}`).value = label;
-        document.getElementById(`input2-${day}`).value = label;
-      });
-      flash("Filled with this week's dates (Vegas)");
-    }
-
-    function flash(msg){
-      const el = document.getElementById('status');
-      el.textContent = msg; el.style.display='inline-block';
-      clearTimeout(flash._t); flash._t = setTimeout(()=> el.style.display='none', 1500);
-    }
-
-    async function loadAll(){
+    async function loadAll() {
       const d = await supabase.from('couple_schedule_dates').select('*');
-      const map = new Map();
-      if(!d.error){ d.data.forEach(r=> map.set(r.day, r.label||'')); }
+      if (!d.error) {
+        d.data.forEach(r => {
+          const lab = document.getElementById(`label-${r.day}`); if (lab) lab.textContent = r.label || '';
+        });
+      }
 
       const c = await supabase.from('couple_schedule').select('*');
-      const contentMap = new Map();
-      if(!c.error){ c.data.forEach(r=> contentMap.set(`${r.person}|${r.day}`, r.content||'')); }
-
-      for(const day of DAYS){
-        const label = map.get(day) || ''; 
-        document.getElementById(`label-${day}`).textContent = label;
-        document.getElementById(`label2-${day}`).textContent = label;
-
-        document.getElementById(`disp-godbrand-${day}`).textContent = contentMap.get(`godbrand|${day}`)||'';
-        document.getElementById(`disp-sihaya-${day}`).textContent = contentMap.get(`sihaya|${day}`)||'';
-
-        document.getElementById(`ta-godbrand-${day}`).value = contentMap.get(`godbrand|${day}`)||'';
-        document.getElementById(`ta-sihaya-${day}`).value = contentMap.get(`sihaya|${day}`)||'';
+      if (!c.error) {
+        c.data.forEach(r => {
+          const disp = document.getElementById(`disp-${r.person}-${r.day}`);
+          const ta = document.getElementById(`ta-${r.person}-${r.day}`);
+          if (disp) disp.textContent = r.content || '';
+          if (ta) ta.value = r.content || '';
+        });
       }
-      recalc('godbrand');
-      recalc('sihaya');
     }
 
-    async function saveColumn(person){
-      for(const day of DAYS){
-        const text = (document.getElementById(`ta-${person}-${day}`).value||'').trim();
-        document.getElementById(`disp-${person}-${day}`).textContent = text;
-        await supabase.from('couple_schedule').upsert({ person, day, content: text }, { onConflict:'person,day' });
+    async function saveDates() {
+      for (const day of DAYS) {
+        const inp = document.getElementById(`input-${day}`);
+        if (!inp || inp.style.display === 'none') continue;
+        const val = (inp.value || '').trim();
+        document.getElementById(`label-${day}`).textContent = val;
+        await supabase.from('couple_schedule_dates').upsert({ day, label: val });
       }
-      flash(`${person==='godbrand'?'Godbrand':'Sihaya'} saved ✓`);
     }
 
-    function onContentChange(payload){
-      const r = payload.new; if(!r) return;
-      const id = `disp-${r.person}-${r.day}`;
+    async function saveColumn(person) {
+      for (const day of DAYS) {
+        const ta = document.getElementById(`ta-${person}-${day}`);
+        const disp = document.getElementById(`disp-${person}-${day}`);
+        const text = (ta.value || '').trim();
+        disp.textContent = text;
+        await supabase
+          .from('couple_schedule')
+          .upsert({ person, day, content: text }, { onConflict: 'person,day' });
+      }
+    }
+
+    function onContentChange(payload) {
+      const r = payload.new; if (!r) return;
+      const disp = document.getElementById(`disp-${r.person}-${r.day}`);
       const ta = document.getElementById(`ta-${r.person}-${r.day}`);
-      document.getElementById(id).textContent = r.content||'';
-      if(ta && ta.style.display==='block'){ ta.value = r.content||''; }
-      recalc(r.person);
+      if (disp) disp.textContent = r.content || '';
+      if (ta && ta.style.display === 'block') ta.value = r.content || '';
     }
 
-    function onDateChange(payload){
-      const r = payload.new; if(!r) return;
-      document.getElementById(`label-${r.day}`).textContent = r.label||'';
-      document.getElementById(`label2-${r.day}`).textContent = r.label||'';
+    function onDateChange(payload) {
+      const r = payload.new; if (!r) return;
+      const lab = document.getElementById(`label-${r.day}`);
+      const inp = document.getElementById(`input-${r.day}`);
+      if (lab) lab.textContent = r.label || '';
+      if (inp && inp.style.display === 'block') inp.value = r.label || '';
     }
 
     supabase.channel('sched_rt')
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'couple_schedule'}, onContentChange)
-      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'couple_schedule'}, onContentChange)
-      .on('postgres_changes', {event:'INSERT', schema:'public', table:'couple_schedule_dates'}, onDateChange)
-      .on('postgres_changes', {event:'UPDATE', schema:'public', table:'couple_schedule_dates'}, onDateChange)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'couple_schedule' }, onContentChange)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_schedule' }, onContentChange)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'couple_schedule_dates' }, onDateChange)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_schedule_dates' }, onDateChange)
       .subscribe();
 
     buildTables();
     loadAll();
   </script>
-
 </body>
 </html>
