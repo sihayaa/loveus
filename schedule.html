@@ -3,7 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Our Weekly Schedule — build v13</title>
+  <title>Our Weekly Schedule — build v14</title>
+
+  <!-- Favicon (prevents 404) -->
+  <link rel="icon" href="data:,">
+
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/luxon@3/build/global/luxon.min.js"></script>
@@ -14,13 +18,10 @@
       margin:0; padding:24px; min-height:100dvh; color:var(--ink);
       font-family:'Patrick Hand',cursive; display:flex; justify-content:center; align-items:flex-start;
     }
-    /* Full background */
     body::before{
       content:""; position:fixed; inset:0; z-index:-1;
       background:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_bg.png") center/cover no-repeat;
     }
-
-    /* Back Home */
     .home-btn{
       position:fixed; top:16px; left:16px; z-index:20;
       background:#ffd6e7; color:#7a2d4e; border:1px solid rgba(122,45,78,.12);
@@ -58,12 +59,10 @@
     .btn{border:none; padding:7px 12px; border-radius:8px; cursor:pointer; font-size:14px; margin:0 6px}
     .edit{background:#dbeafe} .save{background:#bbf7d0} .reset{background:#fecaca}
 
-    /* Notes (Sihaya, right side) */
     .rowflex{display:flex; justify-content:space-between; gap:12px}
     .note-chip{max-width:200px; padding:3px 8px; border-radius:999px; background:#f2efff; border:1px solid #dcd4ff; color:#3f2c85; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
     .note-input{display:none; width:200px; padding:6px; border:1px dashed #c9b8ff; background:#f6f5ff; border-radius:999px; font-family:'Patrick Hand',cursive; font-size:13px}
 
-    /* Modal */
     .hidden{display:none!important}
     .overlay{position:fixed; inset:0; display:flex; justify-content:center; align-items:center; background:rgba(15,23,42,.55); z-index:1000}
     .modal{width:min(440px,92%); background:#fff; border-radius:16px; padding:20px 18px; text-align:center; box-shadow:0 20px 50px rgba(0,0,0,.25)}
@@ -78,7 +77,6 @@
   </a>
 
   <div class="wrap">
-    <!-- Godbrand: type Vegas → show Manila -->
     <section class="card" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields. ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -90,7 +88,6 @@
       </div>
     </section>
 
-    <!-- Sihaya: type Manila → show Vegas -->
     <section class="card" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields. ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -103,7 +100,6 @@
     </section>
   </div>
 
-  <!-- Reset modal -->
   <div id="overlay" class="overlay hidden" role="dialog" aria-modal="true">
     <div class="modal">
       <h3>Reset entries?</h3>
@@ -116,7 +112,7 @@
   </div>
 
   <script>
-    /* ========== Config (Supabase + TZ) ========== */
+    /* Config */
     const supabase = window.supabase.createClient(
       "https://tmjozxcjylcxgemffnoc.supabase.co",
       "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI"
@@ -125,10 +121,10 @@
     const vegasTZ = "America/Los_Angeles";
     const manilaTZ = "Asia/Manila";
     const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
-    const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
-    const buildId = "v13"; console.log("Schedule build:", buildId);
+    const IDX = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
+    console.log("Schedule build: v14");
 
-    /* ========== DOM builders ========== */
+    /* DOM rows */
     function rowHTML(day, person){
       const tag = person==='godbrand'
         ? '<span class="tag manila">Manila Time</span>'
@@ -141,9 +137,29 @@
 
       if(person==='godbrand'){
         return `
-          <tr>
-            <th><div>${day}</div><span class="date-wrap">${dateBits}</span></th>
-            <td>
+        <tr>
+          <th><div>${day}</div><span class="date-wrap">${dateBits}</span></th>
+          <td>
+            <div class="display" id="disp-${person}-${day}"></div>
+            <div class="edit-row" id="edit-${person}-${day}">
+              <div class="group">
+                <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" />
+                <select class="ap" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am"><option>AM</option><option>PM</option></select>
+                <span class="dash">–</span>
+                <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" />
+                <select class="ap" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am"><option>AM</option><option>PM</option></select>
+              </div>
+            </div>
+            <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
+          </td>
+        </tr>`;
+      }
+      return `
+      <tr>
+        <th><div>${day}</div><span class="date-wrap">${dateBits}</span></th>
+        <td>
+          <div class="rowflex">
+            <div class="left">
               <div class="display" id="disp-${person}-${day}"></div>
               <div class="edit-row" id="edit-${person}-${day}">
                 <div class="group">
@@ -155,48 +171,27 @@
                 </div>
               </div>
               <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
-            </td>
-          </tr>`;
-      }
-      return `
-        <tr>
-          <th><div>${day}</div><span class="date-wrap">${dateBits}</span></th>
-          <td>
-            <div class="rowflex">
-              <div class="left">
-                <div class="display" id="disp-${person}-${day}"></div>
-                <div class="edit-row" id="edit-${person}-${day}">
-                  <div class="group">
-                    <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" />
-                    <select class="ap" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am"><option>AM</option><option>PM</option></select>
-                    <span class="dash">–</span>
-                    <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" />
-                    <select class="ap" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am"><option>AM</option><option>PM</option></select>
-                  </div>
-                </div>
-                <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
-              </div>
-              <div class="right">
-                <div class="note-chip" id="note-chip-sihaya-${day}"></div>
-                <input class="note-input" id="note-input-sihaya-${day}" />
-              </div>
             </div>
-          </td>
-        </tr>`;
+            <div class="right">
+              <div class="note-chip" id="note-chip-sihaya-${day}"></div>
+              <input class="note-input" id="note-input-sihaya-${day}" />
+            </div>
+          </div>
+        </td>
+      </tr>`;
     }
-
     function buildTables(){
-      document.getElementById('gbBody').innerHTML = DAYS.map(d => rowHTML(d,'godbrand')).join('');
-      document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
+      document.getElementById('gbBody').innerHTML = DAYS.map(d=>rowHTML(d,'godbrand')).join('');
+      document.getElementById('shBody').innerHTML = DAYS.map(d=>rowHTML(d,'sihaya')).join('');
     }
 
-    /* ========== Edit mode, keyboard, save ========== */
-    function setEditMode(person,on){
+    /* Edit mode + keyboard */
+    function setEditMode(person, on){
       for(const day of DAYS){
         const e = document.getElementById(`edit-${person}-${day}`);
         const d = document.getElementById(`disp-${person}-${day}`);
-        e.style.display = on ? 'block':'none';
-        d.style.display = on ? 'none':'block';
+        e.style.display = on?'block':'none';
+        d.style.display = on?'none':'block';
         if(on) prefillFromText(person,day);
 
         if(person==='sihaya'){
@@ -211,7 +206,7 @@
         const lab=document.getElementById(`label-${day}`);
         const inp=document.getElementById(`input-${day}`);
         if(!inp) continue;
-        if(on){ inp.style.display='inline-block'; lab.style.display='none'; inp.value = lab.textContent; }
+        if(on){ inp.style.display='inline-block'; lab.style.display='none'; inp.value=lab.textContent; }
         else { inp.style.display='none'; lab.style.display='inline'; }
       }
     }
@@ -220,7 +215,7 @@
     const order=['start-hm','start-am','end-hm','end-am'];
     function focusRole(role, person, idx){
       const day=DAYS[Math.max(0,Math.min(6,idx))];
-      const id = role==='date' ? `input-${day}` : `${role}-${person}-${day}`;
+      const id= role==='date' ? `input-${day}` : `${role}-${person}-${day}`;
       const el=document.getElementById(id); if(el){ el.focus(); el.select?.(); }
     }
     function move(person, idx, role, dir){
@@ -228,17 +223,17 @@
       if(r<0){ idx-=1; r=order.length-1; }
       if(r>=order.length){ idx+=1; r=0; }
       idx=Math.max(0,Math.min(6,idx));
-      focusRole(order[r],person,idx);
+      focusRole(order[r], person, idx);
     }
 
     document.addEventListener('keydown', async (e)=>{
       const t=e.target;
       const inEdit=t.matches('.hm,.ap,.dinput,.note-input');
       if(t.matches('.hm,.ap,.dinput')){
-        const role=(t.dataset.role|| (t.classList.contains('dinput')?'date':'start-hm')).toLowerCase();
-        const day=t.dataset.day|| (t.classList.contains('dinput')? t.id.replace('input-','') : t.dataset.day);
-        const person=t.dataset.person|| (t.classList.contains('dinput')?'godbrand':t.dataset.person);
-        const idx=dayIndex[day];
+        const role=(t.dataset.role || (t.classList.contains('dinput')?'date':'start-hm')).toLowerCase();
+        const day=t.dataset.day || (t.classList.contains('dinput')? t.id.replace('input-','') : t.dataset.day);
+        const person=t.dataset.person || (t.classList.contains('dinput')? 'godbrand' : t.dataset.person);
+        const idx=IDX[day];
 
         if(e.key==='ArrowUp'){ e.preventDefault(); move(person,idx,role,-1); return; }
         if(e.key==='ArrowDown'){ e.preventDefault(); move(person,idx,role, 1); return; }
@@ -248,22 +243,22 @@
       if(e.key==='Enter' && inEdit){ e.preventDefault(); await saveAll(true); }
     });
 
-    document.addEventListener('input', e=>{
+    document.addEventListener('input', (e)=>{
       const t=e.target;
-      if(t.matches('.hm,.ap')){
-        recalcRow(t.dataset.person, t.dataset.day);
-      }
+      if(t.matches('.hm,.ap')) recalcRow(t.dataset.person, t.dataset.day);
     });
 
-    async function saveAll(exitAfter=true){
-      await Promise.all([saveDates(),saveCol('godbrand'),saveCol('sihaya'),saveNotes()]);
-      recalcAll('godbrand'); recalcAll('sihaya');
-      if(exitAfter) exitEdit();
-    }
+    /* Save/Reset buttons */
+    document.addEventListener('click', async (e)=>{
+      const b=e.target.closest('.btn'); if(!b) return;
+      const who=b.dataset.person;
+      if(b.classList.contains('edit')){ setEditMode(who,true); setDatesEdit(true); document.getElementById(`start-hm-${who}-Mon`)?.focus(); }
+      if(b.classList.contains('save')){ await saveAll(true); }
+      if(b.classList.contains('reset')){ openModal(who); }
+    });
 
-    /* ========== Supabase load/save ========== */
+    /* Supabase load/save */
     async function loadAll(){
-      // dates
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
         d.data.forEach(r=>{
@@ -271,16 +266,14 @@
           if(L) L.textContent=r.label||''; if(R) R.textContent=r.label||'';
         });
       }
-      // schedules
       const c = await supabase.from('couple_schedule').select('*');
       if(!c.error){
         c.data.forEach(r=>{
           const disp=document.getElementById(`disp-${r.person}-${r.day}`);
           if(disp) disp.textContent=r.content||'';
-          recalcRow(r.person, r.day); // compute NOW so it shows on load
+          recalcRow(r.person, r.day); // conversion NOW on load
         });
       }
-      // notes
       const n = await supabase.from('couple_notes').select('*').eq('person','sihaya');
       if(!n.error){
         n.data.forEach(r=>{
@@ -289,10 +282,14 @@
           if(chip) chip.textContent=r.note||''; if(input) input.value=r.note||'';
         });
       }
-      // safety full pass
-      recalcAll('godbrand'); recalcAll('sihaya');
+      recalcAll('godbrand'); recalcAll('sihaya'); // safety pass
     }
 
+    async function saveAll(exitAfter=true){
+      await Promise.all([saveDates(),saveCol('godbrand'),saveCol('sihaya'),saveNotes()]);
+      recalcAll('godbrand'); recalcAll('sihaya');
+      if(exitAfter) exitEdit();
+    }
     async function saveDates(){
       const rows=[];
       for(const day of DAYS){
@@ -325,7 +322,6 @@
       }
       if(rows.length) await supabase.from('couple_notes').upsert(rows,{onConflict:'person,day'});
     }
-
     async function resetCol(person){
       for(const day of DAYS){
         document.getElementById(`disp-${person}-${day}`).textContent='';
@@ -342,20 +338,18 @@
       if(person==='sihaya') await supabase.from('couple_notes').delete().eq('person','sihaya');
     }
 
-    /* ========== Conversions ========== */
+    /* Conversions */
     const to24=(h,ap)=>ap==='AM'?(h%12):(h%12)+12;
     function parseHM(s){
       const m=String(s||'').trim().match(/^(\d{1,2})(?::(\d{1,2}))?$/);
       if(!m) return null; const h=+m[1], mi=+(m[2]||0); if(h<1||h>12||mi<0||mi>59) return null; return {h, m:mi};
     }
     function normHM(s){ const p=parseHM(s); if(!p) return s; return `${p.h}:${String(p.m).padStart(2,'0')}`; }
-
-    // super-forgiving: finds first two time+am/pm tokens anywhere
     function extractTimes(raw){
       const txt=String(raw||'').replace(/[–—−]/g,'-');
-      const tokens=[...txt.matchAll(/(\d{1,2})(?::(\d{1,2}))?\s*(a\.?m\.?|p\.?m\.?)/gi)];
-      if(tokens.length<2) return null;
-      const a=tokens[0], b=tokens[1];
+      const tok=[...txt.matchAll(/(\d{1,2})(?::(\d{1,2}))?\s*(a\.?m\.?|p\.?m\.?)/gi)];
+      if(tok.length<2) return null;
+      const a=tok[0], b=tok[1];
       return {
         startHM:`${a[1]}:${String(a[2]||'0').padStart(2,'0')}`,
         startAP:/p/i.test(a[3])?'PM':'AM',
@@ -363,37 +357,34 @@
         endAP:/p/i.test(b[3])?'PM':'AM'
       };
     }
-
     function mondayInVegas(){
       const now=DateTime.now().setZone(vegasTZ);
       const d=(now.weekday+6)%7; // Mon=0
       return now.startOf('day').minus({days:d});
     }
-
     function recalcAll(person){ for(const day of DAYS) recalcRow(person,day); }
-
     function recalcRow(person,day){
-      const idx=dayIndex[day];
+      const idx=IDX[day];
       const baseV=mondayInVegas().plus({days:idx}).setZone(vegasTZ).startOf('day');
       const baseM=baseV.setZone(manilaTZ);
 
       let sHM,sAP,eHM,eAP;
-      const editing = document.getElementById(`edit-${person}-${day}`).style.display!=='none';
+      const editing=document.getElementById(`edit-${person}-${day}`).style.display!=='none';
       if(editing){
         sHM=document.getElementById(`start-hm-${person}-${day}`).value;
         sAP=document.getElementById(`start-am-${person}-${day}`).value;
         eHM=document.getElementById(`end-hm-${person}-${day}`).value;
         eAP=document.getElementById(`end-am-${person}-${day}`).value;
       }else{
-        const times=extractTimes(document.getElementById(`disp-${person}-${day}`).textContent);
-        if(!times){ document.getElementById(`out-${person}-${day}`).textContent=''; return; }
-        ({startHM:sHM,startAP:sAP,endHM:eHM,endAP:eAP}=times);
+        const t=extractTimes(document.getElementById(`disp-${person}-${day}`).textContent);
+        if(!t){ document.getElementById(`out-${person}-${day}`).textContent=''; return; }
+        ({startHM:sHM,startAP:sAP,endHM:eHM,endAP:eAP}=t);
       }
 
       const s=parseHM(sHM), e=parseHM(eHM);
       if(!s||!e){ document.getElementById(`out-${person}-${day}`).textContent=''; return; }
-      const s24=to24(s.h,sAP), e24=to24(e.h,eAP);
 
+      const s24=to24(s.h,sAP), e24=to24(e.h,eAP);
       let start=(person==='godbrand'?baseV:baseM).set({hour:s24,minute:s.m});
       let end  =(person==='godbrand'?baseV:baseM).set({hour:e24,minute:e.m});
       if(end<=start) end=end.plus({days:1});
@@ -402,7 +393,6 @@
       document.getElementById(`out-${person}-${day}`).textContent =
         person==='godbrand' ? fmt(start,end,manilaTZ) : fmt(start,end,vegasTZ);
     }
-
     function getContent(person,day){
       const row=document.getElementById(`edit-${person}-${day}`);
       if(row && row.style.display!=='none'){
@@ -415,7 +405,6 @@
       }
       return document.getElementById(`disp-${person}-${day}`).textContent || '';
     }
-
     function prefillFromText(person,day){
       const t=extractTimes(document.getElementById(`disp-${person}-${day}`).textContent);
       if(!t) return;
@@ -425,31 +414,20 @@
       document.getElementById(`end-am-${person}-${day}`).value=t.endAP;
     }
 
-    /* ========== UI events ========== */
-    // Kill legacy autosave on AM/PM (preview only)
-    document.addEventListener('change',(e)=>{
-      if(e.target.matches('.ap')){
-        e.stopImmediatePropagation(); e.stopPropagation();
-        recalcRow(e.target.dataset.person, e.target.dataset.day);
-      }
-    }, true);
-
-    document.addEventListener('click', async (e)=>{
-      const b=e.target.closest('.btn'); if(!b) return;
-      const who=b.dataset.person;
-      if(b.classList.contains('edit')){ setEditMode(who,true); setDatesEdit(true); document.getElementById(`start-hm-${who}-Mon`)?.focus(); }
-      if(b.classList.contains('save')){ await saveAll(true); }
-      if(b.classList.contains('reset')){ openModal(who); }
-    });
-
-    // Reset modal
+    /* Modal */
     const overlay=document.getElementById('overlay'); let pending=null;
-    function openModal(who){ pending=who; document.getElementById('modalMsg').textContent = who==='godbrand' ? "Clear all Godbrand's entries? Dates won't change." : "Clear all Sihaya's entries and notes? Dates won't change."; overlay.classList.remove('hidden'); }
+    function openModal(who){
+      pending=who;
+      document.getElementById('modalMsg').textContent = who==='godbrand'
+        ? "Clear all Godbrand's entries? Dates won't change."
+        : "Clear all Sihaya's entries and notes? Dates won't change.";
+      overlay.classList.remove('hidden');
+    }
     document.getElementById('mCancel').onclick=()=>{overlay.classList.add('hidden'); pending=null};
     document.getElementById('mConfirm').onclick=async()=>{ if(pending){ await resetCol(pending); overlay.classList.add('hidden'); pending=null; } };
-    overlay.addEventListener('click',e=>{ if(e.target===overlay) {overlay.classList.add('hidden'); pending=null;} });
+    overlay.addEventListener('click',e=>{ if(e.target===overlay){ overlay.classList.add('hidden'); pending=null; } });
 
-    /* ========== Init ========== */
+    /* Init */
     buildTables();
     loadAll();
   </script>
