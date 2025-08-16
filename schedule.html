@@ -15,24 +15,29 @@
       font-family:'Patrick Hand', cursive; display:flex; justify-content:center; align-items:flex-start;
       min-height:100dvh;
     }
-    /* Background image */
+    /* Background image — full color (no opacity tint) */
     body::before{
       content:"";
       position:fixed; inset:0; z-index:-1;
       background-image:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_bg.png");
       background-size:cover; background-position:center; background-repeat:no-repeat;
-      opacity:0.18;  /* soft so content stays readable */
+      /* removed opacity so the image is full color */
     }
 
-    /* Back Home button (top-left) */
+    /* Back Home button (dreamy pink) */
     .home-btn{
       position:fixed; top:16px; left:16px; z-index:20;
-      background:#ffffff; color:#111; text-decoration:none;
-      border-radius:999px; padding:8px 12px;
-      box-shadow:0 6px 20px rgba(0,0,0,.12);
+      background:#ffd6e7;            /* dreamy pink */
+      color:#7a2d4e;                  /* plum-ish text for contrast */
+      text-decoration:none;
+      border-radius:999px; padding:8px 14px;
+      box-shadow:0 6px 20px rgba(255, 160, 195, .35);
       display:inline-flex; align-items:center; gap:8px; font-size:16px;
+      transition:transform .12s ease, box-shadow .12s ease, background .12s ease;
+      border:1px solid rgba(122,45,78,.12);
     }
-    .home-btn:hover{ transform:translateY(-1px); }
+    .home-btn:hover{ transform:translateY(-1px); box-shadow:0 8px 24px rgba(255, 160, 195, .45); }
+    .home-btn:active{ transform:translateY(0); }
     .home-btn svg{ width:18px; height:18px; }
 
     .schedule-container{ display:flex; gap:30px; width:min(1100px,96%); }
@@ -109,13 +114,13 @@
   </style>
 </head>
 <body>
-  <!-- Back Home -->
+  <!-- Back Home (dreamy pink) -->
   <a class="home-btn" href="./" aria-label="Back to Home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="15 18 9 12 15 6"></polyline>
       <line x1="9" y1="12" x2="21" y2="12"></line>
     </svg>
-    Home
+    Back Home
   </a>
 
   <div class="schedule-container">
@@ -157,7 +162,7 @@
   </div>
 
   <script>
-    /* ==== Entire JS is your working version from before (unchanged) ==== */
+    /* JS stays the same as your working version */
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
