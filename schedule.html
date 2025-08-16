@@ -48,6 +48,15 @@
     .btn{ border:none; padding:7px 12px; border-radius:8px; cursor:pointer; font-size:14px; margin:0 6px }
     .btn.edit{ background:#dbeafe }
     .btn.save{ background:#bbf7d0 }
+
+    /* Notes (Sihaya only) */
+    .note{ margin-top:6px; }
+    .note-label{ font-size:12px; opacity:.7; margin-bottom:2px }
+    .note-display{ font-size:13px; min-height:16px }
+    .note-edit{
+      display:none; width:100%; padding:6px; border:1px dashed #c9b8ff;
+      background:#f6f5ff; border-radius:6px; font-family:'Patrick Hand', cursive; font-size:13px;
+    }
   </style>
 </head>
 <body>
@@ -55,7 +64,7 @@
     <!-- Godbrand (Vegas input → Manila convert) -->
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
-      <div class="hint">Use ↑/↓ to move through time fields, ←/→ to toggle Date↔Time, Enter to save everything.</div>
+      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save everything.</div>
       <table><tbody id="gbBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="godbrand">Edit</button>
@@ -66,7 +75,7 @@
     <!-- Sihaya (Manila input → Vegas convert) -->
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
-      <div class="hint">Use ↑/↓ to move through time fields, ←/→ to toggle Date↔Time, Enter to save everything.</div>
+      <div class="hint">Use ↑/↓ through time fields, ←/→ to toggle Date↔Time. Press Enter to save everything.</div>
       <table><tbody id="shBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="sihaya">Edit</button>
@@ -89,7 +98,7 @@
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
-    // Build rows. Left column owns editable date inputs; right mirrors.
+    // Build rows. Left column owns editable date inputs; right mirrors. Sihaya rows include Note box.
     function rowHTML(day, person){
       const tag = person==='godbrand'
         ? '<span class="tag manila">Manila Time</span>'
@@ -98,6 +107,7 @@
         ? `<span class="date-label" id="label-${day}"></span>
            <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" placeholder="Aug 18" />`
         : `<span class="date-labelR" id="labelR-${day}"></span>`;
+
       return `
         <tr>
           <th>
@@ -122,6 +132,14 @@
             </div>
 
             <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
+
+            ${ person === 'sihaya' ? `
+              <div class="note">
+                <div class="note-label">Note</div>
+                <div class="note-display" id="note-disp-sihaya-${day}"></div>
+                <textarea class="note-edit" id="note-edit-sihaya-${day}" placeholder="Add a note…"></textarea>
+              </div>
+            ` : '' }
           </td>
         </tr>`;
     }
@@ -139,6 +157,13 @@
         editRow.style.display = on ? 'block' : 'none';
         disp.style.display = on ? 'none' : 'block';
         if(on) prefillRowFromText(person, day);
+
+        // notes toggle (Sihaya only)
+        if (person === 'sihaya') {
+          const nd = document.getElementById(`note-disp-sihaya-${day}`);
+          const ne = document.getElementById(`note-edit-sihaya-${day}`);
+          if (nd && ne) { ne.style.display = on ? 'block' : 'none'; nd.style.display = on ? 'none' : 'block'; }
+        }
       });
     }
     function setDatesEdit(on){
@@ -195,7 +220,7 @@
 
       if(e.key==='Enter'){
         e.preventDefault();
-        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya') ]);
+        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya'), saveNotes() ]);
         recalc('godbrand'); recalc('sihaya');
       }
     });
@@ -220,7 +245,7 @@
         const f = document.getElementById(`start-hm-${person}-Mon`); if(f) f.focus();
       }
       if(btn.classList.contains('save')){
-        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya') ]);
+        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya'), saveNotes() ]);
         setDatesEdit(false);
         setEditMode('godbrand', false);
         setEditMode('sihaya', false);
@@ -230,6 +255,7 @@
 
     // ----- Load data -----
     async function loadAll(){
+      // dates
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
         d.data.forEach(r=>{
@@ -239,6 +265,7 @@
           if(labR) labR.textContent = r.label || '';
         });
       }
+      // schedules
       const c = await supabase.from('couple_schedule').select('*');
       if(!c.error){
         c.data.forEach(r=>{
@@ -246,6 +273,17 @@
           if(disp) disp.textContent = r.content || '';
         });
       }
+      // notes (Sihaya)
+      const n = await supabase.from('couple_notes').select('*').eq('person','sihaya');
+      if(!n.error){
+        n.data.forEach(r=>{
+          const nd = document.getElementById(`note-disp-sihaya-${r.day}`);
+          const ne = document.getElementById(`note-edit-sihaya-${r.day}`);
+          if(nd) nd.textContent = r.note || '';
+          if(ne) ne.value = r.note || '';
+        });
+      }
+
       recalc('godbrand'); recalc('sihaya');
     }
 
@@ -271,6 +309,18 @@
       }
       if(rows.length) await supabase.from('couple_schedule').upsert(rows, { onConflict:'person,day' });
     }
+    async function saveNotes(){
+      const rows = [];
+      for(const day of DAYS){
+        const ne = document.getElementById(`note-edit-sihaya-${day}`);
+        const nd = document.getElementById(`note-disp-sihaya-${day}`);
+        if(!ne || !nd) continue;
+        const note = (ne.value || '').trim();
+        nd.textContent = note;
+        rows.push({ person:'sihaya', day, note });
+      }
+      if(rows.length) await supabase.from('couple_notes').upsert(rows, { onConflict:'person,day' });
+    }
 
     // ----- Helpers: parse/build text, prefill, realtime, convert -----
     function collectContent(person, day){
@@ -291,8 +341,8 @@
       if(!m) return;
       document.getElementById(`start-hm-${person}-${day}`).value = m[1];
       document.getElementById(`start-am-${person}-${day}`).value = m[2].toUpperCase();
-      document.getElementById(`end-hm-${person}-${day}`).value = m[3];
-      document.getElementById(`end-am-${person}-${day}`).value = m[4].toUpperCase();
+      document.getElementById(`end-hm-${person}-${day}`).value   = m[3];
+      document.getElementById(`end-am-${person}-${day}`).value   = m[4].toUpperCase();
     }
 
     function onContentChange(payload){
@@ -308,11 +358,20 @@
       if(lab) lab.textContent = r.label || '';
       if(labR) labR.textContent = r.label || '';
     }
+    function onNoteChange(payload){
+      const r = payload.new; if(!r) return;
+      const nd = document.getElementById(`note-disp-sihaya-${r.day}`);
+      const ne = document.getElementById(`note-edit-sihaya-${r.day}`);
+      if(nd) nd.textContent = r.note || '';
+      if(ne && ne.style.display==='block') ne.value = r.note || '';
+    }
     supabase.channel('sched_rt')
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'couple_schedule' }, onContentChange)
       .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_schedule' }, onContentChange)
       .on('postgres_changes', { event:'INSERT', schema:'public', table:'couple_schedule_dates' }, onDateChange)
       .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_schedule_dates' }, onDateChange)
+      .on('postgres_changes', { event:'INSERT', schema:'public', table:'couple_notes' }, onNoteChange)
+      .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_notes' }, onNoteChange)
       .subscribe();
 
     function mondayInVegas(){
