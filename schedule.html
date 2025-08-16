@@ -15,7 +15,6 @@
       font-family:'Patrick Hand', cursive; display:flex; justify-content:center; align-items:flex-start;
       min-height:100dvh;
     }
-    /* Full-color background */
     body::before{
       content:"";
       position:fixed; inset:0; z-index:-1;
@@ -23,7 +22,6 @@
       background-size:cover; background-position:center; background-repeat:no-repeat;
     }
 
-    /* Back Home (dreamy pink) */
     .home-btn{
       position:fixed; top:16px; left:16px; z-index:20;
       background:#ffd6e7; color:#7a2d4e; text-decoration:none;
@@ -76,7 +74,6 @@
     .btn.save{ background:#bbf7d0 }
     .btn.reset{ background:#fecaca }
 
-    /* Sihaya note chip (small, right side) */
     .cell-flex{ display:flex; gap:12px; align-items:flex-start; justify-content:space-between; }
     .note-side{ display:flex; align-items:flex-start; gap:6px; }
     .note-chip{
@@ -89,7 +86,6 @@
       background:#f6f5ff; border-radius:999px; font-family:'Patrick Hand', cursive; font-size:13px;
     }
 
-    /* Themed modal */
     .hidden{ display:none !important; }
     .overlay{
       position:fixed; inset:0; background:rgba(15,23,42,.55);
@@ -111,7 +107,6 @@
   </style>
 </head>
 <body>
-  <!-- Back Home -->
   <a class="home-btn" href="./" aria-label="Back to Home">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <polyline points="15 18 9 12 15 6"></polyline>
@@ -121,7 +116,6 @@
   </a>
 
   <div class="schedule-container">
-    <!-- Godbrand (type Vegas → shows Manila) -->
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields. ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -133,7 +127,6 @@
       </div>
     </section>
 
-    <!-- Sihaya (type Manila → shows Vegas) -->
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields. ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -146,7 +139,6 @@
     </section>
   </div>
 
-  <!-- Themed modal -->
   <div id="modalOverlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
     <div class="modal">
       <h3 id="modalTitle">Reset entries?</h3>
@@ -159,12 +151,10 @@
   </div>
 
   <script>
-    // ----- Supabase -----
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    // ----- Timezones (Luxon) -----
     const { DateTime } = luxon;
     const vegasTZ = 'America/Los_Angeles';
     const manilaTZ = 'Asia/Manila';
@@ -172,18 +162,16 @@
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
-    // Kill any old autosave on AM/PM change (capture-phase)
     document.addEventListener('change', (e) => {
       if (e.target.matches('.ampm')) {
         e.stopImmediatePropagation();
         e.stopPropagation();
         const person = e.target.dataset.person;
         const day = e.target.dataset.day;
-        if (person && day) recalcRow(person, day); // preview only
+        if (person && day) recalcRow(person, day);
       }
     }, true);
 
-    // Build rows (ONE definition only)
     function rowHTML(day, person){
       const tag = person==='godbrand'
         ? '<span class="tag manila">Manila Time</span>'
@@ -220,7 +208,6 @@
           </tr>`;
       }
 
-      // Sihaya with tiny note chip on right
       return `
         <tr>
           <th>
@@ -260,7 +247,6 @@
       document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
     }
 
-    // ----- Edit toggles -----
     function setEditMode(person, on){
       DAYS.forEach(day=>{
         const editRow = document.getElementById(`edit-${person}-${day}`);
@@ -291,7 +277,6 @@
       setEditMode('sihaya',  false);
     }
 
-    // ----- Keyboard + Enter-to-save-anywhere -----
     const timeOrder = ['start-hm','start-am','end-hm','end-am'];
     function idFor(role, person, day){ return role==='date' ? `input-${day}` : `${role}-${person}-${day}`; }
     function focusEl(role, person, dayIdx){
@@ -349,7 +334,6 @@
       }
     });
 
-    // --- Modal state ---
     const overlay = document.getElementById('modalOverlay');
     const modalMsg = document.getElementById('modalMsg');
     const modalCancel = document.getElementById('modalCancel');
@@ -378,7 +362,6 @@
       closeModal();
     });
 
-    // Buttons
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.btn'); if(!btn) return;
       const person = btn.dataset.person;
@@ -391,7 +374,19 @@
       if(btn.classList.contains('reset')){ openResetModal(person); }
     });
 
-    // Load all
+    function extractTimes(raw){
+      if(!raw) return null;
+      const normalized = String(raw).replace(/[–—−]/g,'-');
+      const tokens = [...normalized.matchAll(/(\d{1,2})(?::(\d{1,2}))?\s*(a\.?m\.?|p\.?m\.?)/gi)];
+      if(tokens.length < 2) return null;
+      const t1 = tokens[0], t2 = tokens[1];
+      const hm1 = `${t1[1]}:${String(t1[2]||'0').padStart(2,'0')}`;
+      const ap1 = /p/i.test(t1[3]) ? 'PM' : 'AM';
+      const hm2 = `${t2[1]}:${String(t2[2]||'0').padStart(2,'0')}`;
+      const ap2 = /p/i.test(t2[3]) ? 'PM' : 'AM';
+      return { startHM: hm1, startAP: ap1, endHM: hm2, endAP: ap2 };
+    }
+
     async function loadAll(){
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
@@ -407,6 +402,7 @@
         c.data.forEach(r=>{
           const disp = document.getElementById(`disp-${r.person}-${r.day}`);
           if(disp) disp.textContent = r.content || '';
+          recalcRow(r.person, r.day);
         });
       }
       const n = await supabase.from('couple_notes').select('*').eq('person','sihaya');
@@ -421,7 +417,6 @@
       recalc('godbrand'); recalc('sihaya');
     }
 
-    // Save helpers
     async function saveDates(){
       const rows = [];
       for(const day of DAYS){
@@ -474,7 +469,6 @@
       if(person==='sihaya'){ await supabase.from('couple_notes').delete().eq('person','sihaya'); }
     }
 
-    // Helpers
     function collectContent(person, day){
       const row = document.getElementById(`edit-${person}-${day}`);
       if(row && row.style.display!=='none'){
@@ -489,13 +483,12 @@
     }
     function prefillRowFromText(person, day){
       const raw = (document.getElementById(`disp-${person}-${day}`).textContent || '');
-      const txt = raw.toLowerCase().replace(/[–—−]/g,'-').replace(/\s+/g,''); // accept various dashes
-      const m = txt.match(/^([0-9]{1,2}(?::[0-9]{2})?)(am|pm)-([0-9]{1,2}(?::[0-9]{2})?)(am|pm)$/);
-      if(!m) return;
-      document.getElementById(`start-hm-${person}-${day}`).value = m[1];
-      document.getElementById(`start-am-${person}-${day}`).value = m[2].toUpperCase();
-      document.getElementById(`end-hm-${person}-${day}`).value   = m[3];
-      document.getElementById(`end-am-${person}-${day}`).value   = m[4].toUpperCase();
+      const t = extractTimes(raw);
+      if(!t) return;
+      document.getElementById(`start-hm-${person}-${day}`).value = t.startHM;
+      document.getElementById(`start-am-${person}-${day}`).value = t.startAP;
+      document.getElementById(`end-hm-${person}-${day}`).value   = t.endHM;
+      document.getElementById(`end-am-${person}-${day}`).value   = t.endAP;
     }
 
     function onContentChange(payload){
@@ -527,7 +520,6 @@
       .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_notes' }, onNoteChange)
       .subscribe();
 
-    // Monday anchor (Vegas)
     function mondayInVegas() {
       const now = DateTime.now().setZone(vegasTZ);
       const daysFromMonday = (now.weekday + 6) % 7; // Mon=0..Sun=6
@@ -563,11 +555,8 @@
         endHM   = document.getElementById(`end-hm-${person}-${day}`).value;
         endAP   = document.getElementById(`end-am-${person}-${day}`).value;
       }else{
-        // Accept -, – or — from previously saved rows
-        const raw = (document.getElementById(`disp-${person}-${day}`).textContent || '');
-        const txt = raw.toLowerCase().replace(/[–—−]/g,'-').replace(/\s+/g,'');
-        const m = txt.match(/^([0-9]{1,2}(?::[0-9]{2})?)(am|pm)-([0-9]{1,2}(?::[0-9]{2})?)(am|pm)$/);
-        if(m){ startHM=m[1]; startAP=m[2].toUpperCase(); endHM=m[3]; endAP=m[4].toUpperCase(); }
+        const times = extractTimes((document.getElementById(`disp-${person}-${day}`).textContent || ''));
+        if(times){ ({startHM, startAP, endHM, endAP} = times); }
         else { document.getElementById(`out-${person}-${day}`).textContent=''; return; }
       }
 
@@ -584,7 +573,6 @@
       out.textContent = person==='godbrand' ? fmt(start,end,manilaTZ) : fmt(start,end,vegasTZ);
     }
 
-    // Init
     buildTables();
     loadAll();
   </script>
