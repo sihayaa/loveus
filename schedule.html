@@ -89,7 +89,7 @@
 </head>
 <body>
   <div class="schedule-container">
-    <!-- Godbrand -->
+    <!-- Godbrand (type Vegas → shows Manila) -->
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields, ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -101,7 +101,7 @@
       </div>
     </section>
 
-    <!-- Sihaya -->
+    <!-- Sihaya (type Manila → shows Vegas) -->
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields, ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -279,44 +279,41 @@
       if (exitAfterSave) exitEditMode();
     }
 
-    // Arrows for date/time; Enter saves from any field; also save on AM/PM change
+    // Robust ENTER + arrows
     document.addEventListener('keydown', async (e) => {
       const t = e.target;
-      const isDate = t.classList.contains('date-input');
-      const isTime = t.classList.contains('hm') || t.classList.contains('ampm');
+      const inEditable = t.matches('.hm, .ampm, .date-input, .note-input');
 
-      if (isDate || isTime) {
-        const role   = (t.getAttribute('data-role') || (isDate ? 'date' : 'start-hm')).toLowerCase();
-        const person = t.getAttribute('data-person') || (isDate ? 'godbrand' : t.getAttribute('data-person'));
-        const day    = t.getAttribute('data-day') || (isDate ? t.id.replace('input-','') : t.getAttribute('data-day'));
+      // arrow nav only for date/time inputs
+      if (t.matches('.hm, .ampm, .date-input')) {
+        const role   = (t.getAttribute('data-role') || (t.classList.contains('date-input') ? 'date' : 'start-hm')).toLowerCase();
+        const person = t.getAttribute('data-person') || (t.classList.contains('date-input') ? 'godbrand' : t.getAttribute('data-person'));
+        const day    = t.getAttribute('data-day') || (t.classList.contains('date-input') ? t.id.replace('input-','') : t.getAttribute('data-day'));
         const dIdx   = dayIndex[day];
 
         if (e.key === 'ArrowUp')   { e.preventDefault(); moveVertical(person, dIdx, role, -1); return; }
         if (e.key === 'ArrowDown') { e.preventDefault(); moveVertical(person, dIdx, role, +1); return; }
         if (e.key === 'ArrowLeft') { e.preventDefault(); timeToDate(day); return; }
-        if (e.key === 'ArrowRight'){ e.preventDefault(); if (isDate) dateToTime(day); else timeToDate(day); return; }
+        if (e.key === 'ArrowRight'){ e.preventDefault(); if (t.classList.contains('date-input')) dateToTime(day); else timeToDate(day); return; }
       }
 
-      if (
-        e.key === 'Enter' &&
-        e.target.closest('.schedule-container') &&
-        ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)
-      ) {
+      // ENTER: save & exit from ANY editable field
+      if (e.key === 'Enter' && inEditable) {
         e.preventDefault();
-        await saveAll(true); // save + exit edit
+        try { await saveAll(true); } catch (err) { console.error(err); exitEditMode(); }
       }
     });
+
+    // Fallbacks: some browsers swallow Enter inside <select>; save on change as well
     document.addEventListener('change', async (e)=>{
-      if (e.target.classList.contains('ampm')) { await saveAll(false); } // keep editing on AM/PM change
+      if (e.target.matches('.ampm')) {
+        try { await saveAll(true); } catch (err) { console.error(err); exitEditMode(); }
+      }
     });
-    document.addEventListener('keyup', async (e)=>{
-      if (
-        e.key === 'Enter' &&
-        e.target.closest('.schedule-container') &&
-        ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)
-      ) {
+    document.addEventListener('keypress', async (e)=>{
+      if (e.key === 'Enter' && e.target.matches('.hm, .ampm, .date-input, .note-input')) {
         e.preventDefault();
-        await saveAll(true);
+        try { await saveAll(true); } catch (err) { console.error(err); exitEditMode(); }
       }
     });
 
@@ -362,7 +359,7 @@
       closeModal();
     });
 
-    // Buttons (Edit/Save/Reset)
+    // Buttons
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.btn'); if(!btn) return;
       const person = btn.dataset.person;
@@ -375,7 +372,7 @@
         await saveAll(true);
       }
       if(btn.classList.contains('reset')){
-        openResetModal(person); // <-- custom modal
+        openResetModal(person);
       }
     });
 
@@ -445,7 +442,6 @@
     }
 
     async function resetColumn(person){
-      // Clear UI
       for (const day of DAYS){
         document.getElementById(`disp-${person}-${day}`).textContent = '';
         const out = document.getElementById(`out-${person}-${day}`); if(out) out.textContent='';
@@ -459,7 +455,6 @@
           if(input) input.value='';
         }
       }
-      // Clear DB rows (dates table is NOT touched)
       await supabase.from('couple_schedule').delete().eq('person', person);
       if(person==='sihaya'){ await supabase.from('couple_notes').delete().eq('person','sihaya'); }
     }
@@ -568,9 +563,8 @@
 
       function fmtRange(st,en,zone){
         st = st.setZone(zone); en = en.setZone(zone);
-        const same = st.hasSame(en,'day');
-        const note = same ? '' : ` (→ ${en.toFormat('ccc')})`;
-        return `${st.toFormat('h:mm a')} - ${en.toFormat('h:mm a')}${note}`;
+        // Always include day names on both ends
+        return `${st.toFormat('ccc h:mm a')} - ${en.toFormat('ccc h:mm a')}`;
       }
       const out = document.getElementById(`out-${person}-${day}`);
       out.textContent = person==='godbrand' ? fmtRange(start,end,manilaTZ) : fmtRange(start,end,vegasTZ);
