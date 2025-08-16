@@ -55,7 +55,7 @@
     <!-- Godbrand (Vegas input → Manila convert) -->
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
-      <div class="hint">Type times. Press <b>Enter</b> to save the whole left column. Example: 10:00 PM – 6:00 AM</div>
+      <div class="hint">Use ↑/↓ to move through time fields, ←/→ to toggle Date↔Time, Enter to save everything.</div>
       <table><tbody id="gbBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="godbrand">Edit</button>
@@ -66,7 +66,7 @@
     <!-- Sihaya (Manila input → Vegas convert) -->
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
-      <div class="hint">Type times. Press <b>Enter</b> to save the whole right column. Example: 1:00 PM – 9:00 PM</div>
+      <div class="hint">Use ↑/↓ to move through time fields, ←/→ to toggle Date↔Time, Enter to save everything.</div>
       <table><tbody id="shBody"></tbody></table>
       <div class="controls">
         <button class="btn edit" data-person="sihaya">Edit</button>
@@ -89,15 +89,15 @@
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
-    // Build rows. Left column owns the editable date inputs; right mirrors.
+    // Build rows. Left column owns editable date inputs; right mirrors.
     function rowHTML(day, person){
       const tag = person==='godbrand'
         ? '<span class="tag manila">Manila Time</span>'
         : '<span class="tag vegas">Vegas Time</span>';
       const dateBits = (person==='godbrand')
         ? `<span class="date-label" id="label-${day}"></span>
-           <input class="date-input" id="input-${day}" placeholder="Aug 18" />`
-        : `<span class="date-labelR" id="labelR-${day}"></span>`; // mirror
+           <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" placeholder="Aug 18" />`
+        : `<span class="date-labelR" id="labelR-${day}"></span>`;
       return `
         <tr>
           <th>
@@ -123,8 +123,7 @@
 
             <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
           </td>
-        </tr>
-      `;
+        </tr>`;
     }
 
     function buildTables(){
@@ -152,38 +151,52 @@
       });
     }
 
-    // ----- Keyboard controls -----
-    // Enter: save WHOLE COLUMN (and dates), stay in edit mode
+    // ----- Keyboard navigation & Enter-to-save-all -----
+    const timeOrder = ['start-hm','start-am','end-hm','end-am']; // vertical order
+    function idFor(role, person, day){
+      return role==='date' ? `input-${day}` : `${role}-${person}-${day}`;
+    }
+    function focusEl(role, person, dayIdx){
+      const day = DAYS[Math.max(0, Math.min(DAYS.length-1, dayIdx))];
+      const el = document.getElementById(idFor(role, person, day));
+      if(el){ el.focus(); if(el.classList.contains('hm')) el.select(); }
+      return !!el;
+    }
+    function moveVertical(person, dayIdx, role, dir){
+      let rIdx = timeOrder.indexOf(role); if(rIdx===-1) rIdx = 0;
+      rIdx += dir;
+      if(rIdx < 0){ dayIdx -= 1; rIdx = timeOrder.length - 1; }
+      if(rIdx >= timeOrder.length){ dayIdx += 1; rIdx = 0; }
+      dayIdx = Math.max(0, Math.min(DAYS.length-1, dayIdx));
+      focusEl(timeOrder[rIdx], person, dayIdx);
+    }
+    function timeToDate(day){
+      const el = document.getElementById(`input-${day}`);
+      if (el && el.style.display!=='none'){ el.focus(); el.select?.(); }
+    }
+    function dateToTime(day){ focusEl('start-hm', 'godbrand', dayIndex[day]); }
+
     document.addEventListener('keydown', async (e)=>{
       const t = e.target;
-      if(!(t.classList.contains('hm') || t.classList.contains('ampm') || t.classList.contains('date-input'))) return;
+      const isDate = t.classList.contains('date-input');
+      const isTime = t.classList.contains('hm') || t.classList.contains('ampm');
+      if(!isDate && !isTime) return;
 
-      // Arrow up/down move in same role to previous/next day
-      if(e.key === 'ArrowDown' || e.key === 'ArrowUp'){
-        e.preventDefault();
-        const person = t.getAttribute('data-person');
-        const day = t.getAttribute('data-day');
-        const role = t.getAttribute('data-role'); // start-hm, start-am, end-hm, end-am
-        if(person && day && role){
-          const idx = dayIndex[day] + (e.key==='ArrowDown' ? 1 : -1);
-          if(idx>=0 && idx<DAYS.length){
-            const next = document.getElementById(`${role}-${person}-${DAYS[idx]}`);
-            if(next) next.focus();
-          }
-        }
-        return;
-      }
+      const role   = (t.getAttribute('data-role') || (isDate ? 'date' : 'start-hm')).toLowerCase();
+      const person = t.getAttribute('data-person') || (isDate ? 'godbrand' : null);
+      const day    = t.getAttribute('data-day') || (isDate ? t.id.replace('input-','') : null);
+      const dIdx   = dayIndex[day];
 
-      if(e.key === 'Enter'){
+      if(e.key==='ArrowUp'){   e.preventDefault(); moveVertical(person, dIdx, role, -1); return; }
+      if(e.key==='ArrowDown'){ e.preventDefault(); moveVertical(person, dIdx, role, +1); return; }
+
+      if(e.key==='ArrowLeft'){ e.preventDefault(); timeToDate(day); return; }
+      if(e.key==='ArrowRight'){e.preventDefault(); if(isDate) dateToTime(day); else timeToDate(day); return; }
+
+      if(e.key==='Enter'){
         e.preventDefault();
-        // Save dates + WHOLE column of the focused input
-        const person = t.getAttribute('data-person') || // time input
-                       (document.activeElement.classList.contains('date-input') ? 'godbrand' : null); // dates live left
-        if(person){
-          await saveDates();
-          await saveColumn(person);
-          recalc('godbrand'); recalc('sihaya');
-        }
+        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya') ]);
+        recalc('godbrand'); recalc('sihaya');
       }
     });
 
@@ -197,7 +210,7 @@
       }
     });
 
-    // Buttons: bottom Edit/Save
+    // Buttons (still available)
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.btn'); if(!btn) return;
       const person = btn.dataset.person;
@@ -207,17 +220,16 @@
         const f = document.getElementById(`start-hm-${person}-Mon`); if(f) f.focus();
       }
       if(btn.classList.contains('save')){
-        await saveDates();
-        await saveColumn(person);
+        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya') ]);
         setDatesEdit(false);
-        setEditMode(person, false);
+        setEditMode('godbrand', false);
+        setEditMode('sihaya', false);
         recalc('godbrand'); recalc('sihaya');
       }
     });
 
     // ----- Load data -----
     async function loadAll(){
-      // dates
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
         d.data.forEach(r=>{
@@ -227,7 +239,6 @@
           if(labR) labR.textContent = r.label || '';
         });
       }
-      // content
       const c = await supabase.from('couple_schedule').select('*');
       if(!c.error){
         c.data.forEach(r=>{
@@ -238,7 +249,7 @@
       recalc('godbrand'); recalc('sihaya');
     }
 
-    // ----- Save (batched) -----
+    // ----- Save (batched for speed) -----
     async function saveDates(){
       const rows = [];
       for(const day of DAYS){
@@ -246,13 +257,11 @@
         if(!inp || inp.style.display==='none') continue;
         const val = (inp.value || '').trim();
         document.getElementById(`label-${day}`).textContent = val;
-        const labR = document.getElementById(`labelR-${day}`); // mirror on right
-        if(labR) labR.textContent = val;
+        const labR = document.getElementById(`labelR-${day}`); if(labR) labR.textContent = val;
         rows.push({ day, label: val });
       }
       if(rows.length) await supabase.from('couple_schedule_dates').upsert(rows);
     }
-
     async function saveColumn(person){
       const rows = [];
       for(const day of DAYS){
@@ -276,7 +285,6 @@
       }
       return document.getElementById(`disp-${person}-${day}`).textContent || '';
     }
-
     function prefillRowFromText(person, day){
       const txt = (document.getElementById(`disp-${person}-${day}`).textContent || '').toLowerCase();
       const m = txt.replace(/\s+/g,'').match(/^([0-9]{1,2}(?::[0-9]{2})?)(am|pm)-([0-9]{1,2}(?::[0-9]{2})?)(am|pm)$/);
@@ -371,4 +379,3 @@
   </script>
 </body>
 </html>
-
