@@ -69,7 +69,7 @@
 </head>
 <body>
   <div class="schedule-container">
-    <!-- Godbrand -->
+    <!-- Godbrand (type Vegas → shows Manila) -->
     <section class="schedule" id="col-godbrand">
       <h2>💜 Godbrand's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields, ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -81,7 +81,7 @@
       </div>
     </section>
 
-    <!-- Sihaya -->
+    <!-- Sihaya (type Manila → shows Vegas) -->
     <section class="schedule" id="col-sihaya">
       <h2>💚 Sihaya's Schedule</h2>
       <div class="hint">Use ↑/↓ for time fields, ←/→ toggles Date↔Time. Press Enter to save.</div>
@@ -115,7 +115,7 @@
         : '<span class="tag vegas">Vegas Time</span>';
       const dateBits = (person==='godbrand')
         ? `<span class="date-label" id="label-${day}"></span>
-           <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" placeholder="" />`
+           <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" />`
         : `<span class="date-labelR" id="labelR-${day}"></span>`;
 
       if (person === 'godbrand') {
@@ -129,12 +129,12 @@
               <div class="display-text" id="disp-${person}-${day}"></div>
               <div class="time-edit" id="edit-${person}-${day}">
                 <div class="time-group">
-                  <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="" />
+                  <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" />
                   <select class="ampm" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am">
                     <option>AM</option><option>PM</option>
                   </select>
                   <span class="dash">–</span>
-                  <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="" />
+                  <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" />
                   <select class="ampm" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am">
                     <option>AM</option><option>PM</option>
                   </select>
@@ -158,12 +158,12 @@
                 <div class="display-text" id="disp-${person}-${day}"></div>
                 <div class="time-edit" id="edit-${person}-${day}">
                   <div class="time-group">
-                    <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="" />
+                    <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" />
                     <select class="ampm" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am">
                       <option>AM</option><option>PM</option>
                     </select>
                     <span class="dash">–</span>
-                    <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="" />
+                    <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" />
                     <select class="ampm" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am">
                       <option>AM</option><option>PM</option>
                     </select>
@@ -173,7 +173,7 @@
               </div>
               <div class="note-side">
                 <div class="note-chip" id="note-chip-sihaya-${day}"></div>
-                <input class="note-input" id="note-input-sihaya-${day}" placeholder="" />
+                <input class="note-input" id="note-input-sihaya-${day}" />
               </div>
             </div>
           </td>
@@ -234,7 +234,12 @@
     }
     function dateToTime(day){ focusEl('start-hm', 'godbrand', dayIndex[day]); }
 
-    // unified keydown: arrows for date/time; Enter saves from any input/select/textarea
+    async function saveAll(){
+      await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya'), saveNotes() ]);
+      recalc('godbrand'); recalc('sihaya');
+    }
+
+    // Arrows for date/time; Enter saves from any field; also save on AM/PM change
     document.addEventListener('keydown', async (e) => {
       const t = e.target;
       const isDate = t.classList.contains('date-input');
@@ -258,8 +263,25 @@
         ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)
       ) {
         e.preventDefault();
-        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya'), saveNotes() ]);
-        recalc('godbrand'); recalc('sihaya');
+        await saveAll();
+      }
+    });
+
+    // Some browsers swallow Enter inside <select>—save on change too
+    document.addEventListener('change', async (e)=>{
+      if (e.target.classList.contains('ampm')) {
+        await saveAll();
+      }
+    });
+    // Fallback: keyup Enter (e.g., some selects)
+    document.addEventListener('keyup', async (e)=>{
+      if (
+        e.key === 'Enter' &&
+        e.target.closest('.schedule-container') &&
+        ['INPUT','SELECT','TEXTAREA'].includes(e.target.tagName)
+      ) {
+        e.preventDefault();
+        await saveAll();
       }
     });
 
@@ -283,11 +305,10 @@
         const f = document.getElementById(`start-hm-${person}-Mon`); if(f) f.focus();
       }
       if(btn.classList.contains('save')){
-        await Promise.all([ saveDates(), saveColumn('godbrand'), saveColumn('sihaya'), saveNotes() ]);
+        await saveAll();
         setDatesEdit(false);
         setEditMode('godbrand', false);
         setEditMode('sihaya', false);
-        recalc('godbrand'); recalc('sihaya');
       }
       if(btn.classList.contains('reset')){
         const ok = confirm(`Clear all ${person === 'godbrand' ? "Godbrand's" : "Sihaya's"} entries? Dates won't change.`);
@@ -430,7 +451,7 @@
       .on('postgres_changes', { event:'UPDATE', schema:'public', table:'couple_notes' }, onNoteChange)
       .subscribe();
 
-    // >>> FIXED Monday anchor (no extra day shift)
+    // Monday anchor (correct, no locale shift)
     function mondayInVegas() {
       const now = DateTime.now().setZone(vegasTZ);
       const daysFromMonday = (now.weekday + 6) % 7; // Mon=0 … Sun=6
