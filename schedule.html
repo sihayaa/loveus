@@ -18,17 +18,13 @@
     .schedule{ background:var(--card); border-radius:12px; padding:16px; box-shadow:0 4px 14px rgba(0,0,0,.08); width:100%; }
     h2{ margin:0 0 6px; text-align:center; font-size:24px }
     .hint{ text-align:center; font-size:13px; opacity:.75; margin:0 0 10px }
-    table{ width:100%; border-collapse:collapse }
-    th,td{ border:1px solid var(--line); vertical-align:top }
+
+    table{ width:100%; border-collapse:collapse; }
+    th,td{ border:1px solid var(--line); vertical-align:top; }
     th{ width:120px; background:#f3f4f6; padding:8px; text-align:left; font-size:14px }
     td{ padding:8px }
-    .day{ font-size:16px }
-    .date-wrap{ display:block; margin-top:3px }
-    .date-label,.date-labelR{ font-size:12px; opacity:.8 }
-    .date-input{
-      display:none; width:92px; border:1px dashed #9bb7ff; background:#fff;
-      border-radius:6px; padding:3px 6px; font-family:'Patrick Hand', cursive; font-size:12px
-    }
+
+    /* time UI */
     .display-text{ font-size:14px; min-height:24px; padding:4px; white-space:pre-line }
     .time-edit{ display:none }
     .time-group{ display:flex; align-items:center; gap:6px; background:var(--blue); padding:6px; border-radius:8px; flex-wrap:wrap }
@@ -44,15 +40,24 @@
     .tag{ padding:2px 8px; border-radius:999px; font-size:12px }
     .tag.manila{ background:#d7fbef; color:#0c5d49 }
     .tag.vegas{ background:#efe7ff; color:#3f2c85 }
+
+    /* dates */
+    .date-wrap{ display:block; margin-top:3px }
+    .date-label,.date-labelR{ font-size:12px; opacity:.8 }
+    .date-input{
+      display:none; width:92px; border:1px dashed #9bb7ff; background:#fff;
+      border-radius:6px; padding:3px 6px; font-family:'Patrick Hand', cursive; font-size:12px
+    }
+
     .controls{ margin-top:10px; text-align:center }
     .btn{ border:none; padding:7px 12px; border-radius:8px; cursor:pointer; font-size:14px; margin:0 6px }
     .btn.edit{ background:#dbeafe }
     .btn.save{ background:#bbf7d0 }
 
-    /* Notes (Sihaya only) */
-    .note{ margin-top:6px; }
-    .note-label{ font-size:12px; opacity:.7; margin-bottom:2px }
-    .note-display{ font-size:13px; min-height:16px }
+    /* Sihaya NOTE side column */
+    #shBody td.note-cell{ width:240px; min-width:240px; }
+    .note-title{ font-size:12px; opacity:.7; margin-bottom:4px }
+    .note-display{ font-size:13px; min-height:40px; white-space:pre-wrap }
     .note-edit{
       display:none; width:100%; padding:6px; border:1px dashed #c9b8ff;
       background:#f6f5ff; border-radius:6px; font-family:'Patrick Hand', cursive; font-size:13px;
@@ -98,55 +103,52 @@
     const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const dayIndex = Object.fromEntries(DAYS.map((d,i)=>[d,i]));
 
-    // Build rows. Left column owns editable date inputs; right mirrors. Sihaya rows include Note box.
+    // Build rows: Godbrand has 2 columns (Day|Time). Sihaya has 3 columns (Day|Time|Note).
     function rowHTML(day, person){
-  const tag = person==='godbrand'
-    ? '<span class="tag manila">Manila Time</span>'
-    : '<span class="tag vegas">Vegas Time</span>';
+      const tag = person==='godbrand'
+        ? '<span class="tag manila">Manila Time</span>'
+        : '<span class="tag vegas">Vegas Time</span>';
 
-  const dateBits = (person==='godbrand')
-    ? `<span class="date-label" id="label-${day}"></span>
-       <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" placeholder="Aug 18" />`
-    : `<span class="date-labelR" id="labelR-${day}"></span>`;
+      const dateBits = (person==='godbrand')
+        ? `<span class="date-label" id="label-${day}"></span>
+           <input class="date-input" id="input-${day}" data-role="date" data-person="godbrand" data-day="${day}" placeholder="Aug 18" />`
+        : `<span class="date-labelR" id="labelR-${day}"></span>`;
 
-  // GODBRAND (unchanged cell)
-  if (person === 'godbrand'){
-    return `
-      <tr>
-        <th>
-          <div class="day">${day}</div>
-          <span class="date-wrap">${dateBits}</span>
-        </th>
-        <td>
-          <div class="display-text" id="disp-${person}-${day}"></div>
-          <div class="time-edit" id="edit-${person}-${day}">
-            <div class="time-group">
-              <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="10:00" />
-              <select class="ampm" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am">
-                <option>AM</option><option>PM</option>
-              </select>
-              <span class="dash">–</span>
-              <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="6:00" />
-              <select class="ampm" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am">
-                <option>AM</option><option>PM</option>
-              </select>
-            </div>
-          </div>
-          <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
-        </td>
-      </tr>`;
-  }
+      if (person === 'godbrand') {
+        return `
+          <tr>
+            <th>
+              <div class="day">${day}</div>
+              <span class="date-wrap">${dateBits}</span>
+            </th>
+            <td>
+              <div class="display-text" id="disp-${person}-${day}"></div>
+              <div class="time-edit" id="edit-${person}-${day}">
+                <div class="time-group">
+                  <input class="hm" id="start-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-hm" inputmode="numeric" placeholder="10:00" />
+                  <select class="ampm" id="start-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="start-am">
+                    <option>AM</option><option>PM</option>
+                  </select>
+                  <span class="dash">–</span>
+                  <input class="hm" id="end-hm-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-hm" inputmode="numeric" placeholder="6:00" />
+                  <select class="ampm" id="end-am-${person}-${day}" data-person="${person}" data-day="${day}" data-role="end-am">
+                    <option>AM</option><option>PM</option>
+                  </select>
+                </div>
+              </div>
+              <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
+            </td>
+          </tr>`;
+      }
 
-  // SIHAYA (notes on the right)
-  return `
-    <tr>
-      <th>
-        <div class="day">${day}</div>
-        <span class="date-wrap">${dateBits}</span>
-      </th>
-      <td>
-        <div class="sihaya-cell">
-          <div class="left">
+      // Sihaya: extra td.note-cell for notes (true side column)
+      return `
+        <tr>
+          <th>
+            <div class="day">${day}</div>
+            <span class="date-wrap">${dateBits}</span>
+          </th>
+          <td>
             <div class="display-text" id="disp-${person}-${day}"></div>
             <div class="time-edit" id="edit-${person}-${day}">
               <div class="time-group">
@@ -162,17 +164,15 @@
               </div>
             </div>
             <div class="sub">${tag} <span id="out-${person}-${day}"></span></div>
-          </div>
-
-          <div class="right note-side">
+          </td>
+          <td class="note-cell">
             <div class="note-title">Note</div>
             <div class="note-display" id="note-disp-sihaya-${day}"></div>
             <textarea class="note-edit" id="note-edit-sihaya-${day}" placeholder="Add a note…"></textarea>
-          </div>
-        </div>
-      </td>
-    </tr>`;
-}
+          </td>
+        </tr>`;
+    }
+
     function buildTables(){
       document.getElementById('gbBody').innerHTML = DAYS.map(d => rowHTML(d,'godbrand')).join('');
       document.getElementById('shBody').innerHTML = DAYS.map(d => rowHTML(d,'sihaya')).join('');
@@ -187,7 +187,6 @@
         disp.style.display = on ? 'none' : 'block';
         if(on) prefillRowFromText(person, day);
 
-        // notes toggle (Sihaya only)
         if (person === 'sihaya') {
           const nd = document.getElementById(`note-disp-sihaya-${day}`);
           const ne = document.getElementById(`note-edit-sihaya-${day}`);
@@ -207,9 +206,7 @@
 
     // ----- Keyboard navigation & Enter-to-save-all -----
     const timeOrder = ['start-hm','start-am','end-hm','end-am']; // vertical order
-    function idFor(role, person, day){
-      return role==='date' ? `input-${day}` : `${role}-${person}-${day}`;
-    }
+    function idFor(role, person, day){ return role==='date' ? `input-${day}` : `${role}-${person}-${day}`; }
     function focusEl(role, person, dayIdx){
       const day = DAYS[Math.max(0, Math.min(DAYS.length-1, dayIdx))];
       const el = document.getElementById(idFor(role, person, day));
@@ -264,7 +261,7 @@
       }
     });
 
-    // Buttons (still available)
+    // Buttons
     document.addEventListener('click', async (e)=>{
       const btn = e.target.closest('.btn'); if(!btn) return;
       const person = btn.dataset.person;
@@ -284,7 +281,6 @@
 
     // ----- Load data -----
     async function loadAll(){
-      // dates
       const d = await supabase.from('couple_schedule_dates').select('*');
       if(!d.error){
         d.data.forEach(r=>{
@@ -294,7 +290,6 @@
           if(labR) labR.textContent = r.label || '';
         });
       }
-      // schedules
       const c = await supabase.from('couple_schedule').select('*');
       if(!c.error){
         c.data.forEach(r=>{
@@ -302,7 +297,6 @@
           if(disp) disp.textContent = r.content || '';
         });
       }
-      // notes (Sihaya)
       const n = await supabase.from('couple_notes').select('*').eq('person','sihaya');
       if(!n.error){
         n.data.forEach(r=>{
@@ -312,11 +306,10 @@
           if(ne) ne.value = r.note || '';
         });
       }
-
       recalc('godbrand'); recalc('sihaya');
     }
 
-    // ----- Save (batched for speed) -----
+    // ----- Save helpers -----
     async function saveDates(){
       const rows = [];
       for(const day of DAYS){
@@ -351,7 +344,7 @@
       if(rows.length) await supabase.from('couple_notes').upsert(rows, { onConflict:'person,day' });
     }
 
-    // ----- Helpers: parse/build text, prefill, realtime, convert -----
+    // ----- Helpers -----
     function collectContent(person, day){
       const row = document.getElementById(`edit-${person}-${day}`);
       if(row && row.style.display!=='none'){
@@ -461,7 +454,6 @@
       out.textContent = person==='godbrand' ? fmtRange(start,end,manilaTZ) : fmtRange(start,end,vegasTZ);
     }
 
-    // Init
     buildTables();
     loadAll();
   </script>
