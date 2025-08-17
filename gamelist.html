@@ -114,6 +114,8 @@
     document.addEventListener("keydown",e=>{if(e.key==="Escape")closeZoom();});
 
     $("#save").addEventListener("click",saveNew);
+    titleEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();saveNew();}});
+    notesEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();saveNew();}});
 
     async function saveNew(){
       const title=titleEl.value.trim();
@@ -138,6 +140,7 @@
 
     function fileToDataURL(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});}
     function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+    function escapeAttr(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
     function render(rows){
       rows.sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));
@@ -185,7 +188,9 @@
       const form=body.querySelector(".editbox");
       const et=form.querySelector("#e-title");
       const en=form.querySelector("#e-notes");
-      en.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
+      form.addEventListener("keydown",e=>{
+        if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}
+      });
       form.addEventListener("submit",async e=>{
         e.preventDefault();
         const newTitle=et.value.trim(); const newNotes=en.value.trim(); if(!newTitle){et.focus();return;}
@@ -197,8 +202,6 @@
       });
       et.focus(); et.select();
     }
-
-    function escapeAttr(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
     function readLocal(){return JSON.parse(localStorage.getItem("game_list_all")||"[]")}
     function writeLocal(arr){localStorage.setItem("game_list_all",JSON.stringify(arr));render(arr)}
@@ -215,9 +218,7 @@
             .subscribe();
         }
       }catch(err){
-        useLocal=true;
-        const local=readLocal();
-        render(local);
+        useLocal=true;render(readLocal());
       }
     }
 
