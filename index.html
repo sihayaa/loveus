@@ -287,7 +287,7 @@
       max-width: min(780px, 86vw);
       padding: 16px 24px;
       border-radius: 16px;
-      background: rgba(255,255,255,0.22);
+      background: rgba(255,255,255,0.22);   
       backdrop-filter: blur(10px);
       -webkit-backdrop-filter: blur(10px);
       border: 1px solid rgba(255,255,255,0.45);
@@ -307,7 +307,7 @@
 
     #reminder-box {
       position: fixed;
-      top: 330px;
+      top: 330px;            
       right: 40px;
       width: 260px;
       padding: 14px;
@@ -359,7 +359,7 @@
     #add-reminder-btn:hover { background: #8fc6bb; }
 
     #reminder-list {
-      max-height: 300px;
+      max-height: 300px;  
       overflow-y: auto;
       padding-right: 4px;
     }
@@ -404,12 +404,12 @@
       flex: 1;
       font-size: 18px;
       font-weight: 800;
-      color: #fff;
+      color: #fff;            
       letter-spacing: 0.2px;
-      -webkit-text-stroke: 0.4px #000;
+      -webkit-text-stroke: 0.4px #000; 
       text-shadow:
-        0 0 5px var(--teal),
-        0 0 10px var(--teal);
+        0 0 5px var(--teal),     
+        0 0 10px var(--teal);   
       word-break: break-word;
     }
     .reminder-text.done{
@@ -657,13 +657,13 @@
       let color;
 
       if (hour >= 6 && hour < 12) {
-        color = 'rgba(255, 231, 214, 0.35)';
+        color = 'rgba(255, 231, 214, 0.35)'; 
       } else if (hour >= 12 && hour < 18) {
-        color = 'rgba(214, 255, 226, 0.35)';
+        color = 'rgba(214, 255, 226, 0.35)'; 
       } else if (hour >= 18 && hour < 22) {
-        color = 'rgba(232, 214, 255, 0.35)';
+        color = 'rgba(232, 214, 255, 0.35)'; 
       } else {
-        color = 'rgba(10, 15, 60, 0.30)';
+        color = 'rgba(10, 15, 60, 0.30)'; 
       }
 
       document.getElementById('mood-overlay').style.background = color;
@@ -674,15 +674,16 @@
     applyMoodOverlay();
 
     setInterval(updateTimeZones, 60000);
-    setInterval(applyMoodOverlay, 60 * 60 * 1000);
+    setInterval(applyMoodOverlay, 60 * 60 * 1000); 
   </script>
 
+  <!-- HEARTS + logout + quotes + reminders (all restored) -->
   <script>
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
     let hearts = [];
 
-    /* your 4 heart colors */
+    // your 4 colors
     const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
 
     function resizeCanvas() {
@@ -693,6 +694,7 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    // same spawn behavior (3 per move)
     document.addEventListener('mousemove', e => {
       for (let i = 0; i < 3; i++) {
         hearts.push({
@@ -711,12 +713,14 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       hearts.forEach((h, i) => {
         ctx.globalAlpha = h.alpha;
-        ctx.font = `${h.size}px "Segoe UI Emoji","Apple Color Emoji",system-ui,sans-serif`;
+        // monochrome heart so fillStyle applies (no pink)
+        ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
         ctx.fillStyle = h.color;
-        ctx.fillText('❤', h.x, h.y);
+        ctx.fillText('♥', h.x, h.y);
+
         h.x += h.dx;
         h.y += h.dy;
-        h.alpha -= 0.02;
+        h.alpha -= 0.02; // same fade
         if (h.alpha <= 0) hearts.splice(i, 1);
       });
       requestAnimationFrame(drawHearts);
@@ -724,11 +728,13 @@
 
     drawHearts();
 
+    // logout
     document.getElementById('logout-btn').addEventListener('click', async () => {
       await supabase.auth.signOut();
       location.href = "login.html";
     });
 
+    // quotes (restored)
     const sweetQuotes = [
       "You make ordinary moments feel special.",
       "Your laugh is my favorite sound.",
@@ -855,6 +861,7 @@
       }
     });
 
+    // reminders (restored)
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
@@ -864,7 +871,7 @@
       const { data, error } = await supabase
         .from('reminders')
         .select('*')
-        .eq('room_key', ROOM_KEY)
+        .eq('room_key', ROOM_KEY) 
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -922,7 +929,7 @@
 
       inputEl.value = '';
       const { error } = await supabase.from('reminders').insert({
-        room_key: ROOM_KEY,
+        room_key: ROOM_KEY,  
         text,
         done: false
       });
