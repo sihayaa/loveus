@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Game List</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
   <style>
     :root{--green:#67e4ca;--purple:#7a5af8;--ink:#0f172a;--card:#fff;--border:#e5e7ef}
     *{box-sizing:border-box} html,body{height:100%}
@@ -31,7 +32,7 @@
     .list{display:grid;gap:12px}
     .card{position:relative;background:#fff;border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:0 8px 28px #00000012;display:grid;grid-template-columns:140px 1fr;min-height:120px}
     .thumb{background:#f7fafb;display:grid;place-items:center;cursor:zoom-in;padding:8px}
-    .thumb img{max-width:100%;max-height:120px;object-fit:contain;display:block;border-radius:8px}
+    .thumb img{width:100%;max-height:120px;object-fit:contain;display:block;border-radius:8px}
     .body{padding:12px;display:grid;gap:8px}
     .card h3{margin:0;font-size:18px;font-weight:900}
     .meta{color:#64748b;font-size:12px}
@@ -45,10 +46,21 @@
     #zoom img{max-width:95vw;max-height:90vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
     .editbox{display:grid;gap:8px}
     .hint{font-size:12px;color:#6b7280}
+    /* gaming confirm */
+    #gconfirm{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,8,20,.75);z-index:10000}
+    .gc-panel{position:relative;min-width:290px;max-width:92vw;padding:22px;border-radius:18px;background:#0d1224;color:#e6faff;box-shadow:0 0 0 2px #1b2140, 0 0 30px #7a5af822}
+    .gc-panel:before{content:"";position:absolute;inset:-2px;border-radius:20px;background:linear-gradient(135deg,var(--green),var(--purple));filter:blur(8px);opacity:.6;z-index:-1}
+    .gc-title{font-family:"Press Start 2P",system-ui;font-size:14px;margin:0 0 10px;letter-spacing:.5px;text-align:center}
+    .gc-text{font-size:14px;opacity:.9;text-align:center;margin-bottom:16px}
+    .gc-actions{display:flex;gap:10px;justify-content:center}
+    .gc-btn{border:none;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer}
+    .gc-yes{background:linear-gradient(90deg,var(--green),#45a1df);color:#082a2a}
+    .gc-no{background:#151a30;color:#e6faff;border:1px solid #2a335a}
   </style>
 </head>
 <body>
   <header><h1>Game List</h1></header>
+
   <div id="zoom"><img id="zoomImg" alt=""></div>
 
   <div class="wrap">
@@ -74,6 +86,18 @@
     <div id="list" class="list" aria-live="polite"></div>
   </div>
 
+  <!-- gaming confirm -->
+  <div id="gconfirm">
+    <div class="gc-panel" role="dialog" aria-modal="true">
+      <h3 class="gc-title">CONFIRM DELETE</h3>
+      <div id="gcMsg" class="gc-text"></div>
+      <div class="gc-actions">
+        <button id="gcYes" class="gc-btn gc-yes">DELETE</button>
+        <button id="gcNo" class="gc-btn gc-no">CANCEL</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const SUPABASE_URL="https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
@@ -84,8 +108,9 @@
     const titleEl=$("#title"),fileEl=$("#file"),notesEl=$("#notes");
     const listEl=$("#list"),dropEl=$("#drop"),previewEl=$("#preview");
     const zoom=$("#zoom"),zoomImg=$("#zoomImg");
+    const gconfirm=$("#gconfirm"), gcMsg=$("#gcMsg"), gcYes=$("#gcYes"), gcNo=$("#gcNo");
 
-    let useLocal=false,selectedFile=null;
+    let useLocal=false,selectedFile=null,confirmResolve=null;
 
     ["dragenter","dragover"].forEach(evt=>{
       dropEl.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropEl.classList.add("highlight");});
@@ -111,7 +136,7 @@
     function openZoom(src){zoomImg.src=src;zoom.style.display="flex";}
     function closeZoom(){zoom.style.display="none";zoomImg.src="";}
     zoom.addEventListener("click",closeZoom);
-    document.addEventListener("keydown",e=>{if(e.key==="Escape")closeZoom();});
+    document.addEventListener("keydown",e=>{if(e.key==="Escape"){ if(gconfirm.style.display==="flex") closeConfirm(false); else closeZoom(); }});
 
     $("#save").addEventListener("click",saveNew);
     titleEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();saveNew();}});
@@ -167,7 +192,8 @@
           </div>`;
         if(r.image_url){card.querySelector(".thumb img").addEventListener("click",()=>openZoom(r.image_url));}
         card.querySelector(".del").addEventListener("click",async ()=>{
-          if(!confirm("Delete this entry?"))return;
+          const ok=await confirmBox(`Delete “${r.title}”?`);
+          if(!ok)return;
           if(useLocal){writeLocal(readLocal().filter(x=>x.id!==r.id));return;}
           try{await sb.from(TABLE).delete().eq("id",r.id);await load(true);}catch(e){useLocal=true;writeLocal(readLocal().filter(x=>x.id!==r.id));}
         });
@@ -188,16 +214,11 @@
       const form=body.querySelector(".editbox");
       const et=form.querySelector("#e-title");
       const en=form.querySelector("#e-notes");
-      form.addEventListener("keydown",e=>{
-        if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}
-      });
+      form.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
       form.addEventListener("submit",async e=>{
         e.preventDefault();
         const newTitle=et.value.trim(); const newNotes=en.value.trim(); if(!newTitle){et.focus();return;}
-        if(useLocal){
-          const a=readLocal().map(x=>x.id===row.id?{...x,title:newTitle,notes:newNotes}:x);
-          writeLocal(a);return;
-        }
+        if(useLocal){const a=readLocal().map(x=>x.id===row.id?{...x,title:newTitle,notes:newNotes}:x);writeLocal(a);return;}
         try{await sb.from(TABLE).update({title:newTitle,notes:newNotes}).eq("id",row.id);await load(true);}catch(e){useLocal=true;const a=readLocal().map(x=>x.id===row.id?{...x,title:newTitle,notes:newNotes}:x);writeLocal(a);}
       });
       et.focus(); et.select();
@@ -217,9 +238,7 @@
             .on("postgres_changes",{event:"*",schema:"public",table:TABLE},()=>load(true))
             .subscribe();
         }
-      }catch(err){
-        useLocal=true;render(readLocal());
-      }
+      }catch(err){useLocal=true;render(readLocal());}
     }
 
     (async()=>{ 
@@ -233,6 +252,22 @@
           .subscribe();
       }catch(e){useLocal=true;render(local);}
     })();
+
+    function confirmBox(msg){
+      return new Promise(res=>{
+        confirmResolve=res;
+        gcMsg.textContent=msg;
+        gconfirm.style.display="flex";
+        gcYes.focus();
+      });
+    }
+    function closeConfirm(val){
+      gconfirm.style.display="none";
+      if(confirmResolve){confirmResolve(val);confirmResolve=null;}
+    }
+    gcYes.addEventListener("click",()=>closeConfirm(true));
+    gcNo.addEventListener("click",()=>closeConfirm(false));
+    gconfirm.addEventListener("click",e=>{ if(e.target===gconfirm) closeConfirm(false); });
   </script>
 </body>
 </html>
