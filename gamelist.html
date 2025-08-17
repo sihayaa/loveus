@@ -5,13 +5,20 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Game List</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Orbitron:wght@800&display=swap" rel="stylesheet">
   <style>
     :root{--green:#67e4ca;--purple:#7a5af8;--ink:#0f172a;--card:#fff;--border:#e5e7ef}
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;font:16px/1.4 system-ui,Segoe UI,Inter,Arial,sans-serif;color:var(--ink);background:#eef7f5}
-    header{padding:16px;display:flex;justify-content:center;align-items:center}
-    header h1{margin:0;font-size:20px;font-weight:900}
+    header{padding:18px 16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+    .glitch{position:relative;font-family:"Press Start 2P",system-ui;font-size:clamp(32px,7vw,64px);line-height:1;color:#0B8744;text-transform:uppercase;letter-spacing:2px}
+    .glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0}
+    .glitch::before{transform:translate(2px,-1px);text-shadow:-3px 0 #1fbf74;clip-path:polygon(0 0,100% 0,100% 48%,0 48%);animation:gt 1.7s infinite linear alternate}
+    .glitch::after{transform:translate(-2px,1px);text-shadow:3px 0 #0b4;clip-path:polygon(0 52%,100% 52%,100% 100%,0 100%);animation:gb 1.7s infinite linear alternate}
+    @keyframes gt{0%{transform:translate(1px,-1px)}50%{transform:translate(3px,-2px)}100%{transform:translate(2px,-1px)}}
+    @keyframes gb{0%{transform:translate(-1px,1px)}50%{transform:translate(-3px,2px)}100%{transform:translate(-2px,1px)}}
+    .tagline{font-family:"Orbitron",system-ui;font-weight:800;color:#35664A;font-size:clamp(12px,2.6vw,20px);letter-spacing:1px;text-transform:uppercase}
+
     .wrap{max-width:760px;margin:0 auto;padding:0 14px 60px;display:flex;flex-direction:column;gap:14px}
     .composer{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 8px 28px #00000014;padding:16px;position:sticky;top:8px;z-index:2}
     .title{margin:0 0 12px;font-weight:900;display:flex;align-items:center;gap:10px}
@@ -46,9 +53,9 @@
     #zoom img{max-width:95vw;max-height:90vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
     .editbox{display:grid;gap:8px}
     .hint{font-size:12px;color:#6b7280}
-    /* gaming confirm */
+
     #gconfirm{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(6,8,20,.75);z-index:10000}
-    .gc-panel{position:relative;min-width:290px;max-width:92vw;padding:22px;border-radius:18px;background:#0d1224;color:#e6faff;box-shadow:0 0 0 2px #1b2140, 0 0 30px #7a5af822}
+    .gc-panel{position:relative;min-width:290px;max-width:92vw;padding:22px;border-radius:18px;background:#0d1224;color:#e6faff;box-shadow:0 0 0 2px #1b2140,0 0 30px #7a5af822}
     .gc-panel:before{content:"";position:absolute;inset:-2px;border-radius:20px;background:linear-gradient(135deg,var(--green),var(--purple));filter:blur(8px);opacity:.6;z-index:-1}
     .gc-title{font-family:"Press Start 2P",system-ui;font-size:14px;margin:0 0 10px;letter-spacing:.5px;text-align:center}
     .gc-text{font-size:14px;opacity:.9;text-align:center;margin-bottom:16px}
@@ -59,7 +66,10 @@
   </style>
 </head>
 <body>
-  <header><h1>Game List</h1></header>
+  <header>
+    <h1 class="glitch" data-text="Game List">Game List</h1>
+    <div class="tagline">Share all your games for the love of GAMING</div>
+  </header>
 
   <div id="zoom"><img id="zoomImg" alt=""></div>
 
@@ -86,7 +96,6 @@
     <div id="list" class="list" aria-live="polite"></div>
   </div>
 
-  <!-- gaming confirm -->
   <div id="gconfirm">
     <div class="gc-panel" role="dialog" aria-modal="true">
       <h3 class="gc-title">CONFIRM DELETE</h3>
@@ -112,26 +121,14 @@
 
     let useLocal=false,selectedFile=null,confirmResolve=null;
 
-    ["dragenter","dragover"].forEach(evt=>{
-      dropEl.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropEl.classList.add("highlight");});
-    });
-    ["dragleave","drop"].forEach(evt=>{
-      dropEl.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropEl.classList.remove("highlight");});
-    });
+    ["dragenter","dragover"].forEach(evt=>{dropEl.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropEl.classList.add("highlight");});});
+    ["dragleave","drop"].forEach(evt=>{dropEl.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation();dropEl.classList.remove("highlight");});});
     dropEl.addEventListener("drop",e=>{const f=e.dataTransfer.files?.[0];if(f){setFile(f);}});
     fileEl.addEventListener("change",e=>{const f=e.target.files?.[0];if(f){setFile(f);}});
 
-    function setFile(f){
-      selectedFile=f;
-      const r=new FileReader();
-      r.onload=()=>{previewEl.hidden=false;previewEl.innerHTML=`<img src="${r.result}" alt="preview">`;};
-      r.readAsDataURL(f);
-    }
+    function setFile(f){selectedFile=f;const r=new FileReader();r.onload=()=>{previewEl.hidden=false;previewEl.innerHTML=`<img src="${r.result}" alt="preview">`;};r.readAsDataURL(f);}
 
-    $("#clear").addEventListener("click",()=>{
-      titleEl.value="";notesEl.value="";fileEl.value="";selectedFile=null;
-      previewEl.hidden=true;previewEl.innerHTML="";titleEl.focus();
-    });
+    $("#clear").addEventListener("click",()=>{titleEl.value="";notesEl.value="";fileEl.value="";selectedFile=null;previewEl.hidden=true;previewEl.innerHTML="";titleEl.focus();});
 
     function openZoom(src){zoomImg.src=src;zoom.style.display="flex";}
     function closeZoom(){zoom.style.display="none";zoomImg.src="";}
@@ -143,8 +140,7 @@
     notesEl.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();saveNew();}});
 
     async function saveNew(){
-      const title=titleEl.value.trim();
-      if(!title){titleEl.focus();return;}
+      const title=titleEl.value.trim(); if(!title){titleEl.focus();return;}
       const notes=notesEl.value.trim();
       const id=crypto.randomUUID();
       const created_at=new Date().toISOString();
@@ -154,13 +150,8 @@
       try{
         const {error}=await sb.from(TABLE).insert({id,title,notes,created_at,image_url});
         if(error)throw error;
-        $("#clear").click();
-        await load(true);
-      }catch(err){
-        useLocal=true;
-        saveLocal({id,title,notes,created_at,image_url});
-        $("#clear").click();
-      }
+        $("#clear").click(); await load(true);
+      }catch(err){useLocal=true;saveLocal({id,title,notes,created_at,image_url});$("#clear").click();}
     }
 
     function fileToDataURL(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});}
@@ -192,8 +183,7 @@
           </div>`;
         if(r.image_url){card.querySelector(".thumb img").addEventListener("click",()=>openZoom(r.image_url));}
         card.querySelector(".del").addEventListener("click",async ()=>{
-          const ok=await confirmBox(`Delete “${r.title}”?`);
-          if(!ok)return;
+          const ok=await confirmBox(`Delete “${r.title}”?`); if(!ok)return;
           if(useLocal){writeLocal(readLocal().filter(x=>x.id!==r.id));return;}
           try{await sb.from(TABLE).delete().eq("id",r.id);await load(true);}catch(e){useLocal=true;writeLocal(readLocal().filter(x=>x.id!==r.id));}
         });
@@ -234,40 +224,17 @@
         if(error)throw error;
         render(data||[]);
         if(!skipRealtime){
-          sb.channel("realtime:game_list_all")
-            .on("postgres_changes",{event:"*",schema:"public",table:TABLE},()=>load(true))
-            .subscribe();
+          sb.channel("realtime:game_list_all").on("postgres_changes",{event:"*",schema:"public",table:TABLE},()=>load(true)).subscribe();
         }
       }catch(err){useLocal=true;render(readLocal());}
     }
+    (async()=>{const local=readLocal();try{const {data,error}=await sb.from(TABLE).select("*").order("created_at",{ascending:false}).limit(500);if(error)throw error;render((data||[]).length===0&&local.length>0?local:(data||[]));sb.channel("realtime:game_list_all").on("postgres_changes",{event:"*",schema:"public",table:TABLE},()=>load(true)).subscribe();}catch(e){useLocal=true;render(local);}})();
 
-    (async()=>{ 
-      const local=readLocal();
-      try{
-        const {data,error}=await sb.from(TABLE).select("*").order("created_at",{ascending:false}).limit(500);
-        if(error)throw error;
-        if((data||[]).length===0 && local.length>0){render(local);} else {render(data||[]);}
-        sb.channel("realtime:game_list_all")
-          .on("postgres_changes",{event:"*",schema:"public",table:TABLE},()=>load(true))
-          .subscribe();
-      }catch(e){useLocal=true;render(local);}
-    })();
-
-    function confirmBox(msg){
-      return new Promise(res=>{
-        confirmResolve=res;
-        gcMsg.textContent=msg;
-        gconfirm.style.display="flex";
-        gcYes.focus();
-      });
-    }
-    function closeConfirm(val){
-      gconfirm.style.display="none";
-      if(confirmResolve){confirmResolve(val);confirmResolve=null;}
-    }
+    function confirmBox(msg){return new Promise(res=>{confirmResolve=res;gcMsg.textContent=msg;gconfirm.style.display="flex";gcYes.focus();});}
+    function closeConfirm(val){gconfirm.style.display="none";if(confirmResolve){confirmResolve(val);confirmResolve=null;}}
     gcYes.addEventListener("click",()=>closeConfirm(true));
     gcNo.addEventListener("click",()=>closeConfirm(false));
-    gconfirm.addEventListener("click",e=>{ if(e.target===gconfirm) closeConfirm(false); });
+    gconfirm.addEventListener("click",e=>{if(e.target===gconfirm)closeConfirm(false);});
   </script>
 </body>
 </html>
