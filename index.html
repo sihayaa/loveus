@@ -500,12 +500,20 @@
     <img src="album-icon.png" alt="Album Icon">
   </div>
 
-<div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
-  <img
-    src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
-    alt="Work Schedule Icon"
-    onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
-</div>
+  <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
+    <img
+      src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
+      alt="Work Schedule Icon"
+      onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
+  </div>
+
+  <!-- NEW: Game List icon below the schedule button -->
+  <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='gamelist.html'" title="Game List">
+    <img
+      src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png"
+      alt="Game List Icon"
+      onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
+  </div>
 
   <div class="album-icon" style="top: 200px;" onclick="location.href='mandarin.html'">
     <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/Mandarin.png" alt="Mandarin Icon">
@@ -553,6 +561,10 @@
 
   <template id="work-schedule-label-template">
     <div class="icon-label">🗓<br>Schedule</div>
+  </template>
+  <!-- NEW: Fallback label for Game List icon -->
+  <template id="gamelist-label-template">
+    <div class="icon-label">🎮<br>Game&nbsp;List</div>
   </template>
 
   <div class="secret-heart" id="secretHeart" title=" ">
@@ -697,7 +709,6 @@
       hearts.forEach((h, i) => {
         ctx.globalAlpha = h.alpha;
         ctx.font = `${h.size}px serif`;
-        ctx.fillStyle = 'pink';
         ctx.fillText('❤', h.x, h.y);
         h.x += h.dx;
         h.y += h.dy;
