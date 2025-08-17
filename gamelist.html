@@ -21,6 +21,7 @@
 
     .wrap{max-width:760px; margin:0 auto; padding:0 14px 60px; display:flex; flex-direction:column; gap:14px}
 
+    /* composer */
     .composer{
       background:var(--card); border:1px solid var(--border); border-radius:16px;
       box-shadow:0 8px 28px #00000014; padding:16px; position:sticky; top:8px; z-index:2;
@@ -46,21 +47,38 @@
     .save{color:#fff; background:linear-gradient(90deg,var(--green),var(--purple))}
     .clear{background:#eef1ff; color:#374151}
 
+    /* list */
     .list{display:grid; gap:12px}
     .card{
+      position:relative;
       background:#fff; border:1px solid var(--border); border-radius:16px; overflow:hidden;
-      box-shadow:0 8px 28px #00000012; display:grid; grid-template-columns:120px 1fr
+      box-shadow:0 8px 28px #00000012; display:grid; grid-template-columns:160px 1fr;
+      min-height:120px;
     }
-    .thumb{background:#f7fafb; display:grid; place-items:center; cursor:zoom-in}
-    .thumb img{max-width:100%; max-height:100%; object-fit:cover; display:block}
+    .thumb{
+      background:#f7fafb; display:grid; place-items:center; cursor:zoom-in; padding:6px;
+    }
+    .thumb img{
+      width:100%; height:100%; object-fit:contain; display:block; border-radius:8px;
+    }
     .body{padding:12px; display:grid; gap:8px}
     .card h3{margin:0; font-size:18px; font-weight:900}
     .meta{color:#64748b; font-size:12px}
-    .ops{display:flex; gap:8px; justify-content:flex-end}
-    .ops .mini{border:1px solid var(--border); background:#fff; padding:6px 10px; border-radius:10px; font-size:12px; cursor:pointer}
-    .ops .danger{color:#b42318; border-color:#ffd3cf; background:#fff5f5}
+
+    .iconbtns{
+      position:absolute; top:8px; right:8px; display:flex; gap:6px;
+    }
+    .iconbtn{
+      width:28px; height:28px; display:grid; place-items:center; border-radius:8px; cursor:pointer;
+      border:1px solid var(--border); background:#fff; box-shadow:0 2px 8px #00000014;
+    }
+    .iconbtn svg{width:16px; height:16px}
+    .iconbtn.danger{background:#fff5f5; border-color:#ffd3cf}
+    .iconbtn.danger svg path{fill:#b42318}
+
     .card.noimg{grid-template-columns:1fr}
 
+    /* zoom overlay */
     #zoom{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:rgba(0,0,0,.75); z-index:9999; cursor:zoom-out;
@@ -68,14 +86,20 @@
     #zoom img{
       max-width:95vw; max-height:90vh; border-radius:12px; box-shadow:0 10px 40px rgba(0,0,0,.5);
     }
+
+    /* edit mode styles */
+    .editbox{display:grid; gap:8px}
+    .hint{font-size:12px; color:#6b7280}
   </style>
 </head>
 <body>
   <header><h1>Game List</h1></header>
 
+  <!-- Zoom overlay -->
   <div id="zoom"><img id="zoomImg" alt=""></div>
 
   <div class="wrap">
+    <!-- composer -->
     <section class="composer" id="composer">
       <h2 class="title"><span class="icon">🎮</span> Add a game</h2>
 
@@ -103,16 +127,16 @@
       </div>
     </section>
 
+    <!-- list -->
     <div id="list" class="list" aria-live="polite"></div>
   </div>
 
   <script>
+    // Supabase (only table; images are saved as base64 in image_url)
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-    const TABLE  = "game_list_all";
-    const BUCKET = "game_shots";
+    const TABLE = "game_list_all";
 
     const $ = s=>document.querySelector(s);
     const titleEl = $("#title"), fileEl = $("#file"), notesEl = $("#notes");
@@ -121,6 +145,7 @@
 
     let useLocal = false, selectedFile = null;
 
+    // drag-drop
     ["dragenter","dragover"].forEach(evt=>{
       dropEl.addEventListener(evt, e=>{ e.preventDefault(); e.stopPropagation(); dropEl.classList.add("highlight"); });
     });
@@ -144,74 +169,79 @@
       previewEl.hidden=true; previewEl.innerHTML=""; titleEl.focus();
     });
 
+    // zoom helpers
     function openZoom(src){ zoomImg.src = src; zoom.style.display='flex'; }
     function closeZoom(){ zoom.style.display='none'; zoomImg.src=""; }
     zoom.addEventListener('click', closeZoom);
     document.addEventListener('keydown', e=>{ if(e.key==='Escape') closeZoom(); });
 
+    // save new
     $("#save").addEventListener("click", async ()=>{
       const title = titleEl.value.trim();
       if(!title){ alert("Type a game title"); titleEl.focus(); return; }
       const notes = notesEl.value.trim();
       const id = crypto.randomUUID();
       const created_at = new Date().toISOString();
+      const image_url = selectedFile ? await fileToDataURL(selectedFile) : null;
 
       if(useLocal){
-        const image_url = selectedFile ? await fileToDataURL(selectedFile) : null;
         saveLocal({id,title,notes,created_at,image_url});
       }else{
         try{
-          let image_url=null, image_path=null;
-          if(selectedFile){
-            const ext = (selectedFile.name.split(".").pop() || "jpg").toLowerCase();
-            image_path = `${id}/${sanitize(title)}_${Date.now()}.${ext}`;
-            const { error:upErr } = await sb.storage.from(BUCKET).upload(image_path, selectedFile, { upsert:false });
-            if(upErr) throw upErr;
-            const { data } = sb.storage.from(BUCKET).getPublicUrl(image_path);
-            image_url = data.publicUrl;
-          }
-          const { error:insErr } = await sb.from(TABLE).insert({ id, title, notes, created_at, image_url, image_path });
-          if(insErr) throw insErr;
+          const { error } = await sb.from(TABLE).insert({ id, title, notes, created_at, image_url });
+          if(error) throw error;
         }catch(err){
-          console.warn("Supabase failed, switching to local mode:", err?.message||err);
           useLocal = true;
-          const image_url = selectedFile ? await fileToDataURL(selectedFile) : null;
           saveLocal({id,title,notes,created_at,image_url});
         }
       }
       $("#clear").click();
     });
 
-    function sanitize(s){ return s.replace(/[^a-z0-9_\-]+/gi,"-").slice(0,60) }
     function fileToDataURL(file){ return new Promise(res=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.readAsDataURL(file); }); }
+    function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    function sanitize(s){ return s.replace(/[^a-z0-9_\-]+/gi,"-").slice(0,60) }
 
+    // render
     function render(rows){
       rows.sort((a,b)=> new Date(b.created_at) - new Date(a.created_at));
       listEl.innerHTML = "";
       rows.forEach(r=>{
         const card = document.createElement("article");
         card.className = "card" + (r.image_url? "" : " noimg");
+        card.dataset.id = r.id;
+
+        const imgBlock = r.image_url ? `<div class="thumb"><img src="${r.image_url}" alt="screenshot of ${escapeHtml(r.title)}"></div>` : "";
+
         card.innerHTML = `
-          ${r.image_url ? `<div class="thumb"><img src="${r.image_url}" alt="screenshot of ${escapeHtml(r.title)}"></div>` : ""}
+          ${imgBlock}
           <div class="body">
-            <h3>${escapeHtml(r.title)}</h3>
+            <h3 class="title-txt">${escapeHtml(r.title)}</h3>
             <div class="meta">${new Date(r.created_at).toLocaleString()}</div>
-            ${r.notes ? `<div>${escapeHtml(r.notes)}</div>` : ""}
-            <div class="ops">
-              <button class="mini danger" data-del="${r.id}">delete</button>
-            </div>
+            ${r.notes ? `<div class="notes-txt">${escapeHtml(r.notes)}</div>` : `<div class="notes-txt" style="display:none;"></div>`}
+          </div>
+          <div class="iconbtns">
+            <button class="iconbtn edit" title="edit" aria-label="edit">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1.003 1.003 0 0 0 0-1.42L18.37 3.29a1.003 1.003 0 0 0-1.42 0l-1.83 1.83 3.75 3.75 1.84-1.83z" fill="#111"/></svg>
+            </button>
+            <button class="iconbtn danger del" title="delete" aria-label="delete">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M18 6l-1 14H7L6 6h12zm-5-3h-2l-1 1H6v2h12V4h-4l-1-1z" fill="#b42318"/></svg>
+            </button>
           </div>
         `;
+
+        // click-to-zoom
         if(r.image_url){
           card.querySelector(".thumb img").addEventListener("click", ()=> openZoom(r.image_url));
         }
-        card.querySelector('[data-del]').addEventListener('click', async ()=>{
+
+        // delete
+        card.querySelector('.del').addEventListener('click', async ()=>{
           if(!confirm('Delete this entry?')) return;
           if(useLocal){
             writeLocal(readLocal().filter(x=>x.id!==r.id));
           }else{
             try{
-              if(r.image_path){ await sb.storage.from(BUCKET).remove([r.image_path]).catch(()=>{}); }
               await sb.from(TABLE).delete().eq("id", r.id);
             }catch(err){
               useLocal = true;
@@ -219,15 +249,64 @@
             }
           }
         });
+
+        // edit
+        card.querySelector('.edit').addEventListener('click', ()=> enterEdit(card, r));
+
         listEl.appendChild(card);
       });
     }
 
+    function enterEdit(card, row){
+      const body = card.querySelector('.body');
+      const notesTxt = card.querySelector('.notes-txt')?.textContent || "";
+      body.innerHTML = `
+        <div class="editbox">
+          <input id="e-title" type="text" value="${escapeQuotes(row.title)}" />
+          <textarea id="e-notes" placeholder="notes...">${escapeQuotes(notesTxt)}</textarea>
+          <div class="hint">Press <b>Enter</b> to save · <b>Shift+Enter</b> for a new line</div>
+        </div>
+      `;
+      const et = body.querySelector('#e-title');
+      const en = body.querySelector('#e-notes');
+      et.focus(); et.select();
+
+      function maybeSave(e){
+        if(e.key === 'Enter' && !e.shiftKey){
+          e.preventDefault(); doSave();
+        }
+      }
+      et.addEventListener('keydown', maybeSave);
+      en.addEventListener('keydown', maybeSave);
+
+      async function doSave(){
+        const newTitle = et.value.trim();
+        const newNotes = en.value.trim();
+        if(!newTitle){ alert('Title required'); et.focus(); return; }
+
+        if(useLocal){
+          const a = readLocal().map(x => x.id===row.id ? {...x, title:newTitle, notes:newNotes} : x);
+          writeLocal(a);
+        }else{
+          try{
+            await sb.from(TABLE).update({ title:newTitle, notes:newNotes }).eq('id', row.id);
+          }catch(err){
+            useLocal = true;
+            const a = readLocal().map(x => x.id===row.id ? {...x, title:newTitle, notes:newNotes} : x);
+            writeLocal(a);
+          }
+        }
+      }
+    }
+
+    function escapeQuotes(s){ return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+    // local store
     function readLocal(){ return JSON.parse(localStorage.getItem("game_list_all")||"[]"); }
     function writeLocal(arr){ localStorage.setItem("game_list_all", JSON.stringify(arr)); render(arr); }
     function saveLocal(row){ const a=readLocal(); a.unshift(row); writeLocal(a); }
-    function escapeHtml(s){ return s.replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
 
+    // initial load
     async function load(){
       try{
         const { data, error } = await sb.from(TABLE).select("*").order("created_at",{ascending:false}).limit(500);
