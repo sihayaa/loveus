@@ -10,7 +10,9 @@
     :root{--green:#67e4ca;--purple:#7a5af8;--ink:#0f172a;--card:#fff;--border:#e5e7ef}
     *{box-sizing:border-box} html,body{height:100%}
     body{margin:0;font:16px/1.4 system-ui,Segoe UI,Inter,Arial,sans-serif;color:var(--ink);background:#eef7f5}
-    header{padding:18px 16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+    header{position:relative;padding:18px 16px 10px;display:flex;flex-direction:column;align-items:center;gap:8px}
+    .home-btn{position:absolute;left:16px;top:16px;text-decoration:none;font-family:"Orbitron",system-ui;font-weight:800;font-size:12px;padding:9px 12px;border-radius:12px;border:1px solid #2a335a;background:#0d1224;color:#e6faff;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+    .home-btn:hover{transform:translateY(-1px)}
     .glitch{position:relative;font-family:"Press Start 2P",system-ui;font-size:clamp(32px,7vw,64px);line-height:1;color:#0B8744;text-transform:uppercase;letter-spacing:2px}
     .glitch::before,.glitch::after{content:attr(data-text);position:absolute;left:0;top:0}
     .glitch::before{transform:translate(2px,-1px);text-shadow:-3px 0 #1fbf74;clip-path:polygon(0 0,100% 0,100% 48%,0 48%);animation:gt 1.7s infinite linear alternate}
@@ -67,6 +69,7 @@
 </head>
 <body>
   <header>
+    <a class="home-btn" href="./index.html">◀ Home</a>
     <h1 class="glitch" data-text="Game List">Game List</h1>
     <div class="tagline">Share all your games for the love of GAMING</div>
   </header>
