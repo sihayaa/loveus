@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Middle-earth Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Fonts: Forte isn't hosted on Google; we set it first with readable fallbacks -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+  <style>
+    :root{
+      --bg:#1a140f;
+      --ink:#d7c6a3;
+      --glass: rgba(0,0,0,0.45);
+      --panel:#2a221b;
+      --ring:#bfa35a;
+      --green:#4fa981;   /* 💚 you */
+      --purple:#a372d1;  /* 💜 him */
+      --danger:#e05e5e;
+      --shadow: 0 8px 24px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      margin:0; background: radial-gradient(1200px 800px at 70% 10%, #2a221b, #15100b 70%, #0d0a07 100%), var(--bg);
+      color:var(--ink); font-family: "IM Fell English", serif; user-select:none; overflow:hidden;
+    }
+
+    /* Canvas particles sit at the very back */
+    #particles{
+      position:fixed; inset:0; z-index:0; pointer-events:none;
+    }
+
+    /* Top bar */
+    .topbar{
+      position:fixed; z-index:5; inset:12px 12px auto 12px;
+      display:flex; align-items:center; gap:12px; width:calc(100% - 24px);
+    }
+    .chip, .btn{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 12px; border:1px solid rgba(191,163,90,0.5);
+      border-radius:10px; background:rgba(32,26,20,0.6); color:var(--ink);
+      box-shadow: var(--shadow); backdrop-filter: blur(3px);
+      cursor:pointer; font-size:14px; line-height:1; text-decoration:none;
+    }
+    .chip:hover,.btn:hover{background:rgba(50,40,30,0.75)}
+    .title{
+      flex:1; text-align:center; font-family:"Cinzel", serif; font-weight:700; letter-spacing:0.5px;
+      font-size:28px; text-shadow:0 0 8px rgba(255,231,160,0.2);
+    }
+    .group{display:flex; gap:8px; align-items:center;}
+    .sep{flex:1}
+
+    /* Map viewport */
+    .viewport{
+      position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none;
+    }
+    .map-inner{
+      position:absolute; top:50%; left:50%;
+      transform-origin: 0 0; /* we’ll manage translate by hand */
+      will-change: transform;
+    }
+    .map-img{
+      display:block; width:100%; height:auto; pointer-events:none; /* we pan on wrapper */
+      filter: contrast(1.06) brightness(0.92) sepia(0.12);
+    }
+
+    /* Pin */
+    .pin{
+      position:absolute; width:22px; height:22px; border-radius:50%;
+      border:2px solid var(--ring); background:rgba(0,0,0,0.35);
+      display:grid; place-items:center; transform:translate(-50%,-100%); cursor:pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.6), inset 0 0 10px rgba(255,255,255,0.05);
+    }
+    .pin::after{
+      content:""; width:8px; height:8px; border-radius:50%;
+      background: var(--ring);
+      box-shadow: 0 0 8px currentColor;
+    }
+    .pin[data-color="green"]{ outline:2px solid var(--green); }
+    .pin[data-color="green"]::after{ background: var(--green); }
+    .pin[data-color="purple"]{ outline:2px solid var(--purple); }
+    .pin[data-color="purple"]::after{ background: var(--purple); }
+
+    /* Pin modal */
+    .modal{
+      position:absolute; min-width:260px; max-width:320px;
+      background:rgba(35,27,21,0.95); border:1px solid rgba(191,163,90,0.6);
+      border-radius:14px; padding:12px 12px 10px; box-shadow: var(--shadow);
+      transform: translate(-50%,-110%); z-index:6;
+    }
+    .modal h3{margin:0 0 6px 0; font-family:"Cinzel", serif; font-size:18px}
+    .muted{opacity:0.8; font-size:13px}
+    .tag{display:inline-flex; align-items:center; gap:6px; padding:4px 8px; border-radius:999px; font-size:12px; border:1px solid rgba(255,255,255,0.15)}
+    .tag.green{color:var(--green); border-color:var(--green)}
+    .tag.purple{color:var(--purple); border-color:var(--purple)}
+    .modal .row{display:flex; gap:8px; margin-top:10px}
+    .modal .btn{flex:1; justify-content:center}
+
+    /* Add form */
+    .form{
+      position:absolute; z-index:7; transform: translate(-50%,-110%);
+      background:rgba(35,27,21,0.98); border:1px solid rgba(191,163,90,0.6);
+      border-radius:14px; padding:12px; width:320px; box-shadow: var(--shadow);
+    }
+    .form h3{margin:0 0 10px 0; font-family:"Cinzel", serif}
+    .form label{display:block; font-size:12px; opacity:0.9; margin:6px 0 2px}
+    .form input[type="text"], .form textarea{
+      width:100%; padding:8px 10px; background:rgba(15,12,9,0.8); color:var(--ink);
+      border:1px solid rgba(191,163,90,0.35); border-radius:8px; font-family:inherit;
+    }
+    .form textarea{resize:vertical; min-height:54px}
+    .form .row{display:flex; gap:8px; align-items:center; margin-top:8px}
+    .pill{display:flex; gap:8px}
+    .pill .opt{
+      padding:6px 10px; border-radius:999px; border:1px solid rgba(191,163,90,0.5);
+      cursor:pointer; user-select:none;
+    }
+    .opt[data-v="green"]{color:var(--green); border-color:var(--green)}
+    .opt[data-v="purple"]{color:var(--purple); border-color:var(--purple)}
+    .opt.active{background:rgba(255,255,255,0.06)}
+    .form .actions{display:flex; gap:8px; margin-top:10px}
+    .ghost{opacity:0.6}
+
+    /* Quotes (Forte look) */
+    .quote{
+      position:fixed; z-index:4; max-width:min(70ch, 90vw);
+      left:50%; bottom:26px; transform:translateX(-50%);
+      background:rgba(40,30,22,0.9); border:1px solid rgba(191,163,90,0.5); border-radius:14px;
+      padding:12px 16px; box-shadow: var(--shadow); text-align:center;
+      font-family:"Forte","Cinzel", serif; font-size:22px; letter-spacing:0.2px;
+      opacity:0; animation:fade 4.2s ease forwards;
+    }
+    @keyframes fade{
+      0%{opacity:0; transform:translate(-50%, 10px)}
+      12%{opacity:1; transform:translate(-50%, 0)}
+      70%{opacity:1}
+      100%{opacity:0; transform:translate(-50%, 8px)}
+    }
+
+    /* Small toasts */
+    .toast{
+      position:fixed; right:14px; bottom:14px; z-index:8;
+      background:rgba(30,24,18,0.95); border:1px solid rgba(191,163,90,0.5);
+      padding:10px 12px; border-radius:10px; font-size:13px; box-shadow: var(--shadow);
+    }
+
+    /* Control drawer (bottom-left) */
+    .drawer{
+      position:fixed; left:12px; bottom:12px; z-index:5;
+      background:rgba(32,26,20,0.8); border:1px solid rgba(191,163,90,0.45);
+      border-radius:12px; padding:10px; display:flex; gap:10px; align-items:center; box-shadow: var(--shadow);
+      backdrop-filter: blur(3px);
+    }
+    .drawer label{font-size:12px; opacity:0.85}
+    .drawer input[type="range"]{width:140px}
+
+    /* Search box */
+    .search{position:relative}
+    .search input{
+      padding:8px 10px; border-radius:10px; border:1px solid rgba(191,163,90,0.5);
+      background:rgba(15,12,9,0.7); color:var(--ink); width:180px;
+    }
+
+    /* Secret unlock pill */
+    .unlock{
+      display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:999px;
+      border:1px dashed rgba(191,163,90,0.5); background:rgba(30,24,18,0.6);
+    }
+    .unlock input{
+      background:transparent; border:none; outline:none; color:var(--ink); width:90px; text-align:center;
+      font-family:"Cinzel", serif; letter-spacing:1.5px;
+    }
+
+    /* Util */
+    .hidden{display:none}
+    .noselect{user-select:none}
+    .pointer{cursor:pointer}
+  </style>
+</head>
+<body>
+  <canvas id="particles"></canvas>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <a class="chip" href="javascript:void(0)" onclick="history.back()">
+      ⟵ Back Home
+    </a>
+    <div class="group">
+      <button class="chip" id="filterAll">All</button>
+      <button class="chip" id="filterGreen">💚</button>
+      <button class="chip" id="filterPurple">💜</button>
+    </div>
+    <div class="title">Middle-earth Map</div>
+    <div class="group">
+      <div class="search"><input id="search" placeholder="Search…" /></div>
+      <div class="unlock">
+        <span>Secret</span>
+        <input id="unlock" maxlength="6" placeholder="code" />
+      </div>
+      <button class="btn" id="addPinBtn">+ Add Pin</button>
+    </div>
+  </div>
+
+  <!-- Control drawer -->
+  <div class="drawer">
+    <label>Particles:</label>
+    <button class="chip" id="modeBtn">Snow</button>
+    <label>Intensity</label>
+    <input type="range" id="intensity" min="0" max="2" step="1" value="1" />
+    <button class="chip" id="pauseBtn">Pause</button>
+  </div>
+
+  <!-- Map viewport -->
+  <div id="viewport" class="viewport">
+    <div id="mapInner" class="map-inner">
+      <img id="mapImg" class="map-img" alt="Map"
+           src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-bg%20.png" />
+      <!-- Pins container -->
+      <div id="pinsLayer" style="position:absolute; inset:0;"></div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div id="toast" class="toast hidden"></div>
+
+  <script>
+  // ========= Config =========
+  const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
+  const TABLE = "map_pins";
+  const SECRET_CODE = "1013";
+
+  const quotes = [
+    "There and back again.",
+    "Not all those who wander are lost.",
+    "Even the smallest person can change the course of the future.",
+    "I would rather share one lifetime with you than face all the ages of this world alone.",
+    "Deeds will not be less valiant because they are unpraised.",
+    "May it be a light for you in dark places.",
+    "Courage is found in unlikely places.",
+    "The road goes ever on and on."
+  ];
+
+  // ========= Supabase client =========
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  let supabaseOK = true;
+
+  // ========= Elements =========
+  const viewport = document.getElementById('viewport');
+  const mapInner = document.getElementById('mapInner');
+  const mapImg = document.getElementById('mapImg');
+  const pinsLayer = document.getElementById('pinsLayer');
+  const addPinBtn = document.getElementById('addPinBtn');
+  const searchBox = document.getElementById('search');
+  const toast = document.getElementById('toast');
+  const unlock = document.getElementById('unlock');
+
+  // Filters
+  let filter = 'all'; // 'all' | 'green' | 'purple'
+  document.getElementById('filterAll').onclick = () => { filter='all'; renderPins(); };
+  document.getElementById('filterGreen').onclick = () => { filter='green'; renderPins(); };
+  document.getElementById('filterPurple').onclick = () => { filter='purple'; renderPins(); };
+
+  // Secret unlock
+  let secretsUnlocked = false;
+  unlock.addEventListener('input', () => {
+    if (unlock.value.trim() === SECRET_CODE) {
+      secretsUnlocked = true;
+      showToast("Doors of Durin open. Secret pins revealed.");
+      unlock.value = "";
+      renderPins();
+      localStorage.setItem('me_map_secret', '1');
+    }
+  });
+  if (localStorage.getItem('me_map_secret') === '1') secretsUnlocked = true;
+
+  // Search
+  let searchTerm = "";
+  searchBox.addEventListener('input', () => { searchTerm = searchBox.value.toLowerCase(); renderPins(); });
+
+  // ========= Map pan/zoom =========
+  const state = {
+    scale: 1, minScale: 0.5, maxScale: 3,
+    tx: 0, ty: 0, dragging: false, lastX: 0, lastY: 0,
+    naturalW: 1000, naturalH: 1000
+  };
+
+  mapImg.addEventListener('load', () => {
+    state.naturalW = mapImg.naturalWidth;
+    state.naturalH = mapImg.naturalHeight;
+    // Fit to viewport width
+    const vw = viewport.clientWidth, vh = viewport.clientHeight;
+    const s = Math.min(vw / state.naturalW, vh / state.naturalH) * 1.05;
+    state.scale = s; state.tx = vw/2 - (state.naturalW*s)/2; state.ty = vh/2 - (state.naturalH*s)/2;
+    applyTransform();
+  });
+
+  function applyTransform(){
+    mapInner.style.transform = `translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`;
+  }
+
+  // Drag pan
+  viewport.addEventListener('pointerdown', (e)=>{
+    state.dragging = true; state.lastX = e.clientX; state.lastY = e.clientY; viewport.setPointerCapture(e.pointerId);
+  });
+  viewport.addEventListener('pointermove', (e)=>{
+    if(!state.dragging) return;
+    const dx = e.clientX - state.lastX, dy = e.clientY - state.lastY;
+    state.tx += dx; state.ty += dy; state.lastX = e.clientX; state.lastY = e.clientY; applyTransform();
+  });
+  viewport.addEventListener('pointerup', (e)=>{ state.dragging=false; viewport.releasePointerCapture(e.pointerId); });
+
+  // Wheel zoom (centered on cursor)
+  viewport.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY) * -0.1;
+    const newScale = clamp(state.scale * (1 + delta), state.minScale, state.maxScale);
+    zoomAt(e.clientX, e.clientY, newScale);
+  }, {passive:false});
+
+  function clamp(v,min,max){return Math.max(min, Math.min(max, v));}
+
+  function zoomAt(cx, cy, newScale){
+    const prev = state.scale; if (newScale === prev) return;
+    // Cursor position relative to image before scaling
+    const rect = viewport.getBoundingClientRect();
+    const x = (cx - rect.left - state.tx) / prev;
+    const y = (cy - rect.top - state.ty) / prev;
+    state.tx = cx - rect.left - x * newScale;
+    state.ty = cy - rect.top - y * newScale;
+    state.scale = newScale; applyTransform();
+  }
+
+  // Convert client coords to % on the base image
+  function clientToPct(clientX, clientY){
+    const rect = viewport.getBoundingClientRect();
+    const xOnImg = (clientX - rect.left - state.tx) / state.scale;
+    const yOnImg = (clientY - rect.top - state.ty) / state.scale;
+    const xPct = clamp((xOnImg / state.naturalW) * 100, 0, 100);
+    const yPct = clamp((yOnImg / state.naturalH) * 100, 0, 100);
+    return {xPct, yPct};
+  }
+
+  // ========= Pins store =========
+  let pins = []; // {id, x_pct, y_pct, title, caption, color, is_secret, created_at}
+
+  async function loadPins(){
+    try{
+      const { data, error } = await supabase.from(TABLE).select('*').order('created_at', {ascending:true});
+      if(error) throw error;
+      pins = data || [];
+      supabaseOK = true;
+      renderPins();
+    }catch(err){
+      supabaseOK = false;
+      pins = JSON.parse(localStorage.getItem('me_map_pins')||"[]");
+      showToast("Supabase table not found — saving locally for now.");
+      renderPins();
+    }
+  }
+
+  function saveLocal(){
+    localStorage.setItem('me_map_pins', JSON.stringify(pins));
+  }
+
+  function showToast(msg){
+    toast.textContent = msg; toast.classList.remove('hidden');
+    clearTimeout(showToast.t); showToast.t = setTimeout(()=> toast.classList.add('hidden'), 2500);
+  }
+
+  // ========= Render =========
+  function renderPins(){
+    pinsLayer.innerHTML = "";
+    const term = (searchTerm||"").trim();
+    for(const p of pins){
+      if(p.is_secret && !secretsUnlocked) continue;
+      if(filter!=='all' && p.color!==filter) continue;
+      if(term){
+        const hay = `${p.title||""} ${p.caption||""}`.toLowerCase();
+        if(!hay.includes(term)) continue;
+      }
+      const el = document.createElement('button');
+      el.className = 'pin';
+      el.dataset.color = p.color || 'green';
+      el.style.left = `${p.x_pct}%`;
+      el.style.top  = `${p.y_pct}%`;
+      el.title = p.title || '';
+      el.onclick = (ev)=> openModal(p, ev);
+      pinsLayer.appendChild(el);
+    }
+  }
+
+  function openModal(p, ev){
+    closeFloating();
+    const box = document.createElement('div');
+    box.className = 'modal';
+    box.style.left = `${ev.clientX}px`;
+    box.style.top  = `${ev.clientY}px`;
+    box.innerHTML = `
+      <h3>${escapeHTML(p.title||'Untitled')}</h3>
+      <div class="muted">${escapeHTML(p.caption||'')}</div>
+      <div class="row">
+        <span class="tag ${p.color==='green'?'green':'purple'}">${p.color==='green'?'💚':'💜'} ${p.color==='green'?'Sihaya':'Godbrand'}</span>
+        ${p.is_secret ? '<span class="tag">Secret</span>' : ''}
+        <span class="muted" style="margin-left:auto">${new Date(p.created_at||Date.now()).toLocaleDateString()}</span>
+      </div>
+      <div class="row">
+        <button class="btn" onclick="closeFloating()">Close</button>
+        <button class="btn" onclick="deletePin('${p.id||''}')">Delete</button>
+      </div>
+    `;
+    document.body.appendChild(box);
+    window._floating = box;
+  }
+
+  async function deletePin(id){
+    if(!confirm("Delete this pin?")) return;
+    pins = pins.filter(x=>x.id!==id);
+    renderPins(); 
+    if(supabaseOK){
+      try{ await supabase.from(TABLE).delete().eq('id', id); }
+      catch(e){ /* ignore */ }
+    }else saveLocal();
+    closeFloating();
+  }
+
+  function closeFloating(){
+    if(window._floating){ window._floating.remove(); window._floating=null; }
+    if(window._form){ window._form.remove(); window._form=null; }
+  }
+
+  // ========= Add Pin flow =========
+  let adding = false;
+  addPinBtn.onclick = ()=>{
+    adding = !adding;
+    addPinBtn.textContent = adding ? "Click map…" : "+ Add Pin";
+    if(adding) showToast("Click the map to place your pin.");
+  };
+
+  viewport.addEventListener('click', (e)=>{
+    // Show quote if click is not on pin or during 'adding' position selection
+    const clickedBtn = e.target.closest('.chip,.btn,.pin,.form,.modal, input, textarea');
+    if(clickedBtn) return;
+    if(adding){
+      const {xPct,yPct} = clientToPct(e.clientX, e.clientY);
+      openForm(e.clientX, e.clientY, xPct, yPct);
+      adding=false; addPinBtn.textContent="+ Add Pin";
+    }else{
+      spawnQuote();
+    }
+  });
+
+  function openForm(cx, cy, xPct, yPct){
+    closeFloating();
+    const form = document.createElement('div');
+    form.className = 'form';
+    form.style.left = `${cx}px`; form.style.top = `${cy}px`;
+    form.innerHTML = `
+      <h3>Add Pin</h3>
+      <label>Title</label>
+      <input id="fTitle" type="text" placeholder="e.g., First Date" />
+      <label>Caption</label>
+      <textarea id="fCap" placeholder="Short note…"></textarea>
+      <div class="row">
+        <span class="pill">
+          <span class="opt optG opt active" data-v="green">💚</span>
+          <span class="opt optP opt" data-v="purple">💜</span>
+        </span>
+        <label style="margin-left:auto"><input id="fSecret" type="checkbox" /> Secret</label>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" onclick="closeFloating()">Cancel</button>
+        <button class="btn" id="savePinBtn">Save</button>
+      </div>
+    `;
+    document.body.appendChild(form);
+    window._form = form;
+
+    let color = 'green';
+    form.querySelectorAll('.opt').forEach(el=>{
+      el.onclick = ()=>{ color = el.dataset.v; form.querySelectorAll('.opt').forEach(x=>x.classList.remove('active')); el.classList.add('active'); };
+    });
+
+    form.querySelector('#savePinBtn').onclick = async ()=>{
+      const title = form.querySelector('#fTitle').value.trim();
+      const caption = form.querySelector('#fCap').value.trim();
+      const is_secret = !!form.querySelector('#fSecret').checked;
+      const row = {
+        id: crypto.randomUUID(),
+        x_pct: xPct, y_pct: yPct, title, caption, color, is_secret,
+        created_at: new Date().toISOString()
+      };
+      pins.push(row); renderPins(); closeFloating();
+      if(supabaseOK){
+        try{
+          const { error } = await supabase.from(TABLE).insert([row]);
+          if(error) throw error;
+        }catch(err){
+          supabaseOK=false; saveLocal();
+          showToast("Supabase insert failed — saving locally.");
+        }
+      }else saveLocal();
+    };
+  }
+
+  // ========= Quotes =========
+  function spawnQuote(){
+    const q = quotes[Math.floor(Math.random()*quotes.length)];
+    const el = document.createElement('div');
+    el.className = 'quote'; el.textContent = q;
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 4200);
+  }
+
+  function escapeHTML(s){
+    return (s||"").replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  // ========= Particles (Snow/Embers) =========
+  const canvas = document.getElementById('particles');
+  const ctx = canvas.getContext('2d');
+  let W=0,H=0; function resize(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; }
+  addEventListener('resize', resize); resize();
+
+  let mode='snow'; // 'snow' | 'embers'
+  let intensity=1; // 0 light, 1 medium, 2 extra
+  let paused=false;
+
+  const modeBtn = document.getElementById('modeBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const intensitySlider = document.getElementById('intensity');
+
+  modeBtn.onclick=()=>{ mode = (mode==='snow'?'embers':'snow'); modeBtn.textContent = mode==='snow'?'Snow':'Embers'; };
+  pauseBtn.onclick=()=>{ paused=!paused; pauseBtn.textContent = paused?'Resume':'Pause'; };
+  intensitySlider.oninput=(e)=>{ intensity=+e.target.value; };
+
+  const parts=[];
+  function seed(n=200){
+    parts.length=0;
+    for(let i=0;i<n;i++) parts.push(makeP());
+  }
+  function makeP(){
+    const r = Math.random();
+    return {
+      x: Math.random()*W,
+      y: Math.random()*H,
+      vx: (Math.random()-0.5)*0.2,
+      vy: mode==='snow' ? (0.3+Math.random()*0.6) : (0.6+Math.random()*1.2),
+      s: 0.7 + Math.random()*1.6,
+      a: 0.4 + Math.random()*0.6
+    };
+  }
+  function step(){
+    requestAnimationFrame(step);
+    if(paused) return;
+    const targetCount = [120, 220, 420][intensity];
+    if(parts.length!==targetCount){ seed(targetCount); }
+    ctx.clearRect(0,0,W,H);
+    for(const p of parts){
+      // drift
+      p.x += p.vx + (mode==='snow' ? Math.sin(p.y*0.002)*0.05 : Math.sin(p.y*0.01)*0.08);
+      p.y += p.vy;
+      if(p.y>H+8){ p.y=-8; p.x=Math.random()*W; }
+      if(p.x<-8) p.x=W+8;
+      if(p.x>W+8) p.x=-8;
+
+      if(mode==='snow'){
+        ctx.globalAlpha = p.a*0.9;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.s+0.6,0,Math.PI*2);
+        ctx.fillStyle = "rgba(255,255,255,0.9)";
+        ctx.fill();
+      }else{
+        // embers: small glowing dots
+        ctx.globalAlpha = p.a;
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.s,0,Math.PI*2);
+        ctx.fillStyle = "rgba(255,200,120,0.85)";
+        ctx.shadowColor = "rgba(255,180,80,0.8)";
+        ctx.shadowBlur = 6;
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+    }
+    ctx.globalAlpha = 1;
+  }
+  seed(220); step();
+
+  // ========= Realtime (optional) =========
+  try{
+    supabase.channel('realtime-pins')
+      .on('postgres_changes', {event:'INSERT', schema:'public', table:TABLE}, payload=>{
+        const r = payload.new;
+        if(!pins.find(x=>x.id===r.id)){ pins.push(r); renderPins(); }
+      })
+      .subscribe();
+  }catch(e){ /* ignore */ }
+
+  // ========= Init =========
+  loadPins();
+
+  </script>
+
+</body>
+</html>
