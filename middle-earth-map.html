@@ -4,7 +4,6 @@
   <meta charset="UTF-8" />
   <title>Middle-earth Map</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <!-- Optional display fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -68,187 +67,221 @@
     </div>
   </div>
 
-  <script>
-    /* ========= Map pan/zoom ========= */
-    const viewport = document.getElementById('viewport');
-    const mapInner = document.getElementById('mapInner');
-    const mapImg   = document.getElementById('mapImg');
+<script>
+/* ========= Smooth pan/zoom camera ========= */
+const viewport = document.getElementById('viewport');
+const mapInner = document.getElementById('mapInner');
+const mapImg   = document.getElementById('mapImg');
 
-    const FIT_FACTOR = 0.82;
-    const st = { scale:1, min:.45, max:3.5, tx:0, ty:0, dragging:false, lx:0, ly:0, nw:1000, nh:1000 };
+const FIT = 0.82;
+const ZOOM_SMOOTH = 0.22; // easing strength (0.1–0.3 feels nice)
+const camera = {
+  // current
+  x:0, y:0, s:1,
+  // targets
+  tx:0, ty:0, ts:1,
+  sMin:0.45, sMax:3.5,
+  dragging:false, lx:0, ly:0,
+  natW:2048, natH:1536
+};
 
-    mapImg.addEventListener('load', () => {
-      st.nw = mapImg.naturalWidth; st.nh = mapImg.naturalHeight;
-      centerFit(); applyTransform();
+mapImg.addEventListener('load', ()=>{
+  camera.natW = mapImg.naturalWidth || camera.natW;
+  camera.natH = mapImg.naturalHeight || camera.natH;
+  centerFit(true);
+});
+
+function centerFit(now=false){
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  const s  = Math.min(vw/camera.natW, vh/camera.natH) * FIT;
+  camera.ts = camera.s = s;
+  camera.tx = camera.x = vw/2 - (camera.natW*s)/2;
+  camera.ty = camera.y = vh/2 - (camera.natH*s)/2;
+  applyTransform();
+}
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function applyTransform(){
+  // matrix() is fast and avoids repeated string work
+  mapInner.style.transform = `matrix(${camera.s},0,0,${camera.s},${camera.x},${camera.y})`;
+}
+function zoomAt(clientX,clientY, newScale){
+  newScale = clamp(newScale, camera.sMin, camera.sMax);
+  const r = viewport.getBoundingClientRect();
+  // world coords under cursor using CURRENT camera (smooth and intuitive)
+  const wx = (clientX - r.left - camera.x) / camera.s;
+  const wy = (clientY - r.top  - camera.y) / camera.s;
+  camera.ts = newScale;
+  camera.tx = clientX - r.left - wx * newScale;
+  camera.ty = clientY - r.top  - wy * newScale;
+}
+
+// input
+viewport.addEventListener('pointerdown', e=>{
+  camera.dragging = true; camera.lx = e.clientX; camera.ly = e.clientY;
+  viewport.setPointerCapture(e.pointerId);
+});
+viewport.addEventListener('pointermove', e=>{
+  if(!camera.dragging) return;
+  const dx = e.clientX - camera.lx, dy = e.clientY - camera.ly;
+  camera.tx += dx; camera.ty += dy; camera.lx = e.clientX; camera.ly = e.clientY;
+});
+viewport.addEventListener('pointerup', e=>{
+  camera.dragging = false; viewport.releasePointerCapture(e.pointerId);
+});
+viewport.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const factor = (e.deltaY<0) ? 1.08 : 0.92;
+  zoomAt(e.clientX, e.clientY, camera.ts * factor);
+},{passive:false});
+function resetView(){ centerFit(); }
+
+// animate camera with framerate-independent easing
+let lastCam = performance.now();
+function animateCamera(){
+  const now = performance.now();
+  const dt = (now - lastCam) / 16.6667; // 60fps units
+  lastCam = now;
+
+  const t = 1 - Math.pow(1 - ZOOM_SMOOTH, dt); // framerate independent
+  camera.x += (camera.tx - camera.x) * t;
+  camera.y += (camera.ty - camera.y) * t;
+  camera.s += (camera.ts - camera.s) * t;
+  applyTransform();
+  requestAnimationFrame(animateCamera);
+}
+animateCamera();
+addEventListener('resize', ()=>{ centerFit(); });
+
+/* ========= Background particles (fast + smooth) =========
+   Your exact mix: runes + leaves + embers falling; glyph bursts on click.
+*/
+const palette = { gold:"#d4af37", ember:"rgba(255,140,60,.9)", leaf:"#b6a47a" };
+const glyphs  = ["✶","✷","✸","✹","✺","✧","✦","✳"]; // bursts
+const runes   = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];
+const leaves  = ["🍂","🍁"];
+
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+
+// perf: cap DPR a bit; still crisp
+let W=0,H=0;
+function sizeCanvas(){
+  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+  canvas.width  = Math.floor(innerWidth * dpr);
+  canvas.height = Math.floor(innerHeight * dpr);
+  canvas.style.width  = innerWidth + 'px';
+  canvas.style.height = innerHeight + 'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  W = innerWidth; H = innerHeight;
+}
+addEventListener('resize', sizeCanvas); sizeCanvas();
+
+// density/speed knobs
+const FLAKE_COUNT = 280;   // ↑ denser
+const EDGE        = 100;   // edge bleed so flakes reach far sides
+const FALL_SPEED  = 2.2;   // global speed multiplier (↑ faster)
+
+const flakes = [];
+function makeFlake(){
+  const kind = Math.random();
+  let type, char, color, size;
+  if (kind < .34){ type='rune';  char=runes[(Math.random()*runes.length)|0];  color=palette.gold; size=14+Math.random()*8; }
+  else if (kind < .67){ type='leaf'; char=leaves[(Math.random()*leaves.length)|0]; color=palette.leaf; size=16+Math.random()*10; }
+  else { type='ember'; char="•"; color=palette.ember; size=3+Math.random()*2; }
+  return {
+    x: Math.random()*(W+EDGE*2)-EDGE,
+    y: -20 - Math.random()*(H+EDGE),
+    vy: (0.5 + Math.random()*0.7) * FALL_SPEED,  // faster + varied
+    drift: 0.2 + Math.random()*0.4,
+    phase: Math.random()*Math.PI*2,
+    rot: Math.random()*Math.PI,
+    spin: (Math.random()-0.5)*0.02,
+    type, char, color, size, alpha: type==='ember' ? 0.8 : 0.95
+  };
+}
+for (let i=0;i<FLAKE_COUNT;i++) flakes.push(makeFlake());
+
+// bursts on click
+let bursts = [];
+function burst(x,y){
+  const n=18;
+  for(let i=0;i<n;i++){
+    bursts.push({
+      x,y,
+      vx: Math.cos((i/n)*Math.PI*2)*(1.5+Math.random()*1.2),
+      vy: Math.sin((i/n)*Math.PI*2)*(1.5+Math.random()*1.2) - 0.6,
+      life: 1,
+      char: glyphs[i%glyphs.length],
+      size: 10+Math.random()*10
     });
+  }
+}
+addEventListener('click', e=> burst(e.clientX, e.clientY));
 
-    function centerFit(){
-      const vw = viewport.clientWidth, vh = viewport.clientHeight;
-      const s = Math.min(vw/st.nw, vh/st.nh) * FIT_FACTOR;
-      st.scale = s;
-      st.tx = vw/2 - (st.nw*s)/2;
-      st.ty = vh/2 - (st.nh*s)/2;
+function fontFor(px){
+  return `${px}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol","Symbola","Noto Sans",serif`;
+}
+
+// framerate-independent particle update
+let last = performance.now();
+function step(){
+  const now = performance.now();
+  const dt = (now - last) / 16.6667; // 60fps units
+  last = now;
+
+  requestAnimationFrame(step);
+  ctx.clearRect(0,0,W,H);
+
+  const breeze = Math.sin(now*0.00045) * 0.4; // shared wind
+
+  // flakes
+  for (let i=0;i<flakes.length;i++){
+    const f = flakes[i];
+    f.phase += 0.01 * dt;
+    f.x += (Math.sin(f.phase)*f.drift + breeze) * dt;
+    f.y += f.vy * dt;
+    f.rot += f.spin * dt;
+
+    // wrap with edge bleed
+    if (f.y > H + EDGE){ const nf = makeFlake(); nf.y = -EDGE; flakes[i] = nf; continue; }
+    if (f.x < -EDGE) f.x = W + EDGE;
+    if (f.x > W + EDGE) f.x = -EDGE;
+
+    if (f.type === 'ember'){
+      ctx.save();
+      ctx.globalAlpha = f.alpha;
+      ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI*2);
+      ctx.fillStyle = f.color; ctx.shadowColor = f.color; ctx.shadowBlur = 3; // lower blur = faster
+      ctx.fill(); ctx.shadowBlur = 0; ctx.restore();
+    } else {
+      ctx.save();
+      ctx.translate(f.x, f.y); ctx.rotate(f.rot);
+      ctx.globalAlpha = f.alpha; ctx.fillStyle = f.color;
+      ctx.font = fontFor(f.size);
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(f.char, 0, 0);
+      ctx.restore();
     }
-    function applyTransform(){
-      mapInner.style.transform = `translate(${st.tx}px, ${st.ty}px) scale(${st.scale})`;
-    }
-    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
+  }
 
-    viewport.addEventListener('pointerdown', e => {
-      st.dragging = true; st.lx = e.clientX; st.ly = e.clientY;
-      viewport.setPointerCapture(e.pointerId);
-    });
-    viewport.addEventListener('pointermove', e => {
-      if(!st.dragging) return;
-      const dx = e.clientX - st.lx, dy = e.clientY - st.ly;
-      st.tx += dx; st.ty += dy; st.lx = e.clientX; st.ly = e.clientY; applyTransform();
-    });
-    viewport.addEventListener('pointerup', e => {
-      st.dragging = false; viewport.releasePointerCapture(e.pointerId);
-    });
-    viewport.addEventListener('wheel', e => {
-      e.preventDefault();
-      const factor = (e.deltaY < 0) ? 1.08 : 0.92;
-      const ns = clamp(st.scale * factor, st.min, st.max);
-      const r = viewport.getBoundingClientRect();
-      const x = (e.clientX - r.left - st.tx) / st.scale;
-      const y = (e.clientY - r.top  - st.ty) / st.scale;
-      st.tx = e.clientX - r.left - x * ns;
-      st.ty = e.clientY - r.top  - y * ns;
-      st.scale = ns; applyTransform();
-    }, {passive:false});
-    function resetView(){ centerFit(); applyTransform(); }
-    window.addEventListener('resize', () => { centerFit(); applyTransform(); });
+  // bursts
+  for (let i=bursts.length-1;i>=0;i--){
+    const b = bursts[i];
+    b.x += b.vx * dt; b.y += b.vy * dt; b.vy += 0.02 * dt;
+    b.life -= 0.02 * dt;
 
-    /* ========= Background particles =========
-       EXACT symbol sets + your flake/burst approach
-    */
-    const palette = { gold:"#d4af37", ember:"rgba(255,140,60,.9)", leaf:"#b6a47a" };
-    const glyphs  = ["✶","✷","✸","✹","✺","✧","✦","✳"];           // bursts
-    const runes   = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];           // falling
-    const leaves  = ["🍂","🍁"];                                    // falling
+    ctx.save();
+    ctx.globalAlpha = Math.max(b.life, 0);
+    ctx.fillStyle = palette.gold;
+    ctx.font = fontFor(b.size * (0.9 + b.life*0.6));
+    ctx.textAlign="center"; ctx.textBaseline="middle";
+    ctx.fillText(b.char, b.x, b.y);
+    ctx.restore();
 
-    const canvas = document.getElementById('particles');
-    const ctx    = canvas.getContext('2d');
-
-    // Hi-DPI scaling so symbols look crisp
-    let W=0, H=0;
-    function sizeCanvas(){
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width  = Math.floor(innerWidth * dpr);
-      canvas.height = Math.floor(innerHeight * dpr);
-      canvas.style.width  = innerWidth + 'px';
-      canvas.style.height = innerHeight + 'px';
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      W = innerWidth; H = innerHeight;
-    }
-    window.addEventListener('resize', sizeCanvas);
-    sizeCanvas();
-
-    // Density + edge-bleed so flakes truly occupy the sides
-    const FLAKE_COUNT = 260;   // ⬅ make higher for more density (e.g. 320)
-    const EDGE = 100;          // ⬅ off-screen bleed (left/right/top/bottom)
-
-    const flakes = [];
-    function makeFlake() {
-      const kind = Math.random();
-      let type, char, color, size;
-      if (kind < .34){ type='rune';  char = runes[(Math.random()*runes.length)|0];  color = palette.gold; size = 14 + Math.random()*8; }
-      else if (kind < .67){ type='leaf'; char = leaves[(Math.random()*leaves.length)|0]; color = palette.leaf; size = 16 + Math.random()*10; }
-      else { type='ember'; char="•"; color = palette.ember; size = 3 + Math.random()*2; }
-
-      return {
-        x: Math.random() * (W + EDGE*2) - EDGE,  // spawn from -EDGE..W+EDGE
-        y: -20 - Math.random() * (H + EDGE),     // some start well above
-        vy: 0.5 + Math.random() * 0.7,           // natural fall
-        drift: 0.2 + Math.random() * 0.4,        // gentle personal sway
-        phase: Math.random() * Math.PI * 2,
-        rot: Math.random() * Math.PI, spin: (Math.random()-0.5) * 0.02,
-        type, char, color, size, alpha: type==='ember' ? 0.8 : 0.95
-      };
-    }
-    for (let i=0;i<FLAKE_COUNT;i++) flakes.push(makeFlake());
-
-    // Click bursts (golden glyphs)
-    let bursts = [];
-    function burst(x,y){
-      const n = 18;
-      for (let i=0;i<n;i++){
-        bursts.push({
-          x, y,
-          vx: Math.cos((i/n)*Math.PI*2) * (1.5 + Math.random()*1.2),
-          vy: Math.sin((i/n)*Math.PI*2) * (1.5 + Math.random()*1.2) - 0.6,
-          life: 1,
-          char: glyphs[i % glyphs.length],
-          size: 10 + Math.random()*10
-        });
-      }
-    }
-    // Canvas ignores clicks (pointer-events:none), so listen on window
-    window.addEventListener('click', e => burst(e.clientX, e.clientY));
-
-    function fontFor(px){
-      // Wide stack to render runes + emoji across OSes
-      return `${px}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol","Symbola","Noto Sans",serif`;
-    }
-
-    function step(){
-      requestAnimationFrame(step);
-      ctx.clearRect(0,0,W,H);
-
-      // gentle breeze so everything moves together
-      const t = performance.now() * 0.00015;
-      const breeze = Math.sin(t*3) * 0.4;
-
-      // Flakes
-      for (let i=0;i<flakes.length;i++){
-        const f = flakes[i];
-        f.phase += 0.01;
-        f.x += Math.sin(f.phase) * f.drift + breeze;
-        f.y += f.vy;
-        f.rot += f.spin;
-
-        // Wrap using EDGE bleed
-        if (f.y > H + EDGE) { const nf = makeFlake(); nf.y = -EDGE; flakes[i] = nf; continue; }
-        if (f.x < -EDGE) f.x = W + EDGE;
-        if (f.x > W + EDGE) f.x = -EDGE;
-
-        // Draw
-        if (f.type === 'ember'){
-          ctx.save();
-          ctx.globalAlpha = f.alpha;
-          ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI*2);
-          ctx.fillStyle = f.color; ctx.shadowColor = f.color; ctx.shadowBlur = 6; ctx.fill();
-          ctx.shadowBlur = 0; ctx.restore();
-        } else {
-          ctx.save();
-          ctx.translate(f.x, f.y); ctx.rotate(f.rot);
-          ctx.globalAlpha = f.alpha; ctx.fillStyle = f.color;
-          ctx.font = fontFor(f.size);
-          ctx.textAlign = "center"; ctx.textBaseline = "middle";
-          ctx.fillText(f.char, 0, 0);
-          ctx.restore();
-        }
-      }
-
-      // Bursts
-      for (let i=bursts.length-1;i>=0;i--){
-        const b = bursts[i];
-        b.x += b.vx; b.y += b.vy; b.vy += 0.02;   // gravity
-        b.life -= 0.02;
-
-        ctx.save();
-        ctx.globalAlpha = Math.max(b.life, 0);
-        ctx.fillStyle = palette.gold;
-        ctx.font = fontFor(b.size * (0.9 + b.life*0.6));
-        ctx.textAlign="center"; ctx.textBaseline="middle";
-        ctx.fillText(b.char, b.x, b.y);
-        ctx.restore();
-
-        if (b.life <= 0) bursts.splice(i,1);
-      }
-    }
-    step();
-  </script>
+    if (b.life <= 0) bursts.splice(i,1);
+  }
+}
+step();
+</script>
 </body>
 </html>
