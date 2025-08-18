@@ -9,21 +9,25 @@
     :root{ --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a; --shadow:0 18px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06); }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{ margin:0; overflow:hidden; user-select:none;
+    body{
+      margin:0; overflow:hidden; user-select:none;
       background: radial-gradient(1200px 800px at 70% 10%, #2a221b, #15100b 70%, #0d0a07 100%), var(--bg);
-      color:var(--ink); font-family:"IM Fell English",serif; }
-    #particles{position:fixed; inset:0; z-index:0; pointer-events:none}
+      color:var(--ink); font-family:"IM Fell English",serif;
+    }
 
-    .topbar{position:fixed; inset:12px 12px auto 12px; z-index:5; display:flex; gap:12px; align-items:center}
-    .chip{display:inline-flex; align-items:center; gap:8px; padding:7px 10px; border:1px solid rgba(191,163,90,.5);
-      border-radius:10px; background:rgba(32,26,20,.6); color:var(--ink); box-shadow:var(--shadow); backdrop-filter:blur(3px);
-      cursor:pointer; text-decoration:none; font-size:13px;}
+    /* BACKGROUND particles (behind map) */
+    #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
+
+    .topbar{position:fixed; inset:12px 12px auto 12px; z-index:10; display:flex; gap:12px; align-items:center}
+    .chip{display:inline-flex; align-items:center; gap:8px; padding:7px 10px;
+      border:1px solid rgba(191,163,90,.5); border-radius:10px; background:rgba(32,26,20,.6);
+      color:var(--ink); box-shadow:var(--shadow); backdrop-filter:blur(3px); cursor:pointer; text-decoration:none; font-size:13px;}
     .chip:hover{background:rgba(50,40,30,.75)}
     .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2);}
 
-    /* compact drawer */
-    .drawer{position:fixed; left:10px; bottom:10px; z-index:5; background:rgba(32,26,20,.8); border:1px solid rgba(191,163,90,.45);
-      border-radius:10px; padding:6px 8px; display:flex; gap:8px; align-items:center; box-shadow:var(--shadow); backdrop-filter:blur(2px);}
+    /* compact controls */
+    .drawer{position:fixed; left:10px; bottom:10px; z-index:10; background:rgba(32,26,20,.8);
+      border:1px solid rgba(191,163,90,.45); border-radius:10px; padding:6px 8px; display:flex; gap:8px; align-items:center; box-shadow:var(--shadow);}
     .drawer .chip{padding:5px 9px; font-size:12px}
     .drawer label{font-size:11px; opacity:.85}
     .drawer input[type="range"]{width:120px; height:4px}
@@ -31,17 +35,20 @@
     .seg button{border:none; background:transparent; color:var(--ink); padding:5px 9px; font-size:12px; cursor:pointer}
     .seg button.active{background:rgba(255,255,255,.09); outline:1px solid rgba(191,163,90,.6);}
 
+    /* map viewer (over particles) */
     .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none}
     .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
     .map-img{display:block; width:100%; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
 
-    .quote{position:fixed; z-index:4; max-width:min(70ch,90vw); left:50%; bottom:26px; transform:translateX(-50%);
+    /* click-quotes */
+    .quote{position:fixed; z-index:9; max-width:min(70ch,90vw); left:50%; bottom:26px; transform:translateX(-50%);
       background:rgba(40,30,22,.9); border:1px solid rgba(191,163,90,.5); border-radius:14px; padding:10px 14px; box-shadow:var(--shadow);
       text-align:center; font-family:"Forte","Cinzel",serif; font-size:20px; letter-spacing:.2px; opacity:0; animation:fade 4.2s ease forwards;}
     @keyframes fade{0%{opacity:0; transform:translate(-50%,10px)}12%{opacity:1; transform:translate(-50%,0)}70%{opacity:1}100%{opacity:0; transform:translate(-50%,8px)}}
   </style>
 </head>
 <body>
+  <!-- background particles -->
   <canvas id="particles"></canvas>
 
   <div class="topbar">
@@ -50,7 +57,7 @@
     <a class="chip" href="#" onclick="resetView()">Reset View</a>
   </div>
 
-  <!-- small, fixed controls -->
+  <!-- fixed controls (no cycling) -->
   <div class="drawer">
     <span style="font-size:11px;opacity:.85">Particles:</span>
     <div class="seg">
@@ -63,6 +70,7 @@
     <button class="chip" id="pauseBtn">Pause</button>
   </div>
 
+  <!-- map -->
   <div id="viewport" class="viewport">
     <div id="mapInner" class="map-inner">
       <img id="mapImg" class="map-img" alt="Map"
@@ -71,201 +79,115 @@
   </div>
 
   <script>
-    // ---------- Quotes ----------
+    /* quotes */
     const quotes=[
       "There and back again.","Not all those who wander are lost.",
       "Even the smallest person can change the course of the future.",
       "May it be a light for you in dark places.","The road goes ever on and on."
     ];
-    function spawnQuote(){
-      const q=quotes[Math.floor(Math.random()*quotes.length)];
+    function spawnQuote(){ const q=quotes[Math.floor(Math.random()*quotes.length)];
       const el=document.createElement('div'); el.className='quote'; el.textContent=q;
-      document.body.appendChild(el); setTimeout(()=>el.remove(),4200);
-    }
+      document.body.appendChild(el); setTimeout(()=>el.remove(),4200); }
 
-    // ---------- Map pan/zoom ----------
-    const viewport=document.getElementById('viewport');
-    const mapInner=document.getElementById('mapInner');
-    const mapImg=document.getElementById('mapImg');
-
-    const FIT_FACTOR = 0.82;
-    const state={scale:1,minScale:.45,maxScale:3.5,tx:0,ty:0,dragging:false,lastX:0,lastY:0,natW:1000,natH:1000};
-
-    mapImg.addEventListener('load',()=>{ state.natW=mapImg.naturalWidth; state.natH=mapImg.naturalHeight; centerFit(); apply(); });
-    function centerFit(){
-      const vw=viewport.clientWidth, vh=viewport.clientHeight;
-      const s=Math.min(vw/state.natW, vh/state.natH)*FIT_FACTOR;
-      state.scale=s; state.tx=vw/2 - (state.natW*s)/2; state.ty=vh/2 - (state.natH*s)/2;
-    }
+    /* map viewer */
+    const viewport=document.getElementById('viewport'), mapInner=document.getElementById('mapInner'), mapImg=document.getElementById('mapImg');
+    const FIT_FACTOR=0.82;
+    const state={scale:1,minScale:.45,maxScale:3.5,tx:0,ty:0,drag:false,lastX:0,lastY:0,nw:1000,nh:1000};
+    mapImg.addEventListener('load',()=>{ state.nw=mapImg.naturalWidth; state.nh=mapImg.naturalHeight; centerFit(); apply(); });
+    function centerFit(){ const vw=viewport.clientWidth, vh=viewport.clientHeight;
+      const s=Math.min(vw/state.nw, vh/state.nh)*FIT_FACTOR; state.scale=s; state.tx=vw/2-(state.nw*s)/2; state.ty=vh/2-(state.nh*s)/2; }
     function apply(){ mapInner.style.transform=`translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`; }
     function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
-
-    viewport.addEventListener('pointerdown',e=>{ state.dragging=true; state.lastX=e.clientX; state.lastY=e.clientY; viewport.setPointerCapture(e.pointerId); });
-    viewport.addEventListener('pointermove',e=>{
-      if(!state.dragging) return;
-      const dx=e.clientX-state.lastX, dy=e.clientY-state.lastY;
-      state.tx+=dx; state.ty+=dy; state.lastX=e.clientX; state.lastY=e.clientY; apply();
-    });
-    viewport.addEventListener('pointerup',e=>{ state.dragging=false; viewport.releasePointerCapture(e.pointerId); });
-
-    viewport.addEventListener('wheel',e=>{
-      e.preventDefault();
-      const factor=(e.deltaY<0)?1.08:0.92;
-      const newScale=clamp(state.scale*factor, state.minScale, state.maxScale);
-      zoomAt(e.clientX,e.clientY,newScale);
-    },{passive:false});
-    function zoomAt(cx,cy,newScale){
-      const prev=state.scale; if(newScale===prev) return;
-      const rect=viewport.getBoundingClientRect();
-      const x=(cx-rect.left-state.tx)/prev; const y=(cy-rect.top-state.ty)/prev;
-      state.tx=cx-rect.left - x*newScale; state.ty=cy-rect.top - y*newScale;
-      state.scale=newScale; apply();
-    }
-    function resetView(){ centerFit(); apply(); }
-    viewport.addEventListener('dblclick', resetView);
-
-    let moved=false;
-    viewport.addEventListener('pointerdown',()=>{moved=false;});
-    viewport.addEventListener('pointermove',()=>{moved=true;});
-    viewport.addEventListener('click',e=>{ if(moved) return; if(e.target.closest('.chip, .seg')) return; spawnQuote(); });
+    viewport.addEventListener('pointerdown',e=>{state.drag=true; state.lastX=e.clientX; state.lastY=e.clientY; viewport.setPointerCapture(e.pointerId);});
+    viewport.addEventListener('pointermove',e=>{ if(!state.drag) return; const dx=e.clientX-state.lastX, dy=e.clientY-state.lastY; state.tx+=dx; state.ty+=dy; state.lastX=e.clientX; state.lastY=e.clientY; apply(); });
+    viewport.addEventListener('pointerup',e=>{state.drag=false; viewport.releasePointerCapture(e.pointerId);});
+    viewport.addEventListener('wheel',e=>{ e.preventDefault(); const f=(e.deltaY<0)?1.08:0.92; const ns=clamp(state.scale*f,state.minScale,state.maxScale); zoomAt(e.clientX,e.clientY,ns); },{passive:false});
+    function zoomAt(cx,cy,ns){ const ps=state.scale; if(ns===ps) return; const r=viewport.getBoundingClientRect(); const x=(cx-r.left-state.tx)/ps, y=(cy-r.top-state.ty)/ps; state.tx=cx-r.left-x*ns; state.ty=cy-r.top-y*ns; state.scale=ns; apply(); }
+    function resetView(){ centerFit(); apply(); } viewport.addEventListener('dblclick', resetView);
+    let moved=false; viewport.addEventListener('pointerdown',()=>{moved=false;}); viewport.addEventListener('pointermove',()=>{moved=true;});
+    viewport.addEventListener('click',e=>{ if(moved) return; if(e.target.closest('.chip,.seg')) return; spawnQuote(); });
     window.addEventListener('resize',()=>{ centerFit(); apply(); });
 
-    // ---------- Particles: EXACT SYMBOLS ----------
-    const palette = { gold:"#d4af37", leaf:"#b6a47a" };
+    /* particles — background snow-like fall with your symbols */
     const glyphs = ["✶","✷","✸","✹","✺","✧","✦","✳"];
     const runes  = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];
     const leaves = ["🍂","🍁"];
+    const palette={ gold:"#d4af37", leaf:"#b6a47a" };
 
-    // UI (no cycling)
-    const btnGlyphs = document.getElementById('btnGlyphs');
-    const btnRunes  = document.getElementById('btnRunes');
-    const btnLeaves = document.getElementById('btnLeaves');
-    const pauseBtn  = document.getElementById('pauseBtn');
-    const intensitySlider=document.getElementById('intensity');
-
-    let mode = "glyphs"; // default
-    function setMode(m){
-      mode = m;
-      [btnGlyphs,btnRunes,btnLeaves].forEach(b=>b.classList.remove('active'));
-      (m==="glyphs"?btnGlyphs: m==="runes"?btnRunes:btnLeaves).classList.add('active');
-      seed();
-    }
-    btnGlyphs.onclick=()=>setMode("glyphs");
-    btnRunes.onclick =()=>setMode("runes");
-    btnLeaves.onclick=()=>setMode("leaves");
-    pauseBtn.onclick =()=>{ paused=!paused; pauseBtn.textContent=paused?'Resume':'Pause'; };
-
-    let intensity=1, paused=false;
+    // buttons (no cycling)
+    const btnGlyphs=document.getElementById('btnGlyphs'), btnRunes=document.getElementById('btnRunes'), btnLeaves=document.getElementById('btnLeaves');
+    const pauseBtn=document.getElementById('pauseBtn'), intensitySlider=document.getElementById('intensity');
+    let mode="glyphs", paused=false, intensity=1;
+    function setMode(m){ mode=m; [btnGlyphs,btnRunes,btnLeaves].forEach(b=>b.classList.remove('active')); (m==="glyphs"?btnGlyphs:m==="runes"?btnRunes:btnLeaves).classList.add('active'); seed(); }
+    btnGlyphs.onclick=()=>setMode("glyphs"); btnRunes.onclick=()=>setMode("runes"); btnLeaves.onclick=()=>setMode("leaves");
+    pauseBtn.onclick=()=>{ paused=!paused; pauseBtn.textContent=paused?'Resume':'Pause'; };
     intensitySlider.oninput=e=>{ intensity=+e.target.value; seed(); };
 
-    // Canvas (hi-DPI so symbols are crisp)
-    const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
-    let W=0,H=0;
-    function resizeCanvas(){
-      const dpr = Math.min(window.devicePixelRatio||1, 2);
-      canvas.width  = Math.floor(innerWidth * dpr);
-      canvas.height = Math.floor(innerHeight * dpr);
-      canvas.style.width  = innerWidth + "px";
-      canvas.style.height = innerHeight + "px";
-      ctx.setTransform(dpr,0,0,dpr,0,0);
-      W = innerWidth; H = innerHeight;
-      seed();
+    // hi-DPI canvas so text is crisp
+    const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d'); let W=0,H=0;
+    function resizeCanvas(){ const dpr=Math.min(window.devicePixelRatio||1,2);
+      canvas.width=Math.floor(innerWidth*dpr); canvas.height=Math.floor(innerHeight*dpr);
+      canvas.style.width=innerWidth+"px"; canvas.style.height=innerHeight+"px"; ctx.setTransform(dpr,0,0,dpr,0,0); W=innerWidth; H=innerHeight; seed(); }
+    window.addEventListener('resize',resizeCanvas); resizeCanvas();
+
+    // natural snow params
+    const DENSITY=[140,220,320];    // how many symbols
+    const SIZE   =[18,22,28];       // font size px
+    const SPEEDY =[0.35,0.5,0.7];   // base fall speed
+
+    let parts=[], t=0;
+    function pick(a){ return a[(Math.random()*a.length)|0]; }
+    function fontFor(m,px){
+      return m==="leaves"
+        ? `${px}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla","Segoe UI Symbol",sans-serif`
+        : `${px}px "Noto Sans Symbols 2","Segoe UI Symbol","Symbola","Noto Sans Runic","Noto Sans","IM Fell English",serif`;
     }
-    window.addEventListener('resize', resizeCanvas); resizeCanvas();
-
-    // Band parameters (together-fall)
-    const DENSITY = [140, 220, 320];
-    const SIZE    = [18, 22, 28];           // font px for glyphs/runes; emojis will scale similarly
-    const SPEEDY  = [0.35, 0.50, 0.70];     // downward speed
-    const STREAMS = [6, 9, 12];             // how many bands
-
-    let parts=[], bandY=[], bandVy=[], windPhase=0;
-
-    function pick(arr){ return arr[(Math.random()*arr.length)|0]; }
 
     function seed(){
-      const count = DENSITY[intensity];
-      const bands = STREAMS[intensity];
-      parts.length=0; bandY.length=0; bandVy.length=0;
-
-      for(let b=0;b<bands;b++){
-        bandY[b] = Math.random()*H;
-        bandVy[b] = SPEEDY[intensity]*(0.9 + Math.random()*0.2);
-      }
+      const count=DENSITY[intensity]; parts.length=0;
       for(let i=0;i<count;i++){
-        const b = i % bands;
-        parts.push(makeP(b));
+        parts.push({
+          x: Math.random()*W,
+          y: Math.random()*H,
+          vx: (Math.random()-0.5)*0.15,                       // slight horizontal drift
+          vy: SPEEDY[intensity]*(0.8+Math.random()*0.6),       // natural fall
+          s:  SIZE[intensity]*(0.9+Math.random()*0.6),
+          a:  0.85,                                            // fully visible
+          swayA: Math.random()*2*Math.PI,                      // personal sway phase
+          swayS: 0.4 + Math.random()*0.8,                      // sway strength
+          rot: Math.random()*Math.PI*2,
+          rv:  (Math.random()-0.5)*0.02,
+          char: mode==="glyphs"?pick(glyphs): mode==="runes"?pick(runes): pick(leaves)
+        });
       }
-    }
-
-    function fontFor(mode, px){
-      // emoji + symbols + runic stacks
-      const stack = mode==="leaves"
-        ? `"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla","Segoe UI Symbol","Symbola",sans-serif`
-        : `"Noto Sans Symbols 2","Segoe UI Symbol","Symbola","Noto Sans Runic","Noto Sans","IM Fell English",serif`;
-      return `${px}px ${stack}`;
-    }
-
-    function makeP(band){
-      return {
-        band,
-        x: Math.random()*W,
-        offY: (Math.random()*24 - 12),
-        vx: (Math.random()-0.5) * 0.18,
-        s:  SIZE[intensity] * (0.9 + Math.random()*0.6),
-        a:  0.75 + Math.random()*0.25,
-        rot: (Math.random()*Math.PI*2),
-        rv:  (Math.random()-0.5) * 0.02,
-        char: (mode==="glyphs"? pick(glyphs) : mode==="runes"? pick(runes) : pick(leaves))
-      };
     }
 
     function step(){
       requestAnimationFrame(step);
       if(paused) return;
-
+      t += 0.016; // ~60fps tick
       ctx.clearRect(0,0,W,H);
 
-      // shared wind so bands drift together
-      windPhase += 0.003;
-      const wind = Math.sin(windPhase) * 0.25;
-
-      // update bands (fall together)
-      for(let b=0;b<bandY.length;b++){
-        bandY[b] += bandVy[b];
-        if(bandY[b] > H + 24) bandY[b] = -24;
-      }
-
-      // draw
       ctx.textAlign="center"; ctx.textBaseline="middle";
-      for(let i=0;i<parts.length;i++){
-        const p = parts[i];
-        p.x += p.vx + wind * 0.6;
+      for(const p of parts){
+        // sinusoidal side-to-side sway + slight global breeze
+        const breeze = Math.sin(t*0.15)*0.2;
+        p.x += p.vx + Math.sin(t*0.9 + p.swayA) * p.swayS + breeze;
+        p.y += p.vy;
         p.rot += p.rv;
-        if(p.x < -20) p.x = W + 20;
-        if(p.x > W + 20) p.x = -20;
 
-        const y = bandY[p.band] + p.offY;
+        // wrap
+        if(p.y > H + 30){ p.y = -30; p.x = Math.random()*W; }
+        if(p.x < -30) p.x = W + 30;
+        if(p.x > W + 30) p.x = -30;
 
-        ctx.save();
-        ctx.translate(p.x, y);
-        ctx.rotate(p.rot);
-
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.rot);
         if(mode==="leaves"){
           ctx.font = fontFor("leaves", p.s);
-          ctx.globalAlpha = 1; // keep emoji crisp
-          ctx.fillText(p.char, 0, 0);
-        }else if(mode==="glyphs"){
-          ctx.font = fontFor("glyphs", p.s);
           ctx.globalAlpha = 1;
-          ctx.fillStyle = palette.gold;
           ctx.fillText(p.char, 0, 0);
-          // subtle stroke for contrast
-          ctx.strokeStyle="rgba(0,0,0,0.35)";
-          ctx.lineWidth=1;
-          ctx.strokeText(p.char, 0, 0);
-        }else{ // runes
-          ctx.font = fontFor("runes", p.s);
+        }else{
+          ctx.font = fontFor(mode, p.s);
           ctx.globalAlpha = 1;
           ctx.fillStyle = palette.gold;
           ctx.fillText(p.char, 0, 0);
