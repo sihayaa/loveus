@@ -33,9 +33,10 @@
     .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2)}
 
     /* map */
-    .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none}
+    .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none; cursor:grab}
+    .viewport.dragging{cursor:grabbing}
     .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
-    .map-img{display:block; width:100%; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
+    .map-img{display:block; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
 
     /* pins */
     .pins{position:absolute; inset:0; z-index:6; pointer-events:none}
@@ -141,21 +142,56 @@ const FIT = 0.82;
 const ZOOM_SMOOTH = 0.24;
 const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.45, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
 
-mapImg.addEventListener('load', ()=>{ cam.natW = mapImg.naturalWidth || cam.natW; cam.natH = mapImg.naturalHeight || cam.natH; centerFit(); renderPins(); setZoomVar(); });
-
-function centerFit(){ const vw=viewport.clientWidth, vh=viewport.clientHeight; const s=Math.min(vw/cam.natW, vh/cam.natH)*FIT;
-  cam.s=cam.ts=s; cam.x=cam.tx=vw/2-(cam.natW*s)/2; cam.y=cam.ty=vh/2-(cam.nh*s)/2; applyCam(); }
+mapImg.addEventListener('load', ()=>{
+  cam.natW = mapImg.naturalWidth || cam.natW;
+  cam.natH = mapImg.naturalHeight || cam.natH;
+  // lock DOM image size; all scaling via transform
+  mapImg.style.width  = cam.natW + 'px';
+  mapImg.style.height = 'auto';
+  centerFit(); renderPins(); setZoomVar();
+});
+function centerFit(){
+  const vw = viewport.clientWidth, vh = viewport.clientHeight;
+  const s  = Math.min(vw/cam.natW, vh/cam.natH) * FIT;
+  cam.s = cam.ts = s;
+  cam.x = cam.tx = vw/2 - (cam.natW*s)/2;
+  cam.y = cam.ty = vh/2 - (cam.natH*s)/2;  // ✅ correct (was cam.nh)
+  applyCam();
+}
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function applyCam(){ mapInner.style.transform = `matrix(${cam.s},0,0,${cam.s},${cam.x},${cam.y})`; }
 function setZoomVar(){ document.documentElement.style.setProperty('--zoom', cam.s.toFixed(3)); }
-function zoomAt(cx,cy,newScale){ newScale=clamp(newScale, cam.sMin, cam.sMax); const r=viewport.getBoundingClientRect();
-  const wx=(cx-r.left-cam.x)/cam.s, wy=(cy-r.top-cam.y)/cam.s; cam.ts=newScale; cam.tx=cx-r.left-wx*newScale; cam.ty=cy-r.top-wy*newScale; }
-
-viewport.addEventListener('pointerdown', e=>{ cam.dragging=true; cam.lx=e.clientX; cam.ly=e.clientY; viewport.setPointerCapture(e.pointerId); });
+function zoomAt(cx,cy,newScale){
+  newScale = clamp(newScale, cam.sMin, cam.sMax);
+  const r = viewport.getBoundingClientRect();
+  const wx = (cx - r.left - cam.x) / cam.s;
+  const wy = (cy - r.top  - cam.y) / cam.s;
+  cam.ts = newScale;
+  cam.tx = cx - r.left - wx * newScale;
+  cam.ty = cy - r.top  - wy * newScale;
+}
+viewport.addEventListener('pointerdown', e=>{
+  cam.dragging = true; moved = false;
+  cam.lx = e.clientX; cam.ly = e.clientY;
+  viewport.classList.add('dragging');
+  viewport.setPointerCapture(e.pointerId);
+});
 let moved=false;
-viewport.addEventListener('pointermove', e=>{ if(!cam.dragging) return; const dx=e.clientX-cam.lx, dy=e.clientY-cam.ly; moved=moved||Math.hypot(dx,dy)>2; cam.tx+=dx; cam.ty+=dy; cam.lx=e.clientX; cam.ly=e.clientY; });
-viewport.addEventListener('pointerup', e=>{ cam.dragging=false; viewport.releasePointerCapture(e.pointerId); });
-viewport.addEventListener('wheel', e=>{ e.preventDefault(); const factor=(e.deltaY<0)?1.08:0.92; zoomAt(e.clientX,e.clientY, cam.ts*factor); }, {passive:false});
+viewport.addEventListener('pointermove', e=>{
+  if(!cam.dragging) return;
+  const dx=e.clientX-cam.lx, dy=e.clientY-cam.ly; moved = moved || Math.hypot(dx,dy)>2;
+  cam.tx+=dx; cam.ty+=dy; cam.lx=e.clientX; cam.ly=e.clientY;
+});
+viewport.addEventListener('pointerup', e=>{
+  cam.dragging = false;
+  viewport.classList.remove('dragging');
+  viewport.releasePointerCapture(e.pointerId);
+});
+viewport.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const factor=(e.deltaY<0)?1.08:0.92;
+  zoomAt(e.clientX,e.clientY, cam.ts*factor);
+},{passive:false});
 function resetView(){ centerFit(); renderPins(); }
 
 let lastCam = performance.now();
@@ -169,7 +205,7 @@ requestAnimationFrame(animateCam);
 addEventListener('resize', ()=>{ centerFit(); renderPins(); });
 
 /* ========= Lightweight snowfall (fast) + magic burst ========= */
-const GOLD="#d4af37"; const BLUE="#74d3ff";
+const GOLD="#d4af37", BLUE="#74d3ff";
 const glyphs=["✶","✷","✸","✹","✺","✧","✦","✳"], runes=["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"]; const SYMBOLS=glyphs.concat(runes);
 const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
 let W=0,H=0;
@@ -204,22 +240,17 @@ function doorMagic(strength=1){
     magic.push({ x:cx,y:cy, vx:Math.cos(ang)*speed, vy:Math.sin(ang)*speed, life:1.2, sprite:getMagicSprite(glyphs[i%glyphs.length], size) });
   }
 }
-
 let last = performance.now(); document.addEventListener('visibilitychange',()=>{ last=performance.now(); });
 function snow(now){ requestAnimationFrame(snow); if(document.hidden){ last=now; return; }
   let dt=(now-last)/16.6667; dt=Math.max(.5,Math.min(dt,1.2)); last=now;
   ctx.clearRect(0,0,W,H);
   const breeze=Math.sin(now*.00035)*DRIFT;
-
-  // flakes
   for(let i=0;i<flakes.length;i++){ const f=flakes[i];
     f.sway+=f.rate*.02*dt; f.x+=(Math.sin(f.sway)*(DRIFT*.9)+breeze)*dt*16; f.y+=f.vy*dt;
     if(f.y>H+EDGE){ const nf=makeFlake(); nf.y=-EDGE; flakes[i]=nf; continue; }
     if(f.x<-EDGE) f.x=W+EDGE; if(f.x>W+EDGE) f.x=-EDGE;
     const s=f.sprite; ctx.globalAlpha=f.alpha; ctx.drawImage(s, f.x-s.width/2, f.y-s.height/2);
   }
-
-  // magic burst
   for(let i=magic.length-1;i>=0;i--){
     const m=magic[i];
     m.x += m.vx*dt*10; m.y += m.vy*dt*10; m.life -= 0.03*dt;
@@ -235,17 +266,21 @@ requestAnimationFrame(snow);
 const pinsEl=document.getElementById('pins'); const pinBtn=document.getElementById('pinBtn'); const hint=document.getElementById('pinHint'); const exitSecretBtn=document.getElementById('exitSecretBtn');
 let addingPin=false, addingSecret=false, secretView=false;
 
-function togglePinMode(on){ addingPin=(on!=null)?on:!addingPin; addingSecret=false;
-  pinBtn.textContent=addingPin?"✅ Place pin":"📍 Pin it"; hint.textContent="Pin mode: click anywhere on the map";
-  hint.classList.toggle('on', addingPin); viewport.style.cursor=addingPin?"crosshair":"grab"; }
-
+function togglePinMode(on){
+  addingPin = (on!=null)?on:!addingPin; addingSecret=false;
+  pinBtn.textContent = addingPin ? "✅ Place pin" : "📍 Pin it";
+  hint.textContent = "Pin mode: click anywhere on the map";
+  hint.classList.toggle('on', addingPin);
+  viewport.style.cursor = addingPin ? "crosshair" : "grab";
+}
 pinBtn.addEventListener('click',()=>{ if(secretView) return; togglePinMode(); });
-exitSecretBtn.addEventListener('click',()=>{ secretView=false; exitSecretBtn.style.display="none"; pinBtn.disabled=false; doorMagic(0.6); renderPins(); });
+exitSecretBtn.addEventListener('click',()=>{
+  secretView=false; exitSecretBtn.style.display="none"; pinBtn.disabled=false; doorMagic(0.6); renderPins();
+});
 
 /* Secret codes: 1013 (add secret pin), 101324 (enter secret view) */
 let codeBuf="";
 document.addEventListener('keydown', (e)=>{
-  // ignore when typing in fields
   const t=e.target.tagName; if(t==="INPUT"||t==="TEXTAREA") return;
   if(!/^\d$/.test(e.key)) return;
   codeBuf=(codeBuf+e.key).slice(-6);
@@ -291,9 +326,9 @@ function renderPins(){
     const tip=document.createElement('div'); tip.className='pintip'; tip.textContent=p.title; tip.style.display='none';
     el.addEventListener('mouseenter',()=>tip.style.display='block');
     el.addEventListener('mouseleave',()=>tip.style.display='none');
-
     el.addEventListener('click',(e)=>{ if(addingPin||addingSecret){ e.stopPropagation(); return; } e.stopPropagation(); openViewPin(p); });
-    el.appendChild(tip); pinsEl.appendChild(el);
+
+    pinsEl.appendChild(el); el.appendChild(tip);
   }
 }
 
@@ -302,14 +337,18 @@ const modalAdd=document.getElementById('modalAdd'); const aTitle=document.getEle
 const aFile=document.getElementById('aFile'); const aCancel=document.getElementById('aCancel'); const aSave=document.getElementById('aSave');
 let pendingCoord=null, pendingSecret=false;
 
-function openAdd(title="Add Pin", isSecret=false){ document.getElementById('addTitle').textContent=title; pendingSecret=isSecret;
-  modalAdd.classList.add('on'); modalAdd.setAttribute('aria-hidden','false'); }
-function closeAdd(){ modalAdd.classList.remove('on'); modalAdd.setAttribute('aria-hidden','true'); aTitle.value=""; aCaption.value=""; aFile.value=""; pendingCoord=null; pendingSecret=false; }
+function openAdd(title="Add Pin", isSecret=false){
+  document.getElementById('addTitle').textContent=title; pendingSecret=isSecret;
+  modalAdd.classList.add('on'); modalAdd.setAttribute('aria-hidden','false');
+}
+function closeAdd(){
+  modalAdd.classList.remove('on'); modalAdd.setAttribute('aria-hidden','true');
+  aTitle.value=""; aCaption.value=""; aFile.value=""; pendingCoord=null; pendingSecret=false;
+}
 aCancel.addEventListener('click', closeAdd);
 modalAdd.addEventListener('click', (e)=>{ if(e.target===modalAdd) closeAdd(); });
 document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAdd(); closeView(); }});
 
-/* click to place (normal or secret) */
 viewport.addEventListener('click', async (e)=>{
   if(moved){ moved=false; return; }
   if(!(addingPin||addingSecret)) return;
@@ -319,15 +358,19 @@ viewport.addEventListener('click', async (e)=>{
   addingPin=false; addingSecret=false; hint.classList.remove('on'); viewport.style.cursor="grab";
   pinBtn.textContent="📍 Pin it";
 });
-
-function screenToNorm(cx,cy){ const r=viewport.getBoundingClientRect(); const px=(cx-r.left-cam.x)/cam.s, py=(cy-r.top-cam.y)/cam.s;
-  return { x:Math.min(1,Math.max(0,px/cam.natW)), y:Math.min(1,Math.max(0,py/cam.natH)) }; }
+function screenToNorm(cx,cy){
+  const r=viewport.getBoundingClientRect();
+  const px=(cx-r.left-cam.x)/cam.s, py=(cy-r.top-cam.y)/cam.s;
+  return { x:Math.min(1,Math.max(0,px/cam.natW)), y:Math.min(1,Math.max(0,py/cam.natH)) };
+}
 
 aSave.addEventListener('click', async ()=>{
   if(!pendingCoord){ closeAdd(); return; }
   if(!aTitle.value.trim()){ aTitle.focus(); return; }
   let photo=null;
-  if(aFile.files && aFile.files[0]){ photo={ kind:"data", value: await fileToDataURLResized(aFile.files[0], 1280, 0.85) }; }
+  if(aFile.files && aFile.files[0]){
+    photo={ kind:"data", value: await fileToDataURLResized(aFile.files[0], 1280, 0.85) };
+  }
   const pin={
     id:"p_"+Date.now(),
     x:pendingCoord.x, y:pendingCoord.y,
@@ -357,8 +400,12 @@ function openViewPin(pin){
   if(pin.caption && pin.caption.trim()){ viewCaptionRow.style.display='flex'; viewCaptionText.textContent=pin.caption.trim(); }
   else{ viewCaptionRow.style.display='none'; viewCaptionText.textContent=""; }
   viewImageWrap.innerHTML = "";
-  if(pin.photo && pin.photo.value){ const img=new Image(); img.loading="lazy"; img.style.maxWidth="100%"; img.style.borderRadius="8px"; img.alt=pin.title||"Pin image"; img.src=pin.photo.value; viewImageWrap.appendChild(img); }
-  else { const ph=document.createElement('div'); ph.style.cssText="opacity:.7;padding-top:7px"; ph.textContent="No image"; viewImageWrap.appendChild(ph); }
+  if(pin.photo && pin.photo.value){
+    const img=new Image(); img.loading="lazy"; img.style.maxWidth="100%"; img.style.borderRadius="8px"; img.alt=pin.title||"Pin image"; img.src=pin.photo.value;
+    viewImageWrap.appendChild(img);
+  } else {
+    const ph=document.createElement('div'); ph.style.cssText="opacity:.7;padding-top:7px"; ph.textContent="No image"; viewImageWrap.appendChild(ph);
+  }
   modalView.classList.add('on'); modalView.setAttribute('aria-hidden','false');
 }
 function closeView(){ modalView.classList.remove('on'); modalView.setAttribute('aria-hidden','true'); }
