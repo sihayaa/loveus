@@ -9,6 +9,7 @@
     :root{
       --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a;
       --shadow:0 18px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+      --zoom:1;
     }
     *{box-sizing:border-box} html,body{height:100%}
     body{
@@ -16,11 +17,15 @@
       background: radial-gradient(1200px 800px at 70% 10%, #2a221b, #15100b 70%, #0d0a07 100%), var(--bg);
       color:var(--ink); font-family: ui-serif, Georgia, "Times New Roman", serif;
     }
-    /* particles BEHIND the map */
+
+    /* particles behind the map */
     #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
 
-    /* Header */
-    .topbar{position:fixed; inset:12px 12px auto 12px; z-index:10; display:flex; gap:12px; align-items:center}
+    /* top bar */
+    .topbar{
+      position:fixed; inset:12px 12px auto 12px; z-index:12;
+      display:flex; gap:12px; align-items:center;
+    }
     .chip{
       display:inline-flex; align-items:center; gap:8px; padding:7px 10px;
       border:1px solid rgba(191,163,90,.5); border-radius:10px;
@@ -33,7 +38,7 @@
       letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2);
     }
 
-    /* Map viewer (over particles) */
+    /* map viewer (over particles) */
     .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none}
     .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
     .map-img{
@@ -41,24 +46,92 @@
       filter:contrast(1.02) brightness(.96) sepia(.08);
       box-shadow:var(--shadow); border-radius:4px;
     }
+
+    /* pins layer (inside map-inner so it follows panning/zoom) */
+    .pins{position:absolute; inset:0; z-index:6; pointer-events:none}
+    .pin{
+      position:absolute; pointer-events:auto; cursor:pointer;
+      transform:translate(-50%,-100%) scale(calc(1/var(--zoom)));
+      width:24px; height:24px; border-radius:50%;
+      background:radial-gradient(circle at 45% 40%, #e9d487, #c9a84b 60%, #7b6230 100%);
+      box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.45);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .pin span{font-size:14px; line-height:1; color:#281f11}
+    .pin:hover{box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 0 12px rgba(212,175,55,.45)}
+    .pintip{
+      position:absolute; transform:translate(-50%,-120%);
+      background:rgba(40,30,22,.92); color:#d7c6a3;
+      border:1px solid rgba(191,163,90,.55); border-radius:8px; padding:4px 8px;
+      font-size:12px; white-space:nowrap; pointer-events:none;
+    }
+
+    /* pin mode hint */
+    .hint{
+      position:fixed; right:16px; top:58px; z-index:12;
+      background:rgba(40,30,22,.92); border:1px solid rgba(191,163,90,.5);
+      color:#d7c6a3; border-radius:10px; padding:8px 10px; font-size:12px;
+      display:none;
+    }
+    .hint.on{display:block}
+
+    /* modal */
+    .modal{
+      position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.55);
+    }
+    .modal.on{display:flex}
+    .panel{
+      width:min(520px, 92vw); max-height:85vh; overflow:auto;
+      background:linear-gradient(#2a221b,#1e1812);
+      border:1px solid rgba(191,163,90,.55); border-radius:14px; box-shadow:var(--shadow);
+      padding:16px; color:#e7dbc3;
+    }
+    .panel h3{margin:0 0 10px; font-family:"Cinzel",serif; letter-spacing:.4px}
+    .row{display:flex; gap:10px; margin:8px 0}
+    .row label{width:90px; opacity:.9; font-size:13px; padding-top:7px}
+    .row input[type="text"], .row input[type="date"], .row input[type="url"], .row textarea{
+      flex:1; background:#1b1510; color:#e7dbc3; border:1px solid rgba(191,163,90,.45);
+      border-radius:8px; padding:8px 10px; font-size:14px;
+    }
+    .row input[type="file"]{flex:1; color:#e7dbc3}
+    .actions{display:flex; gap:8px; justify-content:flex-end; margin-top:12px}
+    .btn{padding:8px 12px; border-radius:10px; border:1px solid rgba(191,163,90,.55); background:#2b221a; color:#e7dbc3; cursor:pointer}
+    .btn.primary{background:#3a2e21}
+    .btn:hover{filter:brightness(1.06)}
   </style>
 </head>
 <body>
-  <!-- background particles -->
   <canvas id="particles"></canvas>
 
-  <!-- header -->
   <div class="topbar">
     <a class="chip" href="javascript:history.back()">⟵ Back Home</a>
     <div class="title">MIDDLE-EARTH MAP</div>
+    <button id="pinBtn" class="chip">📍 Pin it</button>
     <a class="chip" href="#" onclick="resetView(); return false;">Reset View</a>
   </div>
+  <div id="pinHint" class="hint">Pin mode: click anywhere on the map</div>
 
-  <!-- map -->
   <div id="viewport" class="viewport">
     <div id="mapInner" class="map-inner">
       <img id="mapImg" class="map-img" alt="Map"
            src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem_map.png" />
+      <div id="pins" class="pins"></div>
+    </div>
+  </div>
+
+  <!-- modal (add / view) -->
+  <div id="modal" class="modal" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="mTitle">
+      <h3 id="mTitle">Add Pin</h3>
+      <div class="row"><label>Caption</label><input id="mCaption" type="text" placeholder="Write a caption..." /></div>
+      <div class="row"><label>Date</label><input id="mDate" type="date" /></div>
+      <div class="row"><label>Photo</label><input id="mFile" type="file" accept="image/*" /></div>
+      <div class="row"><label>or URL</label><input id="mURL" type="url" placeholder="https://..." /></div>
+      <div class="actions">
+        <button class="btn" id="mCancel">Cancel</button>
+        <button class="btn primary" id="mSave">Save Pin</button>
+      </div>
     </div>
   </div>
 
@@ -69,13 +142,13 @@ const mapInner = document.getElementById('mapInner');
 const mapImg   = document.getElementById('mapImg');
 
 const FIT = 0.82;
-const ZOOM_SMOOTH = 0.24; // 0.18–0.3
+const ZOOM_SMOOTH = 0.24;
 const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.45, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
 
 mapImg.addEventListener('load', ()=>{
   cam.natW = mapImg.naturalWidth || cam.natW;
   cam.natH = mapImg.naturalHeight || cam.natH;
-  centerFit();
+  centerFit(); renderPins(); setZoomVar();
 });
 function centerFit(){
   const vw=viewport.clientWidth, vh=viewport.clientHeight;
@@ -87,6 +160,7 @@ function centerFit(){
 }
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function applyCam(){ mapInner.style.transform = `matrix(${cam.s},0,0,${cam.s},${cam.x},${cam.y})`; }
+function setZoomVar(){ document.documentElement.style.setProperty('--zoom', cam.s.toFixed(3)); }
 function zoomAt(cx,cy,newScale){
   newScale = clamp(newScale, cam.sMin, cam.sMax);
   const r = viewport.getBoundingClientRect();
@@ -97,9 +171,10 @@ function zoomAt(cx,cy,newScale){
   cam.ty = cy - r.top  - wy * newScale;
 }
 viewport.addEventListener('pointerdown', e=>{ cam.dragging=true; cam.lx=e.clientX; cam.ly=e.clientY; viewport.setPointerCapture(e.pointerId); });
+let moved=false;
 viewport.addEventListener('pointermove', e=>{
   if(!cam.dragging) return;
-  const dx=e.clientX-cam.lx, dy=e.clientY-cam.ly;
+  const dx=e.clientX-cam.lx, dy=e.clientY-cam.ly; moved = moved || Math.hypot(dx,dy)>2;
   cam.tx+=dx; cam.ty+=dy; cam.lx=e.clientX; cam.ly=e.clientY;
 });
 viewport.addEventListener('pointerup', e=>{ cam.dragging=false; viewport.releasePointerCapture(e.pointerId); });
@@ -108,10 +183,8 @@ viewport.addEventListener('wheel', e=>{
   const factor=(e.deltaY<0)?1.08:0.92;
   zoomAt(e.clientX,e.clientY, cam.ts*factor);
 },{passive:false});
-function resetView(){ centerFit(); }
-addEventListener('resize', ()=>{ centerFit(); });
+function resetView(){ centerFit(); renderPins(); }
 
-// camera easing (dt-clamped so it never jumps after background tab)
 let lastCam = performance.now();
 function animateCam(now){
   const dt = Math.min( (now - lastCam) / 16.6667, 2 );
@@ -120,24 +193,19 @@ function animateCam(now){
   cam.x += (cam.tx - cam.x) * t;
   cam.y += (cam.ty - cam.y) * t;
   cam.s += (cam.ts - cam.s) * t;
-  applyCam();
+  applyCam(); setZoomVar();
   requestAnimationFrame(animateCam);
 }
 requestAnimationFrame(animateCam);
+addEventListener('resize', ()=>{ centerFit(); renderPins(); });
 
-/* ========= Lightweight snowfall (runes + star glyphs only) ========= */
-/* No emoji leaves, no glowing embers, no per-frame text drawing.
-   Each symbol is pre-rendered once to a tiny canvas sprite and then blitted. */
-
+/* ========= Lightweight snowfall (kept) ========= */
 const GOLD = "#d4af37";
 const glyphs = ["✶","✷","✸","✹","✺","✧","✦","✳"];
 const runes  = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];
 const SYMBOLS = glyphs.concat(runes);
-
 const canvas = document.getElementById('particles');
 const ctx    = canvas.getContext('2d');
-
-// modest DPR cap keeps it crisp but fast
 let W=0,H=0;
 function sizeCanvas(){
   const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
@@ -149,86 +217,173 @@ function sizeCanvas(){
   W = innerWidth; H = innerHeight;
 }
 addEventListener('resize', sizeCanvas); sizeCanvas();
-
-/* Tweak these */
-const FLAKE_COUNT = 220;   // density (160–280)
-const FALL_SPEED  = 2.4;   // overall fall speed
-const DRIFT       = 0.35;  // horizontal sway (0.25–0.45)
-const EDGE        = 100;   // off-screen spawn/wrap bleed
-
-/* Sprite cache: key = "char@size" => canvas */
+const FLAKE_COUNT = 220, FALL_SPEED = 2.4, DRIFT = 0.35, EDGE = 100;
 const spriteCache = new Map();
 function getSprite(char, size){
-  const key = char+"@"+size;
-  if (spriteCache.has(key)) return spriteCache.get(key);
-  const pad = Math.ceil(size*0.55);
-  const s   = document.createElement('canvas');
-  s.width = s.height = size + pad*2;
-  const c = s.getContext('2d');
-  c.textAlign="center"; c.textBaseline="middle";
+  const key = char+"@"+size; if (spriteCache.has(key)) return spriteCache.get(key);
+  const pad = Math.ceil(size*0.55), s=document.createElement('canvas'); s.width=s.height=size+pad*2;
+  const c=s.getContext('2d'); c.textAlign="center"; c.textBaseline="middle";
   c.font = `${size}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Symbol","Symbola","Noto Sans",serif`;
-  // one-time paint (fill + thin stroke) into the sprite
-  c.fillStyle = GOLD;
-  c.fillText(char, s.width/2, s.height/2);
-  c.strokeStyle = "rgba(0,0,0,0.28)";
-  c.lineWidth = Math.max(1, size*0.06);
-  c.strokeText(char, s.width/2, s.height/2);
-  spriteCache.set(key, s);
-  return s;
+  c.fillStyle = GOLD; c.fillText(char, s.width/2, s.height/2);
+  c.strokeStyle="rgba(0,0,0,.28)"; c.lineWidth=Math.max(1,size*0.06); c.strokeText(char, s.width/2, s.height/2);
+  spriteCache.set(key,s); return s;
 }
-
-/* Particles */
-const flakes = [];
-function makeFlake(){
-  const char = SYMBOLS[(Math.random()*SYMBOLS.length)|0];
-  const size = Math.round(16 + Math.random()*10); // 16..26px
-  const sprite = getSprite(char, size);
-  return {
-    x: Math.random()*(W+EDGE*2) - EDGE,
-    y: -20 - Math.random()*(H+EDGE),
-    vy: (0.6 + Math.random()*0.5) * FALL_SPEED,     // natural, a bit varied
-    swayPhase: Math.random()*Math.PI*2,
-    swaySpeed: 0.8 + Math.random()*0.6,             // individual sway rate
-    alpha: 0.95,
-    sprite
-  };
-}
+const flakes=[]; function makeFlake(){ const ch=SYMBOLS[(Math.random()*SYMBOLS.length)|0]; const sz=Math.round(16+Math.random()*10);
+  return { x:Math.random()*(W+EDGE*2)-EDGE, y:-20-Math.random()*(H+EDGE), vy:(0.6+Math.random()*0.5)*FALL_SPEED,
+           sway:Math.random()*Math.PI*2, rate:0.8+Math.random()*0.6, alpha:.95, sprite:getSprite(ch,sz) }; }
 for(let i=0;i<FLAKE_COUNT;i++) flakes.push(makeFlake());
-
-// freeze sim while tab hidden so it never “jumps”
-let last = performance.now();
-document.addEventListener('visibilitychange', ()=>{ last = performance.now(); });
-
-function step(now){
-  requestAnimationFrame(step);
-  if (document.hidden) { last = now; return; }
-  let dt = (now - last) / 16.6667;             // 60fps units
-  dt = Math.max(0.5, Math.min(dt, 1.2));       // clamp for stability
-  last = now;
-
-  ctx.clearRect(0,0,W,H);
-
-  const breeze = Math.sin(now * 0.00035) * DRIFT; // shared wind
-
-  for (let i=0;i<flakes.length;i++){
-    const f = flakes[i];
-    f.swayPhase += f.swaySpeed * 0.02 * dt;
-    f.x += (Math.sin(f.swayPhase) * (DRIFT*0.9) + breeze) * dt * 16;
-    f.y += f.vy * dt;
-
-    // wrap with bleed
-    if (f.y > H + EDGE){ const nf = makeFlake(); nf.y = -EDGE; flakes[i] = nf; continue; }
-    if (f.x < -EDGE) f.x = W + EDGE;
-    if (f.x > W + EDGE) f.x = -EDGE;
-
-    // draw pre-rendered sprite (no save/restore, no text layout)
-    const s = f.sprite;
-    ctx.globalAlpha = f.alpha;
-    ctx.drawImage(s, f.x - s.width/2, f.y - s.height/2);
-  }
-  ctx.globalAlpha = 1;
+let last = performance.now(); document.addEventListener('visibilitychange',()=>{ last = performance.now(); });
+function snow(now){ requestAnimationFrame(snow);
+  if(document.hidden){ last=now; return; } let dt=(now-last)/16.6667; dt=Math.max(.5,Math.min(dt,1.2)); last=now;
+  ctx.clearRect(0,0,W,H); const breeze=Math.sin(now*.00035)*DRIFT;
+  for(let i=0;i<flakes.length;i++){ const f=flakes[i]; f.sway+=f.rate*.02*dt; f.x+=(Math.sin(f.sway)*(DRIFT*.9)+breeze)*dt*16; f.y+=f.vy*dt;
+    if(f.y>H+EDGE){ const nf=makeFlake(); nf.y=-EDGE; flakes[i]=nf; continue; } if(f.x<-EDGE) f.x=W+EDGE; if(f.x>W+EDGE) f.x=-EDGE;
+    const s=f.sprite; ctx.globalAlpha=f.alpha; ctx.drawImage(s, f.x-s.width/2, f.y-s.height/2); }
+  ctx.globalAlpha=1;
 }
-requestAnimationFrame(step);
+requestAnimationFrame(snow);
+
+/* ========= Pins ========= */
+const pinsEl = document.getElementById('pins');
+const pinBtn = document.getElementById('pinBtn');
+const hint   = document.getElementById('pinHint');
+let addingPin = false;
+function togglePinMode(on){
+  addingPin = on!=null ? on : !addingPin;
+  pinBtn.textContent = addingPin ? "✅ Place pin" : "📍 Pin it";
+  hint.classList.toggle('on', addingPin);
+  viewport.style.cursor = addingPin ? "crosshair" : "grab";
+}
+pinBtn.addEventListener('click', ()=> togglePinMode());
+
+/* Modal elements */
+const modal   = document.getElementById('modal');
+const mTitle  = document.getElementById('mTitle');
+const mCaption= document.getElementById('mCaption');
+const mDate   = document.getElementById('mDate');
+const mFile   = document.getElementById('mFile');
+const mURL    = document.getElementById('mURL');
+const mCancel = document.getElementById('mCancel');
+const mSave   = document.getElementById('mSave');
+
+let pendingCoord = null;   // {xNorm, yNorm}
+
+function openModal(title="Add Pin"){
+  mTitle.textContent = title;
+  modal.classList.add('on'); modal.setAttribute('aria-hidden','false');
+}
+function closeModal(){
+  modal.classList.remove('on'); modal.setAttribute('aria-hidden','true');
+  mCaption.value=""; mDate.value=""; mFile.value=""; mURL.value="";
+}
+
+/* Convert screen click → normalized image coords */
+function screenToNorm(clientX, clientY){
+  const r = viewport.getBoundingClientRect();
+  const px = (clientX - r.left - cam.x) / cam.s;
+  const py = (clientY - r.top  - cam.y) / cam.s;
+  return { x: Math.min(1, Math.max(0, px / cam.natW)),
+           y: Math.min(1, Math.max(0, py / cam.natH)) };
+}
+
+viewport.addEventListener('click', async (e)=>{
+  if (!addingPin || moved) { moved=false; return; }   // ignore drags
+  const norm = screenToNorm(e.clientX, e.clientY);
+  pendingCoord = norm;
+  // default date today
+  mDate.value = new Date().toISOString().slice(0,10);
+  openModal("Add Pin");
+  togglePinMode(false);
+});
+
+/* Data store (localStorage) */
+const LS_KEY = "mem_pins_v1";
+let PINS = [];
+function savePins(){ localStorage.setItem(LS_KEY, JSON.stringify(PINS)); }
+function loadPins(){ try{ PINS = JSON.parse(localStorage.getItem(LS_KEY)||"[]"); }catch{ PINS=[]; } }
+loadPins();
+
+/* Render pins */
+function renderPins(){
+  pinsEl.innerHTML = "";
+  for(const p of PINS){
+    const el = document.createElement('button');
+    el.className = 'pin';
+    el.style.left = (p.x * cam.natW) + 'px';
+    el.style.top  = (p.y * cam.natH) + 'px';
+    el.innerHTML = `<span>✶</span>`;
+    // tooltip
+    const tip = document.createElement('div'); tip.className='pintip'; tip.textContent = p.caption || "Untitled"; tip.style.display='none';
+    el.addEventListener('mouseenter', ()=> tip.style.display='block');
+    el.addEventListener('mouseleave', ()=> tip.style.display='none');
+    el.addEventListener('click', ()=> openViewPin(p));
+    el.appendChild(tip);
+    pinsEl.appendChild(el);
+  }
+}
+
+/* Lazy-loaded viewer: we only set the <img src> when opened */
+function openViewPin(pin){
+  mTitle.textContent = pin.caption || "Pin";
+  // reuse modal shell as viewer
+  const html = [];
+  if (pin.date) html.push(`<div class="row"><label>Date</label><div style="padding-top:7px">${pin.date}</div></div>`);
+  html.push(`<div class="row"><label>Caption</label><div style="padding-top:7px">${pin.caption||""}</div></div>`);
+  // image placeholder container
+  html.push(`<div class="row"><label>Photo</label><div id="viewerImgWrap" style="flex:1"></div></div>`);
+  const panel = modal.querySelector('.panel');
+  const old = panel.innerHTML; // backup
+  panel.innerHTML =
+    `<h3 id="mTitle">${mTitle.textContent}</h3>${html.join("")}
+     <div class="actions">
+       <button class="btn" id="vClose">Close</button>
+     </div>`;
+  modal.classList.add('on'); modal.setAttribute('aria-hidden','false');
+
+  // lazy load image now
+  if (pin.photo && pin.photo.value){
+    const img = new Image(); img.loading="lazy"; img.style.maxWidth="100%"; img.style.borderRadius="8px";
+    img.src = pin.photo.value; // set only here
+    modal.querySelector('#viewerImgWrap').appendChild(img);
+  } else {
+    modal.querySelector('#viewerImgWrap').innerHTML = `<div style="opacity:.7;padding-top:7px">No image</div>`;
+  }
+  document.getElementById('vClose').onclick = ()=>{ modal.classList.remove('on'); modal.setAttribute('aria-hidden','true'); panel.innerHTML = old; };
+}
+
+/* Modal actions */
+mCancel.addEventListener('click', closeModal);
+modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
+
+mSave.addEventListener('click', async ()=>{
+  if (!pendingCoord){ closeModal(); return; }
+  const caption = mCaption.value.trim();
+  const date    = mDate.value || "";
+  // get photo: prefer file, else URL, else none
+  let photo = null;
+  if (mFile.files && mFile.files[0]){
+    const file = mFile.files[0];
+    // convert to data URL so it persists in localStorage (small images recommended)
+    photo = { kind:"data", value: await fileToDataURL(file) };
+  } else if (mURL.value.trim()){
+    photo = { kind:"url", value: mURL.value.trim() };
+  }
+  const pin = {
+    id: "p_"+Date.now(),
+    x: pendingCoord.x, y: pendingCoord.y,
+    caption, date, photo
+  };
+  PINS.push(pin); savePins(); renderPins();
+  pendingCoord = null; closeModal();
+});
+
+function fileToDataURL(file){
+  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); });
+}
+
+/* first paint */
+renderPins();
 </script>
 </body>
 </html>
