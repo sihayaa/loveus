@@ -8,7 +8,7 @@
   <style>
     :root{
       --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a;
-      --shadow:0 8px 24px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.06);
+      --shadow:0 18px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
     }
     *{box-sizing:border-box}
     html,body{height:100%}
@@ -19,21 +19,14 @@
     }
     #particles{position:fixed; inset:0; z-index:0; pointer-events:none}
 
-    .topbar{
-      position:fixed; inset:12px 12px auto 12px; z-index:5;
-      display:flex; align-items:center; gap:12px; width:calc(100% - 24px);
-    }
+    .topbar{position:fixed; inset:12px 12px auto 12px; z-index:5; display:flex; align-items:center; gap:12px; width:calc(100% - 24px)}
     .chip{
-      display:inline-flex; align-items:center; gap:8px;
-      padding:8px 12px; border:1px solid rgba(191,163,90,.5);
-      border-radius:10px; background:rgba(32,26,20,.6); color:var(--ink);
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px;
+      border:1px solid rgba(191,163,90,.5); border-radius:10px; background:rgba(32,26,20,.6); color:var(--ink);
       box-shadow:var(--shadow); backdrop-filter:blur(3px); cursor:pointer; text-decoration:none; font-size:14px;
     }
     .chip:hover{background:rgba(50,40,30,.75)}
-    .title{
-      flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700;
-      letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2);
-    }
+    .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2)}
 
     .drawer{
       position:fixed; left:12px; bottom:12px; z-index:5;
@@ -42,12 +35,15 @@
       backdrop-filter:blur(3px);
     }
     .drawer label{font-size:12px; opacity:.85}
-    .drawer input[type="range"]{width:140px}
+    .drawer input[type="range"]{width:160px}
 
     .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none}
-    /* FIX: anchor at (0,0), not 50%/50% */
     .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
-    .map-img{display:block; width:100%; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08)}
+    .map-img{
+      display:block; width:100%; height:auto; pointer-events:none;
+      image-rendering:auto; filter:contrast(1.02) brightness(.96) sepia(.08);
+      box-shadow:var(--shadow); border-radius:4px;
+    }
 
     .quote{
       position:fixed; z-index:4; max-width:min(70ch,90vw); left:50%; bottom:26px; transform:translateX(-50%);
@@ -55,12 +51,7 @@
       box-shadow:var(--shadow); text-align:center; font-family:"Forte","Cinzel",serif; font-size:22px; letter-spacing:.2px;
       opacity:0; animation:fade 4.2s ease forwards;
     }
-    @keyframes fade{
-      0%{opacity:0; transform:translate(-50%,10px)}
-      12%{opacity:1; transform:translate(-50%,0)}
-      70%{opacity:1}
-      100%{opacity:0; transform:translate(-50%,8px)}
-    }
+    @keyframes fade{0%{opacity:0; transform:translate(-50%,10px)}12%{opacity:1; transform:translate(-50%,0)}70%{opacity:1}100%{opacity:0; transform:translate(-50%,8px)}}
   </style>
 </head>
 <body>
@@ -68,13 +59,13 @@
 
   <div class="topbar">
     <a class="chip" href="javascript:void(0)" onclick="history.back()">⟵ Back Home</a>
-    <div class="title">Middle-earth Map</div>
+    <div class="title">MIDDLE-EARTH MAP</div>
     <a class="chip" href="#" onclick="resetView()">Reset View</a>
   </div>
 
   <div class="drawer">
     <label>Particles:</label>
-    <button class="chip" id="modeBtn">Snow</button>
+    <button class="chip" id="modeBtn">Glyphs</button>
     <label>Intensity</label>
     <input type="range" id="intensity" min="0" max="2" step="1" value="1" />
     <button class="chip" id="pauseBtn">Pause</button>
@@ -88,7 +79,7 @@
   </div>
 
   <script>
-    // Quotes
+    // --- Quotes (click empty space) ---
     const quotes=[
       "There and back again.","Not all those who wander are lost.",
       "Even the smallest person can change the course of the future.",
@@ -100,101 +91,149 @@
       document.body.appendChild(el); setTimeout(()=>el.remove(),4200);
     }
 
-    // Map pan/zoom
+    // --- Map pan/zoom (centered) ---
     const viewport=document.getElementById('viewport');
     const mapInner=document.getElementById('mapInner');
     const mapImg=document.getElementById('mapImg');
 
-    const state={scale:1,minScale:.4,maxScale:3.5,tx:0,ty:0,dragging:false,lastX:0,lastY:0,natW:1000,natH:1000};
+    const FIT_FACTOR = 0.82;
+    const state={scale:1,minScale:.45,maxScale:3.5,tx:0,ty:0,dragging:false,lastX:0,lastY:0,natW:1000,natH:1000};
 
     mapImg.addEventListener('load',()=>{ state.natW=mapImg.naturalWidth; state.natH=mapImg.naturalHeight; centerFit(); apply(); });
 
     function centerFit(){
       const vw=viewport.clientWidth, vh=viewport.clientHeight;
-      const s=Math.min(vw/state.natW, vh/state.natH)*0.95;
-      state.scale=s;
-      state.tx=vw/2 - (state.natW*s)/2;
-      state.ty=vh/2 - (state.natH*s)/2;
+      const s=Math.min(vw/state.natW, vh/state.natH)*FIT_FACTOR;
+      state.scale=s; state.tx=vw/2 - (state.natW*s)/2; state.ty=vh/2 - (state.natH*s)/2;
     }
     function apply(){ mapInner.style.transform=`translate(${state.tx}px, ${state.ty}px) scale(${state.scale})`; }
     function clamp(v,min,max){return Math.max(min,Math.min(max,v));}
 
-    viewport.addEventListener('pointerdown',e=>{
-      state.dragging=true; state.lastX=e.clientX; state.lastY=e.clientY; viewport.setPointerCapture(e.pointerId);
-    });
+    viewport.addEventListener('pointerdown',e=>{ state.dragging=true; state.lastX=e.clientX; state.lastY=e.clientY; viewport.setPointerCapture(e.pointerId); });
     viewport.addEventListener('pointermove',e=>{
       if(!state.dragging) return;
       const dx=e.clientX-state.lastX, dy=e.clientY-state.lastY;
       state.tx+=dx; state.ty+=dy; state.lastX=e.clientX; state.lastY=e.clientY; apply();
     });
-    viewport.addEventListener('pointerup',e=>{
-      state.dragging=false; viewport.releasePointerCapture(e.pointerId);
-    });
+    viewport.addEventListener('pointerup',e=>{ state.dragging=false; viewport.releasePointerCapture(e.pointerId); });
 
     viewport.addEventListener('wheel',e=>{
       e.preventDefault();
-      const factor=(e.deltaY<0)?1.1:0.9;
+      const factor=(e.deltaY<0)?1.08:0.92;
       const newScale=clamp(state.scale*factor, state.minScale, state.maxScale);
       zoomAt(e.clientX,e.clientY,newScale);
     },{passive:false});
-
     function zoomAt(cx,cy,newScale){
       const prev=state.scale; if(newScale===prev) return;
       const rect=viewport.getBoundingClientRect();
-      const x=(cx-rect.left-state.tx)/prev;
-      const y=(cy-rect.top -state.ty)/prev;
-      state.tx=cx-rect.left - x*newScale;
-      state.ty=cy-rect.top  - y*newScale;
+      const x=(cx-rect.left-state.tx)/prev; const y=(cy-rect.top-state.ty)/prev;
+      state.tx=cx-rect.left - x*newScale; state.ty=cy-rect.top - y*newScale;
       state.scale=newScale; apply();
     }
-
     function resetView(){ centerFit(); apply(); }
     viewport.addEventListener('dblclick', resetView);
 
-    // click empty to show quote
     let moved=false;
     viewport.addEventListener('pointerdown',()=>{moved=false;});
     viewport.addEventListener('pointermove',()=>{moved=true;});
-    viewport.addEventListener('click',e=>{
-      if(moved) return;
-      if(e.target.closest('.chip')) return;
-      spawnQuote();
-    });
-
+    viewport.addEventListener('click',e=>{ if(moved) return; if(e.target.closest('.chip')) return; spawnQuote(); });
     window.addEventListener('resize',()=>{ centerFit(); apply(); });
 
-    // Particles
-    const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
-    let W=0,H=0; function resize(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; } addEventListener('resize',resize); resize();
+    // --- Particles: Glyphs / Runes / Leaves / Embers ---
+    const palette = { gold:"#d4af37", ember:"rgba(255,140,60,.9)", leaf:"#b6a47a" };
+    const glyphs = ["✶","✷","✸","✹","✺","✧","✦","✳"];
+    const runes  = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];
+    const leaves = ["🍂","🍁"];
 
-    let mode='snow', intensity=1, paused=false;
-    const modeBtn=document.getElementById('modeBtn'), pauseBtn=document.getElementById('pauseBtn'), intensitySlider=document.getElementById('intensity');
-    modeBtn.onclick=()=>{ mode=(mode==='snow'?'embers':'snow'); modeBtn.textContent=(mode==='snow'?'Snow':'Embers'); };
+    const MODES = ["glyphs","runes","leaves","embers"];
+    const LABEL = { glyphs:"Glyphs", runes:"Runes", leaves:"Leaves", embers:"Embers" };
+    let mode = "glyphs";
+
+    const modeBtn=document.getElementById('modeBtn');
+    const pauseBtn=document.getElementById('pauseBtn');
+    const intensitySlider=document.getElementById('intensity');
+    let intensity=1, paused=false;
+
+    modeBtn.onclick=()=>{ mode = MODES[(MODES.indexOf(mode)+1)%MODES.length]; modeBtn.textContent = LABEL[mode]; seed(); };
     pauseBtn.onclick=()=>{ paused=!paused; pauseBtn.textContent=paused?'Resume':'Pause'; };
-    intensitySlider.oninput=e=>{ intensity=+e.target.value; };
+    intensitySlider.oninput=e=>{ intensity=+e.target.value; seed(); };
 
-    const parts=[];
-    function seed(n=200){ parts.length=0; for(let i=0;i<n;i++) parts.push(makeP()); }
-    function makeP(){ return {x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-0.5)*0.2,vy:mode==='snow'?(0.3+Math.random()*0.6):(0.6+Math.random()*1.2),s:0.7+Math.random()*1.6,a:0.4+Math.random()*0.6}; }
+    const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
+    let W=0,H=0; function resize(){ W=canvas.width=innerWidth; H=canvas.height=innerHeight; seed(); } addEventListener('resize',resize); resize();
+
+    // density/sizes per intensity (tuned)
+    const DENSITY={ glyphs:[70,130,220], runes:[60,110,200], leaves:[50,90,160], embers:[120,220,420] };
+    const SIZE   ={ glyphs:[16,22,30],   runes:[16,22,30],   leaves:[18,26,34],  embers:[2,3,4] };
+    const SPEEDY ={ glyphs:[0.25,0.35,0.5], runes:[0.25,0.35,0.5], leaves:[0.3,0.45,0.6], embers:[-0.8,-1.0,-1.3] }; // embers float up (negative)
+
+    let parts=[];
+    function seed(){
+      const n = DENSITY[mode][intensity];
+      parts.length=0;
+      for(let i=0;i<n;i++) parts.push(makeP(Math.random()*W, Math.random()*H, true));
+    }
+
+    function pick(arr){ return arr[(Math.random()*arr.length)|0]; }
+
+    function makeP(x,y,randY){
+      const s = SIZE[mode][intensity];
+      const base = {
+        x, y,
+        vx:(Math.random()-0.5)* (mode==='embers' ? 0.25 : 0.18),
+        vy: SPEEDY[mode][intensity] + (mode==='embers' ? Math.random()*-0.3 : Math.random()*0.35),
+        s: s*(0.8 + Math.random()*0.6),
+        a: 0.55 + Math.random()*0.45,
+        rot: Math.random()*Math.PI*2,
+        rv: (Math.random()-0.5) * 0.012
+      };
+      if(mode==='glyphs') base.char = pick(glyphs);
+      else if(mode==='runes') base.char = pick(runes);
+      else if(mode==='leaves') base.char = pick(leaves);
+      return base;
+    }
+
     function step(){
       requestAnimationFrame(step); if(paused) return;
-      const target=[120,220,420][intensity]; if(parts.length!==target) seed(target);
       ctx.clearRect(0,0,W,H);
-      for(const p of parts){
-        p.x+=p.vx + (mode==='snow'? Math.sin(p.y*0.002)*0.05 : Math.sin(p.y*0.01)*0.08);
-        p.y+=p.vy;
-        if(p.y>H+8){ p.y=-8; p.x=Math.random()*W; }
-        if(p.x<-8) p.x=W+8; if(p.x>W+8) p.x=-8;
-        if(mode==='snow'){
-          ctx.globalAlpha=p.a*.9; ctx.beginPath(); ctx.arc(p.x,p.y,p.s+0.6,0,Math.PI*2); ctx.fillStyle="rgba(255,255,255,.9)"; ctx.fill();
-        } else {
-          ctx.globalAlpha=p.a; ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,Math.PI*2);
-          ctx.fillStyle="rgba(255,200,120,.85)"; ctx.shadowColor="rgba(255,180,80,.8)"; ctx.shadowBlur=6; ctx.fill(); ctx.shadowBlur=0;
+      for(let i=0;i<parts.length;i++){
+        const p=parts[i];
+        // motion
+        p.x += p.vx + (mode==='embers' ? Math.sin(p.y*0.01)*0.08 : Math.sin(p.y*0.002)*0.05);
+        p.y += p.vy;
+        p.rot += p.rv;
+
+        // wrap/reset
+        if(mode==='embers'){ // float up
+          if(p.y<-12){ parts[i]=makeP(Math.random()*W, H+12); continue; }
+        }else{ // fall down
+          if(p.y>H+12){ parts[i]=makeP(Math.random()*W, -12); continue; }
         }
+        if(p.x<-12) p.x=W+12;
+        if(p.x>W+12) p.x=-12;
+
+        // draw
+        ctx.save();
+        ctx.globalAlpha = p.a;
+
+        if(mode==='embers'){
+          ctx.beginPath(); ctx.arc(p.x,p.y,p.s,0,Math.PI*2);
+          ctx.fillStyle=palette.ember; ctx.shadowColor=palette.ember; ctx.shadowBlur=6; ctx.fill(); ctx.shadowBlur=0;
+        }else{
+          ctx.translate(p.x,p.y); ctx.rotate(p.rot);
+          ctx.font = `${p.s}px "Segoe UI Symbol","Apple Color Emoji","Noto Color Emoji","IM Fell English",serif`;
+          ctx.textAlign="center"; ctx.textBaseline="middle";
+          if(mode==='leaves'){
+            // emojis usually have their own color; set a subtle tint fallback
+            ctx.fillStyle = palette.leaf;
+          }else{
+            ctx.fillStyle = palette.gold;
+          }
+          ctx.fillText(p.char, 0, 0);
+        }
+        ctx.restore();
       }
-      ctx.globalAlpha=1;
     }
-    seed(220); step();
+    seed(); step();
   </script>
 </body>
 </html>
