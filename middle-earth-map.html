@@ -7,9 +7,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a;
+      --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a; --zoom:1;
       --shadow:0 18px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
-      --zoom:1;
     }
     *{box-sizing:border-box} html,body{height:100%}
     body{
@@ -18,14 +17,11 @@
       color:var(--ink); font-family: ui-serif, Georgia, "Times New Roman", serif;
     }
 
-    /* particles behind the map */
+    /* particles (behind the map) */
     #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
 
     /* top bar */
-    .topbar{
-      position:fixed; inset:12px 12px auto 12px; z-index:12;
-      display:flex; gap:12px; align-items:center;
-    }
+    .topbar{position:fixed; inset:12px 12px auto 12px; z-index:12; display:flex; gap:12px; align-items:center}
     .chip{
       display:inline-flex; align-items:center; gap:8px; padding:7px 10px;
       border:1px solid rgba(191,163,90,.5); border-radius:10px;
@@ -33,21 +29,14 @@
       text-decoration:none; font-size:13px; cursor:pointer;
     }
     .chip:hover{background:rgba(50,40,30,.75)}
-    .title{
-      flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700;
-      letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2);
-    }
+    .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2)}
 
-    /* map viewer (over particles) */
+    /* map */
     .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none}
     .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
-    .map-img{
-      display:block; width:100%; height:auto; pointer-events:none;
-      filter:contrast(1.02) brightness(.96) sepia(.08);
-      box-shadow:var(--shadow); border-radius:4px;
-    }
+    .map-img{display:block; width:100%; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
 
-    /* pins layer (inside map-inner so it follows panning/zoom) */
+    /* pins */
     .pins{position:absolute; inset:0; z-index:6; pointer-events:none}
     .pin{
       position:absolute; pointer-events:auto; cursor:pointer;
@@ -65,21 +54,15 @@
       border:1px solid rgba(191,163,90,.55); border-radius:8px; padding:4px 8px;
       font-size:12px; white-space:nowrap; pointer-events:none;
     }
-
-    /* pin mode hint */
     .hint{
       position:fixed; right:16px; top:58px; z-index:12;
       background:rgba(40,30,22,.92); border:1px solid rgba(191,163,90,.5);
-      color:#d7c6a3; border-radius:10px; padding:8px 10px; font-size:12px;
-      display:none;
+      color:#d7c6a3; border-radius:10px; padding:8px 10px; font-size:12px; display:none;
     }
     .hint.on{display:block}
 
     /* modal */
-    .modal{
-      position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center;
-      background:rgba(0,0,0,.55);
-    }
+    .modal{position:fixed; inset:0; z-index:20; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55)}
     .modal.on{display:flex}
     .panel{
       width:min(520px, 92vw); max-height:85vh; overflow:auto;
@@ -90,7 +73,7 @@
     .panel h3{margin:0 0 10px; font-family:"Cinzel",serif; letter-spacing:.4px}
     .row{display:flex; gap:10px; margin:8px 0}
     .row label{width:90px; opacity:.9; font-size:13px; padding-top:7px}
-    .row input[type="text"], .row input[type="date"], .row input[type="url"], .row textarea{
+    .row input[type="text"], .row textarea{
       flex:1; background:#1b1510; color:#e7dbc3; border:1px solid rgba(191,163,90,.45);
       border-radius:8px; padding:8px 10px; font-size:14px;
     }
@@ -120,17 +103,28 @@
     </div>
   </div>
 
-  <!-- modal (add / view) -->
-  <div id="modal" class="modal" aria-hidden="true">
-    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="mTitle">
-      <h3 id="mTitle">Add Pin</h3>
-      <div class="row"><label>Caption</label><input id="mCaption" type="text" placeholder="Write a caption..." /></div>
-      <div class="row"><label>Date</label><input id="mDate" type="date" /></div>
-      <div class="row"><label>Photo</label><input id="mFile" type="file" accept="image/*" /></div>
-      <div class="row"><label>or URL</label><input id="mURL" type="url" placeholder="https://..." /></div>
+  <!-- Add Pin modal -->
+  <div id="modalAdd" class="modal" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+      <h3 id="addTitle">Add Pin</h3>
+      <div class="row"><label>Title*</label><input id="aTitle" type="text" placeholder="Title for hover…" required /></div>
+      <div class="row"><label>Caption</label><textarea id="aCaption" rows="3" placeholder="Optional caption…"></textarea></div>
+      <div class="row"><label>Photo</label><input id="aFile" type="file" accept="image/*" /></div>
       <div class="actions">
-        <button class="btn" id="mCancel">Cancel</button>
-        <button class="btn primary" id="mSave">Save Pin</button>
+        <button class="btn" id="aCancel">Cancel</button>
+        <button class="btn primary" id="aSave">Save Pin</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Pin modal (lazy image) -->
+  <div id="modalView" class="modal" aria-hidden="true">
+    <div class="panel" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+      <h3 id="viewTitle">Pin</h3>
+      <div id="viewCaption" class="row" style="display:none"><label>Caption</label><div id="viewCaptionText" style="flex:1;padding-top:7px"></div></div>
+      <div class="row"><label>Photo</label><div id="viewImageWrap" style="flex:1"></div></div>
+      <div class="actions">
+        <button class="btn" id="vClose">Close</button>
       </div>
     </div>
   </div>
@@ -145,244 +139,132 @@ const FIT = 0.82;
 const ZOOM_SMOOTH = 0.24;
 const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.45, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
 
-mapImg.addEventListener('load', ()=>{
-  cam.natW = mapImg.naturalWidth || cam.natW;
-  cam.natH = mapImg.naturalHeight || cam.natH;
-  centerFit(); renderPins(); setZoomVar();
-});
-function centerFit(){
-  const vw=viewport.clientWidth, vh=viewport.clientHeight;
-  const s=Math.min(vw/cam.natW, vh/cam.natH)*FIT;
-  cam.s = cam.ts = s;
-  cam.x = cam.tx = vw/2 - (cam.natW*s)/2;
-  cam.y = cam.ty = vh/2 - (cam.natH*s)/2;
-  applyCam();
-}
+mapImg.addEventListener('load', ()=>{ cam.natW = mapImg.naturalWidth || cam.natW; cam.natH = mapImg.naturalHeight || cam.natH; centerFit(); renderPins(); setZoomVar(); });
+
+function centerFit(){ const vw=viewport.clientWidth, vh=viewport.clientHeight; const s=Math.min(vw/cam.natW, vh/cam.natH)*FIT;
+  cam.s=cam.ts=s; cam.x=cam.tx=vw/2-(cam.natW*s)/2; cam.y=cam.ty=vh/2-(cam.natH*s)/2; applyCam(); }
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
 function applyCam(){ mapInner.style.transform = `matrix(${cam.s},0,0,${cam.s},${cam.x},${cam.y})`; }
 function setZoomVar(){ document.documentElement.style.setProperty('--zoom', cam.s.toFixed(3)); }
-function zoomAt(cx,cy,newScale){
-  newScale = clamp(newScale, cam.sMin, cam.sMax);
-  const r = viewport.getBoundingClientRect();
-  const wx = (cx - r.left - cam.x) / cam.s;
-  const wy = (cy - r.top  - cam.y) / cam.s;
-  cam.ts = newScale;
-  cam.tx = cx - r.left - wx * newScale;
-  cam.ty = cy - r.top  - wy * newScale;
-}
+function zoomAt(cx,cy,newScale){ newScale=clamp(newScale, cam.sMin, cam.sMax); const r=viewport.getBoundingClientRect();
+  const wx=(cx-r.left-cam.x)/cam.s, wy=(cy-r.top-cam.y)/cam.s; cam.ts=newScale; cam.tx=cx-r.left-wx*newScale; cam.ty=cy-r.top-wy*newScale; }
+
 viewport.addEventListener('pointerdown', e=>{ cam.dragging=true; cam.lx=e.clientX; cam.ly=e.clientY; viewport.setPointerCapture(e.pointerId); });
 let moved=false;
-viewport.addEventListener('pointermove', e=>{
-  if(!cam.dragging) return;
-  const dx=e.clientX-cam.lx, dy=e.clientY-cam.ly; moved = moved || Math.hypot(dx,dy)>2;
-  cam.tx+=dx; cam.ty+=dy; cam.lx=e.clientX; cam.ly=e.clientY;
-});
+viewport.addEventListener('pointermove', e=>{ if(!cam.dragging) return; const dx=e.clientX-cam.lx, dy=e.clientY-cam.ly; moved=moved||Math.hypot(dx,dy)>2; cam.tx+=dx; cam.ty+=dy; cam.lx=e.clientX; cam.ly=e.clientY; });
 viewport.addEventListener('pointerup', e=>{ cam.dragging=false; viewport.releasePointerCapture(e.pointerId); });
-viewport.addEventListener('wheel', e=>{
-  e.preventDefault();
-  const factor=(e.deltaY<0)?1.08:0.92;
-  zoomAt(e.clientX,e.clientY, cam.ts*factor);
-},{passive:false});
+viewport.addEventListener('wheel', e=>{ e.preventDefault(); const factor=(e.deltaY<0)?1.08:0.92; zoomAt(e.clientX,e.clientY, cam.ts*factor); }, {passive:false});
 function resetView(){ centerFit(); renderPins(); }
 
 let lastCam = performance.now();
 function animateCam(now){
-  const dt = Math.min( (now - lastCam) / 16.6667, 2 );
-  lastCam = now;
+  const dt = Math.min((now-lastCam)/16.6667, 2); lastCam=now;
   const t = 1 - Math.pow(1 - ZOOM_SMOOTH, dt);
-  cam.x += (cam.tx - cam.x) * t;
-  cam.y += (cam.ty - cam.y) * t;
-  cam.s += (cam.ts - cam.s) * t;
-  applyCam(); setZoomVar();
-  requestAnimationFrame(animateCam);
+  cam.x += (cam.tx-cam.x)*t; cam.y += (cam.ty-cam.y)*t; cam.s += (cam.ts-cam.s)*t;
+  applyCam(); setZoomVar(); requestAnimationFrame(animateCam);
 }
 requestAnimationFrame(animateCam);
 addEventListener('resize', ()=>{ centerFit(); renderPins(); });
 
-/* ========= Lightweight snowfall (kept) ========= */
-const GOLD = "#d4af37";
-const glyphs = ["✶","✷","✸","✹","✺","✧","✦","✳"];
-const runes  = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];
-const SYMBOLS = glyphs.concat(runes);
-const canvas = document.getElementById('particles');
-const ctx    = canvas.getContext('2d');
+/* ========= Lightweight snowfall (fast) ========= */
+const GOLD="#d4af37"; const glyphs=["✶","✷","✸","✹","✺","✧","✦","✳"], runes=["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"]; const SYMBOLS=glyphs.concat(runes);
+const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
 let W=0,H=0;
-function sizeCanvas(){
-  const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
-  canvas.width  = Math.floor(innerWidth * dpr);
-  canvas.height = Math.floor(innerHeight * dpr);
-  canvas.style.width  = innerWidth + 'px';
-  canvas.style.height = innerHeight + 'px';
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  W = innerWidth; H = innerHeight;
+function sizeCanvas(){ const dpr=Math.min(window.devicePixelRatio||1,1.5);
+  canvas.width=Math.floor(innerWidth*dpr); canvas.height=Math.floor(innerHeight*dpr);
+  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); W=innerWidth; H=innerHeight;
 }
 addEventListener('resize', sizeCanvas); sizeCanvas();
-const FLAKE_COUNT = 220, FALL_SPEED = 2.4, DRIFT = 0.35, EDGE = 100;
-const spriteCache = new Map();
-function getSprite(char, size){
-  const key = char+"@"+size; if (spriteCache.has(key)) return spriteCache.get(key);
-  const pad = Math.ceil(size*0.55), s=document.createElement('canvas'); s.width=s.height=size+pad*2;
-  const c=s.getContext('2d'); c.textAlign="center"; c.textBaseline="middle";
-  c.font = `${size}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Symbol","Symbola","Noto Sans",serif`;
-  c.fillStyle = GOLD; c.fillText(char, s.width/2, s.height/2);
-  c.strokeStyle="rgba(0,0,0,.28)"; c.lineWidth=Math.max(1,size*0.06); c.strokeText(char, s.width/2, s.height/2);
-  spriteCache.set(key,s); return s;
-}
+const FLAKE_COUNT=220, FALL_SPEED=2.4, DRIFT=.35, EDGE=100;
+const spriteCache=new Map();
+function getSprite(char,size){ const key=char+"@"+size; if(spriteCache.has(key)) return spriteCache.get(key);
+  const pad=Math.ceil(size*.55), s=document.createElement('canvas'); s.width=s.height=size+pad*2; const c=s.getContext('2d');
+  c.textAlign="center"; c.textBaseline="middle"; c.font=`${size}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Symbol","Symbola","Noto Sans",serif`;
+  c.fillStyle=GOLD; c.fillText(char,s.width/2,s.height/2); c.strokeStyle="rgba(0,0,0,.28)"; c.lineWidth=Math.max(1,size*.06); c.strokeText(char,s.width/2,s.height/2);
+  spriteCache.set(key,s); return s; }
 const flakes=[]; function makeFlake(){ const ch=SYMBOLS[(Math.random()*SYMBOLS.length)|0]; const sz=Math.round(16+Math.random()*10);
   return { x:Math.random()*(W+EDGE*2)-EDGE, y:-20-Math.random()*(H+EDGE), vy:(0.6+Math.random()*0.5)*FALL_SPEED,
-           sway:Math.random()*Math.PI*2, rate:0.8+Math.random()*0.6, alpha:.95, sprite:getSprite(ch,sz) }; }
+    sway:Math.random()*Math.PI*2, rate:.8+Math.random()*.6, alpha:.95, sprite:getSprite(ch,sz) }; }
 for(let i=0;i<FLAKE_COUNT;i++) flakes.push(makeFlake());
-let last = performance.now(); document.addEventListener('visibilitychange',()=>{ last = performance.now(); });
-function snow(now){ requestAnimationFrame(snow);
-  if(document.hidden){ last=now; return; } let dt=(now-last)/16.6667; dt=Math.max(.5,Math.min(dt,1.2)); last=now;
+let last = performance.now(); document.addEventListener('visibilitychange',()=>{ last=performance.now(); });
+function snow(now){ requestAnimationFrame(snow); if(document.hidden){ last=now; return; }
+  let dt=(now-last)/16.6667; dt=Math.max(.5,Math.min(dt,1.2)); last=now;
   ctx.clearRect(0,0,W,H); const breeze=Math.sin(now*.00035)*DRIFT;
   for(let i=0;i<flakes.length;i++){ const f=flakes[i]; f.sway+=f.rate*.02*dt; f.x+=(Math.sin(f.sway)*(DRIFT*.9)+breeze)*dt*16; f.y+=f.vy*dt;
     if(f.y>H+EDGE){ const nf=makeFlake(); nf.y=-EDGE; flakes[i]=nf; continue; } if(f.x<-EDGE) f.x=W+EDGE; if(f.x>W+EDGE) f.x=-EDGE;
-    const s=f.sprite; ctx.globalAlpha=f.alpha; ctx.drawImage(s, f.x-s.width/2, f.y-s.height/2); }
-  ctx.globalAlpha=1;
-}
+    const s=f.sprite; ctx.globalAlpha=f.alpha; ctx.drawImage(s, f.x-s.width/2, f.y-s.height/2); } ctx.globalAlpha=1; }
 requestAnimationFrame(snow);
 
 /* ========= Pins ========= */
-const pinsEl = document.getElementById('pins');
-const pinBtn = document.getElementById('pinBtn');
-const hint   = document.getElementById('pinHint');
-let addingPin = false;
-function togglePinMode(on){
-  addingPin = on!=null ? on : !addingPin;
-  pinBtn.textContent = addingPin ? "✅ Place pin" : "📍 Pin it";
-  hint.classList.toggle('on', addingPin);
-  viewport.style.cursor = addingPin ? "crosshair" : "grab";
-}
-pinBtn.addEventListener('click', ()=> togglePinMode());
+const pinsEl=document.getElementById('pins'); const pinBtn=document.getElementById('pinBtn'); const hint=document.getElementById('pinHint');
+let addingPin=false; function togglePinMode(on){ addingPin=(on!=null)?on:!addingPin; pinBtn.textContent=addingPin?"✅ Place pin":"📍 Pin it"; hint.classList.toggle('on',addingPin); viewport.style.cursor=addingPin?"crosshair":"grab"; }
+pinBtn.addEventListener('click',()=>togglePinMode());
 
-/* Modal elements */
-const modal   = document.getElementById('modal');
-const mTitle  = document.getElementById('mTitle');
-const mCaption= document.getElementById('mCaption');
-const mDate   = document.getElementById('mDate');
-const mFile   = document.getElementById('mFile');
-const mURL    = document.getElementById('mURL');
-const mCancel = document.getElementById('mCancel');
-const mSave   = document.getElementById('mSave');
+const LS_KEY="mem_pins_v2"; let PINS=[]; function savePins(){ localStorage.setItem(LS_KEY, JSON.stringify(PINS)); }
+function loadPins(){ try{ PINS=JSON.parse(localStorage.getItem(LS_KEY)||"[]"); }catch{ PINS=[]; } } loadPins();
 
-let pendingCoord = null;   // {xNorm, yNorm}
+function renderPins(){ pinsEl.innerHTML=""; for(const p of PINS){ const el=document.createElement('button'); el.className='pin';
+  el.style.left=(p.x*cam.natW)+'px'; el.style.top=(p.y*cam.natH)+'px'; el.innerHTML=`<span>✶</span>`;
+  const tip=document.createElement('div'); tip.className='pintip'; tip.textContent=p.title||"Untitled"; tip.style.display='none';
+  el.addEventListener('mouseenter',()=>tip.style.display='block'); el.addEventListener('mouseleave',()=>tip.style.display='none');
+  el.addEventListener('click',()=>openViewPin(p)); el.appendChild(tip); pinsEl.appendChild(el);} }
 
-function openModal(title="Add Pin"){
-  mTitle.textContent = title;
-  modal.classList.add('on'); modal.setAttribute('aria-hidden','false');
-}
-function closeModal(){
-  modal.classList.remove('on'); modal.setAttribute('aria-hidden','true');
-  mCaption.value=""; mDate.value=""; mFile.value=""; mURL.value="";
-}
+/* Add Pin modal */
+const modalAdd=document.getElementById('modalAdd'); const aTitle=document.getElementById('aTitle'); const aCaption=document.getElementById('aCaption');
+const aFile=document.getElementById('aFile'); const aCancel=document.getElementById('aCancel'); const aSave=document.getElementById('aSave');
+let pendingCoord=null;
+function openAdd(){ modalAdd.classList.add('on'); modalAdd.setAttribute('aria-hidden','false'); }
+function closeAdd(){ modalAdd.classList.remove('on'); modalAdd.setAttribute('aria-hidden','true'); aTitle.value=""; aCaption.value=""; aFile.value=""; pendingCoord=null; }
+aCancel.addEventListener('click', closeAdd);
+modalAdd.addEventListener('click', (e)=>{ if(e.target===modalAdd) closeAdd(); });
+document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAdd(); closeView(); }});
 
-/* Convert screen click → normalized image coords */
-function screenToNorm(clientX, clientY){
-  const r = viewport.getBoundingClientRect();
-  const px = (clientX - r.left - cam.x) / cam.s;
-  const py = (clientY - r.top  - cam.y) / cam.s;
-  return { x: Math.min(1, Math.max(0, px / cam.natW)),
-           y: Math.min(1, Math.max(0, py / cam.natH)) };
-}
+function screenToNorm(cx,cy){ const r=viewport.getBoundingClientRect(); const px=(cx-r.left-cam.x)/cam.s, py=(cy-r.top-cam.y)/cam.s;
+  return { x:Math.min(1,Math.max(0,px/cam.natW)), y:Math.min(1,Math.max(0,py/cam.natH)) }; }
 
 viewport.addEventListener('click', async (e)=>{
-  if (!addingPin || moved) { moved=false; return; }   // ignore drags
-  const norm = screenToNorm(e.clientX, e.clientY);
-  pendingCoord = norm;
-  // default date today
-  mDate.value = new Date().toISOString().slice(0,10);
-  openModal("Add Pin");
+  if(!addingPin || moved){ moved=false; return; }
+  pendingCoord = screenToNorm(e.clientX,e.clientY);
   togglePinMode(false);
+  openAdd();
 });
 
-/* Data store (localStorage) */
-const LS_KEY = "mem_pins_v1";
-let PINS = [];
-function savePins(){ localStorage.setItem(LS_KEY, JSON.stringify(PINS)); }
-function loadPins(){ try{ PINS = JSON.parse(localStorage.getItem(LS_KEY)||"[]"); }catch{ PINS=[]; } }
-loadPins();
+aSave.addEventListener('click', async ()=>{
+  if(!pendingCoord) return closeAdd();
+  if(!aTitle.value.trim()){ aTitle.focus(); return; }
+  let photo=null;
+  if(aFile.files && aFile.files[0]){ photo = { kind:"data", value: await fileToDataURLResized(aFile.files[0], 1280, 0.85) }; }
+  const pin={ id:"p_"+Date.now(), x:pendingCoord.x, y:pendingCoord.y, title:aTitle.value.trim(), caption:aCaption.value.trim(), photo, createdAt:new Date().toISOString() };
+  PINS.push(pin); savePins(); renderPins(); closeAdd();
+});
 
-/* Render pins */
-function renderPins(){
-  pinsEl.innerHTML = "";
-  for(const p of PINS){
-    const el = document.createElement('button');
-    el.className = 'pin';
-    el.style.left = (p.x * cam.natW) + 'px';
-    el.style.top  = (p.y * cam.natH) + 'px';
-    el.innerHTML = `<span>✶</span>`;
-    // tooltip
-    const tip = document.createElement('div'); tip.className='pintip'; tip.textContent = p.caption || "Untitled"; tip.style.display='none';
-    el.addEventListener('mouseenter', ()=> tip.style.display='block');
-    el.addEventListener('mouseleave', ()=> tip.style.display='none');
-    el.addEventListener('click', ()=> openViewPin(p));
-    el.appendChild(tip);
-    pinsEl.appendChild(el);
-  }
+function fileToDataURLResized(file, maxDim=1280, quality=0.85){
+  return new Promise((resolve, reject)=>{
+    const fr=new FileReader();
+    fr.onload=()=>{ const img=new Image(); img.onload=()=>{
+      let {width:w, height:h}=img; const scale=Math.min(1, maxDim/Math.max(w,h)); w=Math.round(w*scale); h=Math.round(h*scale);
+      const c=document.createElement('canvas'); c.width=w; c.height=h; const cx=c.getContext('2d'); cx.drawImage(img,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg', quality));
+    }; img.onerror=reject; img.src=fr.result; };
+    fr.onerror=reject; fr.readAsDataURL(file);
+  });
 }
 
-/* Lazy-loaded viewer: we only set the <img src> when opened */
+/* View Pin modal (lazy image) */
+const modalView=document.getElementById('modalView'); const viewTitle=document.getElementById('viewTitle');
+const viewCaptionRow=document.getElementById('viewCaption'); const viewCaptionText=document.getElementById('viewCaptionText'); const viewImageWrap=document.getElementById('viewImageWrap'); const vClose=document.getElementById('vClose');
 function openViewPin(pin){
-  mTitle.textContent = pin.caption || "Pin";
-  // reuse modal shell as viewer
-  const html = [];
-  if (pin.date) html.push(`<div class="row"><label>Date</label><div style="padding-top:7px">${pin.date}</div></div>`);
-  html.push(`<div class="row"><label>Caption</label><div style="padding-top:7px">${pin.caption||""}</div></div>`);
-  // image placeholder container
-  html.push(`<div class="row"><label>Photo</label><div id="viewerImgWrap" style="flex:1"></div></div>`);
-  const panel = modal.querySelector('.panel');
-  const old = panel.innerHTML; // backup
-  panel.innerHTML =
-    `<h3 id="mTitle">${mTitle.textContent}</h3>${html.join("")}
-     <div class="actions">
-       <button class="btn" id="vClose">Close</button>
-     </div>`;
-  modal.classList.add('on'); modal.setAttribute('aria-hidden','false');
-
-  // lazy load image now
-  if (pin.photo && pin.photo.value){
-    const img = new Image(); img.loading="lazy"; img.style.maxWidth="100%"; img.style.borderRadius="8px";
-    img.src = pin.photo.value; // set only here
-    modal.querySelector('#viewerImgWrap').appendChild(img);
-  } else {
-    modal.querySelector('#viewerImgWrap').innerHTML = `<div style="opacity:.7;padding-top:7px">No image</div>`;
-  }
-  document.getElementById('vClose').onclick = ()=>{ modal.classList.remove('on'); modal.setAttribute('aria-hidden','true'); panel.innerHTML = old; };
+  viewTitle.textContent = pin.title || "Pin";
+  if(pin.caption){ viewCaptionRow.style.display='flex'; viewCaptionText.textContent=pin.caption; } else { viewCaptionRow.style.display='none'; viewCaptionText.textContent=""; }
+  viewImageWrap.innerHTML = ""; // lazy-load image now
+  if(pin.photo && pin.photo.value){ const img=new Image(); img.loading="lazy"; img.style.maxWidth="100%"; img.style.borderRadius="8px"; img.src=pin.photo.value; viewImageWrap.appendChild(img); }
+  modalView.classList.add('on'); modalView.setAttribute('aria-hidden','false');
 }
+function closeView(){ modalView.classList.remove('on'); modalView.setAttribute('aria-hidden','true'); }
+vClose.addEventListener('click', closeView);
+modalView.addEventListener('click', (e)=>{ if(e.target===modalView) closeView(); });
 
-/* Modal actions */
-mCancel.addEventListener('click', closeModal);
-modal.addEventListener('click', (e)=>{ if(e.target===modal) closeModal(); });
-document.addEventListener('keydown', (e)=>{ if(e.key==='Escape') closeModal(); });
-
-mSave.addEventListener('click', async ()=>{
-  if (!pendingCoord){ closeModal(); return; }
-  const caption = mCaption.value.trim();
-  const date    = mDate.value || "";
-  // get photo: prefer file, else URL, else none
-  let photo = null;
-  if (mFile.files && mFile.files[0]){
-    const file = mFile.files[0];
-    // convert to data URL so it persists in localStorage (small images recommended)
-    photo = { kind:"data", value: await fileToDataURL(file) };
-  } else if (mURL.value.trim()){
-    photo = { kind:"url", value: mURL.value.trim() };
-  }
-  const pin = {
-    id: "p_"+Date.now(),
-    x: pendingCoord.x, y: pendingCoord.y,
-    caption, date, photo
-  };
-  PINS.push(pin); savePins(); renderPins();
-  pendingCoord = null; closeModal();
-});
-
-function fileToDataURL(file){
-  return new Promise((res,rej)=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=rej; fr.readAsDataURL(file); });
-}
-
-/* first paint */
+/* init */
 renderPins();
 </script>
 </body>
