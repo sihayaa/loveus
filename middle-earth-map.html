@@ -1,34 +1,53 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Middle-earth Map</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
-<style>
-  :root{ --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a; --shadow:0 18px 55px rgba(0,0,0,.5); }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; overflow:hidden; user-select:none;
-    background: radial-gradient(1200px 800px at 70% 10%, #2a221b, #15100b 70%, #0d0a07 100%), var(--bg);
-    color:var(--ink); font-family:"IM Fell English",serif;
-  }
+  <meta charset="UTF-8" />
+  <title>Middle-earth Map</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Optional display fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a;
+      --shadow:0 18px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; overflow:hidden; user-select:none;
+      background: radial-gradient(1200px 800px at 70% 10%, #2a221b, #15100b 70%, #0d0a07 100%), var(--bg);
+      color:var(--ink); font-family: ui-serif, Georgia, "Times New Roman", serif;
+    }
 
-  /* BACKGROUND particles (behind map) */
-  #particles{ position:fixed; inset:0; z-index:1; pointer-events:none }
+    /* BACKGROUND particles (behind the map) */
+    #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
 
-  /* Header (kept) */
-  .topbar{position:fixed; inset:12px 12px auto 12px; z-index:10; display:flex; gap:12px; align-items:center}
-  .chip{display:inline-flex; align-items:center; gap:8px; padding:7px 10px; border:1px solid rgba(191,163,90,.5);
-        border-radius:10px; background:rgba(32,26,20,.6); color:var(--ink); box-shadow:var(--shadow); cursor:pointer; text-decoration:none; font-size:13px}
-  .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px}
+    /* Header */
+    .topbar{
+      position:fixed; inset:12px 12px auto 12px; z-index:10;
+      display:flex; gap:12px; align-items:center;
+    }
+    .chip{
+      display:inline-flex; align-items:center; gap:8px; padding:7px 10px;
+      border:1px solid rgba(191,163,90,.5); border-radius:10px;
+      background:rgba(32,26,20,.6); color:var(--ink); box-shadow:var(--shadow);
+      text-decoration:none; font-size:13px; cursor:pointer;
+    }
+    .chip:hover{background:rgba(50,40,30,.75)}
+    .title{
+      flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700;
+      letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2);
+    }
 
-  /* Map viewer */
-  .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none}
-  .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
-  .map-img{display:block; width:100%; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
-</style>
+    /* Map viewer (over particles) */
+    .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none}
+    .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
+    .map-img{
+      display:block; width:100%; height:auto; pointer-events:none;
+      filter:contrast(1.02) brightness(.96) sepia(.08);
+      box-shadow:var(--shadow); border-radius:4px;
+    }
+  </style>
 </head>
 <body>
   <!-- background particles -->
@@ -38,7 +57,7 @@
   <div class="topbar">
     <a class="chip" href="javascript:history.back()">⟵ Back Home</a>
     <div class="title">MIDDLE-EARTH MAP</div>
-    <a class="chip" href="#" onclick="resetView()">Reset View</a>
+    <a class="chip" href="#" onclick="resetView(); return false;">Reset View</a>
   </div>
 
   <!-- map -->
@@ -49,129 +68,187 @@
     </div>
   </div>
 
-<script>
-/* ========= Map pan/zoom ========= */
-const viewport=document.getElementById('viewport'), mapInner=document.getElementById('mapInner'), mapImg=document.getElementById('mapImg');
-const FIT=0.82, S={scale:1,min:.45,max:3.5,tx:0,ty:0,drag:false,lx:0,ly:0,nw:1000,nh:1000};
-mapImg.addEventListener('load',()=>{S.nw=mapImg.naturalWidth;S.nh=mapImg.naturalHeight;fit();apply();});
-function fit(){const vw=viewport.clientWidth,vh=viewport.clientHeight;const s=Math.min(vw/S.nw,vh/S.nh)*FIT;S.scale=s;S.tx=vw/2-(S.nw*s)/2;S.ty=vh/2-(S.nh*s)/2;}
-function apply(){mapInner.style.transform=`translate(${S.tx}px,${S.ty}px) scale(${S.scale})`;}
-function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
-viewport.addEventListener('pointerdown',e=>{S.drag=true;S.lx=e.clientX;S.ly=e.clientY;viewport.setPointerCapture(e.pointerId);});
-viewport.addEventListener('pointermove',e=>{if(!S.drag)return;const dx=e.clientX-S.lx,dy=e.clientY-S.ly;S.tx+=dx;S.ty+=dy;S.lx=e.clientX;S.ly=e.clientY;apply();});
-viewport.addEventListener('pointerup',e=>{S.drag=false;viewport.releasePointerCapture(e.pointerId);});
-viewport.addEventListener('wheel',e=>{e.preventDefault();const f=(e.deltaY<0)?1.08:0.92;const ns=clamp(S.scale*f,S.min,S.max);const r=viewport.getBoundingClientRect();
-  const x=(e.clientX-r.left-S.tx)/S.scale, y=(e.clientY-r.top-S.ty)/S.scale; S.tx=e.clientX-r.left-x*ns; S.ty=e.clientY-r.top-y*ns; S.scale=ns; apply();},{passive:false});
-function resetView(){fit();apply();} window.addEventListener('resize',()=>{fit();apply();});
+  <script>
+    /* ========= Map pan/zoom ========= */
+    const viewport = document.getElementById('viewport');
+    const mapInner = document.getElementById('mapInner');
+    const mapImg   = document.getElementById('mapImg');
 
-/* ========= Background particles (your exact logic) ========= */
-const palette = { gold:"#d4af37", ember:"rgba(255,140,60,.9)", leaf:"#b6a47a" };
-const glyphs  = ["✶","✷","✸","✹","✺","✧","✦","✳"];
-const runes   = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];
-const leaves  = ["🍂","🍁"];
+    const FIT_FACTOR = 0.82;
+    const st = { scale:1, min:.45, max:3.5, tx:0, ty:0, dragging:false, lx:0, ly:0, nw:1000, nh:1000 };
 
-const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
-let W=0,H=0;
-function sizeCanvas(){ const dpr=Math.min(devicePixelRatio||1,2);
-  canvas.width=Math.floor(innerWidth*dpr); canvas.height=Math.floor(innerHeight*dpr);
-  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
-  ctx.setTransform(dpr,0,0,dpr,0,0); W=innerWidth; H=innerHeight;
-}
-addEventListener('resize', sizeCanvas); sizeCanvas();
-
-/* --- flakes --- */
-const flakes = [];
-const FLAKE_COUNT = 60;
-function makeFlake() {
-  const kind = Math.random();
-  let type, char, color, size;
-  if (kind < .34){ type='rune';  char = runes[(Math.random()*runes.length)|0];  color = palette.gold;  size = 14+Math.random()*8; }
-  else if (kind < .67){ type='leaf'; char = leaves[(Math.random()*leaves.length)|0]; color = palette.leaf; size = 16+Math.random()*10; }
-  else { type='ember'; char="•"; color = palette.ember; size = 3+Math.random()*2; }
-  return {
-    x: Math.random()*W, y: -20-Math.random()*H, vy: 0.4+Math.random()*0.6,
-    drift: (Math.random()*0.6)+0.2, phase: Math.random()*Math.PI*2,
-    rot: Math.random()*Math.PI, spin: (Math.random()-0.5)*0.02,
-    type, char, color, size, alpha: type==='ember' ? 0.8 : 0.95
-  };
-}
-for (let i=0;i<FLAKE_COUNT;i++) flakes.push(makeFlake());
-
-/* --- bursts --- */
-let bursts = [];
-function burst(x,y){
-  const n = 18;
-  for (let i=0;i<n;i++){
-    bursts.push({
-      x,y, vx: Math.cos((i/n)*Math.PI*2)*(1.5+Math.random()*1.2),
-      vy: Math.sin((i/n)*Math.PI*2)*(1.5+Math.random()*1.2) - 0.6,
-      life: 1, char: glyphs[i%glyphs.length], size: 10+Math.random()*10
+    mapImg.addEventListener('load', () => {
+      st.nw = mapImg.naturalWidth; st.nh = mapImg.naturalHeight;
+      centerFit(); applyTransform();
     });
-  }
-}
-window.addEventListener('click', e => burst(e.clientX, e.clientY));
 
-/* --- draw helpers --- */
-function fontFor(px){
-  return `${px}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol","Symbola","Noto Sans",serif`;
-}
-
-/* --- animation loop --- */
-function step(){
-  requestAnimationFrame(step);
-  ctx.clearRect(0,0,W,H);
-
-  // soft global breeze so everything moves together
-  const t = performance.now() * 0.00015;
-  const breeze = Math.sin(t*3) * 0.4;
-
-  // flakes
-  for (let i=0;i<flakes.length;i++){
-    const f = flakes[i];
-    f.phase += 0.01;
-    f.x += Math.sin(f.phase)*f.drift + breeze;
-    f.y += f.vy;
-    f.rot += f.spin;
-
-    // wrap
-    if (f.y > H + 30) { flakes[i] = makeFlake(); flakes[i].y = -30; continue; }
-    if (f.x < -30) f.x = W + 30;
-    if (f.x > W + 30) f.x = -30;
-
-    // draw
-    if (f.type === 'ember'){
-      ctx.save();
-      ctx.globalAlpha = f.alpha;
-      ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI*2);
-      ctx.fillStyle = f.color; ctx.shadowColor = f.color; ctx.shadowBlur = 6; ctx.fill();
-      ctx.shadowBlur = 0; ctx.restore();
-    } else {
-      ctx.save();
-      ctx.translate(f.x, f.y); ctx.rotate(f.rot);
-      ctx.globalAlpha = f.alpha; ctx.fillStyle = f.color;
-      ctx.font = fontFor(f.size);
-      ctx.textAlign = "center"; ctx.textBaseline = "middle";
-      ctx.fillText(f.char, 0, 0);
-      ctx.restore();
+    function centerFit(){
+      const vw = viewport.clientWidth, vh = viewport.clientHeight;
+      const s = Math.min(vw/st.nw, vh/st.nh) * FIT_FACTOR;
+      st.scale = s;
+      st.tx = vw/2 - (st.nw*s)/2;
+      st.ty = vh/2 - (st.nh*s)/2;
     }
-  }
+    function applyTransform(){
+      mapInner.style.transform = `translate(${st.tx}px, ${st.ty}px) scale(${st.scale})`;
+    }
+    function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
 
-  // bursts
-  for (let i=bursts.length-1;i>=0;i--){
-    const b = bursts[i];
-    b.x += b.vx; b.y += b.vy; b.vy += 0.02; // gravity
-    b.life -= 0.02;
-    ctx.save();
-    ctx.globalAlpha = Math.max(b.life, 0);
-    ctx.fillStyle = palette.gold;
-    ctx.font = fontFor(b.size * (0.9 + b.life*0.6));
-    ctx.textAlign="center"; ctx.textBaseline="middle";
-    ctx.fillText(b.char, b.x, b.y);
-    ctx.restore();
-    if (b.life <= 0) bursts.splice(i,1);
-  }
-}
-step();
-</script>
+    viewport.addEventListener('pointerdown', e => {
+      st.dragging = true; st.lx = e.clientX; st.ly = e.clientY;
+      viewport.setPointerCapture(e.pointerId);
+    });
+    viewport.addEventListener('pointermove', e => {
+      if(!st.dragging) return;
+      const dx = e.clientX - st.lx, dy = e.clientY - st.ly;
+      st.tx += dx; st.ty += dy; st.lx = e.clientX; st.ly = e.clientY; applyTransform();
+    });
+    viewport.addEventListener('pointerup', e => {
+      st.dragging = false; viewport.releasePointerCapture(e.pointerId);
+    });
+    viewport.addEventListener('wheel', e => {
+      e.preventDefault();
+      const factor = (e.deltaY < 0) ? 1.08 : 0.92;
+      const ns = clamp(st.scale * factor, st.min, st.max);
+      const r = viewport.getBoundingClientRect();
+      const x = (e.clientX - r.left - st.tx) / st.scale;
+      const y = (e.clientY - r.top  - st.ty) / st.scale;
+      st.tx = e.clientX - r.left - x * ns;
+      st.ty = e.clientY - r.top  - y * ns;
+      st.scale = ns; applyTransform();
+    }, {passive:false});
+    function resetView(){ centerFit(); applyTransform(); }
+    window.addEventListener('resize', () => { centerFit(); applyTransform(); });
+
+    /* ========= Background particles =========
+       EXACT symbol sets + your flake/burst approach
+    */
+    const palette = { gold:"#d4af37", ember:"rgba(255,140,60,.9)", leaf:"#b6a47a" };
+    const glyphs  = ["✶","✷","✸","✹","✺","✧","✦","✳"];           // bursts
+    const runes   = ["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];           // falling
+    const leaves  = ["🍂","🍁"];                                    // falling
+
+    const canvas = document.getElementById('particles');
+    const ctx    = canvas.getContext('2d');
+
+    // Hi-DPI scaling so symbols look crisp
+    let W=0, H=0;
+    function sizeCanvas(){
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width  = Math.floor(innerWidth * dpr);
+      canvas.height = Math.floor(innerHeight * dpr);
+      canvas.style.width  = innerWidth + 'px';
+      canvas.style.height = innerHeight + 'px';
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+      W = innerWidth; H = innerHeight;
+    }
+    window.addEventListener('resize', sizeCanvas);
+    sizeCanvas();
+
+    // Density + edge-bleed so flakes truly occupy the sides
+    const FLAKE_COUNT = 260;   // ⬅ make higher for more density (e.g. 320)
+    const EDGE = 100;          // ⬅ off-screen bleed (left/right/top/bottom)
+
+    const flakes = [];
+    function makeFlake() {
+      const kind = Math.random();
+      let type, char, color, size;
+      if (kind < .34){ type='rune';  char = runes[(Math.random()*runes.length)|0];  color = palette.gold; size = 14 + Math.random()*8; }
+      else if (kind < .67){ type='leaf'; char = leaves[(Math.random()*leaves.length)|0]; color = palette.leaf; size = 16 + Math.random()*10; }
+      else { type='ember'; char="•"; color = palette.ember; size = 3 + Math.random()*2; }
+
+      return {
+        x: Math.random() * (W + EDGE*2) - EDGE,  // spawn from -EDGE..W+EDGE
+        y: -20 - Math.random() * (H + EDGE),     // some start well above
+        vy: 0.5 + Math.random() * 0.7,           // natural fall
+        drift: 0.2 + Math.random() * 0.4,        // gentle personal sway
+        phase: Math.random() * Math.PI * 2,
+        rot: Math.random() * Math.PI, spin: (Math.random()-0.5) * 0.02,
+        type, char, color, size, alpha: type==='ember' ? 0.8 : 0.95
+      };
+    }
+    for (let i=0;i<FLAKE_COUNT;i++) flakes.push(makeFlake());
+
+    // Click bursts (golden glyphs)
+    let bursts = [];
+    function burst(x,y){
+      const n = 18;
+      for (let i=0;i<n;i++){
+        bursts.push({
+          x, y,
+          vx: Math.cos((i/n)*Math.PI*2) * (1.5 + Math.random()*1.2),
+          vy: Math.sin((i/n)*Math.PI*2) * (1.5 + Math.random()*1.2) - 0.6,
+          life: 1,
+          char: glyphs[i % glyphs.length],
+          size: 10 + Math.random()*10
+        });
+      }
+    }
+    // Canvas ignores clicks (pointer-events:none), so listen on window
+    window.addEventListener('click', e => burst(e.clientX, e.clientY));
+
+    function fontFor(px){
+      // Wide stack to render runes + emoji across OSes
+      return `${px}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Emoji","Apple Color Emoji","Noto Color Emoji","Segoe UI Symbol","Symbola","Noto Sans",serif`;
+    }
+
+    function step(){
+      requestAnimationFrame(step);
+      ctx.clearRect(0,0,W,H);
+
+      // gentle breeze so everything moves together
+      const t = performance.now() * 0.00015;
+      const breeze = Math.sin(t*3) * 0.4;
+
+      // Flakes
+      for (let i=0;i<flakes.length;i++){
+        const f = flakes[i];
+        f.phase += 0.01;
+        f.x += Math.sin(f.phase) * f.drift + breeze;
+        f.y += f.vy;
+        f.rot += f.spin;
+
+        // Wrap using EDGE bleed
+        if (f.y > H + EDGE) { const nf = makeFlake(); nf.y = -EDGE; flakes[i] = nf; continue; }
+        if (f.x < -EDGE) f.x = W + EDGE;
+        if (f.x > W + EDGE) f.x = -EDGE;
+
+        // Draw
+        if (f.type === 'ember'){
+          ctx.save();
+          ctx.globalAlpha = f.alpha;
+          ctx.beginPath(); ctx.arc(f.x, f.y, f.size, 0, Math.PI*2);
+          ctx.fillStyle = f.color; ctx.shadowColor = f.color; ctx.shadowBlur = 6; ctx.fill();
+          ctx.shadowBlur = 0; ctx.restore();
+        } else {
+          ctx.save();
+          ctx.translate(f.x, f.y); ctx.rotate(f.rot);
+          ctx.globalAlpha = f.alpha; ctx.fillStyle = f.color;
+          ctx.font = fontFor(f.size);
+          ctx.textAlign = "center"; ctx.textBaseline = "middle";
+          ctx.fillText(f.char, 0, 0);
+          ctx.restore();
+        }
+      }
+
+      // Bursts
+      for (let i=bursts.length-1;i>=0;i--){
+        const b = bursts[i];
+        b.x += b.vx; b.y += b.vy; b.vy += 0.02;   // gravity
+        b.life -= 0.02;
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(b.life, 0);
+        ctx.fillStyle = palette.gold;
+        ctx.font = fontFor(b.size * (0.9 + b.life*0.6));
+        ctx.textAlign="center"; ctx.textBaseline="middle";
+        ctx.fillText(b.char, b.x, b.y);
+        ctx.restore();
+
+        if (b.life <= 0) bursts.splice(i,1);
+      }
+    }
+    step();
+  </script>
 </body>
 </html>
