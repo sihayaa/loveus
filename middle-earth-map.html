@@ -59,9 +59,16 @@
   .hint.on{display:block}
 
   /* modals base */
-  .modal{position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55)}
+  .modal{position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); overflow:hidden}
   .modal.on{display:flex}
-  .panel{position:relative; width:min(720px, 92vw); max-height:85vh; overflow:auto; border-radius:16px; box-shadow:var(--shadow)}
+  .panel{
+    position:relative; width:min(720px, 92vw); max-height:85vh;
+    overflow-y:auto; overflow-x:clip;               /* no horizontal scrollbar */
+    border-radius:16px; box-shadow:var(--shadow);
+  }
+  /* hide inner scrollbars (still scrolls) */
+  .panel::-webkit-scrollbar{ width:0; height:0; }
+  .panel{ scrollbar-width:none; -ms-overflow-style:none; }
 
   /* === PARCHMENT w/ TRUE SCROLL (rolled top & bottom) === */
   .parchment{
@@ -91,20 +98,24 @@
       inset -18px 0 30px rgba(0,0,0,.10);
     mix-blend-mode:multiply;
   }
-  /* SCROLL ROLLERS */
-  .scrollpaper{padding-top:36px; padding-bottom:32px}
+  /* SCROLL ROLLERS — kept inside panel width */
+  .scrollpaper{ padding-top:36px; padding-bottom:32px; }
   .scrollpaper::before,
   .scrollpaper::after{
-    content:""; position:absolute; left:50%; transform:translateX(-50%);
-    width:calc(100% + 40px); height:26px; border-radius:18px;
+    content:"";
+    position:absolute;
+    left:12px;
+    right:12px;
+    height:26px;
+    border-radius:18px;
     background:
       radial-gradient(120% 100% at 15% 50%, rgba(255,255,255,.75), rgba(255,255,255,.05) 45%, transparent 60%),
       radial-gradient(120% 100% at 85% 50%, rgba(255,255,255,.55), rgba(255,255,255,.05) 50%, transparent 65%),
       linear-gradient(90deg, #d7c39a, #c9b182 40%, #bfa171 60%, #d7c39a);
     box-shadow:0 6px 18px rgba(0,0,0,.25), inset 0 0 12px rgba(0,0,0,.15);
   }
-  .scrollpaper::before{ top:-18px; }
-  .scrollpaper::after { bottom:-18px; box-shadow:0 -6px 18px rgba(0,0,0,.25), inset 0 0 12px rgba(0,0,0,.15); }
+  .scrollpaper::before{ top:-14px; }
+  .scrollpaper::after { bottom:-14px; box-shadow:0 -6px 18px rgba(0,0,0,.25), inset 0 0 12px rgba(0,0,0,.15); }
 
   .scroll-body{padding:18px 20px 14px 20px}
   .scribe-line{display:flex; align-items:center; gap:10px; margin:8px 0 4px}
@@ -119,7 +130,7 @@
   }
   .image-wrap img{max-width:100%; height:auto; border-radius:8px; border:1px solid rgba(0,0,0,.14); box-shadow:0 6px 16px rgba(0,0,0,.25)}
 
-  /* Form fields styled as parchment */
+  /* Form inputs (parchment) */
   .row{display:flex; gap:10px; margin:10px 0}
   .row label{width:90px; opacity:.9; font-size:13px; padding-top:9px; color:#3b2f1b; font-family:"Cinzel",serif}
   .row input[type="text"], .row textarea{
@@ -138,7 +149,6 @@
     outline:none; border-color:#c9ac68; box-shadow:0 0 0 2px rgba(201,172,104,.25), inset 0 1px 0 rgba(255,255,255,.6);
   }
 
-  /* modal top/delete buttons */
   .panel .icon-btn{
     position:absolute; top:8px; right:8px; border:none; background:transparent; font-size:18px; line-height:1;
     color:#5b4723; cursor:pointer; padding:6px 8px; border-radius:8px;
@@ -318,7 +328,7 @@
   }
 
   viewport.addEventListener('pointerdown', e=>{
-    if (e.target.closest('.pin')) return;
+    if (e.target.closest('.pin')) return;  // don't start panning from a pin
     cam.dragging = true; moved=false; cam.lx=e.clientX; cam.ly=e.clientY;
     viewport.classList.add('dragging'); viewport.setPointerCapture(e.pointerId);
   });
@@ -514,13 +524,12 @@
   aCancel.addEventListener('click', closeAdd);
   modalAdd.addEventListener('click', (e)=>{ if(e.target===modalAdd) closeAdd(); });
 
-  /* ENTER = Save (while Add modal is open; ignore inside textarea) */
+  /* ENTER = Save (Add modal open; ignore when typing in textarea) */
   window.addEventListener('keydown', (e)=>{
     if(e.key!=='Enter') return;
     if(!modalAdd.classList.contains('on')) return;
     if(e.target.tagName==='TEXTAREA') return;
-    e.preventDefault();
-    aSave.click();
+    e.preventDefault(); aSave.click();
   });
 
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAdd(); closeView(); }});
