@@ -29,6 +29,28 @@
   .chip:hover{background:rgba(54,46,36,.78)}
   .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2)}
 
+  /* === One Ring pin counter === */
+  .ring-badge{
+    width:42px; height:42px; border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    border:2px solid rgba(212,175,55,.85);
+    background:
+      radial-gradient(circle at 50% 50%, rgba(255,220,130,.12), rgba(0,0,0,0) 62%),
+      conic-gradient(from 0deg, rgba(255,210,120,.20), rgba(212,175,55,.36), rgba(255,210,120,.20));
+    box-shadow:0 0 12px rgba(212,175,55,.35), inset 0 0 12px rgba(212,175,55,.22);
+    margin-left:4px;
+    animation:ringPulse 3.8s ease-in-out infinite;
+  }
+  .ring-badge span{
+    font-family:"Cinzel",serif; font-weight:700; font-size:14px;
+    color:#2b2414; text-shadow:0 0 6px rgba(255,240,200,.45);
+    line-height:1;
+  }
+  @keyframes ringPulse{
+    0%,100%{ box-shadow:0 0 10px rgba(212,175,55,.30), inset 0 0 10px rgba(212,175,55,.18) }
+    50%     { box-shadow:0 0 16px rgba(212,175,55,.55), inset 0 0 12px rgba(212,175,55,.28) }
+  }
+
   /* map */
   .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none; cursor:grab}
   .viewport.dragging{cursor:grabbing}
@@ -63,10 +85,9 @@
   .modal.on{display:flex}
   .panel{
     position:relative; width:min(720px, 92vw); max-height:85vh;
-    overflow-y:auto; overflow-x:clip;               /* no horizontal scrollbar */
+    overflow-y:auto; overflow-x:clip;
     border-radius:16px; box-shadow:var(--shadow);
   }
-  /* hide inner scrollbars (still scrolls) */
   .panel::-webkit-scrollbar{ width:0; height:0; }
   .panel{ scrollbar-width:none; -ms-overflow-style:none; }
 
@@ -79,7 +100,6 @@
     color:#2b2414;
     border:1px solid #b79b5a;
   }
-  /* paper grain */
   .parchment::before{
     content:""; position:absolute; inset:12px; pointer-events:none; border-radius:12px;
     background:
@@ -87,7 +107,6 @@
       radial-gradient(420px 240px at 50% 10%, rgba(0,0,0,.08), transparent 60%);
     mix-blend-mode:multiply; opacity:.45;
   }
-  /* inner curl / edge shading */
   .rolled::after{
     content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
     box-shadow:
@@ -98,7 +117,6 @@
       inset -18px 0 30px rgba(0,0,0,.10);
     mix-blend-mode:multiply;
   }
-  /* SCROLL ROLLERS — kept inside panel width */
   .scrollpaper{ padding-top:36px; padding-bottom:32px; }
   .scrollpaper::before,
   .scrollpaper::after{
@@ -122,7 +140,6 @@
   .scribe-line .label{font-weight:700; font-family:"Cinzel",serif; letter-spacing:.3px}
   .scribe-line .rule{flex:1; height:1px; background:linear-gradient(90deg,#b79b5a,rgba(183,155,90,.1)); opacity:.6}
 
-  /* Title & Caption in VIEW modal */
   .scribe-text{
     margin:0 0 10px; white-space:pre-wrap; line-height:1.5;
     font-family:"Brush Script MT","Brush Script Std","Segoe Script","Comic Sans MS",cursive;
@@ -205,6 +222,12 @@
     <div class="title">MIDDLE-EARTH MAP</div>
     <button id="pinBtn" class="chip">📍 Pin it</button>
     <button id="exitSecretBtn" class="chip" style="display:none">✨ Exit Secret</button>
+
+    <!-- One Ring counter -->
+    <div id="ringCount" class="ring-badge" aria-label="Total pins" title="Total pins">
+      <span>0</span>
+    </div>
+
     <a class="chip" href="#" onclick="resetView(); return false;">Reset View</a>
   </div>
   <div id="pinHint" class="hint">Pin mode: click anywhere on the map</div>
@@ -328,7 +351,7 @@
   }
 
   viewport.addEventListener('pointerdown', e=>{
-    if (e.target.closest('.pin')) return;  // don't start panning from a pin
+    if (e.target.closest('.pin')) return;
     cam.dragging = true; moved=false; cam.lx=e.clientX; cam.ly=e.clientY;
     viewport.classList.add('dragging'); viewport.setPointerCapture(e.pointerId);
   });
@@ -396,7 +419,24 @@
   const pinBtn = document.getElementById('pinBtn');
   const hint   = document.getElementById('pinHint');
   const exitSecretBtn = document.getElementById('exitSecretBtn');
+  const ringEl = document.getElementById('ringCount');
   let addingPin=false, addingSecret=false, secretView=false;
+
+  function setRing(n){ ringEl.querySelector('span').textContent = String(n ?? 0); }
+
+  async function refreshRingCount(){
+    try{
+      if(useSB){
+        const { count, error } = await sb.from('pins').select('id', { count:'exact', head:true });
+        if(error){ setRing(loadPinsLocal().length); }
+        else { setRing(count ?? 0); }
+      }else{
+        setRing(loadPinsLocal().length);
+      }
+    }catch(_){
+      setRing(loadPinsLocal().length);
+    }
+  }
 
   function togglePinMode(on){
     addingPin = (on!=null)?on:!addingPin; addingSecret=false;
@@ -469,6 +509,7 @@
       PINS = all.filter(p => !!p.secret === !!secretView);
     }
     renderPins();
+    refreshRingCount();   /* <— update One Ring count */
   }
 
   function renderPins(){
@@ -558,7 +599,7 @@
       if(useSB){ const { error } = await sb.from('pins').insert(record); if(error) throw error; }
       else { const all=loadPinsLocal(); all.push({ id:"p_"+Date.now(), created_at:new Date().toISOString(), ...record }); savePinsLocal(all); }
     }catch(err){ console.error("Save failed:", err); alert("Saving pin failed. Check console/network and your Supabase policies."); }
-    closeAdd(); await refreshPins();
+    closeAdd(); await refreshPins(); refreshRingCount();  /* <— update after save */
   });
 
   function fileToDataURLResized(file, maxDim=1280, quality=0.85){
@@ -644,7 +685,7 @@
       console.error(err); alert("Failed to delete pin. Check console/network and your Supabase policies.");
     }
     openPinId=null;
-    closeView(); await refreshPins();
+    closeView(); await refreshPins(); refreshRingCount();  /* <— update after delete */
   }
 
   vDelete.addEventListener('click', deleteOpenPin);
