@@ -63,7 +63,7 @@
   .modal.on{display:flex}
   .panel{position:relative; width:min(720px, 92vw); max-height:85vh; overflow:auto; border-radius:16px; box-shadow:var(--shadow)}
 
-  /* === PARCHEMENT / ROLLED EDGES === */
+  /* === PARCHMENT w/ TRUE SCROLL (rolled top & bottom) === */
   .parchment{
     background:
       radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,.35), rgba(0,0,0,0) 60%),
@@ -80,7 +80,7 @@
       radial-gradient(420px 240px at 50% 10%, rgba(0,0,0,.08), transparent 60%);
     mix-blend-mode:multiply; opacity:.45;
   }
-  /* rolled edges: inner shadows + subtle corner curls */
+  /* inner curl / edge shading */
   .rolled::after{
     content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
     box-shadow:
@@ -89,14 +89,22 @@
       inset 0 -18px 30px rgba(0,0,0,.12),
       inset 18px 0 30px rgba(0,0,0,.10),
       inset -18px 0 30px rgba(0,0,0,.10);
-    /* curled highlights at left/right edges */
-    background:
-      radial-gradient(140px 60px at 0% 50%, rgba(255,255,255,.28), transparent 65%),
-      radial-gradient(140px 60px at 100% 50%, rgba(255,255,255,.22), transparent 65%),
-      radial-gradient(60px 60px at 100% 0%, rgba(255,255,255,.75), transparent 60%), /* top-right dog-ear light */
-      radial-gradient(60px 60px at 0% 100%, rgba(255,255,255,.55), transparent 60%); /* bottom-left soft curl */
-    mix-blend-mode:screen;
+    mix-blend-mode:multiply;
   }
+  /* SCROLL ROLLERS */
+  .scrollpaper{padding-top:36px; padding-bottom:32px}
+  .scrollpaper::before,
+  .scrollpaper::after{
+    content:""; position:absolute; left:50%; transform:translateX(-50%);
+    width:calc(100% + 40px); height:26px; border-radius:18px;
+    background:
+      radial-gradient(120% 100% at 15% 50%, rgba(255,255,255,.75), rgba(255,255,255,.05) 45%, transparent 60%),
+      radial-gradient(120% 100% at 85% 50%, rgba(255,255,255,.55), rgba(255,255,255,.05) 50%, transparent 65%),
+      linear-gradient(90deg, #d7c39a, #c9b182 40%, #bfa171 60%, #d7c39a);
+    box-shadow:0 6px 18px rgba(0,0,0,.25), inset 0 0 12px rgba(0,0,0,.15);
+  }
+  .scrollpaper::before{ top:-18px; }
+  .scrollpaper::after { bottom:-18px; box-shadow:0 -6px 18px rgba(0,0,0,.25), inset 0 0 12px rgba(0,0,0,.15); }
 
   .scroll-body{padding:18px 20px 14px 20px}
   .scribe-line{display:flex; align-items:center; gap:10px; margin:8px 0 4px}
@@ -165,7 +173,7 @@
   @keyframes gateShow{from{opacity:0; transform:scale(.92)} to{opacity:1; transform:scale(1)}}
   @keyframes gateOpen{from{transform:scale(1); opacity:1} to{transform:scale(1.35); opacity:0}}
 
-  /* DELETE confirm — parchment center, orange "Freestyle Script" text */
+  /* DELETE confirm — parchment scroll, orange cursive text */
   .scroll-confirm.parchment{width:min(560px, 92vw)}
   .doom-msg{
     font-family:"Freestyle Script","Freestyle Cursive","Brush Script MT","Brush Script Std","Segoe Script",cursive;
@@ -201,7 +209,7 @@
 
   <!-- Add Pin -->
   <div id="modalAdd" class="modal" aria-hidden="true">
-    <div class="panel parchment rolled" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="panel parchment rolled scrollpaper" role="dialog" aria-modal="true" aria-labelledby="addTitle">
       <h3 id="addTitle" style="margin:0; padding:16px 18px 0; font-family:'Cinzel',serif">Add Pin</h3>
       <div class="scroll-body">
         <div class="row"><label>Title*</label><input id="aTitle" type="text" placeholder="Title for hover…" required /></div>
@@ -214,7 +222,7 @@
 
   <!-- View Pin -->
   <div id="modalView" class="modal" aria-hidden="true">
-    <div class="panel parchment rolled" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+    <div class="panel parchment rolled scrollpaper" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
       <button id="vDelete" class="icon-btn" title="Delete pin">✕</button>
       <div class="scroll-body">
         <div class="scribe-line"><span class="label">Title:</span><div class="rule"></div></div>
@@ -233,10 +241,10 @@
 
   <!-- Delete confirm -->
   <div id="modalConfirm" class="modal" aria-hidden="true">
-    <div class="panel parchment rolled scroll-confirm" role="dialog" aria-modal="true">
+    <div class="panel parchment rolled scrollpaper scroll-confirm" role="dialog" aria-modal="true">
       <div class="doom-msg">
-        “You stand upon the edge of doom. Deleting this file will seal its fate.<br>
-        Do you wish to continue?”
+        You stand upon the edge of doom. Deleting this file will seal its fate.<br>
+        Do you wish to continue?
       </div>
       <div class="doom-actions">
         <button id="cCancel" class="btn-ghost">Cancel</button>
@@ -506,11 +514,13 @@
   aCancel.addEventListener('click', closeAdd);
   modalAdd.addEventListener('click', (e)=>{ if(e.target===modalAdd) closeAdd(); });
 
-  /* Enter to Save (not inside textarea) */
-  modalAdd.addEventListener('keydown', (e)=>{
-    if(e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){
-      e.preventDefault(); aSave.click();
-    }
+  /* ENTER = Save (while Add modal is open; ignore inside textarea) */
+  window.addEventListener('keydown', (e)=>{
+    if(e.key!=='Enter') return;
+    if(!modalAdd.classList.contains('on')) return;
+    if(e.target.tagName==='TEXTAREA') return;
+    e.preventDefault();
+    aSave.click();
   });
 
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAdd(); closeView(); }});
