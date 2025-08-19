@@ -37,14 +37,20 @@
 
   /* pins */
   .pins{position:absolute; inset:0; z-index:6; pointer-events:auto}
-  .pin{position:absolute; pointer-events:auto; cursor:pointer;
-    transform:translate(-50%,-100%) scale(calc(1/var(--zoom)));
+  .pin{
+    position:absolute; cursor:pointer; transform:translate(-50%,-100%) scale(calc(1/var(--zoom)));
     width:24px; height:24px; border-radius:50%;
-    background:radial-gradient(circle at 45% 40%, #e9d487, #c9a84b 60%, #7b6230 100%);
+    background:radial-gradient(circle at 45% 40%, #f5e7b0, #c9a84b 60%, #7b6230 100%);
     box-shadow:0 0 0 1px rgba(0,0,0,.5), 0 2px 6px rgba(0,0,0,.45);
-    display:flex; align-items:center; justify-content:center}
+    display:flex; align-items:center; justify-content:center
+  }
+  .pin.secret{
+    background:radial-gradient(circle at 45% 40%, #e9d5ff, #b987ff 60%, #5a33a6 100%);
+    box-shadow:0 0 0 1px rgba(40,0,70,.45), 0 2px 7px rgba(90,51,166,.55);
+  }
   .pin span{font-size:14px; line-height:1; color:#281f11}
   .pin:hover{box-shadow:0 0 0 1px rgba(0,0,0,.6), 0 0 12px rgba(212,175,55,.45)}
+  .pin.secret:hover{box-shadow:0 0 0 1px rgba(40,0,70,.6), 0 0 12px rgba(185,135,255,.55)}
   .pintip{position:absolute; transform:translate(-50%,-120%); background:rgba(30,25,20,.92);
     color:#e7dbc3; border:1px solid rgba(212,175,55,.55); border-radius:8px; padding:4px 8px; font-size:12px; white-space:nowrap; pointer-events:none}
 
@@ -57,7 +63,7 @@
   .modal.on{display:flex}
   .panel{position:relative; width:min(720px, 92vw); max-height:85vh; overflow:auto; border-radius:16px; box-shadow:var(--shadow)}
 
-  /* === PARCHEMENT / SCROLL THEME (reusable) === */
+  /* === PARCHEMENT / ROLLED EDGES === */
   .parchment{
     background:
       radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,.35), rgba(0,0,0,0) 60%),
@@ -66,13 +72,32 @@
     color:#2b2414;
     border:1px solid #b79b5a;
   }
-  .parchment:before{
-    content:""; position:absolute; inset:12px; pointer-events:none;
+  /* paper grain */
+  .parchment::before{
+    content:""; position:absolute; inset:12px; pointer-events:none; border-radius:12px;
     background:
       repeating-linear-gradient(0deg, rgba(0,0,0,.035) 0 3px, rgba(0,0,0,0) 3px 6px),
       radial-gradient(420px 240px at 50% 10%, rgba(0,0,0,.08), transparent 60%);
-    mix-blend-mode:multiply; opacity:.45; border-radius:12px;
+    mix-blend-mode:multiply; opacity:.45;
   }
+  /* rolled edges: inner shadows + subtle corner curls */
+  .rolled::after{
+    content:""; position:absolute; inset:0; border-radius:16px; pointer-events:none;
+    box-shadow:
+      inset 0 0 18px rgba(0,0,0,.32),
+      inset 0 18px 30px rgba(0,0,0,.12),
+      inset 0 -18px 30px rgba(0,0,0,.12),
+      inset 18px 0 30px rgba(0,0,0,.10),
+      inset -18px 0 30px rgba(0,0,0,.10);
+    /* curled highlights at left/right edges */
+    background:
+      radial-gradient(140px 60px at 0% 50%, rgba(255,255,255,.28), transparent 65%),
+      radial-gradient(140px 60px at 100% 50%, rgba(255,255,255,.22), transparent 65%),
+      radial-gradient(60px 60px at 100% 0%, rgba(255,255,255,.75), transparent 60%), /* top-right dog-ear light */
+      radial-gradient(60px 60px at 0% 100%, rgba(255,255,255,.55), transparent 60%); /* bottom-left soft curl */
+    mix-blend-mode:screen;
+  }
+
   .scroll-body{padding:18px 20px 14px 20px}
   .scribe-line{display:flex; align-items:center; gap:10px; margin:8px 0 4px}
   .scribe-line .label{font-weight:700; font-family:"Cinzel",serif; letter-spacing:.3px}
@@ -96,8 +121,6 @@
   }
   .row textarea{min-height:86px; resize:vertical}
   .row input[type="text"]::placeholder, .row textarea::placeholder{color:#7b6a4a}
-
-  /* file button parchment styling */
   .row input[type="file"]{flex:1; color:#2b2414}
   .row input[type="file"]::file-selector-button{
     background:#e8dcc0; color:#2b2414; border:1px solid #b79b5a; border-radius:9px; padding:7px 10px; cursor:pointer;
@@ -142,12 +165,12 @@
   @keyframes gateShow{from{opacity:0; transform:scale(.92)} to{opacity:1; transform:scale(1)}}
   @keyframes gateOpen{from{transform:scale(1); opacity:1} to{transform:scale(1.35); opacity:0}}
 
-  /* === DELETE CONFIRM — parchment, orange Agency FB text === */
+  /* DELETE confirm — parchment center, orange "Freestyle Script" text */
   .scroll-confirm.parchment{width:min(560px, 92vw)}
   .doom-msg{
-    font-family:"Agency FB","Impact","Haettenschweiler","Arial Narrow Bold",sans-serif;
-    color:#E86415; font-size:26px; letter-spacing:.5px; line-height:1.25;
-    margin:10px 14px 18px; text-align:center;
+    font-family:"Freestyle Script","Freestyle Cursive","Brush Script MT","Brush Script Std","Segoe Script",cursive;
+    color:#E86415; font-size:28px; letter-spacing:.4px; line-height:1.25;
+    margin:16px 18px 20px; text-align:center;
   }
   .doom-actions{display:flex; gap:10px; justify-content:center; padding:0 0 14px}
   .btn-ghost{padding:9px 14px; border-radius:10px; border:1px solid #b79b5a; background:#f1e7cc; color:#2b2414; cursor:pointer}
@@ -176,9 +199,9 @@
     </div>
   </div>
 
-  <!-- Add Pin (now parchment/scroll themed) -->
+  <!-- Add Pin -->
   <div id="modalAdd" class="modal" aria-hidden="true">
-    <div class="panel parchment" role="dialog" aria-modal="true" aria-labelledby="addTitle">
+    <div class="panel parchment rolled" role="dialog" aria-modal="true" aria-labelledby="addTitle">
       <h3 id="addTitle" style="margin:0; padding:16px 18px 0; font-family:'Cinzel',serif">Add Pin</h3>
       <div class="scroll-body">
         <div class="row"><label>Title*</label><input id="aTitle" type="text" placeholder="Title for hover…" required /></div>
@@ -189,9 +212,9 @@
     </div>
   </div>
 
-  <!-- View Pin (parchment scroll) -->
+  <!-- View Pin -->
   <div id="modalView" class="modal" aria-hidden="true">
-    <div class="panel parchment" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+    <div class="panel parchment rolled" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
       <button id="vDelete" class="icon-btn" title="Delete pin">✕</button>
       <div class="scroll-body">
         <div class="scribe-line"><span class="label">Title:</span><div class="rule"></div></div>
@@ -208,9 +231,9 @@
     </div>
   </div>
 
-  <!-- Delete confirm — parchment with orange Agency FB text -->
+  <!-- Delete confirm -->
   <div id="modalConfirm" class="modal" aria-hidden="true">
-    <div class="panel parchment scroll-confirm" role="dialog" aria-modal="true">
+    <div class="panel parchment rolled scroll-confirm" role="dialog" aria-modal="true">
       <div class="doom-msg">
         “You stand upon the edge of doom. Deleting this file will seal its fate.<br>
         Do you wish to continue?”
@@ -435,6 +458,7 @@
     for(const p of PINS){
       const el=document.createElement('button');
       el.className='pin';
+      if (p.secret) el.classList.add('secret');
       el.dataset.id = p.id;
       el.style.left=(p.x*cam.natW)+'px';
       el.style.top =(p.y*cam.natH)+'px';
