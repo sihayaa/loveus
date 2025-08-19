@@ -68,37 +68,37 @@
   .btn.primary{background:#3a2e21}
   .btn:hover{filter:brightness(1.06)}
 
-  /* ===== White Tree of Gondor Transition (refined) ===== */
+  /* ===== White Tree of Gondor (final) ===== */
   .gondor{position:fixed; inset:0; z-index:2000; display:none; align-items:center; justify-content:center}
   .gondor.on{display:flex}
   .gondor .veil{position:absolute; inset:0; background: radial-gradient(1200px 800px at 50% 45%, rgba(5,14,20,.88), rgba(0,0,0,.96)); opacity:0; animation:veilIn .45s ease-out forwards}
   .gondor .stage{position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center}
 
   .tree{
-    width:min(640px,86vw);
+    width:min(680px,88vw);
     filter:drop-shadow(0 0 12px var(--gondorGlow)) drop-shadow(0 0 26px rgba(159,227,255,.18));
     opacity:0; animation:treeIn .5s ease-out .05s forwards;
   }
   .tree .stroke{
-    stroke:var(--gondor); fill:none; stroke-width:2.3; stroke-linecap:round; stroke-linejoin:round;
+    stroke:var(--gondor); fill:none; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round;
     stroke-dasharray:1; stroke-dashoffset:1;
-    animation:draw 2.3s cubic-bezier(.22,.7,.12,1) forwards .2s;  /* slower draw */
+    animation:draw 2.6s cubic-bezier(.22,.7,.12,1) forwards .18s;
   }
-  .tree .stroke.slow{ animation-duration:2.7s; animation-delay:.35s; }
+  .tree .stroke.slow{ animation-duration:3.0s; animation-delay:.28s; }
 
-  .tree .star{ fill:var(--gondor); opacity:0; filter:drop-shadow(0 0 6px var(--gondorGlow)); animation:twinkle 2s ease-in-out infinite alternate }
-  .tree .star.top{animation-delay:1.2s}
-  .tree .star.d1{animation-delay:1.4s} .tree .star.d2{animation-delay:1.52s} .tree .star.d3{animation-delay:1.64s}
-  .tree .star.d4{animation-delay:1.76s} .tree .star.d5{animation-delay:1.88s} .tree .star.d6{animation-delay:2.0s} .tree .star.d7{animation-delay:2.12s}
+  .tree .star{ fill:var(--gondor); opacity:0; filter:drop-shadow(0 0 7px var(--gondorGlow)); animation:twinkle 2s ease-in-out infinite alternate }
+  .tree .star.top{animation-delay:1.1s}
+  .tree .star.d1{animation-delay:1.35s} .tree .star.d2{animation-delay:1.47s} .tree .star.d3{animation-delay:1.59s}
+  .tree .star.d4{animation-delay:1.71s} .tree .star.d5{animation-delay:1.83s} .tree .star.d6{animation-delay:1.95s} .tree .star.d7{animation-delay:2.07s}
 
-  .pulses circle{stroke:var(--gondor); stroke-width:1.2; fill:none; opacity:0; animation:pulse 2.1s ease-out forwards 1.5s}
+  .pulses circle{stroke:var(--gondor); stroke-width:1.2; fill:none; opacity:0; animation:pulse 2.1s ease-out forwards 1.6s}
 
   .curtains .panel{
     position:absolute; top:50%; height:56vh; width:32vw; max-width:520px; transform:translateY(-50%);
     border:1px solid rgba(159,227,255,.52);
     background:radial-gradient(260px 120px at 50% 30%, rgba(159,227,255,.08), rgba(159,227,255,0) 60%), linear-gradient(180deg, rgba(159,227,255,.06), rgba(159,227,255,.02));
     box-shadow:0 0 22px rgba(159,227,255,.16), inset 0 0 12px rgba(159,227,255,.10);
-    border-radius:10px; opacity:0; animation:curtainsPop .3s ease-out forwards var(--curtain-pop-delay, 2.0s);
+    border-radius:10px; opacity:0; animation:curtainsPop .32s ease-out forwards var(--curtain-pop-delay, 2.0s);
   }
   .curtains .panel.left{left:50%; transform:translate(-100%,-50%)}
   .curtains .panel.right{left:50%; transform:translate(0,-50%)}
@@ -108,7 +108,7 @@
   @keyframes veilIn{from{opacity:0} to{opacity:1}}
   @keyframes treeIn{from{opacity:0; transform:scale(.985)} to{opacity:1; transform:scale(1)}}
   @keyframes draw{to{stroke-dashoffset:0}}
-  @keyframes twinkle{0%{opacity:0} 50%{opacity:.95} 100%{opacity:.45}}
+  @keyframes twinkle{0%{opacity:0} 50%{opacity:.95} 100%{opacity:.48}}
   @keyframes pulse{0%{r:6; opacity:.0} 35%{opacity:.35} 100%{r:150; opacity:0}}
   @keyframes curtainsPop{from{opacity:0; transform:translate(-100%,-50%) scale(.985)} to{opacity:1; transform:translate(-100%,-50%) scale(1)}}
   @keyframes openLeft{from{transform:translate(-100%,-50%)} to{transform:translate(-180%,-50%); opacity:.0}}
@@ -160,65 +160,70 @@
   <div id="gondor" class="gondor" aria-hidden="true">
     <div class="veil"></div>
     <div class="stage">
-      <!-- Tree built left-half then mirrored for perfect symmetry -->
-      <svg class="tree" viewBox="0 0 400 520">
-        <!-- trunk (tall, slim) -->
+      <!-- Tree built left-half then mirrored for symmetry -->
+      <svg class="tree" viewBox="0 0 400 520" aria-hidden="true">
+        <!-- trunk -->
         <path class="stroke slow" pathLength="1" d="M200 430 L200 110" />
 
-        <!-- roots with triple flourish, mirrored -->
+        <!-- roots: curled flourishes, mirrored -->
         <g>
           <path class="stroke" pathLength="1"
             d="M200 430
-               C184 442,166 448,150 454
-               C144 456,140 462,140 470
-               C140 480,150 484,164 484" />
+               C182 446,166 455,150 463
+               C142 468,138 476,138 484
+               C138 494,148 499,164 500" />
           <g transform="translate(400,0) scale(-1,1)">
             <path class="stroke" pathLength="1"
               d="M200 430
-                 C184 442,166 448,150 454
-                 C144 456,140 462,140 470
-                 C140 480,150 484,164 484" />
+                 C182 446,166 455,150 463
+                 C142 468,138 476,138 484
+                 C138 494,148 499,164 500" />
           </g>
         </g>
 
-        <!-- branch architecture (left half groups) -->
-        <g id="half">
-          <!-- lower sweep -->
+        <!-- left half boughs (rich curls) -->
+        <g id="left">
+          <!-- lowest wide bough -->
           <path class="stroke" pathLength="1"
-            d="M200 308
-               C178 292,160 280,142 272
-               C126 264,116 250,106 234" />
-          <!-- middle sweep -->
+            d="M200 326
+               C176 308,156 294,138 286
+               C122 279,112 266,102 249" />
+          <!-- mid-low bough -->
           <path class="stroke" pathLength="1"
-            d="M200 283
-               C182 268,168 256,154 244
-               C144 234,136 224,128 216" />
-          <!-- upper sweep -->
+            d="M200 300
+               C182 285,168 273,155 261
+               C144 251,136 240,128 230" />
+          <!-- mid bough -->
           <path class="stroke" pathLength="1"
-            d="M200 258
-               C188 246,176 234,166 224
-               C158 216,152 210,146 204" />
+            d="M200 276
+               C188 264,176 252,166 242
+               C158 234,151 226,145 219" />
+          <!-- upper bough -->
+          <path class="stroke" pathLength="1"
+            d="M200 254
+               C191 244,182 235,174 227
+               C166 219,160 213,154 207" />
           <!-- inner curls -->
-          <path class="stroke" pathLength="1" d="M156 244 C150 238,144 234,138 230" />
-          <path class="stroke" pathLength="1" d="M166 224 C160 218,154 214,148 210" />
-          <path class="stroke" pathLength="1" d="M142 272 C136 268,130 264,126 260" />
+          <path class="stroke" pathLength="1" d="M156 261 C150 255,144 251,138 247" />
+          <path class="stroke" pathLength="1" d="M165 243 C159 237,153 233,147 229" />
+          <path class="stroke" pathLength="1" d="M146 286 C140 281,134 277,128 273" />
         </g>
-        <use href="#half" transform="translate(400,0) scale(-1,1)"></use>
+        <use href="#left" transform="translate(400,0) scale(-1,1)"></use>
 
-        <!-- seven stars + one top star -->
-        <polygon class="star top" points="200,150 204,158 213,159 206,165 208,173 200,169 192,173 194,165 187,159 196,158"/>
-        <polygon class="star d1"  points="168,200 172,208 181,209 174,215 176,223 168,219 160,223 162,215 155,209 164,208"/>
-        <polygon class="star d2"  points="232,200 236,208 245,209 238,215 240,223 232,219 224,223 226,215 219,209 228,208"/>
-        <polygon class="star d3"  points="150,230 154,238 163,239 156,245 158,253 150,249 142,253 144,245 137,239 146,238"/>
-        <polygon class="star d4"  points="250,230 254,238 263,239 256,245 258,253 250,249 242,253 244,245 237,239 246,238"/>
-        <polygon class="star d5"  points="180,230 184,238 193,239 186,245 188,253 180,249 172,253 174,245 167,239 176,238"/>
-        <polygon class="star d6"  points="220,230 224,238 233,239 226,245 228,253 220,249 212,253 214,245 207,239 216,238"/>
-        <polygon class="star d7"  points="200,190 204,198 213,199 206,205 208,213 200,209 192,213 194,205 187,199 196,198"/>
+        <!-- seven stars + top star -->
+        <polygon class="star top" points="200,138 204,146 213,147 206,153 208,161 200,157 192,161 194,153 187,147 196,146"/>
+        <polygon class="star d1"  points="168,190 172,198 181,199 174,205 176,213 168,209 160,213 162,205 155,199 164,198"/>
+        <polygon class="star d2"  points="232,190 236,198 245,199 238,205 240,213 232,209 224,213 226,205 219,199 228,198"/>
+        <polygon class="star d3"  points="150,220 154,228 163,229 156,235 158,243 150,239 142,243 144,235 137,229 146,228"/>
+        <polygon class="star d4"  points="250,220 254,228 263,229 256,235 258,243 250,239 242,243 244,235 237,229 246,228"/>
+        <polygon class="star d5"  points="180,220 184,228 193,229 186,235 188,243 180,239 172,243 174,235 167,229 176,228"/>
+        <polygon class="star d6"  points="220,220 224,228 233,229 226,235 228,243 220,239 212,243 214,235 207,229 216,228"/>
+        <polygon class="star d7"  points="200,180 204,188 213,189 206,195 208,203 200,199 192,203 194,195 187,189 196,188"/>
 
-        <!-- gentle pulses from center -->
+        <!-- subtle pulses -->
         <g class="pulses">
-          <circle cx="200" cy="250" r="6"/>
-          <circle cx="200" cy="250" r="6" style="animation-delay:1.6s"/>
+          <circle cx="200" cy="248" r="6"/>
+          <circle cx="200" cy="248" r="6" style="animation-delay:1.7s"/>
         </g>
       </svg>
 
@@ -251,7 +256,7 @@
   const mapInner = document.getElementById('mapInner');
   const mapImg   = document.getElementById('mapImg');
 
-  const FIT = 0.70;              // initial fit (a bit zoomed out)
+  const FIT = 0.70;              // initial fit
   const ZOOM_SMOOTH = 0.24;      // easing
   const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.35, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
 
@@ -310,8 +315,7 @@
   requestAnimationFrame(animateCam);
   addEventListener('resize', ()=>{ centerFit(); renderPins(); });
 
-  /* ===== Background "snow" with your symbols (glyphs + runes + leaves) ===== */
-  const GOLD="#d4af37";
+  /* ===== Background “snow” with your symbols ===== */
   const glyphs=["✶","✷","✸","✹","✺","✧","✦","✳"];
   const runes =["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"];
   const leaves=["🍂","🍁"];
@@ -324,7 +328,7 @@
     canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); W=innerWidth; H=innerHeight; }
   addEventListener('resize', sizeCanvas); sizeCanvas();
 
-  const FLAKE_COUNT=260, FALL_SPEED=2.6, DRIFT=.35, EDGE=110;
+  const GOLD="#d4af37", FLAKE_COUNT=260, FALL_SPEED=2.6, DRIFT=.35, EDGE=110;
   const spriteCache=new Map();
   function getSprite(ch,sz){ const k=ch+"@"+sz; if(spriteCache.has(k)) return spriteCache.get(k);
     const pad=Math.ceil(sz*.55), c=document.createElement('canvas'); c.width=c.height=sz+pad*2; const x=c.getContext('2d');
@@ -488,12 +492,12 @@
   vClose.addEventListener('click', closeView);
   modalView.addEventListener('click', (e)=>{ if(e.target===modalView) closeView(); });
 
-  /* === Gondor transition with 2s hold === */
+  /* === Gondor transition with ~2s hold === */
   const gondor = document.getElementById('gondor');
   const curtains = document.getElementById('curtains');
   function playGondorTransition(done){
-    const DRAW_MS   = 2300;  // must match CSS durations above (~2.3s)
-    const HOLD_MS   = 2000;  // keep visible for 2 seconds
+    const DRAW_MS   = 2600;  // matches CSS draw
+    const HOLD_MS   = 2000;  // hold visible
     const CURTAIN_MS= 1050;  // slide duration
     const TOTAL = DRAW_MS + HOLD_MS + CURTAIN_MS + 250;
 
@@ -512,7 +516,7 @@
     }, TOTAL);
   }
 
-  // init if image is cached
+  // init if image already cached
   if (mapImg.complete) mapImg.dispatchEvent(new Event('load'));
 </script>
 </body>
