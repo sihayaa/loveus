@@ -18,7 +18,7 @@
     color:var(--ink); font-family: ui-serif, Georgia, "Times New Roman", serif;
   }
 
-  /* particles behind everything */
+  /* particles */
   #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
 
   /* top bar */
@@ -29,13 +29,13 @@
   .chip:hover{background:rgba(54,46,36,.78)}
   .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2)}
 
-  /* map layer */
+  /* map */
   .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none; cursor:grab}
   .viewport.dragging{cursor:grabbing}
   .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
   .map-img{display:block; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
 
-  /* pins (clickable) */
+  /* pins */
   .pins{position:absolute; inset:0; z-index:6; pointer-events:auto}
   .pin{position:absolute; pointer-events:auto; cursor:pointer;
     transform:translate(-50%,-100%) scale(calc(1/var(--zoom)));
@@ -52,12 +52,12 @@
     color:#e7dbc3; border-radius:10px; padding:8px 10px; font-size:12px; display:none}
   .hint.on{display:block}
 
-  /* modals (base) */
+  /* modals base */
   .modal{position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55)}
   .modal.on{display:flex}
   .panel{position:relative; width:min(720px, 92vw); max-height:85vh; overflow:auto; border-radius:14px; box-shadow:var(--shadow);}
 
-  /* parchment style panel */
+  /* parchment panel */
   .parchment{
     background:
       radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,.35), rgba(0,0,0,0) 60%),
@@ -77,7 +77,17 @@
   .scribe-line{display:flex; align-items:center; gap:10px; margin:8px 0 4px}
   .scribe-line .label{font-weight:700; font-family:"Cinzel",serif; letter-spacing:.3px}
   .scribe-line .rule{flex:1; height:1px; background:linear-gradient(90deg,#b79b5a,rgba(183,155,90,.1)); opacity:.6}
-  .scribe-text{margin:0 0 10px; white-space:pre-wrap; line-height:1.5}
+
+  /* NEW: title & caption typography */
+  .scribe-text{
+    margin:0 0 10px;
+    white-space:pre-wrap;
+    line-height:1.5;
+    font-family:"Brush Script MT","Brush Script Std","Segoe Script","Comic Sans MS",cursive;
+    color:#496CBA;
+    font-size:1.2rem;
+  }
+
   .image-wrap{margin-top:8px}
   .image-wrap img{max-width:100%; height:auto; border-radius:8px; border:1px solid rgba(0,0,0,.14); box-shadow:0 6px 16px rgba(0,0,0,.25)}
 
@@ -119,13 +129,39 @@
   .evenstar.core{opacity:0; animation:starIn .6s ease-out .05s forwards}
   .evenstar.glow{position:absolute; inset:0; margin:auto; opacity:.85; filter:blur(10px) brightness(1.25) saturate(1.3) drop-shadow(0 0 22px rgba(160,220,255,.35)); mix-blend-mode:screen; animation:glowPulse 2.6s ease-in-out .6s infinite}
   .evenstar.shine{position:absolute; inset:0; margin:auto; opacity:.9; mix-blend-mode:screen; -webkit-mask-image: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.95) 50%, transparent 60%); mask-image: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.95) 50%, transparent 60%); -webkit-mask-size: 220% 220%; mask-size:220% 220%; animation:shineSweep 1.6s ease-in-out .7s 2}
-
   @keyframes veilIn{from{opacity:0} to{opacity:1}}
   @keyframes starIn{from{opacity:0; transform:scale(.985)} to{opacity:1; transform:scale(1)}}
   @keyframes glowPulse{0%,100%{opacity:.75; filter:blur(10px) brightness(1.15) saturate(1.2) drop-shadow(0 0 18px rgba(160,220,255,.28))} 50%{opacity:1; filter:blur(12px) brightness(1.33) saturate(1.35) drop-shadow(0 0 28px rgba(160,220,255,.40))}}
   @keyframes shineSweep{0%{-webkit-mask-position:-60% -60%; mask-position:-60% -60%}100%{-webkit-mask-position:160% 160%; mask-position:160% 160%}}
   @keyframes gateShow{from{opacity:0; transform:scale(.92)} to{opacity:1; transform:scale(1)}}
   @keyframes gateOpen{from{transform:scale(1); opacity:1} to{transform:scale(1.35); opacity:0}}
+
+  /* ===== DELETE CONFIRM (themed) ===== */
+  .doom-panel{
+    width:min(560px, 92vw);
+    background:
+      radial-gradient(90% 80% at 50% 0%, rgba(232,100,21,.08), rgba(0,0,0,0) 60%),
+      linear-gradient(#231813, #150e0b);
+    border:1px solid rgba(232,100,21,.75);
+    box-shadow:0 18px 55px rgba(0,0,0,.6), inset 0 0 24px rgba(232,100,21,.15);
+    color:#e7dbc3;
+    border-radius:16px;
+    padding:18px;
+    text-align:center;
+  }
+  .doom-msg{
+    font-family:"Agency FB","Impact","Haettenschweiler","Arial Narrow Bold",sans-serif;
+    color:#E86415;
+    font-size:26px;
+    letter-spacing:.5px;
+    line-height:1.25;
+    margin:6px 10px 16px;
+  }
+  .doom-actions{display:flex; gap:10px; justify-content:center}
+  .btn-ghost{padding:9px 14px; border-radius:10px; border:1px solid rgba(232,100,21,.6); background:transparent; color:#e7dbc3; cursor:pointer}
+  .btn-danger{padding:9px 14px; border-radius:10px; border:1px solid rgba(232,100,21,.9); background:#E86415; color:#1a0f0a; font-weight:700; cursor:pointer}
+  .btn-ghost:hover{background:rgba(232,100,21,.08)}
+  .btn-danger:hover{filter:brightness(1.05)}
 </style>
 </head>
 <body>
@@ -177,6 +213,20 @@
         <div id="viewImageWrap" class="image-wrap"></div>
       </div>
       <div class="actions"><button class="btn" id="vClose">Close</button></div>
+    </div>
+  </div>
+
+  <!-- Delete confirm modal -->
+  <div id="modalConfirm" class="modal" aria-hidden="true">
+    <div class="doom-panel" role="dialog" aria-modal="true">
+      <div class="doom-msg">
+        “You stand upon the edge of doom. Deleting this file will seal its fate.<br>
+        Do you wish to continue?”
+      </div>
+      <div class="doom-actions">
+        <button id="cCancel" class="btn-ghost">Cancel</button>
+        <button id="cDelete" class="btn-danger">Delete</button>
+      </div>
     </div>
   </div>
 
@@ -343,7 +393,7 @@
     hint.textContent="Secret Pin mode: click anywhere on the map"; hint.classList.add('on'); viewport.style.cursor="crosshair";
   }
 
-  // Evenstar reveal
+  /* Evenstar transition */
   const gondor = document.getElementById('gondor');
   const gate   = document.getElementById('gate');
   function playEvenstarTransition(done){
@@ -365,7 +415,7 @@
     });
   }
 
-  // Storage helpers
+  /* Storage */
   const LS_KEY="mem_pins_tableonly_v1";
   let PINS = [];
   function savePinsLocal(all){ localStorage.setItem(LS_KEY, JSON.stringify(all)); }
@@ -430,7 +480,7 @@
     if (pin) openViewPin(pin);
   }
 
-  // Add pin modal / save
+  /* Add pin */
   const modalAdd=document.getElementById('modalAdd'); const aTitle=document.getElementById('aTitle'); const aCaption=document.getElementById('aCaption');
   const aFile=document.getElementById('aFile'); const aCancel=document.getElementById('aCancel'); const aSave=document.getElementById('aSave');
   let pendingCoord=null, pendingSecret=false;
@@ -439,6 +489,15 @@
   function closeAdd(){ modalAdd.classList.remove('on'); modalAdd.setAttribute('aria-hidden','true'); aTitle.value=""; aCaption.value=""; aFile.value=""; pendingCoord=null; pendingSecret=false; }
   aCancel.addEventListener('click', closeAdd);
   modalAdd.addEventListener('click', (e)=>{ if(e.target===modalAdd) closeAdd(); });
+
+  /* NEW: Enter to Save (except inside textarea) */
+  modalAdd.addEventListener('keydown', (e)=>{
+    if(e.key === 'Enter' && e.target.tagName !== 'TEXTAREA'){
+      e.preventDefault();
+      aSave.click();
+    }
+  });
+
   document.addEventListener('keydown', (e)=>{ if(e.key==='Escape'){ closeAdd(); closeView(); }});
 
   viewport.addEventListener('click', async (e)=>{
@@ -480,7 +539,7 @@
     });
   }
 
-  // View / Delete pin
+  /* View / Delete pin */
   const modalView=document.getElementById('modalView');
   const viewTitleText=document.getElementById('viewTitleText');
   const viewCaptionRow=document.getElementById('viewCaptionRow');
@@ -507,9 +566,37 @@
     modalView.classList.add('on'); modalView.setAttribute('aria-hidden','false');
   }
 
+  /* NEW: Themed delete confirm modal */
+  const modalConfirm = document.getElementById('modalConfirm');
+  const cCancel = document.getElementById('cCancel');
+  const cDelete = document.getElementById('cDelete');
+  function confirmDoom(){
+    return new Promise(resolve=>{
+      modalConfirm.classList.add('on'); modalConfirm.setAttribute('aria-hidden','false');
+
+      const onCancel=()=>{ cleanup(); resolve(false); };
+      const onDelete=()=>{ cleanup(); resolve(true); };
+      const onKey=(e)=>{ if(e.key==='Escape'){ onCancel(); } }
+
+      function cleanup(){
+        modalConfirm.classList.remove('on'); modalConfirm.setAttribute('aria-hidden','true');
+        cCancel.removeEventListener('click', onCancel);
+        cDelete.removeEventListener('click', onDelete);
+        modalConfirm.removeEventListener('click', onOverlay);
+        document.removeEventListener('keydown', onKey);
+      }
+      function onOverlay(e){ if(e.target===modalConfirm) onCancel(); }
+
+      cCancel.addEventListener('click', onCancel);
+      cDelete.addEventListener('click', onDelete);
+      modalConfirm.addEventListener('click', onOverlay);
+      document.addEventListener('keydown', onKey);
+    });
+  }
+
   async function deleteOpenPin(){
     if(!openPinId) return;
-    const yes = confirm("Delete this pin?");
+    const yes = await confirmDoom();
     if(!yes) return;
     try{
       if(useSB){
