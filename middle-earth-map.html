@@ -8,7 +8,7 @@
 <style>
   :root{
     --bg:#0e0f12; --ink:#e7dbc3; --zoom:1;
-    --gold:#d4af37; --gondor:#e9f7ff; --glow:rgba(160,220,255,.55);
+    --gold:#d4af37; --glow:rgba(160,220,255,.55);
     --shadow:0 18px 55px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
   }
   *{box-sizing:border-box} html,body{height:100%}
@@ -67,7 +67,7 @@
   .btn.primary{background:#3a2e21}
   .btn:hover{filter:brightness(1.06)}
 
-  /* === Evenstar overlay (image-based, exact match) === */
+  /* === Evenstar overlay (image + glow + shimmer) === */
   .gondor{position:fixed; inset:0; z-index:2000; display:none; place-items:center}
   .gondor.on{display:grid}
   .veil{
@@ -82,7 +82,7 @@
       radial-gradient(closest-side, rgba(159,227,255,.10), rgba(159,227,255,0) 40%);
     box-shadow:0 0 32px rgba(159,227,255,.22), inset 0 0 18px rgba(159,227,255,.20);
     opacity:0; transform:scale(.92);
-    animation:gateShow .40s ease-out forwards var(--gate-pop-delay, 2.1s); pointer-events:none;
+    animation:gateShow .40s ease-out forwards var(--gate-pop-delay, 1.8s); pointer-events:none;
   }
   .gate.ring::before{
     content:""; position:absolute; inset:8%; border-radius:50%;
@@ -91,15 +91,35 @@
   }
   .gate.open{animation:gateOpen 1.05s ease-in forwards}
 
-  .evenstar-wrap{display:grid; place-items:center}
-  .evenstar-img{
-    width:min(52vmin,520px); height:auto; opacity:0;
-    filter:drop-shadow(0 0 12px var(--glow)) drop-shadow(0 0 26px rgba(160,220,255,.22));
-    animation:evenstarIn .6s ease-out .05s forwards;
+  .evenstar-wrap{position:relative; display:grid; place-items:center}
+  .evenstar{width:min(52vmin,520px); height:auto; filter:drop-shadow(0 0 12px var(--glow)) drop-shadow(0 0 26px rgba(160,220,255,.22))}
+  /* core image fade-in */
+  .evenstar.core{opacity:0; animation:starIn .6s ease-out .05s forwards}
+  /* soft breathing glow (duplicate image) */
+  .evenstar.glow{
+    position:absolute; inset:0; margin:auto; opacity:.85;
+    filter:blur(10px) brightness(1.25) saturate(1.3) drop-shadow(0 0 22px rgba(160,220,255,.35));
+    mix-blend-mode:screen; animation:glowPulse 2.6s ease-in-out .6s infinite;
+  }
+  /* shimmer sweep (duplicate image with animated mask) */
+  .evenstar.shine{
+    position:absolute; inset:0; margin:auto; opacity:.9; mix-blend-mode:screen;
+    -webkit-mask-image: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.95) 50%, transparent 60%);
+            mask-image: linear-gradient(115deg, transparent 40%, rgba(255,255,255,.95) 50%, transparent 60%);
+    -webkit-mask-size: 220% 220%; mask-size:220% 220%;
+    animation:shineSweep 1.6s ease-in-out .7s 2;
   }
 
   @keyframes veilIn{from{opacity:0} to{opacity:1}}
-  @keyframes evenstarIn{from{opacity:0; transform:scale(.985)} to{opacity:1; transform:scale(1)}}
+  @keyframes starIn{from{opacity:0; transform:scale(.985)} to{opacity:1; transform:scale(1)}}
+  @keyframes glowPulse{
+    0%,100%{opacity:.75; filter:blur(10px) brightness(1.15) saturate(1.2) drop-shadow(0 0 18px rgba(160,220,255,.28))}
+    50%     {opacity:1;    filter:blur(12px) brightness(1.33) saturate(1.35) drop-shadow(0 0 28px rgba(160,220,255,.40))}
+  }
+  @keyframes shineSweep{
+    0%   {-webkit-mask-position: -60% -60%; mask-position:-60% -60%}
+    100% {-webkit-mask-position: 160% 160%;  mask-position:160% 160%}
+  }
   @keyframes gateShow{from{opacity:0; transform:scale(.92)} to{opacity:1; transform:scale(1)}}
   @keyframes gateOpen{from{transform:scale(1); opacity:1} to{transform:scale(1.35); opacity:0}}
 </style>
@@ -145,12 +165,14 @@
     </div>
   </div>
 
-  <!-- Evenstar overlay (image-based) -->
+  <!-- Evenstar overlay -->
   <div id="gondor" class="gondor" aria-hidden="true">
     <div class="veil"></div>
     <div class="evenstar-wrap">
-      <!-- REPLACE THIS SRC with your Evenstar image URL (PNG or SVG). -->
-      <img id="evenstarImg" class="evenstar-img" alt="Evenstar" src="" />
+      <!-- Three layered images = core, glow pulse, shimmer sweep -->
+      <img id="evenstarCore" class="evenstar core"  alt="Evenstar" src="">
+      <img id="evenstarGlow" class="evenstar glow"  alt=""         src="">
+      <img id="evenstarShine"class="evenstar shine" alt=""         src="">
     </div>
     <div id="gate" class="gate ring" aria-hidden="true"></div>
   </div>
@@ -158,9 +180,8 @@
 <script type="module">
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  /* ===== Set your Evenstar image URL here (RAW GitHub, CDN, etc.) ===== */
-  const EVENSTAR_URL = "https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/EVENSTAR_URL.png";
-  // ↑ point that to the exact symbol you sent. PNG or SVG both work.
+  /* ===== Your Evenstar image (PNG or SVG) ===== */
+  const EVENSTAR_URL = "https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/evenstar-dark.png";
 
   /* ===== Supabase (table-only) ===== */
   const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
@@ -183,8 +204,10 @@
     mapImg.style.width  = cam.natW + 'px';
     mapImg.style.height = 'auto';
     centerFit(); refreshPins(); setZoomVar();
-    const img = document.getElementById('evenstarImg');
-    if (EVENSTAR_URL) img.src = EVENSTAR_URL;
+    // set Evenstar sources (all three layers)
+    for (const id of ["evenstarCore","evenstarGlow","evenstarShine"]){
+      const el = document.getElementById(id); el.src = EVENSTAR_URL;
+    }
   });
   if (mapImg.complete) mapImg.dispatchEvent(new Event('load'));
 
@@ -310,14 +333,14 @@
   const gondor = document.getElementById('gondor');
   const gate   = document.getElementById('gate');
   function playEvenstarTransition(done){
-    const DRAW_MS=1200, HOLD_MS=1600, GATE_MS=1050, TOTAL=DRAW_MS+HOLD_MS+GATE_MS+250;
-    // set image source each time (in case you swap URLs)
-    const img = document.getElementById('evenstarImg');
-    if (EVENSTAR_URL) img.src = EVENSTAR_URL;
-
+    const FADE_MS=600, HOLD_MS=1200, GATE_MS=1050, TOTAL=FADE_MS+HOLD_MS+GATE_MS+250;
+    // set layered image sources
+    for (const id of ["evenstarCore","evenstarGlow","evenstarShine"]){
+      document.getElementById(id).src = EVENSTAR_URL;
+    }
     gate.classList.remove('open');
     gondor.classList.add('on'); gondor.setAttribute('aria-hidden','false');
-    setTimeout(()=>{ gate.classList.add('open'); }, DRAW_MS + HOLD_MS);
+    setTimeout(()=>{ gate.classList.add('open'); }, FADE_MS + HOLD_MS);
     setTimeout(()=>{ gondor.classList.remove('on'); gondor.setAttribute('aria-hidden','true'); if(typeof done==='function') done(); }, TOTAL);
   }
   function activateSecretView(){
