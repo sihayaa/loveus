@@ -9,7 +9,7 @@
   :root{
     --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a; --zoom:1;
     --shadow:0 18px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
-    --gondor:#ffffff;                    /* WHITE tree */
+    --gondor:#ffffff;                    /* White tree */
     --gondorGlow: rgba(170,220,255,.45); /* icy glow */
   }
   *{box-sizing:border-box} html,body{height:100%}
@@ -76,9 +76,7 @@
 
   .tree{
     width:min(720px,90vw);
-    filter:
-      drop-shadow(0 0 14px var(--gondorGlow))
-      drop-shadow(0 0 26px rgba(160,220,255,.18));
+    filter: drop-shadow(0 0 14px var(--gondorGlow)) drop-shadow(0 0 26px rgba(160,220,255,.18));
     opacity:0; animation:treeIn .5s ease-out .05s forwards;
   }
   .tree .stroke{ stroke:var(--gondor); fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1 }
@@ -157,70 +155,83 @@
     </div>
   </div>
 
-  <!-- White Tree of Gondor overlay (ornate, WHITE) -->
+  <!-- White Tree of Gondor overlay (matches your reference) -->
   <div id="gondor" class="gondor" aria-hidden="true">
     <div class="veil"></div>
     <div class="stage">
       <svg class="tree" viewBox="0 0 400 520" aria-hidden="true">
-        <!-- trunk (thicker) -->
-        <path class="stroke trunk" d="M200 430 L200 110" />
+        <!-- trunk -->
+        <path class="stroke trunk" d="M200 430 L200 118" />
 
-        <!-- ROOT FLOURISHES (mirrored) -->
+        <!-- roots (looping toes) -->
         <g>
           <path class="stroke root"
             d="M200 430
-               C182 446,168 456,152 466
-               C142 472,138 480,138 488
-               C138 498,148 503,164 504" />
+               C183 447,168 457,150 469
+               C139 477,134 486,134 495
+               C134 509,152 514,174 515
+               C186 516,193 520,194 526
+               C195 532,189 536,179 537
+               C164 538,151 536,140 531" />
           <g transform="translate(400,0) scale(-1,1)">
             <path class="stroke root"
               d="M200 430
-                 C182 446,168 456,152 466
-                 C142 472,138 480,138 488
-                 C138 498,148 503,164 504" />
+                 C183 447,168 457,150 469
+                 C139 477,134 486,134 495
+                 C134 509,152 514,174 515
+                 C186 516,193 520,194 526
+                 C195 532,189 536,179 537
+                 C164 538,151 536,140 531" />
           </g>
         </g>
 
-        <!-- LEFT-HALF: sweeping boughs with curls (then mirrored) -->
+        <!-- left half ornate curls (mirrored to right) -->
         <g id="left">
-          <!-- lowest broad bough (heart-shaped sweep) -->
           <path class="stroke branch"
-            d="M200 330
-               C174 310,154 296,134 288
-               C118 281,108 268,100 252" />
-          <!-- mid-low bough with inward curl -->
+            d="M200 328
+               C174 309,154 296,134 288
+               C117 281,106 284,100 296
+               C95 307,103 321,122 327
+               C142 334,164 330,180 320" />
           <path class="stroke branch"
-            d="M200 305
-               C182 290,168 278,154 266
-               C142 256,134 245,126 234" />
-          <!-- mid bough with stronger curl -->
+            d="M200 303
+               C181 288,167 277,153 266
+               C141 256,132 250,124 250
+               C111 251,109 263,121 272
+               C133 282,149 284,163 280" />
           <path class="stroke branch"
-            d="M200 282
-               C188 270,176 258,166 248
-               C156 238,148 229,142 221" />
-          <!-- upper bough close to top -->
+            d="M200 280
+               C188 268,177 258,167 248
+               C158 239,150 233,142 233
+               C132 233,129 242,137 250
+               C145 258,156 260,165 257" />
           <path class="stroke branch"
-            d="M200 260
-               C191 250,182 241,174 233
-               C165 224,158 217,152 210" />
-          <!-- inner twigs / curls (small S-curls) -->
-          <path class="stroke twig" d="M156 267 C150 261,144 257,138 253" />
-          <path class="stroke twig" d="M166 249 C160 243,154 239,148 235" />
-          <path class="stroke twig" d="M146 290 C140 285,134 281,128 277" />
+            d="M200 258
+               C192 248,184 240,176 232
+               C168 224,160 218,154 216
+               C147 214,146 220,152 226
+               C158 232,165 234,170 232" />
+          <!-- inner curls -->
+          <path class="stroke twig" d="M158 268 C152 262,146 258,140 254" />
+          <path class="stroke twig" d="M168 250 C162 244,156 240,150 236" />
+          <path class="stroke twig" d="M148 292 C142 287,136 283,130 279" />
+          <!-- crown twigs -->
+          <path class="stroke twig" d="M200 208 C194 218,189 226,189 232" />
+          <path class="stroke twig" d="M200 208 C206 218,211 226,211 232" />
+          <path class="stroke twig" d="M200 208 L200 196" />
         </g>
         <use href="#left" transform="translate(400,0) scale(-1,1)"></use>
 
-        <!-- SEVEN STARS + TOP STAR -->
-        <polygon class="star top" points="200,138 204,146 213,147 206,153 208,161 200,157 192,161 194,153 187,147 196,146"/>
-        <polygon class="star d1"  points="168,190 172,198 181,199 174,205 176,213 168,209 160,213 162,205 155,199 164,198"/>
-        <polygon class="star d2"  points="232,190 236,198 245,199 238,205 240,213 232,209 224,213 226,205 219,199 228,198"/>
-        <polygon class="star d3"  points="150,220 154,228 163,229 156,235 158,243 150,239 142,243 144,235 137,229 146,228"/>
-        <polygon class="star d4"  points="250,220 254,228 263,229 256,235 258,243 250,239 242,243 244,235 237,229 246,228"/>
-        <polygon class="star d5"  points="180,220 184,228 193,229 186,235 188,243 180,239 172,243 174,235 167,229 176,228"/>
-        <polygon class="star d6"  points="220,220 224,228 233,229 226,235 228,243 220,239 212,243 214,235 207,229 216,228"/>
-        <polygon class="star d7"  points="200,180 204,188 213,189 206,195 208,203 200,199 192,203 194,195 187,189 196,188"/>
+        <!-- seven stars (top + 3 pairs) -->
+        <polygon class="star top" points="200,122 204,130 213,131 206,137 208,145 200,141 192,145 194,137 187,131 196,130"/>
+        <polygon class="star d1"  points="178,151 182,159 191,160 184,166 186,174 178,170 170,174 172,166 165,160 174,159"/>
+        <polygon class="star d2"  points="222,151 226,159 235,160 228,166 230,174 222,170 214,174 216,166 209,160 218,159"/>
+        <polygon class="star d3"  points="160,188 164,196 173,197 166,203 168,211 160,207 152,211 154,203 147,197 156,196"/>
+        <polygon class="star d4"  points="240,188 244,196 253,197 246,203 248,211 240,207 232,211 234,203 227,197 236,196"/>
+        <polygon class="star d5"  points="126,214 130,222 139,223 132,229 134,237 126,233 118,237 120,229 113,223 122,222"/>
+        <polygon class="star d6"  points="274,214 278,222 287,223 280,229 282,237 274,233 266,237 268,229 261,223 270,222"/>
 
-        <!-- gentle pulse from the heart -->
+        <!-- subtle pulse -->
         <g class="pulses">
           <circle cx="200" cy="248" r="6"/>
           <circle cx="200" cy="248" r="6" style="animation-delay:1.7s"/>
@@ -237,7 +248,7 @@
 <script type="module">
   import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-  /* ===== Supabase (table-only; your credentials) ===== */
+  /* ===== Supabase (table-only) ===== */
   const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   let sb=null, useSB=false;
@@ -256,8 +267,8 @@
   const mapInner = document.getElementById('mapInner');
   const mapImg   = document.getElementById('mapImg');
 
-  const FIT = 0.70;              // initial fit
-  const ZOOM_SMOOTH = 0.24;      // easing
+  const FIT = 0.70;
+  const ZOOM_SMOOTH = 0.24;
   const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.35, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
 
   mapImg.addEventListener('load', ()=>{
@@ -521,3 +532,4 @@
 </script>
 </body>
 </html>
+
