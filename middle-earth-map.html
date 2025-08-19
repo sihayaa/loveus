@@ -393,7 +393,7 @@
     canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px'; ctx.setTransform(dpr,0,0,dpr,0,0); W=innerWidth; H=innerHeight; }
   addEventListener('resize', sizeCanvas); sizeCanvas();
 
-  const GOLD="#d4af37", FALL_SPEED=2.3, DRIFT=.35, EDGE=110;
+  const GOLD="#d4af37", FALL_SPEED=2.1, DRIFT=.35, EDGE=110;
   // Adaptive density by screen area & device memory
   const DM = navigator.deviceMemory || 4;
   const AREA = (innerWidth*innerHeight)/(1280*720);
@@ -520,7 +520,7 @@
   async function refreshPins(){
     if(useSB){
       const { data, error } = await sb.from('pins')
-        .select('id,x,y,title,caption,secret,created_at')   // (no photo_data here)
+        .select('id,x,y,title,caption,photo_data,secret,created_at')
         .eq('secret', secretView)
         .order('created_at', { ascending:true });
       if(error){ console.warn(error); PINS=[]; }
