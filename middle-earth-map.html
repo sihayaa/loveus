@@ -18,8 +18,10 @@
       color:var(--ink); font-family: ui-serif, Georgia, "Times New Roman", serif;
     }
 
+    /* background particles */
     #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
 
+    /* top bar */
     .topbar{position:fixed; inset:12px 12px auto 12px; z-index:12; display:flex; gap:12px; align-items:center}
     .chip{display:inline-flex; align-items:center; gap:8px; padding:7px 10px;
       border:1px solid rgba(191,163,90,.5); border-radius:10px;
@@ -29,11 +31,13 @@
     .chip:hover{background:rgba(50,40,30,.75)}
     .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2)}
 
+    /* map */
     .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none; cursor:grab}
     .viewport.dragging{cursor:grabbing}
     .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
     .map-img{display:block; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
 
+    /* pins */
     .pins{position:absolute; inset:0; z-index:6; pointer-events:none}
     .pin{position:absolute; pointer-events:auto; cursor:pointer;
       transform:translate(-50%,-100%) scale(calc(1/var(--zoom)));
@@ -50,6 +54,7 @@
       color:#d7c6a3; border-radius:10px; padding:8px 10px; font-size:12px; display:none}
     .hint.on{display:block}
 
+    /* modal */
     .modal{position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55)}
     .modal.on{display:flex}
     .panel{width:min(520px, 92vw); max-height:85vh; overflow:auto; background:linear-gradient(#2a221b,#1e1812);
@@ -98,7 +103,8 @@
 
   <div id="viewport" class="viewport">
     <div id="mapInner" class="map-inner">
-      <img id="mapImg" class="map-img" alt="Map" src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem_map.png" />
+      <img id="mapImg" class="map-img" alt="Map"
+           src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem_map.png" />
       <div id="pins" class="pins"></div>
     </div>
   </div>
@@ -144,12 +150,12 @@
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-    /* ===== Supabase (table-only; no bucket) ===== */
+    /* ===== Supabase (table-only) ===== */
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     let sb=null, useSB=false;
     try{
-      if (SUPABASE_URL.startsWith("https://tmjozxcjylcxgemffnoc.supabase.co") && !SUPABASE_URL.includes("YOUR-PROJECT") && SUPABASE_ANON_KEY !== "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI"){
+      if (SUPABASE_URL.startsWith("https://") && SUPABASE_ANON_KEY.length > 20){
         sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         useSB = true;
         console.log("Supabase enabled (table-only).");
@@ -163,9 +169,9 @@
     const mapInner = document.getElementById('mapInner');
     const mapImg   = document.getElementById('mapImg');
 
-    const FIT = 0.82;
+    const FIT = 0.70;                      // << smaller to start more zoomed out
     const ZOOM_SMOOTH = 0.24;
-    const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.45, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
+    const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.35, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
 
     mapImg.addEventListener('load', ()=>{
       cam.natW = mapImg.naturalWidth || cam.natW;
@@ -222,7 +228,7 @@
     requestAnimationFrame(animateCam);
     addEventListener('resize', ()=>{ centerFit(); renderPins(); });
 
-    /* ========= Snowfall (light) ========= */
+    /* ========= Light snowfall with runes/glyphs ========= */
     const GOLD="#d4af37";
     const glyphs=["✶","✷","✸","✹","✺","✧","✦","✳"], runes=["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"]; const SYMBOLS=glyphs.concat(runes);
     const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
@@ -263,16 +269,21 @@
       viewport.style.cursor = addingPin ? "crosshair" : "grab";
     }
     pinBtn.addEventListener('click',()=>{ if(secretView) return; togglePinMode(); });
-    exitSecretBtn.addEventListener('click',()=>{ secretView=false; exitSecretBtn.style.display="none"; pinBtn.disabled=false; refreshPins(); });
 
-    // Secret codes
+    exitSecretBtn.addEventListener('click',()=>{
+      secretView=false; exitSecretBtn.style.display="none"; pinBtn.disabled=false; refreshPins();
+    });
+
+    // NEW codes: 2024 = add secret pin, 1013 = enter secret view
+    const SECRET_ADD_CODE = "2024";
+    const SECRET_VIEW_CODE = "1013";
     let codeBuf="";
     document.addEventListener('keydown', (e)=>{
       const t=e.target.tagName; if(t==="INPUT"||t==="TEXTAREA") return;
       if(!/^\d$/.test(e.key)) return;
-      codeBuf=(codeBuf+e.key).slice(-6);
-      if(codeBuf.endsWith("1013")) activateSecretAdd();
-      if(codeBuf.endsWith("101324")) activateSecretView();
+      codeBuf=(codeBuf+e.key).slice(-4);
+      if(codeBuf===SECRET_ADD_CODE) activateSecretAdd();
+      if(codeBuf===SECRET_VIEW_CODE) activateSecretView();
     });
     function activateSecretAdd(){
       addingPin=false; addingSecret=true; pinBtn.textContent="📍 Pin it";
@@ -390,7 +401,7 @@
       });
     }
 
-    // View pin (uses photo_data)
+    // View Pin
     const modalView=document.getElementById('modalView'); const viewTitle=document.getElementById('viewTitle');
     const viewCaptionRow=document.getElementById('viewCaption'); const viewCaptionText=document.getElementById('viewCaptionText'); const viewImageWrap=document.getElementById('viewImageWrap'); const vClose=document.getElementById('vClose');
     function openViewPin(pin){
@@ -408,7 +419,7 @@
     vClose.addEventListener('click', closeView);
     modalView.addEventListener('click', (e)=>{ if(e.target===modalView) closeView(); });
 
-    /* Door of Durin */
+    /* Door of Durin transition */
     const durin = document.getElementById('durin');
     const doors = document.getElementById('doors');
     function playDurinTransition(done){
@@ -418,7 +429,7 @@
       setTimeout(()=>{ durin.classList.remove('on'); durin.setAttribute('aria-hidden','true'); if (typeof done === 'function') done(); }, 1900);
     }
 
-    // initial render if cached
+    // initial render if image cached
     if (mapImg.complete) mapImg.dispatchEvent(new Event('load'));
   </script>
 </body>
