@@ -8,7 +8,7 @@
 <style>
   :root{
     --bg:#0e0f12; --ink:#e7dbc3; --zoom:1;
-    --gold:#d4af37; --gondor:#e8f8ff; --glow:rgba(160,220,255,.5);
+    --gold:#d4af37; --gondor:#e9f7ff; --glow:rgba(160,220,255,.55);
     --shadow:0 18px 55px rgba(0,0,0,.55), inset 0 1px 0 rgba(255,255,255,.06);
   }
   *{box-sizing:border-box}
@@ -19,10 +19,10 @@
     color:var(--ink); font-family: ui-serif, Georgia, "Times New Roman", serif;
   }
 
-  /* particles layer (behind map) */
+  /* particles (behind map) */
   #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
 
-  /* top bar */
+  /* top */
   .topbar{position:fixed; inset:12px 12px auto 12px; z-index:12; display:flex; gap:12px; align-items:center}
   .chip{display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border:1px solid rgba(212,175,55,.5);
     border-radius:10px; background:rgba(36,31,24,.6); color:var(--ink); box-shadow:var(--shadow); text-decoration:none; font-size:13px; cursor:pointer}
@@ -53,7 +53,7 @@
     color:#e7dbc3; border-radius:10px; padding:8px 10px; font-size:12px; display:none}
   .hint.on{display:block}
 
-  /* modal */
+  /* modals */
   .modal{position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55)}
   .modal.on{display:flex}
   .panel{width:min(520px, 92vw); max-height:85vh; overflow:auto; background:linear-gradient(#24201a,#18130f);
@@ -68,21 +68,50 @@
   .btn.primary{background:#3a2e21}
   .btn:hover{filter:brightness(1.06)}
 
-  /* Gondor overlay (centered) */
+  /* Gondor overlay — circular gate + centered tree */
   .gondor{position:fixed; inset:0; z-index:2000; display:none; place-items:center}
   .gondor.on{display:grid}
-  .veil{position:absolute; inset:0; background:radial-gradient(1200px 800px at 50% 45%, rgba(5,14,20,.9), rgba(0,0,0,.96)); opacity:0; animation:veilIn .45s ease-out forwards}
 
+  /* soft vignette over the map (not full black) */
+  .veil{
+    position:absolute; inset:0;
+    background:
+      radial-gradient(1200px 800px at 50% 45%, rgba(5,14,20,.85), rgba(0,0,0,.65) 70%, rgba(0,0,0,.80));
+    opacity:0; animation:veilIn .45s ease-out forwards;
+    pointer-events:none;
+  }
+
+  /* circular gate (no square panel) */
+  .gate{
+    position:absolute; width:min(72vmin,680px); aspect-ratio:1/1; border-radius:50%;
+    background:
+      radial-gradient(closest-side, rgba(159,227,255,.18), rgba(159,227,255,0) 65%),
+      radial-gradient(closest-side, rgba(159,227,255,.10), rgba(159,227,255,0) 40%);
+    box-shadow:
+      0 0 32px rgba(159,227,255,.22),
+      inset 0 0 18px rgba(159,227,255,.20);
+    opacity:0; transform:scale(.92);
+    animation:gateShow .40s ease-out forwards var(--gate-pop-delay, 2.1s);
+    pointer-events:none;
+  }
+  .gate.ring::before{
+    content:""; position:absolute; inset:8%; border-radius:50%;
+    border:1px solid rgba(159,227,255,.45);
+    box-shadow:0 0 12px rgba(159,227,255,.20), inset 0 0 8px rgba(159,227,255,.12);
+  }
+  .gate.open{animation:gateOpen 1.05s ease-in forwards}
+
+  /* centered White Tree (ornate, S-boughs) */
   .tree{
-    display:block; width:min(620px,84vmin); height:auto;
+    display:block; width:min(58vmin,560px); height:auto;
     filter: drop-shadow(0 0 14px var(--glow)) drop-shadow(0 0 26px rgba(160,220,255,.22));
     opacity:0; animation:treeIn .5s ease-out .05s forwards;
   }
   .tree .stroke{ stroke:var(--gondor); fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:1; stroke-dashoffset:1 }
-  .tree .trunk{ stroke-width:8; animation:draw 2.8s cubic-bezier(.22,.7,.12,1) forwards .12s }
-  .tree .branch{ stroke-width:3.2; animation:draw 2.6s cubic-bezier(.22,.7,.12,1) forwards .18s }
-  .tree .twig  { stroke-width:2.6; animation:draw 2.4s cubic-bezier(.22,.7,.12,1) forwards .22s }
-  .tree .root  { stroke-width:5;   animation:draw 2.8s cubic-bezier(.22,.7,.12,1) forwards .16s }
+  .tree .trunk{ stroke-width:8; animation:draw 2.6s cubic-bezier(.22,.7,.12,1) forwards .12s }
+  .tree .branch{ stroke-width:3.2; animation:draw 2.5s cubic-bezier(.22,.7,.12,1) forwards .18s }
+  .tree .twig  { stroke-width:2.6; animation:draw 2.3s cubic-bezier(.22,.7,.12,1) forwards .22s }
+  .tree .root  { stroke-width:4.6; animation:draw 2.6s cubic-bezier(.22,.7,.12,1) forwards .16s }
 
   .tree .star{ fill:var(--gondor); opacity:0; filter:drop-shadow(0 0 9px var(--glow)); animation:twinkle 2.1s ease-in-out infinite alternate }
   .tree .star.top{animation-delay:1.0s}
@@ -91,23 +120,13 @@
 
   .pulses circle{stroke:var(--gondor); stroke-width:1.2; fill:none; opacity:0; animation:pulse 2.2s ease-out forwards 1.6s}
 
-  .curtains{position:absolute; inset:0; display:grid; place-items:center; pointer-events:none}
-  .panelGate{
-    height:54vh; width:min(44vw,560px);
-    border:1px solid rgba(159,227,255,.52);
-    background:linear-gradient(180deg, rgba(159,227,255,.08), rgba(159,227,255,.02));
-    box-shadow:0 0 22px rgba(159,227,255,.18), inset 0 0 12px rgba(159,227,255,.12);
-    border-radius:12px; opacity:0; animation:gateShow .32s ease-out forwards var(--gate-pop-delay, 1.9s);
-  }
-  .curtains.open .panelGate{animation:gateOpen 1.05s ease-in forwards}
-
   @keyframes veilIn{from{opacity:0} to{opacity:1}}
   @keyframes treeIn{from{opacity:0; transform:scale(.985)} to{opacity:1; transform:scale(1)}}
   @keyframes draw{to{stroke-dashoffset:0}}
   @keyframes twinkle{0%{opacity:0} 50%{opacity:.95} 100%{opacity:.5}}
   @keyframes pulse{0%{r:6; opacity:0} 35%{opacity:.35} 100%{r:150; opacity:0}}
-  @keyframes gateShow{from{opacity:0; transform:scale(.985)} to{opacity:1; transform:scale(1)}}
-  @keyframes gateOpen{from{transform:scale(1); opacity:1} to{transform:scale(1.25); opacity:0}}
+  @keyframes gateShow{from{opacity:0; transform:scale(.92)} to{opacity:1; transform:scale(1)}}
+  @keyframes gateOpen{from{transform:scale(1); opacity:1} to{transform:scale(1.35); opacity:0}}
 </style>
 </head>
 <body>
@@ -151,86 +170,81 @@
     </div>
   </div>
 
-  <!-- Gondor overlay (SVG centered, matches reference) -->
+  <!-- Gondor overlay: circular gate + centered tree -->
   <div id="gondor" class="gondor" aria-hidden="true">
     <div class="veil"></div>
-
-    <!-- White Tree -->
     <svg class="tree" viewBox="0 0 400 520" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-      <!-- trunk (slender) -->
-      <path class="stroke trunk" d="M200 442 L200 138" />
+      <!-- trunk -->
+      <path class="stroke trunk" d="M200 446 L200 140" />
 
-      <!-- scalloped base like reference -->
+      <!-- scalloped roots -->
       <path class="stroke root"
-        d="M130 474
-           C154 474,172 466,186 450
-           C192 443,196 436,200 436
-           C204 436,208 443,214 450
-           C228 466,246 474,270 474
-           M150 492
-           C166 488,178 479,186 468
-           M250 492
-           C234 488,222 479,214 468
-           M150 492
-           C160 506,176 506,186 492
-           M214 492
-           C224 506,240 506,250 492" />
+        d="M140 476
+           C158 472,173 462,186 446
+           C192 438,196 432,200 432
+           C204 432,208 438,214 446
+           C227 462,242 472,260 476
+           M156 494
+           C170 490,182 481,190 470
+           M244 494
+           C230 490,218 481,210 470
+           M156 494
+           C168 508,184 508,194 494
+           M206 494
+           C216 508,232 508,244 494" />
 
-      <!-- ===== curly S-boughs (left mirrored to right) ===== -->
-      <g id="boughsL">
-        <!-- outer bough -->
+      <!-- left S-boughs (mirrored to right). No loops, true curls -->
+      <g id="left">
+        <!-- outer -->
         <path class="stroke branch"
-          d="M200 320
-             C170 304,150 295,131 292
-             C116 289,107 294,103 303
-             C99 312,104 323,120 329
-             C142 336,165 331,182 321" />
-        <!-- middle bough -->
+          d="M200 324
+             C172 307,151 298,133 295
+             C118 293,109 298,104 308
+             C100 318,107 329,122 334
+             C144 341,168 335,184 324" />
+        <!-- middle -->
         <path class="stroke branch"
-          d="M200 294
-             C182 282,167 271,154 260
-             C143 251,134 246,126 246
-             C115 246,113 256,121 264
-             C133 276,149 278,164 274" />
-        <!-- upper bough -->
+          d="M200 298
+             C183 286,169 275,156 264
+             C145 255,136 249,128 248
+             C117 248,114 258,122 266
+             C134 278,150 280,165 276" />
+        <!-- upper -->
         <path class="stroke branch"
-          d="M200 270
-             C189 260,178 251,168 241
-             C160 233,152 227,145 225
-             C137 223,135 229,141 235
-             C149 243,158 245,166 242" />
-        <!-- inner curls (twigs) -->
-        <path class="stroke twig" d="M159 268 C153 262,147 258,141 254" />
-        <path class="stroke twig" d="M169 250 C163 244,157 240,151 236" />
-        <path class="stroke twig" d="M149 292 C143 287,137 283,131 279" />
+          d="M200 272
+             C190 262,179 252,169 243
+             C161 235,153 229,146 227
+             C138 225,136 231,142 237
+             C150 245,159 247,167 244" />
+        <!-- inner small curls -->
+        <path class="stroke twig" d="M160 268 C154 262,148 258,142 254" />
+        <path class="stroke twig" d="M170 250 C164 244,158 240,152 236" />
+        <path class="stroke twig" d="M150 292 C144 287,138 283,132 279" />
       </g>
-      <use href="#boughsL" transform="translate(400,0) scale(-1,1)"></use>
+      <use href="#left" transform="translate(400,0) scale(-1,1)"></use>
 
       <!-- crown forks -->
-      <path class="stroke twig" d="M200 212 C193 223,188 231,188 237" />
-      <path class="stroke twig" d="M200 212 C207 223,212 231,212 237" />
-      <path class="stroke twig" d="M200 212 L200 198" />
+      <path class="stroke twig" d="M200 214 C193 224,188 232,188 238" />
+      <path class="stroke twig" d="M200 214 C207 224,212 232,212 238" />
+      <path class="stroke twig" d="M200 214 L200 198" />
 
-      <!-- 7 stars in ring + one top -->
-      <polygon class="star top" points="200,120 205,130 216,131 207,139 209,150 200,145 191,150 193,139 184,131 195,130"/>
-      <polygon class="star s1"  points="150,180 154,188 164,189 156,196 158,206 150,202 142,206 144,196 136,189 146,188"/>
-      <polygon class="star s2"  points="250,180 254,188 264,189 256,196 258,206 250,202 242,206 244,196 236,189 246,188"/>
-      <polygon class="star s3"  points="176,210 180,218 190,219 182,226 184,236 176,232 168,236 170,226 162,219 172,218"/>
-      <polygon class="star s4"  points="224,210 228,218 238,219 230,226 232,236 224,232 216,236 218,226 210,219 220,218"/>
-      <polygon class="star s5"  points="126,230 130,238 140,239 132,246 134,256 126,252 118,256 120,246 112,239 122,238"/>
-      <polygon class="star s6"  points="274,230 278,238 288,239 280,246 282,256 274,252 266,256 268,246 260,239 270,238"/>
+      <!-- stars (1 top + 6 around) -->
+      <polygon class="star top" points="200,118 205,128 216,129 207,137 209,148 200,143 191,148 193,137 184,129 195,128"/>
+      <polygon class="star s1"  points="150,178 154,186 164,187 156,195 158,205 150,201 142,205 144,195 136,187 146,186"/>
+      <polygon class="star s2"  points="250,178 254,186 264,187 256,195 258,205 250,201 242,205 244,195 236,187 246,186"/>
+      <polygon class="star s3"  points="176,208 180,216 190,217 182,225 184,235 176,231 168,235 170,225 162,217 172,216"/>
+      <polygon class="star s4"  points="224,208 228,216 238,217 230,225 232,235 224,231 216,235 218,225 210,217 220,216"/>
+      <polygon class="star s5"  points="126,228 130,236 140,237 132,245 134,255 126,251 118,255 120,245 112,237 122,236"/>
+      <polygon class="star s6"  points="274,228 278,236 288,237 280,245 282,255 274,251 266,255 268,245 260,237 270,236"/>
 
-      <!-- subtle pulse -->
       <g class="pulses">
         <circle cx="200" cy="248" r="6"/>
         <circle cx="200" cy="248" r="6" style="animation-delay:1.7s"/>
       </g>
     </svg>
 
-    <!-- magical gate fade -->
-    <div class="curtains" id="curtains">
-      <div class="panelGate"></div>
-    </div>
+    <!-- circular gate (glowing ring) -->
+    <div id="gate" class="gate ring" aria-hidden="true"></div>
   </div>
 
 <script type="module">
@@ -483,19 +497,49 @@
   vClose.addEventListener('click', closeView);
   modalView.addEventListener('click', (e)=>{ if(e.target===modalView) closeView(); });
 
-  /* === Gondor transition (hold ~2s) === */
+  /* === Gondor transition: tree + circular gate, ~2s hold === */
   const gondor = document.getElementById('gondor');
-  const curtains = document.getElementById('curtains');
+  const gate = document.getElementById('gate');
   function playGondorTransition(done){
-    const DRAW_MS=2600, HOLD_MS=2000, GATE_MS=1050, TOTAL=DRAW_MS+HOLD_MS+GATE_MS+250;
-    curtains.style.setProperty('--gate-pop-delay', (DRAW_MS+HOLD_MS)/1000+'s');
+    const DRAW_MS=2500, HOLD_MS=2000, GATE_MS=1050, TOTAL=DRAW_MS+HOLD_MS+GATE_MS+250;
+    gate.classList.remove('open');
     gondor.classList.add('on'); gondor.setAttribute('aria-hidden','false');
-    setTimeout(()=>{ curtains.classList.add('open'); }, DRAW_MS + HOLD_MS);
+    // show circular gate after draw+hold, then open
+    setTimeout(()=>{ gate.classList.add('open'); }, DRAW_MS + HOLD_MS);
     setTimeout(()=>{ gondor.classList.remove('on'); gondor.setAttribute('aria-hidden','true'); if(typeof done==='function') done(); }, TOTAL);
   }
 
-  // init if cached
+  /* init if cached */
   if (mapImg.complete) mapImg.dispatchEvent(new Event('load'));
+
+  /* ===== Controls (pins + secrets) ===== */
+  const pinsEl=document.getElementById('pins'); const pinBtn=document.getElementById('pinBtn'); const hint=document.getElementById('pinHint'); const exitSecretBtn=document.getElementById('exitSecretBtn');
+  let addingPin=false, addingSecret=false, secretView=false;
+
+  function togglePinMode(on){
+    addingPin = (on!=null)?on:!addingPin; addingSecret=false;
+    pinBtn.textContent = addingPin ? "✅ Place pin" : "📍 Pin it";
+    hint.textContent = "Pin mode: click anywhere on the map";
+    hint.classList.toggle('on', addingPin);
+    viewport.style.cursor = addingPin ? "crosshair" : "grab";
+  }
+  pinBtn.addEventListener('click',()=>{ if(secretView) return; togglePinMode(); });
+
+  exitSecretBtn.addEventListener('click',()=>{
+    secretView=false; exitSecretBtn.style.display="none"; pinBtn.disabled=false; refreshPins();
+  });
+
+  const SECRET_ADD_CODE="2024", SECRET_VIEW_CODE="1013";
+  let codeBuf="";
+  document.addEventListener('keydown', (e)=>{
+    const t=e.target.tagName; if(t==="INPUT"||t==="TEXTAREA") return;
+    if(!/^\d$/.test(e.key)) return;
+    codeBuf=(codeBuf+e.key).slice(-4);
+    if(codeBuf===SECRET_ADD_CODE) { addingPin=false; addingSecret=true; pinBtn.textContent="📍 Pin it"; hint.textContent="Secret Pin mode: click anywhere on the map"; hint.classList.add('on'); viewport.style.cursor="crosshair"; }
+    if(codeBuf===SECRET_VIEW_CODE) { playGondorTransition(()=>{ secretView=true; addingPin=false; addingSecret=false; hint.classList.remove('on'); viewport.style.cursor="grab"; exitSecretBtn.style.display="inline-flex"; pinBtn.disabled=true; refreshPins(); }); }
+  });
+
+  // add-pin handlers are above in the file (reused)
 </script>
 </body>
 </html>
