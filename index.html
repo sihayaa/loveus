@@ -94,13 +94,13 @@
       0%, 100% {
         text-shadow:
           -1px -1px 0 #000, 1px -1px 0 #000,
-          -1px 1px 0 #000, 1px  1px 0 #000,
+          -1px 1px 0 #000, 1px 1px 0 #000,
           0 0 4px #4fa981, 0 0 8px #4fa981;
       }
       50% {
         text-shadow:
           -1px -1px 0 #000, 1px -1px 0 #000,
-          -1px 1px 0 #000, 1px  1px 0 #000,
+          -1px 1px 0 #000, 1px 1px 0 #000,
           0 0 10px #4fa981, 0 0 18px #4fa981;
       }
     }
@@ -485,52 +485,6 @@
   </style>
 </head>
 <body>
-
-  <!-- FAKE 404 OVERLAY (plain server-style; long-press anywhere 5s to unlock) -->
-  <script>
-    const HOLD_MS = 5000;
-    const MODE = 'redirect';           // 'reveal' or 'redirect'
-    const REDIRECT_URL = '/loveus/';   // change to '/' if site root
-    const BYPASS_PARAM = 'ok';
-
-    if (new URLSearchParams(location.search).has(BYPASS_PARAM) || sessionStorage.getItem('bypass404') === '1') {
-      // bypass overlay
-    } else {
-      const wrap = document.createElement('div');
-      wrap.id = 'fake404';
-      wrap.setAttribute('style', `
-        position:fixed; inset:0; z-index:2147483647; display:flex; align-items:center; justify-content:center;
-        background:#ffffff; color:#333; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-        -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale; user-select:none; touch-action:none;
-      `);
-      wrap.innerHTML = `
-        <div style="text-align:center; padding:24px 32px">
-          <div style="font-size:120px; font-weight:700; line-height:1; margin-bottom:12px; color:#555;">404</div>
-          <div style="font-size:32px; font-weight:600; margin-bottom:10px; color:#444;">Not Found</div>
-          <div style="font-size:16px; color:#666;">The resource requested could not be found on this server!</div>
-        </div>
-      `;
-      document.body.appendChild(wrap);
-      document.body.style.overflow = 'hidden';
-
-      // invisible long-press anywhere to unlock
-      let timer = null;
-      const unlock = () => {
-        sessionStorage.setItem('bypass404','1');
-        if (MODE === 'redirect') { location.href = REDIRECT_URL; }
-        else { wrap.remove(); document.body.style.overflow = ''; }
-      };
-      const start = () => { clearTimeout(timer); timer = setTimeout(unlock, HOLD_MS); };
-      const cancel = () => { clearTimeout(timer); timer = null; };
-
-      wrap.addEventListener('pointerdown', start);
-      wrap.addEventListener('pointerup', cancel);
-      wrap.addEventListener('pointerleave', cancel);
-      wrap.addEventListener('pointercancel', cancel);
-      wrap.addEventListener('contextmenu', e => e.preventDefault());
-    }
-  </script>
-
   <h1>Started Dating: October 13, 2024</h1>
 
   <div id="duration-block">
@@ -735,6 +689,7 @@
     const ctx = canvas.getContext('2d');
     let hearts = [];
 
+    // your 4 colors
     const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
 
     function resizeCanvas() {
@@ -745,6 +700,7 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
+    // same spawn behavior (3 per move)
     document.addEventListener('mousemove', e => {
       for (let i = 0; i < 3; i++) {
         hearts.push({
@@ -763,13 +719,14 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       hearts.forEach((h, i) => {
         ctx.globalAlpha = h.alpha;
+        // monochrome heart so fillStyle applies (no pink)
         ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
         ctx.fillStyle = h.color;
         ctx.fillText('♥', h.x, h.y);
 
         h.x += h.dx;
         h.y += h.dy;
-        h.alpha -= 0.02;
+        h.alpha -= 0.02; // same fade
         if (h.alpha <= 0) hearts.splice(i, 1);
       });
       requestAnimationFrame(drawHearts);
@@ -777,11 +734,13 @@
 
     drawHearts();
 
+    // logout
     document.getElementById('logout-btn').addEventListener('click', async () => {
       await supabase.auth.signOut();
       location.href = "login.html";
     });
 
+    // quotes (restored)
     const sweetQuotes = [
       "You make ordinary moments feel special.",
       "Your laugh is my favorite sound.",
@@ -908,6 +867,7 @@
       }
     });
 
+    // reminders (restored)
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
