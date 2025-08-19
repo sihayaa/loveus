@@ -9,6 +9,7 @@
     :root{
       --bg:#1a140f; --ink:#d7c6a3; --ring:#bfa35a; --zoom:1;
       --shadow:0 18px 55px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.06);
+      --durin-blue:#9fe3ff;
     }
     *{box-sizing:border-box} html,body{height:100%}
     body{
@@ -84,6 +85,50 @@
     .btn{padding:8px 12px; border-radius:10px; border:1px solid rgba(191,163,90,.55); background:#2b221a; color:#e7dbc3; cursor:pointer}
     .btn.primary{background:#3a2e21}
     .btn:hover{filter:brightness(1.06)}
+
+    /* ===== Door of Durin overlay ===== */
+    .durin{
+      position:fixed; inset:0; z-index:2000; display:none; align-items:center; justify-content:center;
+      pointer-events:auto;
+    }
+    .durin.on{display:flex;}
+    .durin .veil{
+      position:absolute; inset:0;
+      background: radial-gradient(1200px 800px at 50% 45%, rgba(10,28,36,.85), rgba(0,0,0,.95));
+      opacity:0; animation: veilIn .25s ease-out forwards;
+    }
+    .durin .stage{position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center}
+    .sigil{
+      width:min(520px,78vw);
+      filter: drop-shadow(0 0 10px rgba(159,227,255,.35)) drop-shadow(0 0 20px rgba(159,227,255,.2));
+      opacity:0; animation: sigilIn .3s ease-out .05s forwards;
+    }
+    .sigil path, .sigil circle{
+      stroke: var(--durin-blue); fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-width:2;
+      stroke-dasharray:1; stroke-dashoffset:1; animation: dash 1.2s ease-out forwards .15s;
+    }
+    .doors .panel{
+      position:absolute; top:50%; height:56vh; width:32vw; max-width:520px; transform:translateY(-50%);
+      border:1px solid rgba(159,227,255,.65);
+      background:
+        radial-gradient(260px 120px at 50% 30%, rgba(159,227,255,.08), rgba(159,227,255,0) 60%),
+        linear-gradient(180deg, rgba(159,227,255,.06), rgba(159,227,255,.02));
+      box-shadow:
+        0 0 24px rgba(159,227,255,.18), inset 0 0 12px rgba(159,227,255,.12);
+      border-radius:10px;
+      opacity:0; animation: doorsPop .2s ease-out .9s forwards;
+    }
+    .doors .panel.left{ left:50%; transform:translate(-100%,-50%); }
+    .doors .panel.right{ left:50%; transform:translate(0,-50%); }
+    .doors.open .panel.left{ animation: openLeft .9s ease-in forwards; }
+    .doors.open .panel.right{ animation: openRight .9s ease-in forwards; }
+
+    @keyframes veilIn{from{opacity:0} to{opacity:1}}
+    @keyframes sigilIn{from{opacity:0; transform:scale(.98)} to{opacity:1; transform:scale(1)}}
+    @keyframes dash{to{stroke-dashoffset:0}}
+    @keyframes doorsPop{from{opacity:0; transform:translate(-100%,-50%) scale(.98)} to{opacity:1; transform:translate(-100%,-50%) scale(1)}}
+    @keyframes openLeft{from{transform:translate(-100%,-50%)} to{transform:translate(-180%,-50%); opacity:.0}}
+    @keyframes openRight{from{transform:translate(0,-50%)} to{transform:translate(80%,-50%); opacity:.0}}
   </style>
 </head>
 <body>
@@ -132,6 +177,32 @@
     </div>
   </div>
 
+  <!-- Door of Durin overlay -->
+  <div id="durin" class="durin" aria-hidden="true">
+    <div class="veil"></div>
+    <div class="stage">
+      <!-- simple glowing arch + stars -->
+      <svg class="sigil" viewBox="0 0 400 520">
+        <!-- arch -->
+        <path pathLength="1" d="M80,420 A120,120 0 1 1 320,420" />
+        <!-- lintel -->
+        <path pathLength="1" d="M100,300 H300" />
+        <!-- pillars -->
+        <path pathLength="1" d="M120,420 V300" />
+        <path pathLength="1" d="M280,420 V300" />
+        <!-- stars -->
+        <circle pathLength="1" cx="200" cy="250" r="4"/>
+        <circle pathLength="1" cx="170" cy="270" r="3"/>
+        <circle pathLength="1" cx="230" cy="270" r="3"/>
+      </svg>
+      <!-- sliding doors -->
+      <div class="doors" id="doors">
+        <div class="panel left"></div>
+        <div class="panel right"></div>
+      </div>
+    </div>
+  </div>
+
 <script>
 /* ========= Smooth pan/zoom camera ========= */
 const viewport = document.getElementById('viewport');
@@ -155,7 +226,7 @@ function centerFit(){
   const s  = Math.min(vw/cam.natW, vh/cam.natH) * FIT;
   cam.s = cam.ts = s;
   cam.x = cam.tx = vw/2 - (cam.natW*s)/2;
-  cam.y = cam.ty = vh/2 - (cam.natH*s)/2;  // ✅ correct (was cam.nh)
+  cam.y = cam.ty = vh/2 - (cam.natH*s)/2;
   applyCam();
 }
 function clamp(v,a,b){return Math.max(a,Math.min(b,v));}
@@ -204,8 +275,8 @@ function animateCam(now){
 requestAnimationFrame(animateCam);
 addEventListener('resize', ()=>{ centerFit(); renderPins(); });
 
-/* ========= Lightweight snowfall (fast) + magic burst ========= */
-const GOLD="#d4af37", BLUE="#74d3ff";
+/* ========= Lightweight snowfall (fast) ========= */
+const GOLD="#d4af37";
 const glyphs=["✶","✷","✸","✹","✺","✧","✦","✳"], runes=["ᚠ","ᚱ","ᛃ","ᚨ","ᛟ","ᛞ","ᚾ","ᛋ"]; const SYMBOLS=glyphs.concat(runes);
 const canvas=document.getElementById('particles'), ctx=canvas.getContext('2d');
 let W=0,H=0;
@@ -215,49 +286,23 @@ function sizeCanvas(){ const dpr=Math.min(window.devicePixelRatio||1,1.5);
 }
 addEventListener('resize', sizeCanvas); sizeCanvas();
 const FLAKE_COUNT=200, FALL_SPEED=2.4, DRIFT=.35, EDGE=100;
-const spriteCache=new Map(), magicCache=new Map();
+const spriteCache=new Map();
 function getSprite(char,size){ const key=char+"@"+size; if(spriteCache.has(key)) return spriteCache.get(key);
   const pad=Math.ceil(size*.55), s=document.createElement('canvas'); s.width=s.height=size+pad*2; const c=s.getContext('2d');
   c.textAlign="center"; c.textBaseline="middle"; c.font=`${size}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Symbol","Symbola","Noto Sans",serif`;
   c.fillStyle=GOLD; c.fillText(char,s.width/2,s.height/2); c.strokeStyle="rgba(0,0,0,.28)"; c.lineWidth=Math.max(1,size*.06); c.strokeText(char,s.width/2,s.height/2);
   spriteCache.set(key,s); return s; }
-function getMagicSprite(char,size){ const key=char+"@"+size; if(magicCache.has(key)) return magicCache.get(key);
-  const pad=Math.ceil(size*.55), s=document.createElement('canvas'); s.width=s.height=size+pad*2; const c=s.getContext('2d');
-  c.textAlign="center"; c.textBaseline="middle"; c.font=`${size}px "Noto Sans Symbols 2","Noto Sans Runic","Segoe UI Symbol","Symbola","Noto Sans",serif`;
-  c.fillStyle=BLUE; c.fillText(char,s.width/2,s.height/2); c.strokeStyle="rgba(160,230,255,.7)"; c.lineWidth=Math.max(1,size*.06); c.strokeText(char,s.width/2,s.height/2);
-  magicCache.set(key,s); return s; }
 const flakes=[]; function makeFlake(){ const ch=SYMBOLS[(Math.random()*SYMBOLS.length)|0]; const sz=Math.round(16+Math.random()*10);
   return { x:Math.random()*(W+EDGE*2)-EDGE, y:-20-Math.random()*(H+EDGE), vy:(0.6+Math.random()*0.5)*FALL_SPEED,
     sway:Math.random()*Math.PI*2, rate:.8+Math.random()*.6, alpha:.95, sprite:getSprite(ch,sz) }; }
 for(let i=0;i<FLAKE_COUNT;i++) flakes.push(makeFlake());
-
-/* Magical burst (Door of Durin vibe) */
-let magic=[];
-function doorMagic(strength=1){
-  const cx=W/2, cy=H/2; const n=Math.floor(64*strength);
-  for(let i=0;i<n;i++){
-    const ang=(i/n)*Math.PI*2, speed=1.5+Math.random()*1.8, size=Math.round(14+Math.random()*10);
-    magic.push({ x:cx,y:cy, vx:Math.cos(ang)*speed, vy:Math.sin(ang)*speed, life:1.2, sprite:getMagicSprite(glyphs[i%glyphs.length], size) });
-  }
-}
 let last = performance.now(); document.addEventListener('visibilitychange',()=>{ last=performance.now(); });
 function snow(now){ requestAnimationFrame(snow); if(document.hidden){ last=now; return; }
   let dt=(now-last)/16.6667; dt=Math.max(.5,Math.min(dt,1.2)); last=now;
-  ctx.clearRect(0,0,W,H);
-  const breeze=Math.sin(now*.00035)*DRIFT;
-  for(let i=0;i<flakes.length;i++){ const f=flakes[i];
-    f.sway+=f.rate*.02*dt; f.x+=(Math.sin(f.sway)*(DRIFT*.9)+breeze)*dt*16; f.y+=f.vy*dt;
-    if(f.y>H+EDGE){ const nf=makeFlake(); nf.y=-EDGE; flakes[i]=nf; continue; }
-    if(f.x<-EDGE) f.x=W+EDGE; if(f.x>W+EDGE) f.x=-EDGE;
-    const s=f.sprite; ctx.globalAlpha=f.alpha; ctx.drawImage(s, f.x-s.width/2, f.y-s.height/2);
-  }
-  for(let i=magic.length-1;i>=0;i--){
-    const m=magic[i];
-    m.x += m.vx*dt*10; m.y += m.vy*dt*10; m.life -= 0.03*dt;
-    ctx.globalAlpha = Math.max(m.life,0);
-    ctx.drawImage(m.sprite, m.x - m.sprite.width/2, m.y - m.sprite.height/2);
-    if(m.life<=0) magic.splice(i,1);
-  }
+  ctx.clearRect(0,0,W,H); const breeze=Math.sin(now*.00035)*DRIFT;
+  for(let i=0;i<flakes.length;i++){ const f=flakes[i]; f.sway+=f.rate*.02*dt; f.x+=(Math.sin(f.sway)*(DRIFT*.9)+breeze)*dt*16; f.y+=f.vy*dt;
+    if(f.y>H+EDGE){ const nf=makeFlake(); nf.y=-EDGE; flakes[i]=nf; continue; } if(f.x<-EDGE) f.x=W+EDGE; if(f.x>W+EDGE) f.x=-EDGE;
+    const s=f.sprite; ctx.globalAlpha=f.alpha; ctx.drawImage(s, f.x-s.width/2, f.y-s.height/2); }
   ctx.globalAlpha=1;
 }
 requestAnimationFrame(snow);
@@ -274,8 +319,9 @@ function togglePinMode(on){
   viewport.style.cursor = addingPin ? "crosshair" : "grab";
 }
 pinBtn.addEventListener('click',()=>{ if(secretView) return; togglePinMode(); });
+
 exitSecretBtn.addEventListener('click',()=>{
-  secretView=false; exitSecretBtn.style.display="none"; pinBtn.disabled=false; doorMagic(0.6); renderPins();
+  secretView=false; exitSecretBtn.style.display="none"; pinBtn.disabled=false; renderPins();
 });
 
 /* Secret codes: 1013 (add secret pin), 101324 (enter secret view) */
@@ -292,14 +338,15 @@ function activateSecretAdd(){
   pinBtn.textContent="📍 Pin it";
   hint.textContent = "Secret Pin mode: click anywhere on the map";
   hint.classList.add('on'); viewport.style.cursor="crosshair";
-  doorMagic(0.6);
 }
 function activateSecretView(){
-  secretView=true; addingPin=false; addingSecret=false;
-  hint.classList.remove('on'); viewport.style.cursor="grab";
-  exitSecretBtn.style.display="inline-flex"; pinBtn.disabled=true;
-  doorMagic(1.2);
-  renderPins();
+  // play door overlay, then actually enter secret view
+  playDurinTransition(()=>{
+    secretView=true; addingPin=false; addingSecret=false;
+    hint.classList.remove('on'); viewport.style.cursor="grab";
+    exitSecretBtn.style.display="inline-flex"; pinBtn.disabled=true;
+    renderPins();
+  });
 }
 
 /* Storage */
@@ -411,6 +458,23 @@ function openViewPin(pin){
 function closeView(){ modalView.classList.remove('on'); modalView.setAttribute('aria-hidden','true'); }
 vClose.addEventListener('click', closeView);
 modalView.addEventListener('click', (e)=>{ if(e.target===modalView) closeView(); });
+
+/* ===== Door of Durin transition ===== */
+const durin = document.getElementById('durin');
+const doors = document.getElementById('doors');
+function playDurinTransition(done){
+  // reset & show
+  doors.classList.remove('open');
+  durin.classList.add('on'); durin.setAttribute('aria-hidden','false');
+
+  // after the sigil draws, open the doors
+  setTimeout(()=>{ doors.classList.add('open'); }, 1000);
+  // after doors open, hide overlay & invoke callback
+  setTimeout(()=>{
+    durin.classList.remove('on'); durin.setAttribute('aria-hidden','true');
+    if (typeof done === 'function') done();
+  }, 1900);
+}
 
 /* init */
 renderPins();
