@@ -133,11 +133,13 @@
       position: absolute;
       bottom: 10px;
       right: 12px;
-      background-color: rgba(0, 0, 0, 0.5);
+      background-color: rgba(0, 0, 0, 0.6);
       color: white;
-      font-size: 0.7em;
-      padding: 2px 5px;
+      font-size: 0.65em;
+      line-height: 1.2em;
+      padding: 4px 6px;
       border-radius: 4px;
+      text-align: right;
     }
 
     .lightbox {
@@ -156,6 +158,13 @@
       font-family: 'Great Vibes', cursive;
       font-size: 2em;
       padding: 20px;
+    }
+
+    .lightbox img {
+      max-width: 90%;
+      max-height: 80%;
+      object-fit: contain;
+      border-radius: 10px;
     }
 
     .delete-btn,
@@ -286,19 +295,35 @@
         const block = document.createElement('div');
         block.className = 'photo-block';
         const date = new Date(item.created_at);
-        const timestamp = date.toLocaleString(undefined, {
+
+        // Manila time
+        const manilaTime = date.toLocaleString('en-US', {
           year: 'numeric',
           month: 'short',
           day: 'numeric',
           hour: 'numeric',
-          minute: '2-digit'
+          minute: '2-digit',
+          timeZone: 'Asia/Manila'
+        });
+
+        // Vegas time
+        const vegasTime = date.toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit',
+          timeZone: 'America/Los_Angeles'
         });
 
         block.innerHTML = `
           <span class="delete-btn" onclick="triggerDelete('${item.id}')">✖</span>
           <span class="edit-btn" onclick="triggerEdit('${item.id}','${item.caption || ''}')">✎</span>
           <img src="${item.image_url}" alt="Memory" onclick="showLightbox('${item.image_url}', \`${item.caption || ''}\`)">
-          <div class="timestamp">${timestamp}</div>
+          <div class="timestamp">
+            Manila: ${manilaTime}<br>
+            Vegas: ${vegasTime}
+          </div>
           <p>${item.caption || ''}</p>
         `;
         gallery.appendChild(block);
