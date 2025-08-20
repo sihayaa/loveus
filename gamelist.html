@@ -86,6 +86,30 @@
     .actions .btn{padding:8px 12px;border-radius:10px}
     .wrap{gap:10px}
     .list{gap:14px}
+
+    /* glassy transparency */
+    :root{
+      --glass: rgba(255,255,255,.78);
+      --glassField: rgba(255,255,255,.88);
+      --glassBorder: rgba(229,231,239,.55);
+    }
+    .composer,
+    .card{
+      background: var(--glass);
+      border-color: var(--glassBorder);
+      box-shadow: 0 8px 28px rgba(0,0,0,.10);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+    }
+    input[type="text"],
+    textarea,
+    .drop,
+    .iconbtn{
+      background: var(--glassField);
+      border-color: var(--glassBorder);
+    }
+    .thumb{ background: rgba(247,250,251,.55); }
+    .iconbtn.danger{ background: rgba(255,240,240,.85); border-color: rgba(255,211,207,.6); }
   </style>
 </head>
 <body>
@@ -179,7 +203,7 @@
     }
 
     function fileToDataURL(file){return new Promise(res=>{const r=new FileReader();r.onload=()=>res(r.result);r.readAsDataURL(file);});}
-    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+    function escapeHtml(s){return s.replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;","&gt;":">",'"':"&quot;","'":"&#39;"}[c]));}
     function escapeAttr(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
 
     function render(rows){
