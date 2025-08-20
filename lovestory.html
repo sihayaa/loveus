@@ -12,20 +12,43 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: #f5f0ff;
+      background: #ece5da; /* light background */
       font-family: 'Georgia', serif;
     }
 
+    #book-wrapper {
+      position: relative;
+      width: 900px;
+      height: 600px;
+      background: url("book.png") no-repeat center;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
     #flipbook {
-      width: 800px;
+      width: 700px;
       height: 500px;
     }
 
     #flipbook .page {
-      background: white;
-      border: 1px solid #ccc;
-      padding: 20px;
+      background: #fffdf5; /* page color */
+      border: 1px solid #d4c9b0;
+      padding: 30px;
       box-sizing: border-box;
+    }
+
+    #flipbook .page h2 {
+      text-align: center;
+      color: #7a5af8;
+      margin-bottom: 15px;
+    }
+
+    #flipbook .page p {
+      font-size: 17px;
+      line-height: 1.6;
+      text-align: justify;
     }
 
     #flipbook .page img {
@@ -34,49 +57,39 @@
       display: block;
       margin: 0 auto;
     }
-
-    #flipbook .page h2 {
-      text-align: center;
-      margin-bottom: 10px;
-      color: #7a5af8;
-    }
-
-    #flipbook .page p {
-      font-size: 16px;
-      line-height: 1.5;
-      text-align: justify;
-    }
   </style>
 </head>
 <body>
-  <div id="flipbook">
-    <div class="page">
-      <h2>Our Story Begins</h2>
-      <p>Once upon a time…</p>
-    </div>
-    <div class="page">
-      <img src="https://placekitten.com/600/400" alt="Cute photo">
-    </div>
-    <div class="page">
-      <h2>How We Met</h2>
-      <p>We first met on Overwatch…</p>
-    </div>
-    <div class="page">
-      <img src="https://placebear.com/600/400" alt="Another photo">
-    </div>
-    <div class="page">
-      <h2>Forever Us</h2>
-      <p>This is just the beginning of our love story…</p>
+  <div id="book-wrapper">
+    <div id="flipbook">
+      <div class="page">
+        <h2>Our Story Begins</h2>
+        <p>Once upon a time…</p>
+      </div>
+      <div class="page">
+        <img src="https://placekitten.com/600/400" alt="Cute photo">
+      </div>
+      <div class="page">
+        <h2>How We Met</h2>
+        <p>We first met on Overwatch…</p>
+      </div>
+      <div class="page">
+        <img src="https://placebear.com/600/400" alt="Another photo">
+      </div>
+      <div class="page">
+        <h2>Forever Us</h2>
+        <p>This is just the beginning of our love story…</p>
+      </div>
     </div>
   </div>
 
   <script>
     $(document).ready(function(){
       $("#flipbook").turn({
-        width: 800,
+        width: 700,
         height: 500,
         autoCenter: true,
-        display: 'double', // show 2 pages like a book
+        display: 'double',
         acceleration: true,
         gradients: true,
         elevation: 50
