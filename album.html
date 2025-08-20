@@ -294,7 +294,7 @@
       data.forEach(item => {
         const block = document.createElement('div');
         block.className = 'photo-block';
-        const date = new Date(item.created_at);
+        const utcDate = new Date(item.created_at + "Z"); // force UTC
 
         // Manila time
         const manilaTime = date.toLocaleString('en-US', {
