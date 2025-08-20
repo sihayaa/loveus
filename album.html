@@ -294,10 +294,12 @@
       data.forEach(item => {
         const block = document.createElement('div');
         block.className = 'photo-block';
-        const utcDate = new Date(item.created_at + "Z"); // force UTC
+
+        // force UTC
+        const utcDate = new Date(item.created_at + "Z");
 
         // Manila time
-        const manilaTime = date.toLocaleString('en-US', {
+        const manilaTime = utcDate.toLocaleString('en-US', {
           year: 'numeric',
           month: 'short',
           day: 'numeric',
@@ -307,7 +309,7 @@
         });
 
         // Vegas time
-        const vegasTime = date.toLocaleString('en-US', {
+        const vegasTime = utcDate.toLocaleString('en-US', {
           year: 'numeric',
           month: 'short',
           day: 'numeric',
