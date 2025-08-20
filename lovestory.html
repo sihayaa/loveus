@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Our Love Story Book</title>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/turn.js@4/turn.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background: #f5f0ff; /* light purple background */
+      font-family: 'Georgia', serif;
+    }
+
+    #flipbook {
+      width: 800px;
+      height: 500px;
+    }
+
+    #flipbook .page {
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    #flipbook .page img {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+      margin: 0 auto;
+    }
+
+    #flipbook .page h2 {
+      text-align: center;
+      margin-bottom: 10px;
+      color: #7a5af8; /* purple accent */
+    }
+
+    #flipbook .page p {
+      font-size: 16px;
+      line-height: 1.5;
+      text-align: justify;
+    }
+  </style>
+</head>
+<body>
+  <div id="flipbook">
+    <div class="page">
+      <h2>Our Story Begins</h2>
+      <p>Once upon a time…</p>
+    </div>
+    <div class="page">
+      <img src="https://placekitten.com/600/400" alt="Cute photo">
+    </div>
+    <div class="page">
+      <h2>How We Met</h2>
+      <p>We first met on Overwatch…</p>
+    </div>
+    <div class="page">
+      <img src="https://placebear.com/600/400" alt="Another photo">
+    </div>
+    <div class="page">
+      <h2>Forever Us</h2>
+      <p>This is just the beginning of our love story…</p>
+    </div>
+  </div>
+
+  <script>
+    $("#flipbook").turn({
+      width: 800,
+      height: 500,
+      autoCenter: true,
+      elevation: 50,
+      gradients: true
+    });
+  </script>
+</body>
+</html>
