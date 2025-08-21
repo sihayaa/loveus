@@ -2,191 +2,136 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Our Love Story Scrapbook</title>
+  <title>Our Storybook</title>
+  <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
   <style>
     body {
       margin: 0;
-      background: #0d1b2a; /* midnight blue */
+      background: midnightblue;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-    }
-
-    #bookContainer {
-      width: 1000px;
-      height: 700px;
-    }
-
-    .page-content {
+      flex-direction: column;
       font-family: 'Georgia', serif;
-      position: relative; /* so we can place floating items inside */
-      background: rgba(255, 255, 255, 0.07);
-      border: 2px solid #7a5af8;
+    }
+
+    #story-container {
+      width: 600px;
+      height: 800px;
+      margin: 20px auto;
+    }
+
+    .page {
       width: 100%;
       height: 100%;
+      background: url("https://www.transparenttextures.com/patterns/parchment.png") repeat;
+      background-color: #f9f3e7;
+      box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
       overflow: hidden;
     }
 
-    .scrap-item {
-      position: absolute;
-      cursor: move;
+    .page-content {
+      flex: 1;
+      overflow-y: auto;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #3b2f2f;
     }
 
-    .scrap-item img {
-      max-width: 200px;
-      border: 5px solid #fff;
-      box-shadow: 3px 3px 8px rgba(0,0,0,0.6);
+    .page h2 {
+      margin-top: 0;
+      font-size: 24px;
+      text-align: center;
     }
 
-    .scrap-item p {
-      background: rgba(255,253,245,0.9);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 16px;
-      color: #222;
-      max-width: 250px;
-    }
-
-    /* Toolbar */
-    #toolbar {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      background: rgba(0,0,0,0.8);
-      padding: 10px;
-      border-radius: 8px;
+    #editor {
       display: none;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 1000;
+      margin-top: 10px;
     }
 
-    #toolbar button {
-      background: #7a5af8;
-      color: white;
-      border: none;
-      padding: 8px 12px;
+    #addPage {
+      padding: 10px 20px;
+      font-size: 16px;
+      background: #fff8dc;
+      border: 2px solid #a67c52;
+      border-radius: 8px;
       cursor: pointer;
-      border-radius: 5px;
-      font-size: 14px;
+      font-family: 'Georgia', serif;
+    }
+    #addPage:hover {
+      background: #f0e1c6;
     }
   </style>
 </head>
 <body>
-  <div id="bookContainer"></div>
 
-  <!-- Toolbar -->
-  <div id="toolbar">
-    <button onclick="addText()">Add Text</button>
-    <button onclick="addPhoto()">Add Photo</button>
-    <button onclick="exitEdit()">Exit Edit Mode</button>
+  <div id="story-container"></div>
+
+  <!-- Edit mode controls -->
+  <div id="editor">
+    <button id="addPage">➕ Add Page</button>
   </div>
 
-  <script src="flipbook/page-flip.browser.js"></script>
   <script>
-    const bookContainer = document.getElementById("bookContainer");
-
-    const pageFlip = new St.PageFlip(bookContainer, {
-      width: 480,
-      height: 640,
+    const pageFlip = new St.PageFlip(document.getElementById("story-container"), {
+      width: 600,
+      height: 800,
       size: "stretch",
-      showCover: true,
-      mobileScrollSupport: false
+      minWidth: 315,
+      maxWidth: 1000,
+      minHeight: 420,
+      maxHeight: 1350,
+      drawShadow: true,
+      flippingTime: 1000,
+      useMouseEvents: true
     });
 
-    // Helper to make a page
-    function createPage() {
-      const el = document.createElement("div");
-      el.classList.add("page-content");
-      return el;
+    // Function to create scrapbook-style page
+    function createPage(content = "") {
+      return `
+        <div class="page">
+          <div class="page-content">
+            ${content || "<p style='text-align:center; color:#555;'>Empty Page</p>"}
+          </div>
+        </div>
+      `;
     }
 
-    // Load book with 2 empty pages
-    pageFlip.loadFromHTML([createPage(), createPage()]);
+    // Start with 4 pages
+    pageFlip.loadFromHTML([
+      createPage("<h2>Our Story</h2><p>Once upon a time...</p>"),
+      createPage(),
+      createPage(),
+      createPage()
+    ]);
 
-    // ===== Edit Mode =====
-    let editMode = false;
-    let inputBuffer = "";
-
+    // Unlock edit mode with "123"
     document.addEventListener("keydown", (e) => {
-      inputBuffer += e.key;
-      if (inputBuffer.endsWith("123")) {
-        enterEdit();
-        inputBuffer = "";
+      if (e.key === "1" || e.key === "2" || e.key === "3") {
+        let typed = (window.unlockInput || "") + e.key;
+        window.unlockInput = typed;
+        if (typed === "123") {
+          document.getElementById("editor").style.display = "block";
+          alert("Edit mode unlocked!");
+        }
+      } else {
+        window.unlockInput = "";
       }
     });
 
-    function enterEdit() {
-      editMode = true;
-      document.getElementById("toolbar").style.display = "flex";
-      alert("Edit Mode Activated ✨");
-    }
-
-    function exitEdit() {
-      editMode = false;
-      document.getElementById("toolbar").style.display = "none";
-    }
-
-    // Draggable logic
-    function makeDraggable(el) {
-      el.onmousedown = function (e) {
-        if (!editMode) return;
-        let shiftX = e.clientX - el.getBoundingClientRect().left;
-        let shiftY = e.clientY - el.getBoundingClientRect().top;
-
-        function moveAt(pageX, pageY) {
-          el.style.left = pageX - shiftX + "px";
-          el.style.top = pageY - shiftY + "px";
-        }
-
-        function onMouseMove(e) {
-          moveAt(e.pageX, e.pageY);
-        }
-
-        document.addEventListener("mousemove", onMouseMove);
-
-        el.onmouseup = function () {
-          document.removeEventListener("mousemove", onMouseMove);
-          el.onmouseup = null;
-        };
-      };
-      el.ondragstart = () => false;
-    }
-
-    // Add text to current page
-    function addText() {
-      if (!editMode) return;
-      const text = prompt("Enter text:");
-      if (!text) return;
-
-      const p = document.createElement("div");
-      p.classList.add("scrap-item");
-      p.style.top = "50px";
-      p.style.left = "50px";
-      p.innerHTML = `<p>${text}</p>`;
-      makeDraggable(p);
-
-      const currentPage = pageFlip.getCurrentPageElement();
-      currentPage.appendChild(p);
-    }
-
-    // Add photo to current page
-    function addPhoto() {
-      if (!editMode) return;
-      const url = prompt("Enter image URL:");
-      if (!url) return;
-
-      const imgWrap = document.createElement("div");
-      imgWrap.classList.add("scrap-item");
-      imgWrap.style.top = "100px";
-      imgWrap.style.left = "100px";
-      imgWrap.innerHTML = `<img src="${url}">`;
-      makeDraggable(imgWrap);
-
-      const currentPage = pageFlip.getCurrentPageElement();
-      currentPage.appendChild(imgWrap);
-    }
+    // Add page button
+    document.getElementById("addPage").addEventListener("click", () => {
+      pageFlip.loadFromHTML([
+        ...pageFlip.getPageList().map((p) => p.element.outerHTML),
+        createPage()
+      ]);
+    });
   </script>
+
 </body>
 </html>
