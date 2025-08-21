@@ -9,7 +9,7 @@
     body {
       margin: 0;
       font-family: 'Patrick Hand', cursive;
-      background: #0b0f2f; /* midnight blue */
+      background: #0b0f2f;
       display: flex;
       justify-content: center;
       align-items: center;
@@ -22,14 +22,13 @@
     }
 
     .page {
-      background: #fdf6e3; /* parchment style */
+      background: #fdf6e3;
       padding: 20px;
       box-sizing: border-box;
       overflow: hidden;
       position: relative;
     }
 
-    /* Scrapbook text/images */
     .draggable {
       position: absolute;
       cursor: move;
@@ -42,7 +41,6 @@
       border-radius: 6px;
     }
 
-    /* Toolbar for edit mode */
     #toolbar {
       position: fixed;
       top: 10px;
@@ -66,7 +64,6 @@
       font-weight: bold;
     }
 
-    /* Modal (themed pop-up) */
     #modal {
       display: none;
       position: fixed;
@@ -105,16 +102,22 @@
 </head>
 <body>
 
-<div id="scrapbook"></div>
+<div id="scrapbook">
+  <div class="my-book">
+    <div class="page"><h2>Cover Page</h2></div>
+    <div class="page"><h2>Page 1</h2></div>
+    <div class="page"><h2>Page 2</h2></div>
+    <div class="page"><h2>Page 3</h2></div>
+    <div class="page"><h2>Page 4</h2></div>
+  </div>
+</div>
 
-<!-- Toolbar (appears in edit mode) -->
 <div id="toolbar">
   <button onclick="openTextModal()">Add Text</button>
   <button onclick="triggerImageUpload()">Add Photo</button>
   <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
 </div>
 
-<!-- Modal for text input -->
 <div id="modal">
   <div id="modalContent">
     <h3>Add Your Text</h3>
@@ -125,7 +128,6 @@
 </div>
 
 <script>
-  // Initialize flipbook
   const pageFlip = new St.PageFlip(document.getElementById("scrapbook"), {
     width: 400,
     height: 600,
@@ -134,31 +136,18 @@
     showCover: true
   });
 
-  // Create sample pages
-  const storyPages = [
-    "Cover Page",
-    "Page 1",
-    "Page 2",
-    "Page 3",
-    "Page 4"
-  ];
+  // Load ALL pages together
+  pageFlip.loadFromHTML(document.querySelectorAll(".my-book .page"));
 
-  storyPages.forEach(text => {
-    const page = document.createElement("div");
-    page.className = "page";
-    page.innerHTML = `<h2>${text}</h2>`;
-    pageFlip.loadFromHTML([page]);
-  });
-
-  // Unlock edit mode
+  // Unlock edit mode with password
   document.addEventListener("keydown", (e) => {
-    if (e.key === "123" || e.code === "Digit1" && e.shiftKey) {
+    if (e.key === "1") { 
       document.getElementById("toolbar").style.display = "block";
-      alert("Edit Mode Activated! ✨");
+      alert("Edit Mode Activated ✨");
     }
   });
 
-  // Themed modal controls
+  // Modal
   function openTextModal() {
     document.getElementById("modal").style.display = "flex";
   }
@@ -175,14 +164,13 @@
     textEl.innerText = txt;
     textEl.style.fontSize = "20px";
     textEl.style.color = "#0b0f2f";
-    textEl.contentEditable = true; // allow live edits
-    document.querySelector(".page").appendChild(textEl);
+    textEl.contentEditable = true;
+    pageFlip.getCurrentPageElement().appendChild(textEl);
     dragElement(textEl);
     document.getElementById("newText").value = "";
     closeModal();
   }
 
-  // Upload image
   function triggerImageUpload() {
     document.getElementById("imageUpload").click();
   }
@@ -197,11 +185,11 @@
     wrapper.style.left = "100px";
     wrapper.style.top = "100px";
     wrapper.appendChild(img);
-    document.querySelector(".page").appendChild(wrapper);
+    pageFlip.getCurrentPageElement().appendChild(wrapper);
     dragElement(wrapper);
   }
 
-  // Make elements draggable
+  // Drag system
   function dragElement(elmnt) {
     let pos1=0,pos2=0,pos3=0,pos4=0;
     elmnt.onmousedown = dragMouseDown;
