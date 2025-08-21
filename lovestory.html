@@ -170,7 +170,7 @@ body.editing .scrap-item{ pointer-events:auto !important; }
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
 const PASSCODE = '123';
-const STORAGE_KEY = 'scrapbook_v3';
+const STORAGE_KEY = 'scrapbook_v4';
 
 const bookEl    = document.getElementById('book');
 const toolbar   = document.getElementById('toolbar');
@@ -198,7 +198,11 @@ const pageFlip = new St.PageFlip(bookEl, {
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* Active side tracking */
+/* Make flips happen only by DRAG, not by click/tap */
+bookEl.addEventListener('click', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
+bookEl.addEventListener('dblclick', (e) => { e.preventDefault(); e.stopPropagation(); }, true);
+
+/* Track active side for adding content */
 let activeCanvas = document.querySelector('#book .page .page-canvas');
 bookEl.addEventListener('pointerdown', (ev) => {
   const c = ev.target.closest('.page .page-canvas');
@@ -227,7 +231,6 @@ function getActivePageCanvas(){
 let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
 
 document.addEventListener('keydown',(e)=>{
-  // only listen for passcode
   keyBuffer += e.key;
   clearTimeout(keyTimer);
   keyTimer=setTimeout(()=> keyBuffer='', 1200);
