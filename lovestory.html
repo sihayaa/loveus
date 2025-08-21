@@ -33,19 +33,61 @@
     }
     .page-canvas{ position:relative; width:100%; height:100%; padding:28px; color:var(--ink); }
 
-    /* Scrap items */
-    .scrap-item{ position:absolute; cursor:move; user-select:none; transform-origin:top left; }
-    .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
+    /* ========================
+       SCRAP ITEMS (VIEW MODE)
+       ======================== */
+    .scrap-item{ position:absolute; user-select:none; cursor:default; }
+    .scrap-item.selected{ box-shadow:none; }
     .scrap-text{
-      background:rgba(255,255,255,.55); backdrop-filter: blur(2px);
-      padding:10px 12px; border-radius:8px; border:1px solid rgba(0,0,0,.1);
-      min-width:120px; min-height:44px; white-space:pre-wrap;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      border-radius: 0;
+      box-shadow: none;
+      color: var(--ink);
+      white-space: pre-wrap;
     }
     .scrap-text[contenteditable="true"]{ outline:none; }
-    .scrap-img{ display:block; border:6px solid #fff; border-radius:8px; box-shadow:4px 6px 18px rgba(0,0,0,.25); max-width:100%; max-height:100%; pointer-events:none; }
-    .resizer{ position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
+    .scrap-img{
+      display:block;
+      border:0;
+      border-radius:0;
+      box-shadow:none;
+      max-width:100%;
+      max-height:100%;
+      pointer-events:none;
+    }
+    .resizer{ display:none; }
 
-    /* Secret toolbar (hidden until 123 typed) */
+    /* ========================
+       EDIT MODE (only when
+       body has .editing)
+       ======================== */
+    body.editing .scrap-item{ cursor:move; }
+    body.editing .scrap-item.selected{ box-shadow: 0 0 0 3px var(--accent); }
+    body.editing .scrap-text{
+      background: rgba(255,255,255,.55);
+      padding: 10px 12px;
+      border: 1px solid rgba(0,0,0,.1);
+      border-radius: 8px;
+    }
+    body.editing .scrap-img{
+      border: 6px solid #fff;
+      border-radius: 8px;
+      box-shadow: 4px 6px 18px rgba(0,0,0,.25);
+    }
+    body.editing .scrap-item .resizer{
+      display:block;
+      position:absolute;
+      right:-6px; bottom:-6px;
+      width:16px; height:16px;
+      border-radius:4px;
+      background:var(--mint);
+      border:2px solid #0b2c28;
+      cursor:nwse-resize;
+    }
+
+    /* Toolbar (hidden until 123 typed) */
     #toolbar{
       position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
       display:none; z-index:60; background:rgba(255,255,255,.92);
@@ -60,7 +102,7 @@
     #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
     #toolbar span.hint{ color:#333; font-size:14px; margin-left:6px; }
 
-    /* Modal */
+    /* Modal (text composer) */
     .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
     .modal.open{ display:flex; }
     .modal-card{
@@ -94,7 +136,7 @@
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Hidden editor toolbar (appears after typing 123) -->
+  <!-- Secret editor toolbar (appears after typing 123) -->
   <div id="toolbar">
     <button id="addTextBtn" class="mint">Add Text</button>
     <button id="addPhotoBtn" class="secondary">Add Photo</button>
@@ -138,10 +180,10 @@
     const textCancel = document.getElementById('textCancel');
     const toast    = document.getElementById('toast');
 
-    // ---------- load saved into canvases BEFORE book init ----------
+    /* ---------- saved content BEFORE book init ---------- */
     applySaved();
 
-    // ---------- PageFlip ----------
+    /* ---------- PageFlip ---------- */
     const pageFlip = new St.PageFlip(bookEl, {
       width: 520,
       height: 700,
@@ -155,12 +197,11 @@
     });
     pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-    // ---------- Always add to the page you're on (or clicked) ----------
+    /* ---------- Always add to current page (or clicked page) ---------- */
     let activeCanvas =
       document.querySelectorAll('#book .page .page-canvas')[pageFlip.getCurrentPageIndex()] ||
       document.querySelector('#book .page .page-canvas');
 
-    // When the page flips, update active canvas
     if (pageFlip.on) {
       pageFlip.on('flip', (e) => {
         const canvases = document.querySelectorAll('#book .page .page-canvas');
@@ -170,13 +211,10 @@
         activeCanvas = canvases[idx] || canvases[0];
       });
     }
-
-    // Clicking any page makes it the target
     bookEl.addEventListener('pointerdown', (ev) => {
       const c = ev.target.closest('.page .page-canvas');
       if (c) activeCanvas = c;
     });
-
     function getActivePageCanvas(){
       if (activeCanvas && activeCanvas.isConnected) return activeCanvas;
       const canvases = document.querySelectorAll('#book .page .page-canvas');
@@ -184,8 +222,24 @@
       return canvases[idx] || canvases[0];
     }
 
-    // ---------- edit mode unlock ----------
+    /* ---------- EDIT MODE TOGGLING (makes items blend in view mode) ---------- */
     let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+
+    function setAllTextEditable(on) {
+      document.querySelectorAll('#book .scrap-text').forEach(el => {
+        el.setAttribute('contenteditable', on ? 'true' : 'false');
+      });
+    }
+    function setEditing(on) {
+      if (on) {
+        document.body.classList.add('editing');
+        setAllTextEditable(true);
+      } else {
+        document.body.classList.remove('editing');
+        setAllTextEditable(false);
+      }
+    }
+
     document.addEventListener('keydown',(e)=>{
       if(e.key==='Escape' && editEnabled){ exitEdit(); return; }
       keyBuffer += e.key;
@@ -193,13 +247,25 @@
       keyTimer=setTimeout(()=> keyBuffer='', 1200);
       if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
     });
-    function enterEdit(){ editEnabled=true; toolbar.style.display='flex'; toastShow('Edit mode unlocked ✨'); }
-    function exitEdit(){ editEnabled=false; toolbar.style.display='none'; deselect(); }
 
-    // ---------- drag/resize ----------
+    function enterEdit(){
+      editEnabled=true;
+      toolbar.style.display='flex';
+      setEditing(true);            // <-- turn on edit visuals
+      toastShow('Edit mode unlocked ✨');
+    }
+    function exitEdit(){
+      editEnabled=false;
+      toolbar.style.display='none';
+      setEditing(false);           // <-- back to printed look
+      deselect();
+    }
+
+    /* ---------- drag/resize ---------- */
     function makeDraggable(el){
       let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
       const res=el.querySelector('.resizer');
+
       if(res){
         res.addEventListener('mousedown',(e)=>{
           if(!editEnabled) return; e.stopPropagation();
@@ -214,6 +280,7 @@
         startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
         document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
       });
+
       function onMove(e){
         if(!editEnabled) return;
         if(resizing){
@@ -226,12 +293,16 @@
           el.style.top =(origY+dy)+'px';
         }
       }
-      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
+      function onUp(){
+        document.removeEventListener('mousemove',onMove);
+        document.removeEventListener('mouseup',onUp);
+        resizing=false;
+      }
     }
     function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
     document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-    // ---------- toolbar actions ----------
+    /* ---------- toolbar actions ---------- */
     document.getElementById('addTextBtn').addEventListener('click',()=>{
       textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10);
     });
@@ -240,7 +311,8 @@
       const val=textInput.value.trim(); if(!val) return closeModal(textModal);
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
-      box.innerHTML=`<div class="scrap-text" contenteditable="true">${val}</div><div class="resizer" title="Resize"></div>`;
+      const isEditing = document.body.classList.contains('editing');
+      box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer" title="Resize"></div>`;
       getActivePageCanvas().appendChild(box); makeDraggable(box); closeModal(textModal);
     });
 
@@ -265,7 +337,6 @@
       const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
       bookEl.appendChild(p);
       pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
-      // set target to the newly added page
       const canvases = document.querySelectorAll('#book .page .page-canvas');
       activeCanvas = canvases[canvases.length-1];
       toastShow('Page added');
@@ -277,7 +348,7 @@
       toastShow('Saved ✓');
     });
 
-    // ---------- utils ----------
+    /* ---------- utils ---------- */
     function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
     function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
     function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
@@ -291,8 +362,13 @@
           canvases[i].innerHTML = arr[i];
         }
         document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
+        // ensure printed look initially
+        setEditing(false);
       }catch(e){}
     }
+
+    // ensure printed look on first load
+    setEditing(false);
   </script>
 </body>
 </html>
