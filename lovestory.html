@@ -1,137 +1,234 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Our Storybook</title>
+  <meta charset="UTF-8" />
+  <title>Our Scrapbook Story</title>
   <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      background: midnightblue;
+      font-family: 'Patrick Hand', cursive;
+      background: #0b0f2f; /* midnight blue */
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      flex-direction: column;
-      font-family: 'Georgia', serif;
     }
 
-    #story-container {
-      width: 600px;
-      height: 800px;
-      margin: 20px auto;
+    #scrapbook {
+      width: 90vw;
+      height: 90vh;
     }
 
     .page {
-      width: 100%;
-      height: 100%;
-      background: url("https://www.transparenttextures.com/patterns/parchment.png") repeat;
-      background-color: #f9f3e7;
-      box-shadow: inset 0 0 30px rgba(0,0,0,0.2);
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-start;
+      background: #fdf6e3; /* parchment style */
+      padding: 20px;
+      box-sizing: border-box;
       overflow: hidden;
+      position: relative;
     }
 
-    .page-content {
-      flex: 1;
-      overflow-y: auto;
-      font-size: 18px;
-      line-height: 1.6;
-      color: #3b2f2f;
+    /* Scrapbook text/images */
+    .draggable {
+      position: absolute;
+      cursor: move;
     }
 
-    .page h2 {
-      margin-top: 0;
-      font-size: 24px;
-      text-align: center;
+    .draggable img {
+      max-width: 200px;
+      border: 3px solid #fff;
+      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+      border-radius: 6px;
     }
 
-    #editor {
+    /* Toolbar for edit mode */
+    #toolbar {
+      position: fixed;
+      top: 10px;
+      right: 10px;
       display: none;
-      margin-top: 10px;
+      background: #1a1f4a;
+      color: white;
+      padding: 10px;
+      border-radius: 8px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.4);
     }
 
-    #addPage {
-      padding: 10px 20px;
-      font-size: 16px;
-      background: #fff8dc;
-      border: 2px solid #a67c52;
-      border-radius: 8px;
+    #toolbar button {
+      margin: 5px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
       cursor: pointer;
-      font-family: 'Georgia', serif;
+      background: #67e4ca;
+      color: #0b0f2f;
+      font-weight: bold;
     }
-    #addPage:hover {
-      background: #f0e1c6;
+
+    /* Modal (themed pop-up) */
+    #modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
     }
+
+    #modalContent {
+      background: #fdf6e3;
+      padding: 20px;
+      border: 4px solid #67e4ca;
+      border-radius: 10px;
+      min-width: 300px;
+    }
+
+    #modalContent input, #modalContent textarea {
+      width: 100%;
+      margin: 10px 0;
+      padding: 5px;
+    }
+
+    #modalContent button {
+      margin: 5px;
+      padding: 6px 12px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .saveBtn { background: #67e4ca; color:#0b0f2f; }
+    .cancelBtn { background: #e67a7a; color:white; }
   </style>
 </head>
 <body>
 
-  <div id="story-container"></div>
+<div id="scrapbook"></div>
 
-  <!-- Edit mode controls -->
-  <div id="editor">
-    <button id="addPage">➕ Add Page</button>
+<!-- Toolbar (appears in edit mode) -->
+<div id="toolbar">
+  <button onclick="openTextModal()">Add Text</button>
+  <button onclick="triggerImageUpload()">Add Photo</button>
+  <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+</div>
+
+<!-- Modal for text input -->
+<div id="modal">
+  <div id="modalContent">
+    <h3>Add Your Text</h3>
+    <textarea id="newText" rows="4" placeholder="Write something..."></textarea>
+    <button class="saveBtn" onclick="addText()">Save</button>
+    <button class="cancelBtn" onclick="closeModal()">Cancel</button>
   </div>
+</div>
 
-  <script>
-    const pageFlip = new St.PageFlip(document.getElementById("story-container"), {
-      width: 600,
-      height: 800,
-      size: "stretch",
-      minWidth: 315,
-      maxWidth: 1000,
-      minHeight: 420,
-      maxHeight: 1350,
-      drawShadow: true,
-      flippingTime: 1000,
-      useMouseEvents: true
-    });
+<script>
+  // Initialize flipbook
+  const pageFlip = new St.PageFlip(document.getElementById("scrapbook"), {
+    width: 400,
+    height: 600,
+    size: "stretch",
+    maxShadowOpacity: 0.5,
+    showCover: true
+  });
 
-    // Function to create scrapbook-style page
-    function createPage(content = "") {
-      return `
-        <div class="page">
-          <div class="page-content">
-            ${content || "<p style='text-align:center; color:#555;'>Empty Page</p>"}
-          </div>
-        </div>
-      `;
+  // Create sample pages
+  const storyPages = [
+    "Cover Page",
+    "Page 1",
+    "Page 2",
+    "Page 3",
+    "Page 4"
+  ];
+
+  storyPages.forEach(text => {
+    const page = document.createElement("div");
+    page.className = "page";
+    page.innerHTML = `<h2>${text}</h2>`;
+    pageFlip.loadFromHTML([page]);
+  });
+
+  // Unlock edit mode
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "123" || e.code === "Digit1" && e.shiftKey) {
+      document.getElementById("toolbar").style.display = "block";
+      alert("Edit Mode Activated! ✨");
     }
+  });
 
-    // Start with 4 pages
-    pageFlip.loadFromHTML([
-      createPage("<h2>Our Story</h2><p>Once upon a time...</p>"),
-      createPage(),
-      createPage(),
-      createPage()
-    ]);
+  // Themed modal controls
+  function openTextModal() {
+    document.getElementById("modal").style.display = "flex";
+  }
+  function closeModal() {
+    document.getElementById("modal").style.display = "none";
+  }
+  function addText() {
+    const txt = document.getElementById("newText").value;
+    if (!txt) return;
+    const textEl = document.createElement("div");
+    textEl.className = "draggable";
+    textEl.style.left = "50px";
+    textEl.style.top = "50px";
+    textEl.innerText = txt;
+    textEl.style.fontSize = "20px";
+    textEl.style.color = "#0b0f2f";
+    textEl.contentEditable = true; // allow live edits
+    document.querySelector(".page").appendChild(textEl);
+    dragElement(textEl);
+    document.getElementById("newText").value = "";
+    closeModal();
+  }
 
-    // Unlock edit mode with "123"
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "1" || e.key === "2" || e.key === "3") {
-        let typed = (window.unlockInput || "") + e.key;
-        window.unlockInput = typed;
-        if (typed === "123") {
-          document.getElementById("editor").style.display = "block";
-          alert("Edit mode unlocked!");
-        }
-      } else {
-        window.unlockInput = "";
-      }
-    });
+  // Upload image
+  function triggerImageUpload() {
+    document.getElementById("imageUpload").click();
+  }
 
-    // Add page button
-    document.getElementById("addPage").addEventListener("click", () => {
-      pageFlip.loadFromHTML([
-        ...pageFlip.getPageList().map((p) => p.element.outerHTML),
-        createPage()
-      ]);
-    });
-  </script>
+  function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const img = document.createElement("img");
+    img.src = URL.createObjectURL(file);
+    const wrapper = document.createElement("div");
+    wrapper.className = "draggable";
+    wrapper.style.left = "100px";
+    wrapper.style.top = "100px";
+    wrapper.appendChild(img);
+    document.querySelector(".page").appendChild(wrapper);
+    dragElement(wrapper);
+  }
+
+  // Make elements draggable
+  function dragElement(elmnt) {
+    let pos1=0,pos2=0,pos3=0,pos4=0;
+    elmnt.onmousedown = dragMouseDown;
+    function dragMouseDown(e) {
+      e = e || window.event;
+      e.preventDefault();
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      document.onmouseup = closeDragElement;
+      document.onmousemove = elementDrag;
+    }
+    function elementDrag(e) {
+      e = e || window.event;
+      e.preventDefault();
+      pos1 = pos3 - e.clientX;
+      pos2 = pos4 - e.clientY;
+      pos3 = e.clientX;
+      pos4 = e.clientY;
+      elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
+      elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
+    }
+    function closeDragElement() {
+      document.onmouseup = null;
+      document.onmousemove = null;
+    }
+  }
+</script>
 
 </body>
 </html>
