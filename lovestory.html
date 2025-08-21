@@ -3,8 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <title>Our Scrapbook Story</title>
-  <!-- avoid favicon 404 -->
   <link rel="icon" href="data:,">
+  <!-- Story fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
   <style>
     :root{
       --night:#0b0f2f;
@@ -12,12 +13,15 @@
       --paper:#f7eddc;
       --ink:#241a14;
       --accent:#7a5af8;
+      /* You can change these two to set your overall look */
+      --story-font: "Playfair Display", serif; /* or "Dancing Script", cursive */
+      --story-color:#2a1f1a;
     }
     *{box-sizing:border-box}
     body{
       margin:0; background:var(--night);
       height:100vh; display:flex; align-items:center; justify-content:center;
-      font-family: Georgia, "Times New Roman", serif; overflow:hidden;
+      font-family: var(--story-font); overflow:hidden;
     }
     #book{ width:min(92vw,1100px); height:min(90vh,760px); }
 
@@ -31,60 +35,38 @@
       box-shadow: inset 0 0 60px rgba(0,0,0,.22);
       overflow:hidden;
     }
-    .page-canvas{ position:relative; width:100%; height:100%; padding:28px; color:var(--ink); }
+    .page-canvas{
+      position:relative; width:100%; height:100%; padding:28px;
+      color: var(--story-color); font-family: var(--story-font);
+    }
 
-    /* ========================
-       SCRAP ITEMS (VIEW MODE)
-       ======================== */
+    /* ---------- VIEW MODE (default printed look) ---------- */
     .scrap-item{ position:absolute; user-select:none; cursor:default; }
     .scrap-item.selected{ box-shadow:none; }
     .scrap-text{
-      background: transparent;
-      border: 0;
-      padding: 0;
-      border-radius: 0;
-      box-shadow: none;
-      color: var(--ink);
-      white-space: pre-wrap;
+      background: transparent; border: 0; padding: 0; border-radius: 0; box-shadow: none;
+      color: inherit; font-family: inherit; white-space: pre-wrap;
     }
     .scrap-text[contenteditable="true"]{ outline:none; }
     .scrap-img{
-      display:block;
-      border:0;
-      border-radius:0;
-      box-shadow:none;
-      max-width:100%;
-      max-height:100%;
-      pointer-events:none;
+      display:block; border:0; border-radius:0; box-shadow:none;
+      max-width:100%; max-height:100%; pointer-events:none;
     }
     .resizer{ display:none; }
 
-    /* ========================
-       EDIT MODE (only when
-       body has .editing)
-       ======================== */
+    /* ---------- EDIT MODE (only when body.editing) ---------- */
     body.editing .scrap-item{ cursor:move; }
     body.editing .scrap-item.selected{ box-shadow: 0 0 0 3px var(--accent); }
     body.editing .scrap-text{
       background: rgba(255,255,255,.55);
-      padding: 10px 12px;
-      border: 1px solid rgba(0,0,0,.1);
-      border-radius: 8px;
+      padding: 10px 12px; border: 1px solid rgba(0,0,0,.1); border-radius: 8px;
     }
     body.editing .scrap-img{
-      border: 6px solid #fff;
-      border-radius: 8px;
-      box-shadow: 4px 6px 18px rgba(0,0,0,.25);
+      border: 6px solid #fff; border-radius: 8px; box-shadow: 4px 6px 18px rgba(0,0,0,.25);
     }
     body.editing .scrap-item .resizer{
-      display:block;
-      position:absolute;
-      right:-6px; bottom:-6px;
-      width:16px; height:16px;
-      border-radius:4px;
-      background:var(--mint);
-      border:2px solid #0b2c28;
-      cursor:nwse-resize;
+      display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px;
+      border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize;
     }
 
     /* Toolbar (hidden until 123 typed) */
@@ -102,7 +84,7 @@
     #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
     #toolbar span.hint{ color:#333; font-size:14px; margin-left:6px; }
 
-    /* Modal (text composer) */
+    /* Modal */
     .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
     .modal.open{ display:flex; }
     .modal-card{
@@ -136,7 +118,7 @@
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Secret editor toolbar (appears after typing 123) -->
+  <!-- Secret editor toolbar -->
   <div id="toolbar">
     <button id="addTextBtn" class="mint">Add Text</button>
     <button id="addPhotoBtn" class="secondary">Add Photo</button>
@@ -163,10 +145,9 @@
   <!-- Toast -->
   <div id="toast">Edit mode unlocked ✨</div>
 
-  <!-- 1) Load your local PageFlip FIRST -->
+  <!-- Load PageFlip (local copy) -->
   <script src="./flipbook/page-flip.browser.js"></script>
 
-  <!-- 2) Then run your app -->
   <script>
     const PASSCODE = '123';
     const STORAGE_KEY = 'scrapbook_pages_v1';
@@ -180,10 +161,10 @@
     const textCancel = document.getElementById('textCancel');
     const toast    = document.getElementById('toast');
 
-    /* ---------- saved content BEFORE book init ---------- */
+    /* ---------- write saved content BEFORE building book ---------- */
     applySaved();
 
-    /* ---------- PageFlip ---------- */
+    /* ---------- PageFlip (start on first inside page; smooth open) ---------- */
     const pageFlip = new St.PageFlip(bookEl, {
       width: 520,
       height: 700,
@@ -192,12 +173,19 @@
       minHeight: 420,
       drawShadow: true,
       flippingTime: 800,
-      showCover: true,
+      showCover: true,          // keep a cover
+      startPage: 1,             // open cleanly on the first spread (no half-cover)
+      autoSize: true,
+      maxShadowOpacity: 0.25,
+      mobileScrollSupport: false,
       useMouseEvents: true
     });
     pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
+    if (pageFlip.on) {
+      pageFlip.on('ready', () => { try { pageFlip.turnToPage(1); } catch (_) {} });
+    }
 
-    /* ---------- Always add to current page (or clicked page) ---------- */
+    /* ---------- Active side (left/right) & editing flip guard ---------- */
     let activeCanvas =
       document.querySelectorAll('#book .page .page-canvas')[pageFlip.getCurrentPageIndex()] ||
       document.querySelector('#book .page .page-canvas');
@@ -211,10 +199,26 @@
         activeCanvas = canvases[idx] || canvases[0];
       });
     }
+
+    // choose the side you click; capture so PageFlip doesn't consume the event first
+    let editEnabled = false;
     bookEl.addEventListener('pointerdown', (ev) => {
       const c = ev.target.closest('.page .page-canvas');
-      if (c) activeCanvas = c;
+      if (c) {
+        activeCanvas = c;
+        if (editEnabled) { ev.stopPropagation(); ev.preventDefault(); }
+      }
+    }, true);
+
+    // while editing, block flip gestures broadly
+    ['pointerdown','pointermove','mousedown','touchstart','touchmove'].forEach(type=>{
+      bookEl.addEventListener(type,(e)=>{
+        if (editEnabled && e.target.closest('.page .page-canvas')) {
+          e.stopPropagation(); /* prevent accidental page turn */
+        }
+      }, true);
     });
+
     function getActivePageCanvas(){
       if (activeCanvas && activeCanvas.isConnected) return activeCanvas;
       const canvases = document.querySelectorAll('#book .page .page-canvas');
@@ -222,8 +226,8 @@
       return canvases[idx] || canvases[0];
     }
 
-    /* ---------- EDIT MODE TOGGLING (makes items blend in view mode) ---------- */
-    let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+    /* ---------- EDIT MODE TOGGLING ---------- */
+    let selectedItem=null, keyBuffer='', keyTimer=null;
 
     function setAllTextEditable(on) {
       document.querySelectorAll('#book .scrap-text').forEach(el => {
@@ -231,13 +235,8 @@
       });
     }
     function setEditing(on) {
-      if (on) {
-        document.body.classList.add('editing');
-        setAllTextEditable(true);
-      } else {
-        document.body.classList.remove('editing');
-        setAllTextEditable(false);
-      }
+      if (on) { document.body.classList.add('editing');  setAllTextEditable(true); }
+      else    { document.body.classList.remove('editing'); setAllTextEditable(false); }
     }
 
     document.addEventListener('keydown',(e)=>{
@@ -251,17 +250,19 @@
     function enterEdit(){
       editEnabled=true;
       toolbar.style.display='flex';
-      setEditing(true);            // <-- turn on edit visuals
+      setEditing(true);
+      try { pageFlip.update?.({ useMouseEvents:false, swipeDistance:10000 }); } catch(_){}
       toastShow('Edit mode unlocked ✨');
     }
     function exitEdit(){
       editEnabled=false;
       toolbar.style.display='none';
-      setEditing(false);           // <-- back to printed look
+      setEditing(false);
       deselect();
+      try { pageFlip.update?.({ useMouseEvents:true, swipeDistance:30 }); } catch(_){}
     }
 
-    /* ---------- drag/resize ---------- */
+    /* ---------- drag / resize ---------- */
     function makeDraggable(el){
       let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
       const res=el.querySelector('.resizer');
@@ -279,6 +280,7 @@
         selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
         startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
         document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+        e.stopPropagation();
       });
 
       function onMove(e){
@@ -362,12 +364,11 @@
           canvases[i].innerHTML = arr[i];
         }
         document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
-        // ensure printed look initially
-        setEditing(false);
+        setEditing(false); // printed look initially
       }catch(e){}
     }
 
-    // ensure printed look on first load
+    // assure printed look on initial load
     setEditing(false);
   </script>
 </body>
