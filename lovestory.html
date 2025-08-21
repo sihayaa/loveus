@@ -4,65 +4,37 @@
   <meta charset="UTF-8">
   <title>Our Love Story Book</title>
 
-  <!-- jQuery -->
-  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-  <!-- Turn.js -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js"></script>
+  <!-- 3D FlipBook CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flipbook-css@1.6.3/dist/flipbook.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flipbook-css@1.6.3/dist/flipbook.min.js"></script>
 
   <style>
     body {
       margin: 0;
+      background: #ece5da;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: #ece5da; /* table background */
-      font-family: 'Georgia', serif;
     }
-
-    /* Wrapper with book background */
-    #book-wrapper {
-      position: relative;
+    #bookContainer {
       width: 1000px;
       height: 700px;
-      background: url("book.png") no-repeat center;
-      background-size: contain;
-      display: flex;
-      justify-content: center;
-      align-items: center;
     }
-
-    /* Flipbook sits inside the book */
-    #flipbook {
-      width: 720px;
-      height: 500px;
-      position: relative;
-      top: -10px; /* adjust to fit inside the book image */
-    }
-
-    #flipbook .page {
-      background: #fffdf5; /* paper color */
-      border: 1px solid #d4c9b0;
+    .page-content {
+      font-family: 'Georgia', serif;
       padding: 30px;
-      box-sizing: border-box;
+      font-size: 18px;
+      line-height: 1.6;
+      color: #333;
     }
-
-    #flipbook .page h2 {
+    .page-content h2 {
       text-align: center;
       color: #7a5af8;
       margin-bottom: 15px;
     }
-
-    #flipbook .page p {
-      font-size: 17px;
-      line-height: 1.6;
-      text-align: justify;
-    }
-
-    #flipbook .page img {
+    .page-content img {
       max-width: 100%;
-      max-height: 100%;
       display: block;
       margin: 0 auto;
       border-radius: 8px;
@@ -70,39 +42,32 @@
   </style>
 </head>
 <body>
-  <div id="book-wrapper">
-    <div id="flipbook">
-      <div class="page">
-        <h2>Our Story Begins</h2>
-        <p>Once upon a time, in the most unexpected place, our story started...</p>
-      </div>
-      <div class="page">
-        <img src="https://placekitten.com/600/400" alt="Cute photo of us">
-      </div>
-      <div class="page">
-        <h2>How We Met</h2>
-        <p>We first met on Overwatch, and what began as a simple game quickly became something more...</p>
-      </div>
-      <div class="page">
-        <img src="https://placebear.com/600/400" alt="Another sweet memory">
-      </div>
-      <div class="page">
-        <h2>Forever Us</h2>
-        <p>This is just the beginning of our love story — many more chapters are waiting to be written together.</p>
-      </div>
-    </div>
-  </div>
+  <div id="bookContainer"></div>
 
   <script>
-    $(document).ready(function(){
-      $("#flipbook").turn({
-        width: 720,
-        height: 500,
-        autoCenter: true,
-        display: 'double',   // shows two pages like a book
-        gradients: true,
-        elevation: 50
-      });
+    // Pages of the book
+    const pages = [
+      // Front cover (your image)
+      { image: "https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/book.png" },
+
+      // Inside pages with text & photos
+      { html: "<div class='page-content'><h2>Our Story Begins</h2><p>Once upon a time, in the most unexpected place, our story started...</p></div>" },
+      { html: "<div class='page-content'><img src='https://placekitten.com/800/600' alt='Cute photo'></div>" },
+      { html: "<div class='page-content'><h2>How We Met</h2><p>We first met on Overwatch, and what began as a simple game quickly became something more...</p></div>" },
+      { html: "<div class='page-content'><img src='https://placebear.com/800/600' alt='Another sweet memory'></div>" },
+      { html: "<div class='page-content'><h2>Forever Us</h2><p>This is just the beginning of our love story — many more chapters are waiting to be written together.</p></div>" },
+
+      // Back cover (same image or a different one)
+      { image: "https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/book.png" }
+    ];
+
+    // Initialize 3D FlipBook
+    new FlipBook('#bookContainer', {
+      pages: pages,
+      properties: {
+        cover: true,   // starts closed with your book cover
+        padding: 20
+      }
     });
   </script>
 </body>
