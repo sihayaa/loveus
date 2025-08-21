@@ -20,30 +20,35 @@
 
     .page-content {
       font-family: 'Georgia', serif;
-      padding: 30px;
-      font-size: 18px;
-      line-height: 1.6;
-      color: #fffdf5;
-      background: rgba(20, 30, 50, 0.9); /* dark parchment effect */
+      position: relative; /* so we can place floating items inside */
+      background: rgba(255, 255, 255, 0.07);
       border: 2px solid #7a5af8;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
     }
 
-    .page-content h2 {
-      text-align: center;
-      color: #67e4ca;
-      margin-bottom: 15px;
+    .scrap-item {
+      position: absolute;
+      cursor: move;
     }
 
-    .page-content img {
-      max-width: 90%;
-      display: block;
-      margin: 10px auto;
+    .scrap-item img {
+      max-width: 200px;
       border: 5px solid #fff;
       box-shadow: 3px 3px 8px rgba(0,0,0,0.6);
-      transform: rotate(-2deg); /* scrapbook tilt */
     }
 
-    /* Toolbar only visible in edit mode */
+    .scrap-item p {
+      background: rgba(255,253,245,0.9);
+      padding: 8px 12px;
+      border-radius: 6px;
+      font-size: 16px;
+      color: #222;
+      max-width: 250px;
+    }
+
+    /* Toolbar */
     #toolbar {
       position: fixed;
       top: 20px;
@@ -54,6 +59,7 @@
       display: none;
       flex-direction: column;
       gap: 10px;
+      z-index: 1000;
     }
 
     #toolbar button {
@@ -70,7 +76,7 @@
 <body>
   <div id="bookContainer"></div>
 
-  <!-- Toolbar for edit mode -->
+  <!-- Toolbar -->
   <div id="toolbar">
     <button onclick="addText()">Add Text</button>
     <button onclick="addPhoto()">Add Photo</button>
@@ -79,36 +85,30 @@
 
   <script src="flipbook/page-flip.browser.js"></script>
   <script>
-    const pageFlip = new St.PageFlip(
-      document.getElementById("bookContainer"),
-      {
-        width: 480,
-        height: 640,
-        size: "stretch",
-        showCover: true,
-        mobileScrollSupport: false
-      }
-    );
+    const bookContainer = document.getElementById("bookContainer");
 
-    // Helper to create page
-    function createPage(content = "<p>(Empty Page)</p>") {
+    const pageFlip = new St.PageFlip(bookContainer, {
+      width: 480,
+      height: 640,
+      size: "stretch",
+      showCover: true,
+      mobileScrollSupport: false
+    });
+
+    // Helper to make a page
+    function createPage() {
       const el = document.createElement("div");
       el.classList.add("page-content");
-      el.innerHTML = content;
       return el;
     }
 
-    // Load initial pages
-    pageFlip.loadFromHTML([
-      createPage("<h2>💜 Our Love Story 💚</h2><p>Click to open...</p>"),
-      createPage("<h2>Our Story Begins</h2><p>Once upon a time...</p>")
-    ]);
+    // Load book with 2 empty pages
+    pageFlip.loadFromHTML([createPage(), createPage()]);
 
     // ===== Edit Mode =====
     let editMode = false;
-
-    // Unlock edit mode if user types "123"
     let inputBuffer = "";
+
     document.addEventListener("keydown", (e) => {
       inputBuffer += e.key;
       if (inputBuffer.endsWith("123")) {
@@ -126,25 +126,66 @@
     function exitEdit() {
       editMode = false;
       document.getElementById("toolbar").style.display = "none";
-      alert("Exited Edit Mode");
     }
 
-    // Add new text box
+    // Draggable logic
+    function makeDraggable(el) {
+      el.onmousedown = function (e) {
+        if (!editMode) return;
+        let shiftX = e.clientX - el.getBoundingClientRect().left;
+        let shiftY = e.clientY - el.getBoundingClientRect().top;
+
+        function moveAt(pageX, pageY) {
+          el.style.left = pageX - shiftX + "px";
+          el.style.top = pageY - shiftY + "px";
+        }
+
+        function onMouseMove(e) {
+          moveAt(e.pageX, e.pageY);
+        }
+
+        document.addEventListener("mousemove", onMouseMove);
+
+        el.onmouseup = function () {
+          document.removeEventListener("mousemove", onMouseMove);
+          el.onmouseup = null;
+        };
+      };
+      el.ondragstart = () => false;
+    }
+
+    // Add text to current page
     function addText() {
       if (!editMode) return;
-      const text = prompt("Enter your text:");
-      if (text) {
-        pageFlip.addPage(createPage("<p>" + text + "</p>"));
-      }
+      const text = prompt("Enter text:");
+      if (!text) return;
+
+      const p = document.createElement("div");
+      p.classList.add("scrap-item");
+      p.style.top = "50px";
+      p.style.left = "50px";
+      p.innerHTML = `<p>${text}</p>`;
+      makeDraggable(p);
+
+      const currentPage = pageFlip.getCurrentPageElement();
+      currentPage.appendChild(p);
     }
 
-    // Add new photo
+    // Add photo to current page
     function addPhoto() {
       if (!editMode) return;
-      const url = prompt("Enter photo URL:");
-      if (url) {
-        pageFlip.addPage(createPage("<img src='" + url + "' alt='Photo'>"));
-      }
+      const url = prompt("Enter image URL:");
+      if (!url) return;
+
+      const imgWrap = document.createElement("div");
+      imgWrap.classList.add("scrap-item");
+      imgWrap.style.top = "100px";
+      imgWrap.style.left = "100px";
+      imgWrap.innerHTML = `<img src="${url}">`;
+      makeDraggable(imgWrap);
+
+      const currentPage = pageFlip.getCurrentPageElement();
+      currentPage.appendChild(imgWrap);
     }
   </script>
 </body>
