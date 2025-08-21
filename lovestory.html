@@ -3,8 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Love Story Book</title>
+
+  <!-- jQuery -->
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/turn.js@4/turn.min.js"></script>
+
+  <!-- Turn.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js"></script>
+
   <style>
     body {
       margin: 0;
@@ -12,28 +17,17 @@
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: #ece5da; /* light background */
+      background: #ece5da; /* soft neutral background */
       font-family: 'Georgia', serif;
     }
 
-    #book-wrapper {
-      position: relative;
-      width: 900px;
-      height: 600px;
-      background: url("book.png") no-repeat center;
-      background-size: cover;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-
     #flipbook {
-      width: 700px;
+      width: 800px;
       height: 500px;
     }
 
     #flipbook .page {
-      background: #fffdf5; /* page color */
+      background: #fffdf5; /* cream paper color */
       border: 1px solid #d4c9b0;
       padding: 30px;
       box-sizing: border-box;
@@ -60,37 +54,34 @@
   </style>
 </head>
 <body>
-  <div id="book-wrapper">
-    <div id="flipbook">
-      <div class="page">
-        <h2>Our Story Begins</h2>
-        <p>Once upon a time…</p>
-      </div>
-      <div class="page">
-        <img src="https://placekitten.com/600/400" alt="Cute photo">
-      </div>
-      <div class="page">
-        <h2>How We Met</h2>
-        <p>We first met on Overwatch…</p>
-      </div>
-      <div class="page">
-        <img src="https://placebear.com/600/400" alt="Another photo">
-      </div>
-      <div class="page">
-        <h2>Forever Us</h2>
-        <p>This is just the beginning of our love story…</p>
-      </div>
+  <div id="flipbook">
+    <div class="page">
+      <h2>Our Story Begins</h2>
+      <p>Once upon a time…</p>
+    </div>
+    <div class="page">
+      <img src="https://placekitten.com/600/400" alt="Cute photo">
+    </div>
+    <div class="page">
+      <h2>How We Met</h2>
+      <p>We first met on Overwatch…</p>
+    </div>
+    <div class="page">
+      <img src="https://placebear.com/600/400" alt="Another photo">
+    </div>
+    <div class="page">
+      <h2>Forever Us</h2>
+      <p>This is just the beginning of our love story…</p>
     </div>
   </div>
 
   <script>
     $(document).ready(function(){
       $("#flipbook").turn({
-        width: 700,
+        width: 800,
         height: 500,
         autoCenter: true,
-        display: 'double',
-        acceleration: true,
+        display: 'double',   // 2 pages side by side like a real book
         gradients: true,
         elevation: 50
       });
