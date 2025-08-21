@@ -172,7 +172,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Toolbar -->
+  <!-- Toolbar (edit mode) -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
@@ -223,15 +223,13 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 <script>
 /* ------------ Config ------------- */
 const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v7';
+const STORAGE_KEY = 'scrapbook_v8';
 const COVER_URL   = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
 
 /* ------------ Elements ------------- */
 const bookEl    = document.getElementById('book');
 const coverUI   = document.getElementById('closedCover');
 const coverImage= document.getElementById('coverImage');
-coverImage.style.backgroundImage = `url('${COVER_URL}')`;
-
 const toolbar   = document.getElementById('toolbar');
 const toast     = document.getElementById('toast');
 const fileInput = document.getElementById('fileInput');
@@ -264,15 +262,19 @@ const pageFlip = new St.PageFlip(bookEl, {
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* Mirror your cover on flipbook's real page 0 */
-const realCover = document.querySelector('#book .page:first-child');
-if (realCover) {
-  realCover.style.backgroundImage = `url('${COVER_URL}')`;
-  realCover.style.backgroundSize  = 'cover';     // 'contain' if you prefer no cropping
-  realCover.style.backgroundPosition = 'center';
-  realCover.style.border = '0';
-  realCover.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.35)';
+/* Apply cover to overlay + to real page 0 */
+function applyCoverToReal(){
+  const realCover = document.querySelector('#book .page:first-child');
+  if (realCover) {
+    realCover.style.backgroundImage = `url('${COVER_URL}')`;
+    realCover.style.backgroundSize  = 'cover';     // 'contain' if you prefer no cropping
+    realCover.style.backgroundPosition = 'center';
+    realCover.style.border = '0';
+    realCover.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.35)';
+  }
 }
+coverImage.style.backgroundImage = `url('${COVER_URL}')`;
+applyCoverToReal();
 
 /* ---------- Drag-only flipping (no tap flip) ---------- */
 let tapStart = null;
@@ -282,14 +284,31 @@ bookEl.addEventListener('pointerup',(e)=>{ if(!tapStart) return; const d=Math.hy
 bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 bookEl.addEventListener('dblclick',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 
-/* ---------- Closed cover open animation ---------- */
+/* ---------- Closed cover animation / visibility ---------- */
+function showClosedCover(){
+  // Make sure the cover image is set each time we show it
+  coverImage.style.backgroundImage = `url('${COVER_URL}')`;
+  coverUI.style.display = 'grid';
+  // reset to closed state
+  coverUI.classList.remove('opening');
+  // while showing closed cover, hide the flipbook to avoid any visual tearing
+  bookEl.style.visibility = 'hidden';
+}
 function openCover(){
+  // start from visible + closed; animate; after animation, hide overlay and show book
+  bookEl.style.visibility = 'hidden';            // hide book during 3D turn to remove glitch
   coverUI.classList.add('opening');
   setTimeout(()=>{
     coverUI.style.display='none';
+    bookEl.style.visibility = 'visible';
     try{ pageFlip.turnToPage(1); }catch(_){}
   }, 900);
 }
+
+// start with a visible closed cover
+showClosedCover();
+
+// cover UI interactions (drag or click)
 let dragStart=null;
 coverUI.addEventListener('pointerdown', (e)=>{ dragStart = {x:e.clientX, y:e.clientY}; });
 coverUI.addEventListener('pointerup', (e)=>{
@@ -300,8 +319,22 @@ coverUI.addEventListener('pointerup', (e)=>{
 });
 coverUI.addEventListener('click', openCover);
 
+/* When user flips back to index 0, re-show closed cover */
+if (pageFlip.on){
+  pageFlip.on('flip', ()=>{
+    setTimeout(()=>{
+      const idx = pageFlip.getCurrentPageIndex?.() ?? 0;
+      if (idx === 0){
+        // re-apply the image to be safe and show the overlay closed
+        applyCoverToReal();
+        showClosedCover();
+      }
+    }, 10);
+  });
+}
+
 /* ---------- Active side targeting ---------- */
-let activeCanvas=null;   // << declared once here
+let activeCanvas=null;
 function getVisibleCanvases(){
   let left = document.querySelector('.stf__item--left  .page .page-canvas');
   let right= document.querySelector('.stf__item--right .page .page-canvas');
@@ -320,12 +353,12 @@ function setActiveCanvas(side){
   next.classList.add('active-side');
   activeCanvas = next;
 }
-targetLeftBtn.addEventListener('click', ()=> setActiveCanvas('left'));
-targetRightBtn.addEventListener('click',()=> setActiveCanvas('right'));
+document.getElementById('targetLeft').addEventListener('click', ()=> setActiveCanvas('left'));
+document.getElementById('targetRight').addEventListener('click',()=> setActiveCanvas('right'));
 if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
 
 /* ---------- Edit Mode (type 123) ---------- */
-let editEnabled=false, selectedItem=null; // << declared once here
+let editEnabled=false, selectedItem=null;
 let keyBuffer='', keyTimer=null;
 
 document.addEventListener('keydown',(e)=>{
@@ -386,8 +419,7 @@ function makeDraggable(el){
 
   el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return;
     if(e.target.classList.contains('resizer') || e.target.classList.contains('rotator')) return;
-    selectedItem?.classList.remove('selected');
-    selectedItem=el; el.classList.add('selected');
+    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
     startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
     document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
     e.stopPropagation();
