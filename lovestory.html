@@ -5,153 +5,48 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Our Co-Op Adventure — Storybook</title>
 
-<!-- Stop favicon 404s -->
-<link rel="icon"
-      href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text x="50%" y="54%" text-anchor="middle" font-size="46">💜</text></svg>'/>
-
-<!-- Google cursive font -->
+<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text x="50%" y="54%" text-anchor="middle" font-size="46">💜</text></svg>'/>
 <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
 
-<!-- Page styles -->
 <style>
-  :root{
-    --bg:#0a0f2b;           /* midnight blue */
-    --paper:#f6eddc;        /* warm parchment */
-    --ink:#13224a;          /* dark blue text */
-    --accent:#6df0d0;
-    --shadow:rgba(0,0,0,.25);
-  }
+  :root{ --bg:#0a0f2b; --paper:#f6eddc; --ink:#13224a; --accent:#6df0d0; }
   *{box-sizing:border-box}
   html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,serif;overscroll-behavior:none}
-
-  .stage{
-    min-height:100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    padding:40px 18px 70px;
-  }
-
-  /* Book container (StPageFlip fills inside) */
-  #book{
-    width:1100px;           /* ~2x single page width */
-    max-width:calc(100vw - 36px);
-    aspect-ratio: 1100 / 720;
-    position:relative;
-  }
-
-  /* Individual page base (HTML mode) */
-  .page{
-    background:var(--paper);
-    width:100%;height:100%;
-    box-shadow:
-      inset 0 0 0 1px #dccfb6,
-      inset 0 0 90px rgba(0,0,0,.09);
-    position:relative;
-  }
-  .page .inner{
-    position:relative;
-    height:100%;
-    padding:36px 40px;
-  }
-
-  .cover{
-    background:#000 center/cover no-repeat
-      url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png");
-    box-shadow:
-      inset 0 0 0 2px rgba(255,255,255,.08),
-      inset 0 0 140px rgba(0,0,0,.45);
-  }
-  [data-density="hard"]{
-    box-shadow:
-      inset 0 0 0 2px rgba(255,255,255,.08),
-      inset 0 0 140px rgba(0,0,0,.45);
-  }
-
-  h1,h2{margin:0 0 14px}
-  .script{font-family:"Great Vibes", cursive;font-size:42px}
-
-  /* HUD (hidden until edit mode) */
-  .hud{
-    position:absolute;
-    left:50%; bottom:-58px;
-    transform:translateX(-50%);
-    display:none; gap:10px; flex-wrap:wrap;
-    font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
-  }
+  .stage{min-height:100%;display:flex;align-items:center;justify-content:center;padding:40px 18px 70px}
+  #book{width:1100px;max-width:calc(100vw - 36px);aspect-ratio:1100/720;position:relative}
+  .page{background:var(--paper);width:100%;height:100%;position:relative;
+        box-shadow:inset 0 0 0 1px #dccfb6, inset 0 0 90px rgba(0,0,0,.09)}
+  .page .inner{position:relative;height:100%;padding:36px 40px}
+  .cover{background:#000 center/cover no-repeat url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png");
+         box-shadow:inset 0 0 0 2px rgba(255,255,255,.08), inset 0 0 140px rgba(0,0,0,.45)}
+  [data-density="hard"]{box-shadow:inset 0 0 0 2px rgba(255,255,255,.08), inset 0 0 140px rgba(0,0,0,.45)}
+  .script{font-family:"Great Vibes",cursive;font-size:42px}
+  .hud{position:absolute;left:50%;bottom:-58px;transform:translateX(-50%);display:none;gap:10px;flex-wrap:wrap;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   .hud.show{display:flex}
-  .btn{
-    appearance:none;border:0;cursor:pointer;
-    padding:10px 14px;border-radius:12px;font-weight:700;
-    background:#eee;color:#0a0f2b;
-    box-shadow:0 8px 22px rgba(0,0,0,.3);
-  }
-  .btn.primary{background:var(--accent)}
-  .btn.danger{background:#ffb3b3}
+  .btn{appearance:none;border:0;cursor:pointer;padding:10px 14px;border-radius:12px;font-weight:700;background:#eee;color:#0a0f2b;box-shadow:0 8px 22px rgba(0,0,0,.3)}
+  .btn.primary{background:var(--accent)} .btn.danger{background:#ffb3b3}
   .sep{width:1px;background:rgba(255,255,255,.2);margin:0 2px}
-
-  .hint{
-    position:absolute; right:20px; bottom:-44px;
-    color:#c9d2ff; font-style:italic; font-size:14px; opacity:.85;
-    user-select:none;
-  }
-
-  /* Editable items (text/photo/sticker) */
-  .el{
-    position:absolute; left:100px; top:120px;
-    user-select:none; touch-action:none; cursor:move;
-    transform-origin:center center;
-  }
-  .el.selected{outline:2px dashed #18d2ac; outline-offset:2px}
-  .el.text{
-    padding:10px 14px; background:rgba(255,255,255,.5);
-    border-radius:10px; color:var(--ink); font-size:26px;
-  }
-  .handle{
-    position:absolute; width:18px; height:18px; border-radius:50%;
-    background:#18d2ac; right:-10px; bottom:-10px;
-    box-shadow:0 4px 10px rgba(0,0,0,.35); cursor:nwse-resize;
-  }
-  .rot{
-    position:absolute; width:18px; height:18px; border-radius:50%;
-    background:#9bb3ff; left:50%; top:-14px; transform:translateX(-50%);
-    box-shadow:0 4px 10px rgba(0,0,0,.35); cursor:grab;
-  }
-
-  /* Shield to prevent flipping while editing, per side */
-  .shield{
-    position:absolute; inset:0; display:none; pointer-events:none;
-  }
-  .shield.editing{display:block; pointer-events:auto}
-
-  /* Sticker palette modal */
-  .sticker-panel{
-    position:fixed; inset:0; display:none; place-items:center; background:rgba(0,0,0,.45);
-  }
-  .sticker-card{
-    background:#1b213f; color:#fff; padding:18px; border-radius:16px;
-    box-shadow:0 30px 60px rgba(0,0,0,.45);
-    display:flex; gap:14px; align-items:center; flex-wrap:wrap; max-width:560px;
-  }
-  .sticker{width:72px;height:72px; background:#fff; border-radius:12px;
-    display:grid; place-items:center; cursor:pointer}
-  .sticker svg{width:54px;height:54px}
-  .sticker-close{margin-left:auto}
+  .hint{position:absolute;right:20px;bottom:-44px;color:#c9d2ff;font-style:italic;font-size:14px;opacity:.85;user-select:none}
+  .el{position:absolute;left:100px;top:120px;user-select:none;touch-action:none;cursor:move;transform-origin:center center}
+  .el.selected{outline:2px dashed #18d2ac;outline-offset:2px}
+  .el.text{padding:10px 14px;background:rgba(255,255,255,.5);border-radius:10px;color:var(--ink);font-size:26px}
+  .handle,.rot{position:absolute;width:18px;height:18px;border-radius:50%;box-shadow:0 4px 10px rgba(0,0,0,.35)}
+  .handle{background:#18d2ac;right:-10px;bottom:-10px;cursor:nwse-resize}
+  .rot{background:#9bb3ff;left:50%;top:-14px;transform:translateX(-50%);cursor:grab}
+  .shield{position:absolute;inset:0;display:none;pointer-events:none}
+  .shield.editing{display:block;pointer-events:auto}
+  .sticker-panel{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45)}
+  .sticker-card{background:#1b213f;color:#fff;padding:18px;border-radius:16px;box-shadow:0 30px 60px rgba(0,0,0,.45);display:flex;gap:14px;align-items:center;flex-wrap:wrap;max-width:560px}
+  .sticker{width:72px;height:72px;background:#fff;border-radius:12px;display:grid;place-items:center;cursor:pointer}
+  .sticker svg{width:54px;height:54px} .sticker-close{margin-left:auto}
   .sticker-panel.show{display:grid}
-
-  /* Small screens */
-  @media (max-width:920px){
-    #book{width:96vw}
-  }
+  @media (max-width:920px){#book{width:96vw}}
 </style>
 </head>
 <body>
   <div class="stage">
-
-    <!-- BOOK -->
     <div id="book">
-
-      <!-- pages (HTML mode) -->
+      <!-- pages -->
       <div class="page cover" data-density="hard" aria-label="Cover"></div>
 
       <div class="page"><div class="inner">
@@ -159,44 +54,22 @@
         <p>Once upon a Discord, a queue became a doorway. Games and laughter grew into late-night talks and quiet promises.</p>
       </div></div>
 
-      <div class="page"><div class="inner">
-        <h2>How We Met</h2>
-        <p>We chatted on an Overwatch server. I didn’t reply right away—fate gave us a small pause before everything began.</p>
-      </div></div>
-
-      <div class="page"><div class="inner">
-        <h2>Little Things</h2>
-        <p>Science tangents, history rants, games you crush without trying—those sparks became a warm light.</p>
-      </div></div>
-
-      <div class="page"><div class="inner"><h2>October 13, 2024</h2>
-        <p>“You are now officially my girlfriend.” Simple words that melted my heart. The start of us.</p>
-      </div></div>
-
-      <div class="page"><div class="inner"><h2>Everyday</h2>
-        <p>Not a day without each other—calls, games, smiles, quiet support. A rhythm that felt like home.</p>
-      </div></div>
-
-      <div class="page"><div class="inner"><h2>Looking Ahead</h2>
-        <p>I want your good days and your hard days. Your dreams, your quiet, your everything. I choose you.</p>
-      </div></div>
-
-      <div class="page"><div class="inner"><h2>Scrapbook</h2>
-        <p>Add photos, notes, and stickers. Make it ours.</p>
-      </div></div>
-
+      <div class="page"><div class="inner"><h2>How We Met</h2><p>We chatted on an Overwatch server. I didn’t reply right away—fate gave us a small pause before everything began.</p></div></div>
+      <div class="page"><div class="inner"><h2>Little Things</h2><p>Science tangents, history rants, games you crush without trying—those sparks became a warm light.</p></div></div>
+      <div class="page"><div class="inner"><h2>October 13, 2024</h2><p>“You are now officially my girlfriend.” Simple words that melted my heart. The start of us.</p></div></div>
+      <div class="page"><div class="inner"><h2>Everyday</h2><p>Not a day without each other—calls, games, smiles, quiet support. A rhythm that felt like home.</p></div></div>
+      <div class="page"><div class="inner"><h2>Looking Ahead</h2><p>I want your good days and your hard days. Your dreams, your quiet, your everything. I choose you.</p></div></div>
+      <div class="page"><div class="inner"><h2>Scrapbook</h2><p>Add photos, notes, and stickers. Make it ours.</p></div></div>
       <div class="page"><div class="inner"><h2>More Memories</h2></div></div>
-
       <div class="page" data-density="hard"><div class="inner" style="display:flex;align-items:center;justify-content:center;">
-        <div><h2 style="text-align:center;margin:0 0 8px">The End (for now)</h2>
-          <p style="text-align:center;opacity:.8">Turn the cover to begin again.</p></div>
+        <div><h2 style="text-align:center;margin:0 0 8px">The End (for now)</h2><p style="text-align:center;opacity:.8">Turn the cover to begin again.</p></div>
       </div></div>
 
-      <!-- shields to stop flipping while editing a specific side -->
+      <!-- edit shields -->
       <div id="shield-left" class="shield"></div>
       <div id="shield-right" class="shield"></div>
 
-      <!-- HUD (appears only in edit mode) -->
+      <!-- HUD -->
       <div id="hud" class="hud">
         <button class="btn" id="editLeft">Edit Left</button>
         <button class="btn" id="editRight">Edit Right</button>
@@ -220,7 +93,7 @@
     </div>
   </div>
 
-  <!-- Sticker palette -->
+  <!-- Stickers -->
   <div id="stickerPanel" class="sticker-panel">
     <div class="sticker-card">
       <div class="sticker" data-stk="heart">
@@ -237,266 +110,182 @@
     </div>
   </div>
 
-  <!-- PageFlip library (CDN) -->
-  <script src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/pageflip.min.js"></script>
-
+  <!-- Robust loader: tries two CDNs; runs init ONLY when St is ready -->
   <script>
-  // ====== BOOK INIT ======
-  (function initBook(){
-    const book = document.getElementById('book');
-    const pageFlip = new St.PageFlip(book, {
-      width: 550, height: 720, size:'fixed',
-      maxShadowOpacity:.35, showCover:true,
-      usePortrait:true, startPage:0, startZIndex:3, flippingTime:900, autoSize:true
-    });
-    const pages = book.querySelectorAll('.page');
-    pageFlip.loadFromHTML(pages);
-
-    // ====== EDIT MODE ======
-    const hud = document.getElementById('hud');
-    const shieldLeft  = document.getElementById('shield-left');
-    const shieldRight = document.getElementById('shield-right');
-    let editMode = false;
-    let editSide = 'right'; // 'left' | 'right'
-    let selectedEl = null;
-
-    // Secret: type 1-2-3
-    let seq = '';
-    window.addEventListener('keydown', (e)=>{
-      if (['1','2','3'].includes(e.key)){ seq += e.key; if(seq==='123'){ enterEdit(); seq=''; } }
-      else { seq=''; }
-      if (!editMode){
-        if (e.key==='ArrowLeft') pageFlip.turnToPrevPage();
-        if (e.key==='ArrowRight') pageFlip.turnToNextPage();
+    (function loadPageFlip(done){
+      function add(src, next){
+        var s=document.createElement('script');
+        s.src=src; s.onload=done; s.onerror=next; document.head.appendChild(s);
       }
-    });
-
-    function enterEdit(){
-      editMode = true;
-      hud.classList.add('show');
-      setSide('right');
-      shieldLeft .classList.add('editing');
-      shieldRight.classList.add('editing');
-    }
-    function exitEdit(){
-      editMode = false;
-      hud.classList.remove('show');
-      shieldLeft .classList.remove('editing');
-      shieldRight.classList.remove('editing');
-      deselect();
-    }
-
-    // Save (localStorage) + auto exit
-    const STORAGE_KEY = 'storybook-v1';
-    document.getElementById('save').addEventListener('click', ()=>{
-      const data = [];
-      pages.forEach((p,idx)=>{
-        const items = Array.from(p.querySelectorAll('.el')).map(el=>({
-          t: el.dataset.t,             // 'text','img','stk'
-          html: el.dataset.t==='text'? el.innerHTML : '',
-          src:  el.dataset.t==='img'?  el.querySelector('img')?.src : '',
-          svg:  el.dataset.t==='stk'?  el.querySelector('svg')?.outerHTML : '',
-          left: el.style.left, top: el.style.top, w: el.style.width, h: el.style.height,
-          tr:   el.style.transform, color: el.style.color, ff: el.style.fontFamily, fs: el.style.fontSize
-        }));
-        data.push(items);
+      // try official scoped package first, then fallback
+      add('https://unpkg.com/@stpageflip/page-flip@2.0.7/dist/js/pageflip.min.js', function(){
+        if (window.St) return done();
+        add('https://unpkg.com/st-pageflip@2.0.7/dist/js/pageflip.min.js', done);
       });
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-      exitEdit();
-    });
+    })(function(){
+      if (!window.St){ console.error('PageFlip failed to load'); return; }
 
-    // Load existing
-    try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-      if (saved && Array.isArray(saved)){
-        saved.forEach((items,idx)=>{
-          if (!pages[idx]) return;
+      // ====== BOOK INIT ======
+      const book = document.getElementById('book');
+      const pageFlip = new St.PageFlip(book, {
+        width: 550, height: 720, size:'fixed',
+        maxShadowOpacity:.35, showCover:true,
+        usePortrait:true, startPage:0, startZIndex:3, flippingTime:900, autoSize:true
+      });
+      const pages = book.querySelectorAll('.page');
+      pageFlip.loadFromHTML(pages);
+
+      // ====== EDIT MODE ======
+      const hud = document.getElementById('hud');
+      const shieldLeft  = document.getElementById('shield-left');
+      const shieldRight = document.getElementById('shield-right');
+      let editMode = false, editSide = 'right', selectedEl = null;
+
+      // Secret 123
+      let seq = '';
+      window.addEventListener('keydown', (e)=>{
+        if (['1','2','3'].includes(e.key)){ seq += e.key; if(seq==='123'){ enterEdit(); seq=''; } }
+        else { seq=''; }
+        if (!editMode){
+          if (e.key==='ArrowLeft') pageFlip.turnToPrevPage();
+          if (e.key==='ArrowRight') pageFlip.turnToNextPage();
+        }
+      });
+
+      function enterEdit(){
+        editMode = true; hud.classList.add('show'); setSide('right');
+        shieldLeft.classList.add('editing'); shieldRight.classList.add('editing');
+      }
+      function exitEdit(){
+        editMode = false; hud.classList.remove('show');
+        shieldLeft.classList.remove('editing'); shieldRight.classList.remove('editing');
+        deselect();
+      }
+
+      const STORAGE_KEY='storybook-v1';
+      document.getElementById('save').addEventListener('click', ()=>{
+        const data=[];
+        pages.forEach((p)=> {
+          const items=[...p.querySelectorAll('.el')].map(el=>({
+            t:el.dataset.t, html:el.dataset.t==='text'?el.innerHTML:'',
+            src:el.dataset.t==='img'?el.querySelector('img')?.src:'',
+            svg:el.dataset.t==='stk'?el.querySelector('svg')?.outerHTML:'',
+            left:el.style.left, top:el.style.top, w:el.style.width, h:el.style.height,
+            tr:el.style.transform, color:el.style.color, ff:el.style.fontFamily, fs:el.style.fontSize
+          })); data.push(items);
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        exitEdit();
+      });
+
+      // Load saved
+      try{
+        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+        if (saved) saved.forEach((items,idx)=>{
+          const p=pages[idx]; if (!p) return;
           items.forEach(it=>{
-            if (it.t==='text') addText(pages[idx], it);
-            if (it.t==='img')  addImage(pages[idx], it);
-            if (it.t==='stk')  addSticker(pages[idx], it);
+            if (it.t==='text') addText(p,it);
+            if (it.t==='img')  addImage(p,it);
+            if (it.t==='stk')  addSticker(p,it);
           });
         });
+      }catch{}
+
+      function currentIndices(){
+        const i=pageFlip.getCurrentPageIndex();
+        return pageFlip.getOrientation()==='portrait' ? {left:null,right:i} : {left:i,right:i+1};
       }
-    }catch{}
+      function pageFor(side){ const idx=currentIndices()[side]; return idx==null?null:pages[idx]; }
 
-    // Helpers to get visible left/right page DOM
-    function currentIndices(){
-      const i = pageFlip.getCurrentPageIndex();
-      const mode = pageFlip.getOrientation(); // 'portrait'|'landscape'
-      if (mode==='portrait') return {left:null, right:i};
-      return {left:i, right:i+1};
-    }
-    function pageFor(side){
-      const idx = currentIndices()[side];
-      return idx==null ? null : pages[idx];
-    }
+      function setSide(side){
+        editSide=side;
+        // split shields 50/50, enable only non-edited side to block flipping
+        shieldLeft.style.left='0';  shieldLeft.style.top='0'; shieldLeft.style.width='50%';  shieldLeft.style.height='100%';
+        shieldRight.style.left='50%'; shieldRight.style.top='0'; shieldRight.style.width='50%'; shieldRight.style.height='100%';
+        shieldLeft.style.pointerEvents  = (side==='right'?'auto':'none');
+        shieldRight.style.pointerEvents = (side==='left' ?'auto':'none');
+      }
 
-    function setSide(side){
-      editSide = side;
-      // enable shield over the *non-edited* side only (to block flipping)
-      const left = pageFor('left'), right = pageFor('right');
-      const rect = book.getBoundingClientRect();
-      const half = rect.width/2;
+      document.getElementById('editLeft').addEventListener('click', ()=>setSide('left'));
+      document.getElementById('editRight').addEventListener('click',()=>setSide('right'));
 
-      // position shields
-      shieldLeft .style.left='0';    shieldLeft .style.top='0';
-      shieldLeft .style.width='50%'; shieldLeft .style.height='100%';
-      shieldRight.style.left='50%';  shieldRight.style.top='0';
-      shieldRight.style.width='50%'; shieldRight.style.height='100%';
-
-      shieldLeft .style.pointerEvents = (side==='right' ? 'auto' : 'none');
-      shieldRight.style.pointerEvents = (side==='left'  ? 'auto' : 'none');
-    }
-
-    // HUD actions
-    document.getElementById('editLeft').addEventListener('click', ()=>setSide('left'));
-    document.getElementById('editRight').addEventListener('click',()=>setSide('right'));
-
-    document.getElementById('addText').addEventListener('click', ()=>{
-      const page = pageFor(editSide); if(!page) return;
-      addText(page, {html:'Your text', left:'120px', top:'120px', color: document.getElementById('color').value,
-                     ff: document.getElementById('font').value});
-    });
-
-    document.getElementById('addPhotoBtn').addEventListener('click', ()=>document.getElementById('addPhoto').click());
-    document.getElementById('addPhoto').addEventListener('change', (e)=>{
-      const file = e.target.files[0]; if(!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        const page = pageFor(editSide); if(!page) return;
-        addImage(page, {src:reader.result, left:'140px', top:'160px', w:'260px'});
-      };
-      reader.readAsDataURL(file);
-      e.target.value='';
-    });
-
-    // Stickers
-    const panel = document.getElementById('stickerPanel');
-    document.getElementById('addSticker').addEventListener('click', ()=>panel.classList.add('show'));
-    document.getElementById('closeSticker').addEventListener('click', ()=>panel.classList.remove('show'));
-    panel.addEventListener('click', (e)=>{
-      const btn = e.target.closest('.sticker'); if(!btn) return;
-      const page = pageFor(editSide); if(!page) return;
-      const type = btn.dataset.stk;
-      const svg = btn.querySelector('svg').outerHTML;
-      addSticker(page, {svg, left:'160px', top:'180px', w:'120px', h:'120px'});
-      panel.classList.remove('show');
-    });
-
-    document.getElementById('deleteSelected').addEventListener('click', ()=>{
-      if (selectedEl){ selectedEl.remove(); selectedEl=null; }
-    });
-
-    // ====== Element builders ======
-    function baseEl(page, opts){
-      const el = document.createElement('div');
-      el.className='el'; el.style.left=opts.left||'120px'; el.style.top=opts.top||'120px';
-      if (opts.w) el.style.width = opts.w; if (opts.h) el.style.height = opts.h;
-      if (opts.tr) el.style.transform = opts.tr;
-      if (opts.color) el.style.color = opts.color;
-      if (opts.ff) el.style.fontFamily = opts.ff;
-      if (opts.fs) el.style.fontSize = opts.fs;
-      el.dataset.t = opts.t;
-      // Controls
-      const handle = document.createElement('div'); handle.className='handle';
-      const rot = document.createElement('div'); rot.className='rot';
-      el.appendChild(handle); el.appendChild(rot);
-      page.querySelector('.inner').appendChild(el);
-      makeInteractive(el, handle, rot);
-      select(el);
-      return el;
-    }
-    function addText(page, opts){
-      const el = baseEl(page, {...opts, t:'text'});
-      el.classList.add('text');
-      el.contentEditable = "true";
-      el.innerHTML = opts.html || 'Your text';
-    }
-    function addImage(page, opts){
-      const el = baseEl(page, {...opts, t:'img'});
-      const img = document.createElement('img');
-      img.src = opts.src; img.style.display='block'; img.style.width='100%'; img.style.height='100%'; img.style.borderRadius='12px';
-      el.appendChild(img);
-      if (!opts.w) el.style.width='280px';
-      if (!opts.h) el.style.height='200px';
-    }
-    function addSticker(page, opts){
-      const el = baseEl(page, {...opts, t:'stk'});
-      el.innerHTML = (opts.svg || '') + el.innerHTML;     // keep handles
-      if (!opts.w) el.style.width='120px';
-      if (!opts.h) el.style.height='120px';
-    }
-
-    // ====== Interactions (drag/resize/rotate/select) ======
-    function select(el){ deselect(); selectedEl=el; el.classList.add('selected'); }
-    function deselect(){ if(selectedEl){ selectedEl.classList.remove('selected'); selectedEl=null; } }
-
-    document.addEventListener('pointerdown', (e)=>{
-      const el = e.target.closest('.el');
-      if (el && book.contains(el)){ select(el); }
-      else if (!e.target.closest('#hud') && !e.target.closest('.sticker-panel')){ deselect(); }
-    });
-
-    function makeInteractive(el, handle, rot){
-      let startX, startY, startL, startT, startW, startH, startAngle=0, startRotAngle=0;
-
-      // move
-      el.addEventListener('pointerdown', (e)=>{
-        if (e.target===handle || e.target===rot) return;
-        e.preventDefault(); el.setPointerCapture(e.pointerId);
-        startX=e.clientX; startY=e.clientY;
-        startL=parseFloat(el.style.left); startT=parseFloat(el.style.top);
-        const move=(ev)=>{ el.style.left = (startL + ev.clientX-startX)+'px';
-                           el.style.top  = (startT + ev.clientY-startY)+'px'; };
-        const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
-        el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+      document.getElementById('addText').addEventListener('click', ()=>{
+        const p=pageFor(editSide); if(!p) return;
+        addText(p,{html:'Your text',left:'120px',top:'120px',color:document.getElementById('color').value,ff:document.getElementById('font').value});
       });
 
-      // resize
-      handle.addEventListener('pointerdown',(e)=>{
-        e.preventDefault(); el.setPointerCapture(e.pointerId);
-        startX=e.clientX; startY=e.clientY;
-        startW=parseFloat(getComputedStyle(el).width);
-        startH=parseFloat(getComputedStyle(el).height);
-        const move=(ev)=>{ el.style.width =(startW + (ev.clientX-startX))+'px';
-                           el.style.height=(startH + (ev.clientY-startY))+'px'; };
-        const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
-        el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+      document.getElementById('addPhotoBtn').addEventListener('click', ()=>document.getElementById('addPhoto').click());
+      document.getElementById('addPhoto').addEventListener('change',(e)=>{
+        const file=e.target.files[0]; if(!file) return;
+        const r=new FileReader();
+        r.onload=()=>{ const p=pageFor(editSide); if(!p) return; addImage(p,{src:r.result,left:'140px',top:'160px',w:'260px'}); };
+        r.readAsDataURL(file); e.target.value='';
       });
 
-      // rotate
-      rot.addEventListener('pointerdown',(e)=>{
-        e.preventDefault(); el.setPointerCapture(e.pointerId);
-        const rect = el.getBoundingClientRect();
-        const cx = rect.left + rect.width/2; const cy = rect.top + rect.height/2;
-        const current = el.style.transform.match(/rotate\(([-0-9.]+)rad\)/);
-        startAngle = current ? parseFloat(current[1]) : 0;
-        const move=(ev)=>{
-          const ang = Math.atan2(ev.clientY-cy, ev.clientX-cx);
-          el.style.transform = `rotate(${ang}rad)`;
-        };
-        const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
-        el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+      const panel=document.getElementById('stickerPanel');
+      document.getElementById('addSticker').addEventListener('click', ()=>panel.classList.add('show'));
+      document.getElementById('closeSticker').addEventListener('click', ()=>panel.classList.remove('show'));
+      panel.addEventListener('click',(e)=>{
+        const btn=e.target.closest('.sticker'); if(!btn) return;
+        const p=pageFor(editSide); if(!p) return;
+        addSticker(p,{svg:btn.querySelector('svg').outerHTML,left:'160px',top:'180px',w:'120px',h:'120px'}); panel.classList.remove('show');
       });
-    }
 
-    // Live text style controls
-    document.getElementById('color').addEventListener('input', e=>{
-      if (selectedEl && selectedEl.dataset.t==='text'){ selectedEl.style.color = e.target.value; }
+      document.getElementById('deleteSelected').addEventListener('click', ()=>{ if(selectedEl){selectedEl.remove(); selectedEl=null;} });
+
+      // builders
+      function baseEl(page,opts){
+        const el=document.createElement('div');
+        el.className='el'; el.style.left=opts.left||'120px'; el.style.top=opts.top||'120px';
+        if (opts.w) el.style.width=opts.w; if (opts.h) el.style.height=opts.h;
+        if (opts.tr) el.style.transform=opts.tr; if (opts.color) el.style.color=opts.color;
+        if (opts.ff) el.style.fontFamily=opts.ff; if (opts.fs) el.style.fontSize=opts.fs;
+        el.dataset.t=opts.t;
+        const handle=document.createElement('div'); handle.className='handle';
+        const rot=document.createElement('div'); rot.className='rot';
+        el.appendChild(handle); el.appendChild(rot);
+        page.querySelector('.inner').appendChild(el);
+        makeInteractive(el,handle,rot); select(el); return el;
+      }
+      function addText(page,opts){ const el=baseEl(page,{...opts,t:'text'}); el.classList.add('text'); el.contentEditable="true"; el.innerHTML=opts.html||'Your text'; }
+      function addImage(page,opts){ const el=baseEl(page,{...opts,t:'img'}); const img=document.createElement('img'); img.src=opts.src; img.style.display='block'; img.style.width='100%'; img.style.height='100%'; img.style.borderRadius='12px'; el.appendChild(img); if(!opts.w)el.style.width='280px'; if(!opts.h)el.style.height='200px'; }
+      function addSticker(page,opts){ const el=baseEl(page,{...opts,t:'stk'}); el.innerHTML=(opts.svg||'')+el.innerHTML; if(!opts.w)el.style.width='120px'; if(!opts.h)el.style.height='120px'; }
+
+      function select(el){ deselect(); selectedEl=el; el.classList.add('selected'); }
+      function deselect(){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null;} }
+      document.addEventListener('pointerdown',(e)=>{ const el=e.target.closest('.el'); if(el && book.contains(el)) select(el); else if(!e.target.closest('#hud') && !e.target.closest('.sticker-panel')) deselect(); });
+
+      function makeInteractive(el,handle,rot){
+        let startX,startY,startL,startT,startW,startH,startAngle=0;
+        el.addEventListener('pointerdown',(e)=>{ if(e.target===handle||e.target===rot) return; e.preventDefault(); el.setPointerCapture(e.pointerId);
+          startX=e.clientX; startY=e.clientY; startL=parseFloat(el.style.left); startT=parseFloat(el.style.top);
+          const move=(ev)=>{ el.style.left=(startL+ev.clientX-startX)+'px'; el.style.top=(startT+ev.clientY-startY)+'px'; };
+          const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
+          el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+        });
+        handle.addEventListener('pointerdown',(e)=>{ e.preventDefault(); el.setPointerCapture(e.pointerId);
+          startX=e.clientX; startY=e.clientY; startW=parseFloat(getComputedStyle(el).width); startH=parseFloat(getComputedStyle(el).height);
+          const move=(ev)=>{ el.style.width=(startW+(ev.clientX-startX))+'px'; el.style.height=(startH+(ev.clientY-startY))+'px'; };
+          const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
+          el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+        });
+        rot.addEventListener('pointerdown',(e)=>{ e.preventDefault(); el.setPointerCapture(e.pointerId);
+          const r=el.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
+          const cur=el.style.transform.match(/rotate\(([-0-9.]+)rad\)/); startAngle=cur?parseFloat(cur[1]):0;
+          const move=(ev)=>{ const ang=Math.atan2(ev.clientY-cy,ev.clientX-cx); el.style.transform=`rotate(${ang}rad)`; };
+          const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
+          el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+        });
+      }
+
+      document.getElementById('color').addEventListener('input',e=>{ if(selectedEl && selectedEl.dataset.t==='text') selectedEl.style.color=e.target.value; });
+      document.getElementById('font').addEventListener('change',e=>{ if(selectedEl && selectedEl.dataset.t==='text') selectedEl.style.fontFamily=e.target.value; });
+
+      shieldLeft.addEventListener('pointerdown', e=>e.preventDefault());
+      shieldRight.addEventListener('pointerdown',e=>e.preventDefault());
+
+      window._flip = pageFlip; // for debugging if needed
     });
-    document.getElementById('font').addEventListener('change', e=>{
-      if (selectedEl && selectedEl.dataset.t==='text'){ selectedEl.style.fontFamily = e.target.value; }
-    });
-
-    // Prevent accidental flips only when editing: shields capture drags
-    shieldLeft.addEventListener('pointerdown', e=>e.preventDefault());
-    shieldRight.addEventListener('pointerdown',e=>e.preventDefault());
-
-    // Expose for debugging if needed
-    window._flip = pageFlip;
-
-  })();
   </script>
 </body>
 </html>
