@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Our Love Story — Flipbook</title>
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0b0f2f;         /* midnight blue */
+  --paper:#f7eddc;      /* parchment */
+  --ink:#0d2a6b;        /* dark blue ink */
+  --accent:#7a5af8;
+  --mint:#67e4ca;
+  --font:"Dancing Script", cursive;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--font);
+  -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+  overscroll-behavior:none;
+}
+
+/* Stage + Book */
+#stage{ width:1000px; height:650px; position:relative; }
+#book{
+  width:1000px; height:650px; margin:0 auto;
+  -webkit-tap-highlight-color:transparent; touch-action:none;
+}
+/* Page base */
+.page{
+  width:500px; height:650px; overflow:hidden; position:relative;
+  background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%), var(--paper);
+  border:3px solid rgba(0,0,0,.06);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.22);
+}
+.hard{
+  background:#111; border:0;
+  box-shadow:0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
+}
+.cover,.backcover{ display:flex; align-items:center; justify-content:center; background:#1b1b1b; }
+.cover img,.backcover img{ width:100%; height:100%; object-fit:contain; border-radius:6px; }
+
+/* Content wrapper per page */
+.canvas{
+  position:relative; width:100%; height:100%; padding:28px;
+  font-size:22px; line-height:1.35;
+}
+
+/* Scrap items */
+.scrap-item{ position:absolute; user-select:none; transform-origin:center; }
+.scrap-text{ background:transparent; border:0; padding:0; white-space:pre-wrap; color:var(--ink); }
+.scrap-text[contenteditable="true"]{ outline:none; }
+.scrap-img{ display:block; max-width:100%; max-height:100%; pointer-events:none; }
+
+.resizer{ display:none; }
+.rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%);
+  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
+  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; }
+.rotator:active{ cursor:grabbing; }
+
+body.editing .scrap-item{ cursor:move; }
+body.editing .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
+body.editing .scrap-text{ background:rgba(255,255,255,.55); padding:10px 12px; border:1px solid rgba(0,0,0,.1); border-radius:8px; }
+body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4px 6px 18px rgba(0,0,0,.25); }
+body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px;
+  border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
+body.editing .scrap-item .rotator{ display:block; }
+
+/* While editing, disable page turning; allow canvases to interact */
+body.editing .turn-page{ pointer-events:none !important; }
+body.editing .canvas, body.editing .scrap-item{ pointer-events:auto !important; }
+
+/* Toolbar */
+#toolbar{
+  position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+  display:none; z-index:60; background:rgba(255,255,255,.94);
+  border:2px solid #e8dcc6; border-radius:14px; padding:10px; gap:8px;
+  box-shadow:0 10px 22px rgba(0,0,0,.25); align-items:center; flex-wrap:wrap;
+}
+#toolbar button{
+  border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
+  font-weight:700; color:#fff; background:var(--accent);
+}
+#toolbar button.secondary{ background:#5d47d4; }
+#toolbar button.mint{ background:var(--mint); color:#022d2c; }
+#toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
+#toolbar .group{ display:flex; gap:8px; align-items:center; }
+#fileInput{ display:none; }
+
+.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
+
+/* Modals */
+.modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
+.modal.open{ display:flex; }
+.modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint);
+  border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
+.modal-card h3{ margin:0 0 10px; font-size:20px; }
+#textModal textarea{ width:100%; background:#0f1430; color:#fff; border:1px solid #2b3258; border-radius:10px; padding:10px 12px; font-family:var(--font); font-size:20px; resize:vertical; }
+.modal-actions{ margin-top:12px; display:flex; justify-content:flex-end; gap:8px; }
+.modal-actions button{ border:0; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
+.btn-mint{ background:var(--mint); color:#05201f; }
+.btn-ghost{ background:#2a315d; color:#fff; }
+
+/* Stickers grid */
+.stickers{ display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
+.stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; }
+.stickers img{ width:100%; aspect-ratio:1; object-fit:contain; }
+
+.tip{ position:absolute; right:12px; bottom:12px; color:#cbd2ff99; font-size:14px; user-select:none; pointer-events:none; }
+#toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint);
+  padding:8px 12px; border-radius:10px; display:none; }
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <div id="book">
+    <!-- 1 Front cover (hard) -->
+    <div class="hard page cover">
+      <img alt="Cover" src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png">
+    </div>
+
+    <!-- 2 Inside front (soft) -->
+    <div class="page"><div class="canvas" data-pg="2"></div></div>
+
+    <!-- 3..12 inner pages (you can add more) -->
+    <div class="page"><div class="canvas" data-pg="3"></div></div>
+    <div class="page"><div class="canvas" data-pg="4"></div></div>
+    <div class="page"><div class="canvas" data-pg="5"></div></div>
+    <div class="page"><div class="canvas" data-pg="6"></div></div>
+    <div class="page"><div class="canvas" data-pg="7"></div></div>
+    <div class="page"><div class="canvas" data-pg="8"></div></div>
+    <div class="page"><div class="canvas" data-pg="9"></div></div>
+    <div class="page"><div class="canvas" data-pg="10"></div></div>
+    <div class="page"><div class="canvas" data-pg="11"></div></div>
+    <div class="page"><div class="canvas" data-pg="12"></div></div>
+
+    <!-- 13 Inside back -->
+    <div class="page"><div class="canvas" data-pg="13"></div></div>
+
+    <!-- 14 Back cover (hard) -->
+    <div class="hard page backcover">
+      <img alt="Back Cover" src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png">
+    </div>
+  </div>
+
+  <!-- Toolbar (hidden until edit is unlocked by typing 123) -->
+  <div id="toolbar">
+    <div class="group">
+      <button id="leftBtn"  class="secondary">Edit Left</button>
+      <button id="rightBtn" class="secondary">Edit Right</button>
+    </div>
+    <div class="group">
+      <button id="addTextBtn"  class="mint">Add Text</button>
+      <button id="addPhotoBtn" class="secondary">Add Photo</button>
+      <button id="stickersBtn" class="secondary">Stickers</button>
+      <button id="addPageBtn"  class="secondary">Add Pages</button>
+    </div>
+    <div class="group">
+      <button id="deleteBtn" class="warn">Delete Selected</button>
+      <button id="clearBtn"  class="warn">Clear Page</button>
+      <button id="saveBtn"   class="mint">Save</button>
+    </div>
+    <input id="fileInput" type="file" accept="image/*" />
+  </div>
+
+  <!-- Text modal -->
+  <div id="textModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3>Add Text</h3>
+      <textarea id="textInput" rows="5" placeholder="Write something sweet…"></textarea>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="textCancel">Cancel</button>
+        <button class="btn-mint"  id="textAdd">Add Text</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Stickers modal -->
+  <div id="stickerModal" class="modal" aria-hidden="true">
+    <div class="modal-card">
+      <h3>Pick a sticker</h3>
+      <div class="stickers" id="stickersGrid"></div>
+      <div class="modal-actions">
+        <button class="btn-ghost" id="stickersClose">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="tip">Drag the corners to turn pages · Type <strong>123</strong> to edit</div>
+  <div id="toast">Edit mode unlocked ✨</div>
+</div>
+
+<!-- jQuery then Turn.js (must be this order) -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js" defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js" defer></script>
+
+<script>
+window.addEventListener('load', function () {
+  if (!window.jQuery) { alert('jQuery failed to load.'); return; }
+
+  const PASSCODE    = '123';
+  const STORAGE_KEY = 'scrapbook_v10';
+
+  /* Init turn.js */
+  const $book = $('#book').turn({
+    width: 1000, height: 650,
+    autoCenter: true, duration: 1000,
+    gradients: true, acceleration: true, elevation: 200
+  });
+
+  /* number all page elements for lookup */
+  $('#book .page').each(function(i){ this.dataset.pg = (i+1); });
+
+  /* ---------- Helpers ---------- */
+  const toast = (msg)=>{ const el=document.getElementById('toast'); el.textContent=msg; el.style.display='block'; setTimeout(()=>el.style.display='none',1200); };
+
+  const pageCanvas = (pageNo)=> document.querySelector(`.page[data-pg="${pageNo}"] .canvas`);
+  const currentView = ()=> $('#book').turn('view'); // [left,right] page numbers
+  const canvasesInView = ()=>{
+    const [l,r] = currentView();
+    return { left: l? pageCanvas(l): null, right: r? pageCanvas(r): null };
+  };
+
+  /* ---------- Edit mode gate (type 123) ---------- */
+  let keyBuf='', keyTimer=null, edit=false, selected=null, activeCanvas=null;
+
+  function enterEdit(){
+    edit=true; document.body.classList.add('editing');
+    $('#toolbar').css('display','flex');
+    // disable page turning while editing
+    try { $('#book').turn('disable', true); } catch(e){}
+    // default to right side
+    setActive('right');
+    // make any existing items draggable
+    document.querySelectorAll('.scrap-item').forEach(makeDraggable);
+    toast('Edit mode unlocked ✨');
+  }
+  function exitEdit(){
+    edit=false; document.body.classList.remove('editing');
+    $('#toolbar').hide();
+    try { $('#book').turn('disable', false); } catch(e){}
+    document.querySelectorAll('.canvas').forEach(c=>c.classList.remove('active-side'));
+    selected?.classList.remove('selected'); selected=null; activeCanvas=null;
+  }
+
+  document.addEventListener('keydown',(e)=>{
+    keyBuf += e.key;
+    clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuf='', 1200);
+    if (keyBuf.endsWith(PASSCODE)){ keyBuf=''; if(!edit) enterEdit(); }
+  });
+
+  /* ---------- Active side ---------- */
+  function setActive(side){
+    const {left,right}=canvasesInView();
+    const next = (side==='left'? left : right) || right || left;
+    if(!next) return;
+    document.querySelectorAll('.canvas').forEach(c=>c.classList.remove('active-side'));
+    next.classList.add('active-side'); activeCanvas=next;
+  }
+  document.getElementById('leftBtn').addEventListener('click', ()=> setActive('left'));
+  document.getElementById('rightBtn').addEventListener('click',()=> setActive('right'));
+  $('#book').bind('turned', ()=>{ if(edit && !activeCanvas) setActive('right'); });
+
+  /* ---------- Drag / Resize / Rotate ---------- */
+  function makeDraggable(el){
+    let sx=0, sy=0, ox=0, oy=0, resizing=false, sw=0, sh=0;
+    let rotating=false, startA=0, startPA=0;
+
+    const res=el.querySelector('.resizer');
+    let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
+
+    const getA = ()=> parseFloat(el.dataset.rot||'0')||0;
+    const setA = (deg)=>{ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; };
+
+    if(res){
+      res.addEventListener('mousedown',(e)=>{ if(!edit) return; e.stopPropagation(); e.preventDefault();
+        resizing=true; sx=e.clientX; sy=e.clientY; sw=el.offsetWidth; sh=el.offsetHeight;
+        document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+      });
+    }
+    rot.addEventListener('mousedown',(e)=>{ if(!edit) return; e.stopPropagation(); e.preventDefault();
+      rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+      startPA=Math.atan2(e.clientY-cy, e.clientX-cx); startA=getA();
+      document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate);
+    });
+    function onRotate(e){ if(!rotating) return;
+      const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+      const a=Math.atan2(e.clientY-cy, e.clientX-cx);
+      setA(startA + (a-startPA)*180/Math.PI);
+    }
+    function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
+
+    el.addEventListener('mousedown',(e)=>{ if(!edit) return;
+      if(e.target.classList.contains('resizer')||e.target.classList.contains('rotator')) return;
+      selected?.classList.remove('selected'); selected=el; el.classList.add('selected');
+      sx=e.clientX; sy=e.clientY; ox=el.offsetLeft; oy=el.offsetTop;
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+      e.stopPropagation(); // don't let book flip
+    });
+    function onMove(e){
+      if(!edit) return;
+      if(resizing){
+        const dx=e.clientX-sx, dy=e.clientY-sy;
+        el.style.width = Math.max(60, sw+dx)+'px';
+        el.style.height= Math.max(60, sh+dy)+'px';
+      }else{
+        const dx=e.clientX-sx, dy=e.clientY-sy;
+        el.style.left=(ox+dx)+'px';
+        el.style.top =(oy+dy)+'px';
+      }
+    }
+    function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+  }
+
+  /* ---------- Add Text ---------- */
+  const textModal   = document.getElementById('textModal');
+  const textInput   = document.getElementById('textInput');
+  const textAdd     = document.getElementById('textAdd');
+  const textCancel  = document.getElementById('textCancel');
+  const openModal   = (m)=>{ m.classList.add('open'); m.setAttribute('aria-hidden','false'); };
+  const closeModal  = (m)=>{ m.classList.remove('open'); m.setAttribute('aria-hidden','true'); };
+
+  document.getElementById('addTextBtn').addEventListener('click',()=>{
+    if(!activeCanvas) setActive('right');
+    openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10);
+  });
+  textCancel.addEventListener('click',()=> closeModal(textModal));
+  textAdd.addEventListener('click',()=>{
+    const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
+    const box=document.createElement('div');
+    box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
+    const editOn=document.body.classList.contains('editing');
+    box.innerHTML=`
+      <div class="scrap-text" contenteditable="${editOn?'true':'false'}">${val}</div>
+      <div class="resizer" title="Resize"></div>
+      <div class="rotator" title="Rotate"></div>
+    `;
+    (activeCanvas||canvasesInView().right).appendChild(box); makeDraggable(box);
+  });
+
+  /* ---------- Add Photo ---------- */
+  const fileInput = document.getElementById('fileInput');
+  document.getElementById('addPhotoBtn').addEventListener('click',()=>fileInput.click());
+  fileInput.addEventListener('change',(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    const r=new FileReader();
+    r.onload=(ev)=>{
+      const box=document.createElement('div');
+      box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+      box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt="">
+                     <div class="resizer"></div><div class="rotator"></div>`;
+      (activeCanvas||canvasesInView().right).appendChild(box); makeDraggable(box);
+      fileInput.value='';
+    };
+    r.readAsDataURL(f);
+  });
+
+  /* ---------- Stickers ---------- */
+  const STICKERS=[
+    {name:'Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><path fill='%23ff5a7a' d='M60 105s-8-6-26-22S3 51 18 33c9-10 26-9 34 3 8-12 25-13 34-3 15 18-4 38-16 50S60 105 60 105z'/></svg>", w:140,h:120},
+    {name:'Leaf',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><path d='M10 80 C 40 60, 70 40, 150 20' stroke='%2348b36b' stroke-width='6' fill='none' stroke-linecap='round'/><circle cx='40' cy='60' r='10' fill='%235fd089'/><circle cx='75' cy='45' r='12' fill='%235fd089'/><circle cx='110' cy='32' r='9' fill='%235fd089'/></svg>", w:180,h:120},
+    {name:'Star',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><polygon points='60,10 72,44 108,44 78,66 90,100 60,78 30,100 42,66 12,44 48,44' fill='%23ffd65c'/></svg>", w:120,h:120},
+    {name:'Tape',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 70'><defs><pattern id='d' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10 L10 0' stroke='%23ffb3c1' stroke-width='2'/></pattern></defs><rect x='10' y='10' width='180' height='50' rx='8' ry='8' fill='url(%23d)' stroke='%23ff86a1' stroke-width='3'/></svg>", w:220,h:90},
+  ];
+  const stickerModal  = document.getElementById('stickerModal');
+  const stickersGrid  = document.getElementById('stickersGrid');
+  const stickersClose = document.getElementById('stickersClose');
+
+  document.getElementById('stickersBtn').addEventListener('click',()=>{
+    if(!activeCanvas) setActive('right');
+    stickersGrid.innerHTML='';
+    STICKERS.forEach(s=>{
+      const b=document.createElement('button'); b.title=s.name;
+      const img=document.createElement('img'); img.src=s.src; img.alt=s.name; b.appendChild(img);
+      b.addEventListener('click',()=>{
+        const box=document.createElement('div');
+        box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width=s.w+'px'; box.style.height=s.h+'px';
+        box.innerHTML=`<img class="scrap-img" src="${s.src}" alt="${s.name}"><div class="resizer"></div><div class="rotator"></div>`;
+        (activeCanvas||canvasesInView().right).appendChild(box); makeDraggable(box);
+      });
+      stickersGrid.appendChild(b);
+    });
+    stickerModal.classList.add('open'); stickerModal.setAttribute('aria-hidden','false');
+  });
+  stickersClose.addEventListener('click',()=>{ stickerModal.classList.remove('open'); stickerModal.setAttribute('aria-hidden','true'); });
+  stickerModal.addEventListener('click',(e)=>{ if(e.target===stickerModal) stickersClose.click(); });
+
+  /* ---------- Delete/Clear ---------- */
+  document.getElementById('deleteBtn').addEventListener('click',()=>{ if(selected){ selected.remove(); selected=null; }});
+  document.getElementById('clearBtn').addEventListener('click',()=>{
+    (activeCanvas||canvasesInView().right).innerHTML=''; selected=null;
+  });
+
+  /* ---------- Save (localStorage) + Auto-exit ---------- */
+  document.getElementById('saveBtn').addEventListener('click',()=>{
+    const pages=[...document.querySelectorAll('#book .page .canvas')].map(c=>c.innerHTML);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
+    toast('Saved ✓ Exiting…');
+    setTimeout(()=> exitEdit(), 300);
+  });
+
+  /* ---------- Load saved ---------- */
+  (function loadSaved(){
+    try{
+      const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+      const arr=JSON.parse(raw);
+      const canvases=document.querySelectorAll('#book .page .canvas');
+      for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
+      document.querySelectorAll('.scrap-item').forEach(makeDraggable);
+    }catch(_){}
+  })();
+
+  /* ---------- Add Pages (adds two soft pages before back cover) ---------- */
+  function createSoftPage(){
+    const wrap=document.createElement('div'); wrap.className='page';
+    const inner=document.createElement('div'); inner.className='canvas'; wrap.appendChild(inner);
+    return wrap;
+  }
+  document.getElementById('addPageBtn').addEventListener('click', ()=>{
+    const total=$('#book').turn('pages');           // current total
+    const insertAt = total;                         // before final hard back cover
+    const pA=createSoftPage(), pB=createSoftPage();
+    $('#book').turn('addPage', pA, insertAt);
+    $('#book').turn('addPage', pB, insertAt+1);
+    // re-number data-pg attributes
+    $('#book .page').each(function(i){ this.dataset.pg = (i+1); });
+    toast('Added 2 pages');
+  });
+
+  /* select canvas by clicking it in edit mode */
+  document.addEventListener('mousedown',(e)=>{
+    if(!edit) return;
+    const c=e.target.closest('.canvas'); if(c){ document.querySelectorAll('.canvas').forEach(x=>x.classList.remove('active-side')); c.classList.add('active-side'); activeCanvas=c; }
+  });
+
+});
+</script>
+</body>
+</html>
