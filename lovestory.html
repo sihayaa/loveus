@@ -32,8 +32,8 @@ body{
 /* Page visuals */
 .page{
   width:100%; height:100%; position:relative; overflow:hidden;
-  background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%);
-  background-color: var(--paper);
+  background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%),
+              var(--paper);
   border:3px solid rgba(0,0,0,.06);
   box-shadow:inset 0 0 60px rgba(0,0,0,.22);
   backface-visibility:hidden; transform:translateZ(0);
@@ -54,7 +54,7 @@ body{
   transition:transform .9s ease-in-out;
 }
 #closedCover .hard{
-  position:absolute; inset:0; background: center/cover no-repeat var(--paper);
+  position:absolute; inset:0; background:center/cover no-repeat var(--paper);
   box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
   border-radius:6px;
 }
@@ -247,10 +247,10 @@ const stickerModal = document.getElementById('stickerModal');
 const stickersGrid = document.getElementById('stickersGrid');
 const stickersClose= document.getElementById('stickersClose');
 
-/* Load saved content BEFORE init */
+/* ---------- Saved content first ---------- */
 applySaved();
 
-/* Flipbook init */
+/* ---------- Flipbook init ---------- */
 const pageFlip = new St.PageFlip(bookEl, {
   width: 500, height: 650,
   size: "fixed",
@@ -258,7 +258,7 @@ const pageFlip = new St.PageFlip(bookEl, {
   drawShadow: true,
   flippingTime: 800,
   maxShadowOpacity: 0.25,
-  useMouseEvents: true,      // drag OK
+  useMouseEvents: true,
   mobileScrollSupport: false,
   startPage: 0
 });
@@ -268,13 +268,13 @@ pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 const realCover = document.querySelector('#book .page:first-child');
 if (realCover) {
   realCover.style.backgroundImage = `url('${COVER_URL}')`;
-  realCover.style.backgroundSize  = 'cover';        // 'contain' if you prefer no cropping
+  realCover.style.backgroundSize  = 'cover';     // 'contain' if you prefer no cropping
   realCover.style.backgroundPosition = 'center';
   realCover.style.border = '0';
   realCover.style.boxShadow = 'inset 0 0 80px rgba(0,0,0,.35)';
 }
 
-/* Drag-only flipping: block taps/clicks */
+/* ---------- Drag-only flipping (no tap flip) ---------- */
 let tapStart = null;
 function isTap(d, t){ return d<8 && t<300; }
 bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
@@ -282,7 +282,7 @@ bookEl.addEventListener('pointerup',(e)=>{ if(!tapStart) return; const d=Math.hy
 bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 bookEl.addEventListener('dblclick',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 
-/* ------------- Closed cover open animation ------------- */
+/* ---------- Closed cover open animation ---------- */
 function openCover(){
   coverUI.classList.add('opening');
   setTimeout(()=>{
@@ -300,8 +300,8 @@ coverUI.addEventListener('pointerup', (e)=>{
 });
 coverUI.addEventListener('click', openCover);
 
-/* ------------- Active side targeting ------------- */
-let activeCanvas=null;
+/* ---------- Active side targeting ---------- */
+let activeCanvas=null;   // << declared once here
 function getVisibleCanvases(){
   let left = document.querySelector('.stf__item--left  .page .page-canvas');
   let right= document.querySelector('.stf__item--right .page .page-canvas');
@@ -324,8 +324,9 @@ targetLeftBtn.addEventListener('click', ()=> setActiveCanvas('left'));
 targetRightBtn.addEventListener('click',()=> setActiveCanvas('right'));
 if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
 
-/* ------------- Edit Mode (type 123) ------------- */
-let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+/* ---------- Edit Mode (type 123) ---------- */
+let editEnabled=false, selectedItem=null; // << declared once here
+let keyBuffer='', keyTimer=null;
 
 document.addEventListener('keydown',(e)=>{
   keyBuffer += e.key;
@@ -354,7 +355,7 @@ function exitEdit(){
   try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
 }
 
-/* ------------- Drag / Resize / Rotate ------------- */
+/* ---------- Drag / Resize / Rotate ---------- */
 function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0;
   let resizing=false,startW=0,startH=0;
@@ -385,7 +386,8 @@ function makeDraggable(el){
 
   el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return;
     if(e.target.classList.contains('resizer') || e.target.classList.contains('rotator')) return;
-    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
+    selectedItem?.classList.remove('selected');
+    selectedItem=el; el.classList.add('selected');
     startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
     document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
     e.stopPropagation();
@@ -411,7 +413,7 @@ function makeDraggable(el){
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
 document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ------------- Add text / photo ------------- */
+/* ---------- Add text / photo ---------- */
 document.getElementById('addTextBtn').addEventListener('click',()=>{
   openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10);
 });
@@ -446,14 +448,14 @@ fileInput.addEventListener('change',(e)=>{
   r.readAsDataURL(f);
 });
 
-/* ------------- Stickers ------------- */
+/* ---------- Stickers ---------- */
 const STICKERS = [
   {name:'Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><path fill='%23ff5a7a' d='M60 105s-8-6-26-22S3 51 18 33c9-10 26-9 34 3 8-12 25-13 34-3 15 18-4 38-16 50S60 105 60 105z'/></svg>", w:140,h:120},
   {name:'Leaf',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><path d='M10 80 C 40 60, 70 40, 150 20' stroke='%2348b36b' stroke-width='6' fill='none' stroke-linecap='round'/><circle cx='40' cy='60' r='10' fill='%235fd089'/><circle cx='75' cy='45' r='12' fill='%235fd089'/><circle cx='110' cy='32' r='9' fill='%235fd089'/></svg>", w:180,h:120},
   {name:'Star',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><polygon points='60,10 72,44 108,44 78,66 90,100 60,78 30,100 42,66 12,44 48,44' fill='%23ffd65c'/></svg>", w:120,h:120},
   {name:'Tape',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 70'><defs><pattern id='d' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10 L10 0' stroke='%23ffb3c1' stroke-width='2'/></pattern></defs><rect x='10' y='10' width='180' height='50' rx='8' ry='8' fill='url(%23d)' stroke='%23ff86a1' stroke-width='3'/></svg>", w:220,h:90},
 ];
-function openStickers(){
+document.getElementById('stickersBtn').addEventListener('click', ()=>{
   stickersGrid.innerHTML='';
   STICKERS.forEach(s=>{
     const b=document.createElement('button'); b.title=s.name;
@@ -467,12 +469,11 @@ function openStickers(){
     stickersGrid.appendChild(b);
   });
   openModal(stickerModal);
-}
-document.getElementById('stickersBtn').addEventListener('click', openStickers);
+});
 stickerModal.addEventListener('click',(e)=>{ if(e.target===stickerModal) closeModal(stickerModal); });
 stickersClose.addEventListener('click',()=> closeModal(stickerModal));
 
-/* Page tools */
+/* ---------- Page tools ---------- */
 document.getElementById('addPageBtn').addEventListener('click',()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
@@ -483,7 +484,7 @@ document.getElementById('addPageBtn').addEventListener('click',()=>{
 document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
 document.getElementById('clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
 
-/* Save => persist + auto-exit */
+/* ---------- Save => persist + auto-exit ---------- */
 document.getElementById('saveBtn').addEventListener('click',()=>{
   const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
@@ -491,7 +492,7 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
   setTimeout(()=> exitEdit(), 300);
 });
 
-/* Utils */
+/* ---------- Utils ---------- */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
@@ -504,12 +505,6 @@ function applySaved(){
     document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
   }catch(e){}
 }
-
-/* Drag/resize/rotate core (selection helpers) */
-let selectedItem=null, activeCanvas=null;
-function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
-
-/* End of script */
 </script>
 </body>
 </html>
