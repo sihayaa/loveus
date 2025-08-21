@@ -1,222 +1,237 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>Our Scrapbook Story</title>
+  <meta charset="UTF-8">
+  <title>Love Story Scrapbook</title>
   <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
   <style>
     body {
       margin: 0;
-      font-family: 'Patrick Hand', cursive;
-      background: #0b0f2f;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
+      background: #0d0f2d; /* midnight blue */
+      font-family: 'Patrick Hand', cursive;
+      color: #fff;
     }
 
     #scrapbook {
-      width: 90vw;
-      height: 90vh;
+      width: 90%;
+      height: 90%;
     }
 
     .page {
-      background: #fdf6e3;
+      width: 100%;
+      height: 100%;
+      background: url("https://www.transparenttextures.com/patterns/cardboard-flat.png"); /* scrapbook texture */
+      background-size: cover;
       padding: 20px;
       box-sizing: border-box;
-      overflow: hidden;
+      border: 4px dashed #67e4ca;
       position: relative;
     }
 
-    .draggable {
-      position: absolute;
-      cursor: move;
+    .page h2 {
+      margin: 0;
+      font-size: 22px;
+      color: #ffe9ec;
     }
 
-    .draggable img {
-      max-width: 200px;
-      border: 3px solid #fff;
-      box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
-      border-radius: 6px;
-    }
-
-    #toolbar {
+    .floating-btns {
       position: fixed;
-      top: 10px;
-      right: 10px;
+      bottom: 20px;
+      right: 20px;
       display: none;
-      background: #1a1f4a;
-      color: white;
-      padding: 10px;
-      border-radius: 8px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.4);
+      flex-direction: column;
+      gap: 10px;
+      z-index: 1000;
     }
 
-    #toolbar button {
-      margin: 5px;
-      padding: 6px 12px;
+    .floating-btns button {
+      padding: 10px 15px;
       border: none;
-      border-radius: 5px;
-      cursor: pointer;
+      border-radius: 8px;
       background: #67e4ca;
-      color: #0b0f2f;
+      color: #0d0f2d;
+      cursor: pointer;
       font-weight: bold;
     }
 
-    #modal {
+    /* Themed modal */
+    .modal {
       display: none;
       position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
+      z-index: 2000;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex;
       align-items: center;
+      justify-content: center;
     }
 
-    #modalContent {
-      background: #fdf6e3;
+    .modal-content {
+      background: #1a1f2e;
       padding: 20px;
-      border: 4px solid #67e4ca;
-      border-radius: 10px;
+      border-radius: 12px;
+      border: 3px solid #67e4ca;
+      color: #fff;
       min-width: 300px;
     }
 
-    #modalContent input, #modalContent textarea {
+    .modal-content textarea,
+    .modal-content input {
       width: 100%;
-      margin: 10px 0;
-      padding: 5px;
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 6px;
+      border: none;
+      outline: none;
     }
 
-    #modalContent button {
-      margin: 5px;
-      padding: 6px 12px;
+    .modal-content button {
+      margin-top: 10px;
+      padding: 8px 12px;
       border: none;
-      border-radius: 5px;
+      border-radius: 6px;
+      background: #67e4ca;
+      color: #0d0f2d;
+      font-weight: bold;
       cursor: pointer;
     }
 
-    .saveBtn { background: #67e4ca; color:#0b0f2f; }
-    .cancelBtn { background: #e67a7a; color:white; }
+    img.scrap-img {
+      max-width: 200px;
+      margin: 10px;
+      border: 3px solid #ffe9ec;
+      border-radius: 6px;
+    }
+
+    .text-block {
+      background: rgba(255,255,255,0.1);
+      padding: 8px;
+      margin: 10px;
+      border-radius: 6px;
+      display: inline-block;
+    }
   </style>
 </head>
 <body>
+  <div id="scrapbook"></div>
 
-<div id="scrapbook">
-  <div class="my-book">
-    <div class="page"><h2>Cover Page</h2></div>
-    <div class="page"><h2>Page 1</h2></div>
-    <div class="page"><h2>Page 2</h2></div>
-    <div class="page"><h2>Page 3</h2></div>
-    <div class="page"><h2>Page 4</h2></div>
+  <!-- Floating buttons -->
+  <div class="floating-btns" id="editorTools">
+    <button onclick="openModal('text')">➕ Add Text</button>
+    <button onclick="openModal('image')">🖼️ Add Image</button>
   </div>
-</div>
 
-<div id="toolbar">
-  <button onclick="openTextModal()">Add Text</button>
-  <button onclick="triggerImageUpload()">Add Photo</button>
-  <input type="file" id="imageUpload" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
-</div>
-
-<div id="modal">
-  <div id="modalContent">
-    <h3>Add Your Text</h3>
-    <textarea id="newText" rows="4" placeholder="Write something..."></textarea>
-    <button class="saveBtn" onclick="addText()">Save</button>
-    <button class="cancelBtn" onclick="closeModal()">Cancel</button>
+  <!-- Modal -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <h3 id="modalTitle">Add Content</h3>
+      <div id="modalBody"></div>
+      <button onclick="closeModal()">Cancel</button>
+    </div>
   </div>
-</div>
 
-<script>
-  const pageFlip = new St.PageFlip(document.getElementById("scrapbook"), {
-    width: 400,
-    height: 600,
-    size: "stretch",
-    maxShadowOpacity: 0.5,
-    showCover: true
-  });
+  <script>
+    const pageFlip = new St.PageFlip(document.getElementById("scrapbook"), {
+      width: 500,
+      height: 700,
+      size: "stretch",
+      minWidth: 315,
+      minHeight: 420,
+      maxWidth: 1000,
+      maxHeight: 1350,
+      drawShadow: true,
+      flippingTime: 700
+    });
 
-  // Load ALL pages together
-  pageFlip.loadFromHTML(document.querySelectorAll(".my-book .page"));
+    pageFlip.loadFromHTML([
+      { element: createPage("Cover Page") },
+      { element: createPage("Our Journey") },
+      { element: createPage("Memories Together") },
+      { element: createPage("Forever") }
+    ]);
 
-  // Unlock edit mode with password
-  document.addEventListener("keydown", (e) => {
-    if (e.key === "1") { 
-      document.getElementById("toolbar").style.display = "block";
-      alert("Edit Mode Activated ✨");
+    function createPage(title) {
+      const div = document.createElement("div");
+      div.className = "page";
+      div.innerHTML = `<h2>${title}</h2>`;
+      return div;
     }
-  });
 
-  // Modal
-  function openTextModal() {
-    document.getElementById("modal").style.display = "flex";
-  }
-  function closeModal() {
-    document.getElementById("modal").style.display = "none";
-  }
-  function addText() {
-    const txt = document.getElementById("newText").value;
-    if (!txt) return;
-    const textEl = document.createElement("div");
-    textEl.className = "draggable";
-    textEl.style.left = "50px";
-    textEl.style.top = "50px";
-    textEl.innerText = txt;
-    textEl.style.fontSize = "20px";
-    textEl.style.color = "#0b0f2f";
-    textEl.contentEditable = true;
-    pageFlip.getCurrentPageElement().appendChild(textEl);
-    dragElement(textEl);
-    document.getElementById("newText").value = "";
-    closeModal();
-  }
-
-  function triggerImageUpload() {
-    document.getElementById("imageUpload").click();
-  }
-
-  function handleImageUpload(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const img = document.createElement("img");
-    img.src = URL.createObjectURL(file);
-    const wrapper = document.createElement("div");
-    wrapper.className = "draggable";
-    wrapper.style.left = "100px";
-    wrapper.style.top = "100px";
-    wrapper.appendChild(img);
-    pageFlip.getCurrentPageElement().appendChild(wrapper);
-    dragElement(wrapper);
-  }
-
-  // Drag system
-  function dragElement(elmnt) {
-    let pos1=0,pos2=0,pos3=0,pos4=0;
-    elmnt.onmousedown = dragMouseDown;
-    function dragMouseDown(e) {
-      e = e || window.event;
-      e.preventDefault();
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      document.onmouseup = closeDragElement;
-      document.onmousemove = elementDrag;
+    // Helper: get active page
+    function getActivePage() {
+      return document.querySelector(".stf__item--current .page");
     }
-    function elementDrag(e) {
-      e = e || window.event;
-      e.preventDefault();
-      pos1 = pos3 - e.clientX;
-      pos2 = pos4 - e.clientY;
-      pos3 = e.clientX;
-      pos4 = e.clientY;
-      elmnt.style.top = (elmnt.offsetTop - pos2) + "px";
-      elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
-    }
-    function closeDragElement() {
-      document.onmouseup = null;
-      document.onmousemove = null;
-    }
-  }
-</script>
 
+    // Modal control
+    let currentMode = null;
+    function openModal(type) {
+      currentMode = type;
+      const modal = document.getElementById("modal");
+      const body = document.getElementById("modalBody");
+      const title = document.getElementById("modalTitle");
+      body.innerHTML = "";
+
+      if (type === "text") {
+        title.innerText = "Add Text";
+        body.innerHTML = `<textarea id="newText" rows="3" placeholder="Type here..."></textarea>
+                          <button onclick="addText()">Add</button>`;
+      } else {
+        title.innerText = "Add Image";
+        body.innerHTML = `<input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">`;
+      }
+
+      modal.style.display = "flex";
+    }
+
+    function closeModal() {
+      document.getElementById("modal").style.display = "none";
+    }
+
+    // Add text
+    function addText() {
+      const text = document.getElementById("newText").value;
+      if (text.trim() !== "") {
+        const el = document.createElement("div");
+        el.className = "text-block";
+        el.innerText = text;
+        getActivePage().appendChild(el);
+      }
+      closeModal();
+    }
+
+    // Handle image upload
+    function handleImageUpload(event) {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          const img = document.createElement("img");
+          img.src = e.target.result;
+          img.className = "scrap-img";
+          getActivePage().appendChild(img);
+        }
+        reader.readAsDataURL(file);
+      }
+      closeModal();
+    }
+
+    // Unlock editor with code
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "1" || e.key === "2" || e.key === "3") {
+        const code = prompt("Enter code to edit:");
+        if (code === "123") {
+          document.getElementById("editorTools").style.display = "flex";
+          alert("Editor unlocked!");
+        }
+      }
+    });
+  </script>
 </body>
 </html>
