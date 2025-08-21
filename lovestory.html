@@ -5,8 +5,6 @@
   <title>Our Scrapbook Story</title>
   <!-- avoid favicon 404 -->
   <link rel="icon" href="data:,">
-  <!-- PageFlip (no jQuery) -->
-  <script src="https://unpkg.com/page-flip@2.0.7/dist/page-flip.browser.min.js"></script>
   <style>
     :root{
       --night:#0b0f2f;
@@ -21,11 +19,8 @@
       height:100vh; display:flex; align-items:center; justify-content:center;
       font-family: Georgia, "Times New Roman", serif; overflow:hidden;
     }
-
-    /* Book area */
     #book{ width:min(92vw,1100px); height:min(90vh,760px); }
 
-    /* Each page */
     .page{
       width:100%; height:100%; position:relative;
       background:
@@ -65,7 +60,7 @@
     #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
     #toolbar span.hint{ color:#333; font-size:14px; margin-left:6px; }
 
-    /* Nice modals (text composer) */
+    /* Modal */
     .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
     .modal.open{ display:flex; }
     .modal-card{
@@ -79,13 +74,13 @@
     .btn-mint{ background:var(--mint); color:#05201f; }
     .btn-ghost{ background:#2a315d; color:#fff; }
 
-    /* Tiny toast notice */
+    /* Toast */
     #toast{ position:fixed; top:14px; right:14px; z-index:80; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
   </style>
 </head>
 <body>
 
-  <!-- Book with 10 blank pages (ready for your content) -->
+  <!-- Book with 10 pages -->
   <div id="book">
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -99,7 +94,7 @@
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Secret editor toolbar (appears ONLY after you type 123) -->
+  <!-- Hidden editor toolbar (appears after typing 123) -->
   <div id="toolbar">
     <button id="addTextBtn" class="mint">Add Text</button>
     <button id="addPhotoBtn" class="secondary">Add Photo</button>
@@ -123,187 +118,150 @@
     </div>
   </div>
 
-  <!-- Tiny toast -->
+  <!-- Toast -->
   <div id="toast">Edit mode unlocked ✨</div>
 
-<script>
-  /* ---------- Load any saved content BEFORE building the book ---------- */
-  applySaved(); // writes innerHTML into canvases if present
+  <!-- 1) Load your local PageFlip FIRST -->
+  <script src="./flipbook/page-flip.browser.js"></script>
 
-  /* ---------- PageFlip setup ---------- */
-  const bookEl = document.getElementById('book');
-  const pageFlip = new St.PageFlip(bookEl, {
-    width: 520,
-    height: 700,
-    size: "stretch",
-    minWidth: 320,
-    minHeight: 420,
-    drawShadow: true,
-    flippingTime: 800,
-    showCover: true,
-    useMouseEvents: true
-  });
-  pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
+  <!-- 2) Then run your app: St is now defined -->
+  <script>
+    const PASSCODE = '123';
+    const STORAGE_KEY = 'scrapbook_pages_v1';
 
-  /* ---------- Helpers ---------- */
-  const toolbar   = document.getElementById('toolbar');
-  const fileInput = document.getElementById('fileInput');
-  const textModal = document.getElementById('textModal');
-  const textInput = document.getElementById('textInput');
-  const textAdd   = document.getElementById('textAdd');
-  const textCancel= document.getElementById('textCancel');
-  const toast     = document.getElementById('toast');
+    const bookEl   = document.getElementById('book');
+    const toolbar  = document.getElementById('toolbar');
+    const fileInput= document.getElementById('fileInput');
+    const textModal= document.getElementById('textModal');
+    const textInput= document.getElementById('textInput');
+    const textAdd  = document.getElementById('textAdd');
+    const textCancel = document.getElementById('textCancel');
+    const toast    = document.getElementById('toast');
 
-  const PASSCODE = '123';
-  let editEnabled = false;
-  let keyBuffer = '';
-  let keyTimer = null;
-  let selectedItem = null;
+    // ---------- saved content ----------
+    applySaved();
 
-  function getActivePageCanvas(){
-    const node = document.querySelector('.stf__item--current .page .page-canvas');
-    return node || document.querySelector('#book .page .page-canvas');
-  }
-  function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
-  function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
-  function toastShow(msg){
-    toast.textContent = msg;
-    toast.style.display='block';
-    setTimeout(()=>toast.style.display='none', 1200);
-  }
+    // ---------- PageFlip (now St exists) ----------
+    const pageFlip = new St.PageFlip(bookEl, {
+      width: 520,
+      height: 700,
+      size: "stretch",
+      minWidth: 320,
+      minHeight: 420,
+      drawShadow: true,
+      flippingTime: 800,
+      showCover: true,
+      useMouseEvents: true
+    });
+    pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-  /* ---------- SECRET UNLOCK: type 1-2-3 anywhere ---------- */
-  document.addEventListener('keydown', (e)=>{
-    if (e.key === 'Escape' && editEnabled){
-      exitEdit();
-      return;
-    }
-    keyBuffer += e.key;
-    clearTimeout(keyTimer);
-    keyTimer = setTimeout(()=> keyBuffer = '', 1200);
-    if (keyBuffer.endsWith(PASSCODE)){
-      keyBuffer = '';
-      enterEdit();
-    }
-  });
-
-  function enterEdit(){
-    editEnabled = true;
-    toolbar.style.display='flex';
-    toastShow('Edit mode unlocked ✨');
-  }
-  function exitEdit(){
-    editEnabled = false;
-    toolbar.style.display='none';
-    deselect();
-  }
-
-  /* ---------- Draggable + resizable items ---------- */
-  function makeDraggable(el){
-    let startX=0,startY=0,origX=0,origY=0, resizing=false, startW=0,startH=0;
-
-    const res = el.querySelector('.resizer');
-    if (res){
-      res.addEventListener('mousedown', (e)=>{
-        if (!editEnabled) return;
-        e.stopPropagation();
-        resizing=true;
-        startX=e.clientX; startY=e.clientY;
-        startW=el.offsetWidth; startH=el.offsetHeight;
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-      });
-    }
-
-    el.addEventListener('mousedown',(e)=>{
-      if (!editEnabled) return;
-      if (e.target.classList.contains('resizer')) return;
-      selectedItem?.classList.remove('selected');
-      selectedItem = el;
-      el.classList.add('selected');
-      startX=e.clientX; startY=e.clientY;
-      origX=el.offsetLeft; origY=el.offsetTop;
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
+    // ---------- secret unlock by typing 1-2-3 ----------
+    let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+    document.addEventListener('keydown',(e)=>{
+      if(e.key==='Escape' && editEnabled){ exitEdit(); return; }
+      keyBuffer += e.key;
+      clearTimeout(keyTimer);
+      keyTimer=setTimeout(()=> keyBuffer='', 1200);
+      if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
     });
 
-    function onMove(e){
-      if (!editEnabled) return;
-      if (resizing){
-        const dx=e.clientX-startX, dy=e.clientY-startY;
-        el.style.width = Math.max(60, startW+dx)+'px';
-        el.style.height= Math.max(60, startH+dy)+'px';
-      }else{
-        const dx=e.clientX-startX, dy=e.clientY-startY;
-        el.style.left = (origX+dx)+'px';
-        el.style.top  = (origY+dy)+'px';
+    function enterEdit(){ editEnabled=true; toolbar.style.display='flex'; toastShow('Edit mode unlocked ✨'); }
+    function exitEdit(){ editEnabled=false; toolbar.style.display='none'; deselect(); }
+
+    function getActivePageCanvas(){
+      const node = document.querySelector('.stf__item--current .page .page-canvas');
+      return node || document.querySelector('#book .page .page-canvas');
+    }
+    function makeDraggable(el){
+      let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
+      const res=el.querySelector('.resizer');
+      if(res){
+        res.addEventListener('mousedown',(e)=>{
+          if(!editEnabled) return; e.stopPropagation();
+          resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
+          document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+        });
       }
+      el.addEventListener('mousedown',(e)=>{
+        if(!editEnabled) return;
+        if(e.target.classList.contains('resizer')) return;
+        selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
+        startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
+        document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+      });
+      function onMove(e){
+        if(!editEnabled) return;
+        if(resizing){
+          const dx=e.clientX-startX, dy=e.clientY-startY;
+          el.style.width=Math.max(60,startW+dx)+'px';
+          el.style.height=Math.max(60,startH+dy)+'px';
+        }else{
+          const dx=e.clientX-startX, dy=e.clientY-startY;
+          el.style.left=(origX+dx)+'px';
+          el.style.top =(origY+dy)+'px';
+        }
+      }
+      function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
     }
-    function onUp(){
-      document.removeEventListener('mousemove', onMove);
-      document.removeEventListener('mouseup', onUp);
-      resizing=false;
-    }
-  }
-  function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
-  document.addEventListener('click', (e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
+    function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
+    document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-  /* ---------- Add TEXT ---------- */
-  document.getElementById('addTextBtn').addEventListener('click', ()=>{
-    textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10);
-  });
-  textCancel.addEventListener('click', ()=> closeModal(textModal));
-  textAdd.addEventListener('click', ()=>{
-    const val = textInput.value.trim(); if(!val) return closeModal(textModal);
-    const box = document.createElement('div');
-    box.className = 'scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
-    box.innerHTML = `<div class="scrap-text" contenteditable="true">${val}</div><div class="resizer" title="Resize"></div>`;
-    getActivePageCanvas().appendChild(box); makeDraggable(box); closeModal(textModal);
-  });
-
-  /* ---------- Add PHOTO ---------- */
-  document.getElementById('addPhotoBtn').addEventListener('click', ()=> fileInput.click());
-  fileInput.addEventListener('change',(e)=>{
-    const f=e.target.files[0]; if(!f) return;
-    const reader=new FileReader();
-    reader.onload=(ev)=>{
+    // ---------- toolbar actions ----------
+    document.getElementById('addTextBtn').addEventListener('click',()=>{ textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10); });
+    textCancel.addEventListener('click',()=> closeModal(textModal));
+    textAdd.addEventListener('click',()=>{
+      const val=textInput.value.trim(); if(!val) return closeModal(textModal);
       const box=document.createElement('div');
-      box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
-      box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer" title="Resize"></div>`;
-      getActivePageCanvas().appendChild(box); makeDraggable(box); fileInput.value='';
-    };
-    reader.readAsDataURL(f);
-  });
+      box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
+      box.innerHTML=`<div class="scrap-text" contenteditable="true">${val}</div><div class="resizer" title="Resize"></div>`;
+      getActivePageCanvas().appendChild(box); makeDraggable(box); closeModal(textModal);
+    });
 
-  /* ---------- Delete / clear / add page ---------- */
-  document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
-  document.getElementById('clearPageBtn').addEventListener('click',()=>{ getActivePageCanvas().innerHTML=''; deselect(); });
+    document.getElementById('addPhotoBtn').addEventListener('click',()=> fileInput.click());
+    fileInput.addEventListener('change',(e)=>{
+      const f=e.target.files[0]; if(!f) return;
+      const reader=new FileReader();
+      reader.onload=(ev)=>{
+        const box=document.createElement('div');
+        box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+        box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer" title="Resize"></div>`;
+        getActivePageCanvas().appendChild(box); makeDraggable(box); fileInput.value='';
+      };
+      reader.readAsDataURL(f);
+    });
 
-  document.getElementById('addPageBtn').addEventListener('click', ()=>{
-    const p=document.createElement('div'); p.className='page';
-    const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-    bookEl.appendChild(p);
-    pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
-    toastShow('Page added');
-  });
+    document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
+    document.getElementById('clearPageBtn').addEventListener('click',()=>{ getActivePageCanvas().innerHTML=''; deselect(); });
+    document.getElementById('addPageBtn').addEventListener('click',()=>{
+      const p=document.createElement('div'); p.className='page';
+      const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
+      bookEl.appendChild(p);
+      pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
+      toastShow('Page added');
+    });
 
-  /* ---------- SAVE to localStorage ---------- */
-  const STORAGE_KEY='scrapbook_pages_v1';
-  document.getElementById('saveBtn').addEventListener('click', ()=>{
-    const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-    toastShow('Saved ✓');
-  });
+    document.getElementById('saveBtn').addEventListener('click',()=>{
+      const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
+      toastShow('Saved ✓');
+    });
 
-  function applySaved(){
-    try{
-      const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
-      const arr=JSON.parse(raw);
-      const canvases=document.querySelectorAll('#book .page .page-canvas');
-      for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
-      document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
-    }catch(e){ /* ignore */ }
-  }
-</script>
+    // ---------- utils ----------
+    function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
+    function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+    function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
+
+    function applySaved(){
+      try{
+        const raw = localStorage.getItem(STORAGE_KEY); if(!raw) return;
+        const arr = JSON.parse(raw);
+        const canvases = document.querySelectorAll('#book .page .page-canvas');
+        for(let i=0;i<Math.min(arr.length,canvases.length);i++){
+          canvases[i].innerHTML = arr[i];
+        }
+        document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
+      }catch(e){}
+    }
+  </script>
 </body>
 </html>
