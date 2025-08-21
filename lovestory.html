@@ -2,82 +2,150 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Our Love Story Book</title>
-
+  <title>Our Love Story Scrapbook</title>
   <style>
     body {
       margin: 0;
-      background: #ece5da;
+      background: #0d1b2a; /* midnight blue */
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
     }
+
     #bookContainer {
       width: 1000px;
       height: 700px;
     }
+
     .page-content {
       font-family: 'Georgia', serif;
       padding: 30px;
       font-size: 18px;
       line-height: 1.6;
-      color: #333;
-      background: #fffdf5;
+      color: #fffdf5;
+      background: rgba(20, 30, 50, 0.9); /* dark parchment effect */
+      border: 2px solid #7a5af8;
     }
+
     .page-content h2 {
       text-align: center;
-      color: #7a5af8;
+      color: #67e4ca;
       margin-bottom: 15px;
     }
+
     .page-content img {
-      max-width: 100%;
+      max-width: 90%;
       display: block;
-      margin: 0 auto;
+      margin: 10px auto;
+      border: 5px solid #fff;
+      box-shadow: 3px 3px 8px rgba(0,0,0,0.6);
+      transform: rotate(-2deg); /* scrapbook tilt */
+    }
+
+    /* Toolbar only visible in edit mode */
+    #toolbar {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0,0,0,0.8);
+      padding: 10px;
       border-radius: 8px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #toolbar button {
+      background: #7a5af8;
+      color: white;
+      border: none;
+      padding: 8px 12px;
+      cursor: pointer;
+      border-radius: 5px;
+      font-size: 14px;
     }
   </style>
 </head>
 <body>
   <div id="bookContainer"></div>
 
-  <!-- Load your local flipbook library -->
+  <!-- Toolbar for edit mode -->
+  <div id="toolbar">
+    <button onclick="addText()">Add Text</button>
+    <button onclick="addPhoto()">Add Photo</button>
+    <button onclick="exitEdit()">Exit Edit Mode</button>
+  </div>
+
   <script src="flipbook/page-flip.browser.js"></script>
   <script>
     const pageFlip = new St.PageFlip(
       document.getElementById("bookContainer"),
       {
-        width: 480, // single page width
-        height: 640, // single page height
+        width: 480,
+        height: 640,
         size: "stretch",
-        minWidth: 315,
-        maxWidth: 1000,
-        minHeight: 420,
-        maxHeight: 1350,
-        maxShadowOpacity: 0.5,
         showCover: true,
         mobileScrollSupport: false
       }
     );
 
-    // Create helper function to build page nodes
-    function createPage(html) {
+    // Helper to create page
+    function createPage(content = "<p>(Empty Page)</p>") {
       const el = document.createElement("div");
       el.classList.add("page-content");
-      el.innerHTML = html;
+      el.innerHTML = content;
       return el;
     }
 
-    // Now load pages as real DOM nodes
+    // Load initial pages
     pageFlip.loadFromHTML([
-      createPage("<h1 style='text-align:center'>💜 Our Love Story 💚</h1><p style='text-align:center'>Click to open</p>"),
-      createPage("<h2>Our Story Begins</h2><p>Once upon a time, in the most unexpected place, our story started...</p>"),
-      createPage("<img src='https://placekitten.com/800/600'>"),
-      createPage("<h2>How We Met</h2><p>We first met on Overwatch, and what began as a simple game quickly became something more...</p>"),
-      createPage("<img src='https://placebear.com/800/600'>"),
-      createPage("<h2>Forever Us</h2><p>This is just the beginning of our love story — many more chapters are waiting to be written together.</p>"),
-      createPage("<h1 style='text-align:center'>💍 The End (and New Beginning)</h1>")
+      createPage("<h2>💜 Our Love Story 💚</h2><p>Click to open...</p>"),
+      createPage("<h2>Our Story Begins</h2><p>Once upon a time...</p>")
     ]);
+
+    // ===== Edit Mode =====
+    let editMode = false;
+
+    // Unlock edit mode if user types "123"
+    let inputBuffer = "";
+    document.addEventListener("keydown", (e) => {
+      inputBuffer += e.key;
+      if (inputBuffer.endsWith("123")) {
+        enterEdit();
+        inputBuffer = "";
+      }
+    });
+
+    function enterEdit() {
+      editMode = true;
+      document.getElementById("toolbar").style.display = "flex";
+      alert("Edit Mode Activated ✨");
+    }
+
+    function exitEdit() {
+      editMode = false;
+      document.getElementById("toolbar").style.display = "none";
+      alert("Exited Edit Mode");
+    }
+
+    // Add new text box
+    function addText() {
+      if (!editMode) return;
+      const text = prompt("Enter your text:");
+      if (text) {
+        pageFlip.addPage(createPage("<p>" + text + "</p>"));
+      }
+    }
+
+    // Add new photo
+    function addPhoto() {
+      if (!editMode) return;
+      const url = prompt("Enter photo URL:");
+      if (url) {
+        pageFlip.addPage(createPage("<img src='" + url + "' alt='Photo'>"));
+      }
+    }
   </script>
 </body>
 </html>
