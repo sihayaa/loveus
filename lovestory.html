@@ -3,222 +3,89 @@
 <head>
   <meta charset="UTF-8" />
   <title>Our Scrapbook Story</title>
-  <!-- prevent favicon 404 -->
+  <!-- avoid favicon 404 -->
   <link rel="icon" href="data:,">
-  <!-- PageFlip (no jQuery required) -->
+  <!-- PageFlip (no jQuery) -->
   <script src="https://unpkg.com/page-flip@2.0.7/dist/page-flip.browser.min.js"></script>
-
   <style>
     :root{
       --night:#0b0f2f;
       --mint:#67e4ca;
       --paper:#f7eddc;
-      --ink:#2a1f1a;
+      --ink:#241a14;
       --accent:#7a5af8;
     }
-
     *{box-sizing:border-box}
-
     body{
-      margin:0;
-      background:var(--night);
-      height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-family: Georgia, "Times New Roman", serif;
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-      overflow:hidden;
+      margin:0; background:var(--night);
+      height:100vh; display:flex; align-items:center; justify-content:center;
+      font-family: Georgia, "Times New Roman", serif; overflow:hidden;
     }
 
-    /* Book frame */
-    #book{
-      width: min(92vw, 1100px);
-      height: min(90vh, 760px);
-    }
+    /* Book area */
+    #book{ width:min(92vw,1100px); height:min(90vh,760px); }
 
-    /* Each page visual */
+    /* Each page */
     .page{
-      width:100%;
-      height:100%;
-      position:relative;
+      width:100%; height:100%; position:relative;
       background:
-        radial-gradient(ellipse at 30% 10%, rgba(0,0,0,.06), transparent 40%),
+        radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.06), transparent 40%),
         url("https://www.transparenttextures.com/patterns/paper.png");
       background-color:var(--paper);
-      border: 3px solid rgba(0,0,0,.08);
-      box-shadow: inset 0 0 60px rgba(0,0,0,.2);
+      border:3px solid rgba(0,0,0,.06);
+      box-shadow: inset 0 0 60px rgba(0,0,0,.22);
       overflow:hidden;
     }
+    .page-canvas{ position:relative; width:100%; height:100%; padding:28px; color:var(--ink); }
 
-    /* Canvas inside page where we drop stuff */
-    .page-canvas{
-      position:relative;
-      width:100%;
-      height:100%;
-      padding:28px;
-      color:var(--ink);
-      font-size:18px;
-      line-height:1.6;
-    }
-
-    /* Scrap items (text & images) */
-    .scrap-item{
-      position:absolute;
-      cursor:move;
-      user-select:none;
-      transform-origin: top left;
-      transition: box-shadow .15s ease;
-    }
-    .scrap-item.selected{ box-shadow: 0 0 0 3px var(--accent); }
-
+    /* Scrap items */
+    .scrap-item{ position:absolute; cursor:move; user-select:none; transform-origin:top left; }
+    .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
     .scrap-text{
-      background: rgba(255,255,255,.55);
-      backdrop-filter: blur(2px);
-      padding:10px 12px;
-      border-radius:8px;
-      border:1px solid rgba(0,0,0,.1);
-      min-width:120px;
-      min-height:44px;
-      white-space:pre-wrap;
+      background:rgba(255,255,255,.55); backdrop-filter: blur(2px);
+      padding:10px 12px; border-radius:8px; border:1px solid rgba(0,0,0,.1);
+      min-width:120px; min-height:44px; white-space:pre-wrap;
     }
-    .scrap-text[contenteditable="true"]{ outline: none; }
+    .scrap-text[contenteditable="true"]{ outline:none; }
+    .scrap-img{ display:block; border:6px solid #fff; border-radius:8px; box-shadow:4px 6px 18px rgba(0,0,0,.25); max-width:100%; max-height:100%; pointer-events:none; }
+    .resizer{ position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 
-    .scrap-img{
-      display:block;
-      border:6px solid #fff;
-      border-radius:8px;
-      box-shadow: 4px 6px 18px rgba(0,0,0,.25);
-      max-width:100%;
-      max-height:100%;
-      pointer-events:none; /* parent handles drag */
-    }
-
-    /* Simple resize handle */
-    .resizer{
-      position:absolute;
-      right:-6px; bottom:-6px;
-      width:16px; height:16px;
-      border-radius:4px;
-      background:var(--mint);
-      border:2px solid #0b2c28;
-      cursor:nwse-resize;
-    }
-
-    /* Floating edit button (view mode) */
-    #editFab{
-      position: fixed;
-      top: 18px;
-      right: 18px;
-      z-index: 60;
-      background: var(--mint);
-      color: #082026;
-      border: 0;
-      padding: 10px 14px;
-      border-radius: 999px;
-      font-weight: 700;
-      box-shadow: 0 8px 20px rgba(0,0,0,.25);
-      cursor:pointer;
-    }
-
-    /* Toolbar (shown in edit mode) */
+    /* Secret toolbar (hidden until 123 typed) */
     #toolbar{
-      position: fixed;
-      bottom: 18px;
-      left: 50%;
-      transform: translateX(-50%);
-      display:none;
-      z-index: 55;
-      background: rgba(255,255,255,.9);
-      border: 2px solid #e6d9c2;
-      border-radius: 14px;
-      padding:10px;
-      box-shadow: 0 10px 22px rgba(0,0,0,.25);
-      display:flex;
-      gap:8px;
-      align-items:center;
-      flex-wrap: wrap;
+      position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+      display:none; z-index:60; background:rgba(255,255,255,.92);
+      border:2px solid #e8dcc6; border-radius:14px; padding:10px;
+      box-shadow:0 10px 22px rgba(0,0,0,.25); gap:8px; flex-wrap:wrap; align-items:center;
     }
     #toolbar button{
-      border:0;
-      background: var(--accent);
-      color:#fff;
-      font-weight:700;
-      padding:8px 12px;
-      border-radius:8px;
-      cursor:pointer;
+      border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent);
     }
-    #toolbar button.secondary{
-      background:#f0e6ff;
-      color:#4b2fb5;
-    }
-    #toolbar button.warn{
-      background:#ffb3c1;
-      color:#5b0a18;
-    }
+    #toolbar button.secondary{ background:#5d47d4; }
+    #toolbar button.mint{ background:var(--mint); color:#022d2c; }
+    #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
+    #toolbar span.hint{ color:#333; font-size:14px; margin-left:6px; }
 
-    /* Modal (password & text) */
-    .modal{
-      position: fixed;
-      inset: 0;
-      display:none;
-      align-items:center;
-      justify-content:center;
-      z-index:70;
-      background: rgba(0,0,0,.55);
-    }
+    /* Nice modals (text composer) */
+    .modal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
     .modal.open{ display:flex; }
     .modal-card{
-      width:min(92vw,420px);
-      background:#151a30;
-      color:#fff;
-      border: 2px solid var(--mint);
-      border-radius: 14px;
-      padding:20px;
-      box-shadow: 0 20px 40px rgba(0,0,0,.45);
+      width:min(92vw,420px); background:#151a30; color:#fff; border:2px solid var(--mint);
+      border-radius:14px; padding:20px; box-shadow:0 20px 40px rgba(0,0,0,.45);
     }
-    .modal-card h3{
-      margin:0 0 10px;
-      font-size:22px;
-      letter-spacing:.3px;
-    }
-    .modal-card input,
-    .modal-card textarea{
-      width:100%;
-      background:#0f1430;
-      color:#fff;
-      border:1px solid #2b3258;
-      border-radius:10px;
-      padding:10px 12px;
-      margin-top:10px;
-      font-family: inherit;
-      font-size:16px;
-      resize:vertical;
-    }
-    .modal-actions{
-      margin-top:12px;
-      display:flex;
-      gap:8px;
-      justify-content:flex-end;
-    }
-    .modal-actions button{
-      border:0;
-      padding:8px 12px;
-      border-radius:10px;
-      cursor:pointer;
-      font-weight:700;
-    }
-    .btn-mint{ background: var(--mint); color:#05201f; }
-    .btn-ghost{ background: #2a315d; color:#fff; }
+    .modal-card h3{ margin:0 0 10px; font-size:22px; letter-spacing:.3px; }
+    .modal-card textarea{ width:100%; background:#0f1430; color:#fff; border:1px solid #2b3258; border-radius:10px; padding:10px 12px; margin-top:10px; font-family:inherit; font-size:16px; resize:vertical; }
+    .modal-actions{ margin-top:12px; display:flex; gap:8px; justify-content:flex-end; }
+    .modal-actions button{ border:0; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
+    .btn-mint{ background:var(--mint); color:#05201f; }
+    .btn-ghost{ background:#2a315d; color:#fff; }
+
+    /* Tiny toast notice */
+    #toast{ position:fixed; top:14px; right:14px; z-index:80; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
   </style>
 </head>
 <body>
 
-  <!-- Edit (hidden password) -->
-  <button id="editFab" title="Edit scrapbook">✎ Edit</button>
-
-  <!-- Book with 10 pages ready -->
+  <!-- Book with 10 blank pages (ready for your content) -->
   <div id="book">
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -232,29 +99,16 @@
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Editor toolbar (appears AFTER password is accepted) -->
+  <!-- Secret editor toolbar (appears ONLY after you type 123) -->
   <div id="toolbar">
-    <button id="addTextBtn">Add Text</button>
+    <button id="addTextBtn" class="mint">Add Text</button>
     <button id="addPhotoBtn" class="secondary">Add Photo</button>
     <button id="addPageBtn" class="secondary">Add Page</button>
     <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
     <button id="clearPageBtn" class="warn">Clear Page</button>
-    <button id="saveBtn">Save</button>
-    <button id="exitEditBtn" class="secondary">Exit Edit</button>
+    <button id="saveBtn" class="mint">Save</button>
+    <span class="hint">Press ESC to exit edit</span>
     <input id="fileInput" type="file" accept="image/*" hidden />
-  </div>
-
-  <!-- Password modal (only when you try to edit) -->
-  <div id="pwModal" class="modal" aria-hidden="true">
-    <div class="modal-card">
-      <h3>Enter Password</h3>
-      <input id="pwInput" type="password" placeholder="•••" />
-      <div class="modal-actions">
-        <button class="btn-ghost" id="pwCancel">Cancel</button>
-        <button class="btn-mint" id="pwGo">Unlock</button>
-      </div>
-      <div id="pwHint" style="margin-top:8px;color:#ffb3c1;display:none;">Wrong password.</div>
-    </div>
   </div>
 
   <!-- Text composer modal -->
@@ -269,15 +123,17 @@
     </div>
   </div>
 
+  <!-- Tiny toast -->
+  <div id="toast">Edit mode unlocked ✨</div>
+
 <script>
-  /* ---------- PageFlip init ---------- */
+  /* ---------- Load any saved content BEFORE building the book ---------- */
+  applySaved(); // writes innerHTML into canvases if present
+
+  /* ---------- PageFlip setup ---------- */
   const bookEl = document.getElementById('book');
-
-  // Load any saved content BEFORE telling PageFlip to build the book
-  applySaved();
-
   const pageFlip = new St.PageFlip(bookEl, {
-    width: 520,    // single page size; book width ~= 1040
+    width: 520,
     height: 700,
     size: "stretch",
     minWidth: 320,
@@ -287,70 +143,86 @@
     showCover: true,
     useMouseEvents: true
   });
-
-  // Provide all .page elements in one shot
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
   /* ---------- Helpers ---------- */
   const toolbar   = document.getElementById('toolbar');
-  const editFab   = document.getElementById('editFab');
   const fileInput = document.getElementById('fileInput');
-
-  const pwModal  = document.getElementById('pwModal');
-  const pwInput  = document.getElementById('pwInput');
-  const pwGo     = document.getElementById('pwGo');
-  const pwCancel = document.getElementById('pwCancel');
-  const pwHint   = document.getElementById('pwHint');
-
-  const textModal  = document.getElementById('textModal');
-  const textInput  = document.getElementById('textInput');
-  const textAdd    = document.getElementById('textAdd');
-  const textCancel = document.getElementById('textCancel');
+  const textModal = document.getElementById('textModal');
+  const textInput = document.getElementById('textInput');
+  const textAdd   = document.getElementById('textAdd');
+  const textCancel= document.getElementById('textCancel');
+  const toast     = document.getElementById('toast');
 
   const PASSCODE = '123';
   let editEnabled = false;
+  let keyBuffer = '';
+  let keyTimer = null;
   let selectedItem = null;
 
+  function getActivePageCanvas(){
+    const node = document.querySelector('.stf__item--current .page .page-canvas');
+    return node || document.querySelector('#book .page .page-canvas');
+  }
   function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
   function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
-
-  function getActivePageCanvas(){
-    // current page element inside the renderer
-    const current = document.querySelector('.stf__item--current .page .page-canvas');
-    return current || document.querySelector('#book .page .page-canvas'); // fallback
+  function toastShow(msg){
+    toast.textContent = msg;
+    toast.style.display='block';
+    setTimeout(()=>toast.style.display='none', 1200);
   }
 
+  /* ---------- SECRET UNLOCK: type 1-2-3 anywhere ---------- */
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape' && editEnabled){
+      exitEdit();
+      return;
+    }
+    keyBuffer += e.key;
+    clearTimeout(keyTimer);
+    keyTimer = setTimeout(()=> keyBuffer = '', 1200);
+    if (keyBuffer.endsWith(PASSCODE)){
+      keyBuffer = '';
+      enterEdit();
+    }
+  });
+
+  function enterEdit(){
+    editEnabled = true;
+    toolbar.style.display='flex';
+    toastShow('Edit mode unlocked ✨');
+  }
+  function exitEdit(){
+    editEnabled = false;
+    toolbar.style.display='none';
+    deselect();
+  }
+
+  /* ---------- Draggable + resizable items ---------- */
   function makeDraggable(el){
-    let startX=0,startY=0,origX=0,origY=0, resizing=false, startW=0, startH=0;
+    let startX=0,startY=0,origX=0,origY=0, resizing=false, startW=0,startH=0;
 
     const res = el.querySelector('.resizer');
     if (res){
       res.addEventListener('mousedown', (e)=>{
+        if (!editEnabled) return;
         e.stopPropagation();
-        resizing = true;
-        startX = e.clientX;
-        startY = e.clientY;
-        startW = el.offsetWidth;
-        startH = el.offsetHeight;
+        resizing=true;
+        startX=e.clientX; startY=e.clientY;
+        startW=el.offsetWidth; startH=el.offsetHeight;
         document.addEventListener('mousemove', onMove);
         document.addEventListener('mouseup', onUp);
       });
     }
 
-    el.addEventListener('mousedown', (e)=>{
+    el.addEventListener('mousedown',(e)=>{
       if (!editEnabled) return;
+      if (e.target.classList.contains('resizer')) return;
       selectedItem?.classList.remove('selected');
       selectedItem = el;
       el.classList.add('selected');
-
-      if (e.target.classList.contains('resizer')) return; // handled above
-
-      resizing = false;
-      startX = e.clientX;
-      startY = e.clientY;
-      origX = el.offsetLeft;
-      origY = el.offsetTop;
-
+      startX=e.clientX; startY=e.clientY;
+      origX=el.offsetLeft; origY=el.offsetTop;
       document.addEventListener('mousemove', onMove);
       document.addEventListener('mouseup', onUp);
     });
@@ -358,180 +230,79 @@
     function onMove(e){
       if (!editEnabled) return;
       if (resizing){
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        el.style.width  = Math.max(60, startW + dx) + 'px';
-        el.style.height = Math.max(60, startH + dy) + 'px';
-      } else {
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        el.style.left = (origX + dx) + 'px';
-        el.style.top  = (origY + dy) + 'px';
+        const dx=e.clientX-startX, dy=e.clientY-startY;
+        el.style.width = Math.max(60, startW+dx)+'px';
+        el.style.height= Math.max(60, startH+dy)+'px';
+      }else{
+        const dx=e.clientX-startX, dy=e.clientY-startY;
+        el.style.left = (origX+dx)+'px';
+        el.style.top  = (origY+dy)+'px';
       }
     }
     function onUp(){
       document.removeEventListener('mousemove', onMove);
       document.removeEventListener('mouseup', onUp);
+      resizing=false;
     }
   }
-
-  function deselect(){
-    selectedItem?.classList.remove('selected');
-    selectedItem = null;
-  }
-
-  // click anywhere on canvas to deselect
-  document.addEventListener('click', (e)=>{
-    if (!editEnabled) return;
-    const isItem = e.target.closest('.scrap-item');
-    if (!isItem) deselect();
-  });
-
-  /* ---------- Password gate (only when editing) ---------- */
-  editFab.addEventListener('click', ()=>{
-    // if already unlocked for this session, just show tools
-    if (editEnabled || localStorage.getItem('scrap_edit_ok') === 'yes'){
-      enterEdit();
-    } else {
-      pwInput.value = '';
-      pwHint.style.display = 'none';
-      openModal(pwModal);
-      pwInput.focus();
-    }
-  });
-
-  pwCancel.addEventListener('click', ()=> closeModal(pwModal));
-  pwGo.addEventListener('click', ()=> {
-    if (pwInput.value === PASSCODE){
-      localStorage.setItem('scrap_edit_ok','yes');
-      closeModal(pwModal);
-      enterEdit();
-    } else {
-      pwHint.style.display = 'block';
-    }
-  });
-
-  function enterEdit(){
-    editEnabled = true;
-    toolbar.style.display = 'flex';
-    editFab.style.display = 'none';
-  }
-
-  // Exit edit mode
-  document.getElementById('exitEditBtn').addEventListener('click', ()=>{
-    editEnabled = false;
-    toolbar.style.display = 'none';
-    editFab.style.display = 'inline-block';
-    deselect();
-  });
+  function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
+  document.addEventListener('click', (e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
   /* ---------- Add TEXT ---------- */
   document.getElementById('addTextBtn').addEventListener('click', ()=>{
-    textInput.value = '';
-    openModal(textModal);
-    setTimeout(()=>textInput.focus(),10);
+    textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10);
   });
   textCancel.addEventListener('click', ()=> closeModal(textModal));
   textAdd.addEventListener('click', ()=>{
-    const val = textInput.value.trim();
-    if (!val) return closeModal(textModal);
+    const val = textInput.value.trim(); if(!val) return closeModal(textModal);
     const box = document.createElement('div');
-    box.className = 'scrap-item';
-    box.style.left = '40px';
-    box.style.top  = '40px';
-    box.style.width = '260px';
+    box.className = 'scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
     box.innerHTML = `<div class="scrap-text" contenteditable="true">${val}</div><div class="resizer" title="Resize"></div>`;
-    getActivePageCanvas().appendChild(box);
-    makeDraggable(box);
-    closeModal(textModal);
+    getActivePageCanvas().appendChild(box); makeDraggable(box); closeModal(textModal);
   });
 
   /* ---------- Add PHOTO ---------- */
   document.getElementById('addPhotoBtn').addEventListener('click', ()=> fileInput.click());
-  fileInput.addEventListener('change', (e)=>{
-    const f = e.target.files[0];
-    if (!f) return;
-    const reader = new FileReader();
-    reader.onload = (ev)=>{
-      const box = document.createElement('div');
-      box.className = 'scrap-item';
-      box.style.left = '90px';
-      box.style.top  = '90px';
-      box.style.width = '300px';
-      box.style.height = '220px';
-      box.innerHTML = `<img class="scrap-img" src="${ev.target.result}" alt="">
-                       <div class="resizer" title="Resize"></div>`;
-      getActivePageCanvas().appendChild(box);
-      makeDraggable(box);
-      fileInput.value = '';
+  fileInput.addEventListener('change',(e)=>{
+    const f=e.target.files[0]; if(!f) return;
+    const reader=new FileReader();
+    reader.onload=(ev)=>{
+      const box=document.createElement('div');
+      box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+      box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer" title="Resize"></div>`;
+      getActivePageCanvas().appendChild(box); makeDraggable(box); fileInput.value='';
     };
     reader.readAsDataURL(f);
   });
 
-  /* ---------- Delete selected / clear ---------- */
-  document.getElementById('deleteSelectedBtn').addEventListener('click', ()=>{
-    if (selectedItem){
-      selectedItem.remove();
-      selectedItem = null;
-    }
-  });
+  /* ---------- Delete / clear / add page ---------- */
+  document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
+  document.getElementById('clearPageBtn').addEventListener('click',()=>{ getActivePageCanvas().innerHTML=''; deselect(); });
 
-  document.getElementById('clearPageBtn').addEventListener('click', ()=>{
-    const cv = getActivePageCanvas();
-    cv.innerHTML = '';
-    deselect();
-  });
-
-  /* ---------- Add PAGE ---------- */
   document.getElementById('addPageBtn').addEventListener('click', ()=>{
-    // create new page node and ask PageFlip to append it
-    const p = document.createElement('div');
-    p.className = 'page';
-    const c = document.createElement('div');
-    c.className = 'page-canvas';
-    p.appendChild(c);
-    // Append DOM then rebuild book pages list for PageFlip
+    const p=document.createElement('div'); p.className='page';
+    const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
     bookEl.appendChild(p);
-    // Re-load pages (PageFlip requires refresh)
     pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
+    toastShow('Page added');
   });
 
-  /* ---------- SAVE (localStorage) ---------- */
-  const STORAGE_KEY = 'scrapbook_pages_v1';
-
+  /* ---------- SAVE to localStorage ---------- */
+  const STORAGE_KEY='scrapbook_pages_v1';
   document.getElementById('saveBtn').addEventListener('click', ()=>{
-    const pages = [...document.querySelectorAll('#book .page')].map(p=>{
-      return p.querySelector('.page-canvas').innerHTML;
-    });
+    const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-    // remember you unlocked editor so you don't re-enter password each refresh
-    localStorage.setItem('scrap_edit_ok', editEnabled ? 'yes' : 'no');
-    // cute feedback
-    const btn = document.getElementById('saveBtn');
-    const old = btn.textContent;
-    btn.textContent = 'Saved ✓';
-    setTimeout(()=>btn.textContent = old, 1200);
+    toastShow('Saved ✓');
   });
 
   function applySaved(){
     try{
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return;
-      const arr = JSON.parse(raw);
-      const canvases = document.querySelectorAll('#book .page .page-canvas');
-      for (let i=0; i<Math.min(arr.length, canvases.length); i++){
-        canvases[i].innerHTML = arr[i];
-      }
-      // Re-attach drag/resize to loaded items
+      const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+      const arr=JSON.parse(raw);
+      const canvases=document.querySelectorAll('#book .page .page-canvas');
+      for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
       document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
-    }catch(e){
-      console.warn('No saved scrapbook or parse error.', e);
-    }
-  }
-
-  // If you previously unlocked editing, show toolbar automatically
-  if (localStorage.getItem('scrap_edit_ok') === 'yes'){
-    enterEdit();
+    }catch(e){ /* ignore */ }
   }
 </script>
 </body>
