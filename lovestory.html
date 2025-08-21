@@ -4,9 +4,9 @@
   <meta charset="UTF-8">
   <title>Our Love Story Book</title>
 
-  <!-- 3D FlipBook CSS & JS -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flipbook-css@1.6.3/dist/flipbook.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/flipbook-css@1.6.3/dist/flipbook.min.js"></script>
+  <!-- 3D FlipBook -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@3d-flip-book/3d-flip-book/css/flipbook.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/@3d-flip-book/3d-flip-book/js/flipbook.min.js"></script>
 
   <style>
     body {
@@ -45,27 +45,25 @@
   <div id="bookContainer"></div>
 
   <script>
-    // Pages of the book
     const pages = [
-      // Front cover (your image)
+      // Front cover
       { image: "https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/book.png" },
 
-      // Inside pages with text & photos
+      // Story
       { html: "<div class='page-content'><h2>Our Story Begins</h2><p>Once upon a time, in the most unexpected place, our story started...</p></div>" },
       { html: "<div class='page-content'><img src='https://placekitten.com/800/600' alt='Cute photo'></div>" },
       { html: "<div class='page-content'><h2>How We Met</h2><p>We first met on Overwatch, and what began as a simple game quickly became something more...</p></div>" },
       { html: "<div class='page-content'><img src='https://placebear.com/800/600' alt='Another sweet memory'></div>" },
       { html: "<div class='page-content'><h2>Forever Us</h2><p>This is just the beginning of our love story — many more chapters are waiting to be written together.</p></div>" },
 
-      // Back cover (same image or a different one)
+      // Back cover
       { image: "https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/book.png" }
     ];
 
-    // Initialize 3D FlipBook
-    new FlipBook('#bookContainer', {
+    new FlipBook("#bookContainer", {
       pages: pages,
       properties: {
-        cover: true,   // starts closed with your book cover
+        cover: true,
         padding: 20
       }
     });
