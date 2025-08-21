@@ -12,8 +12,9 @@
       --mint:#67e4ca;
       --paper:#f7eddc;
       --accent:#7a5af8;
-      --story-font:"Playfair Display",serif; /* change to "Dancing Script", cursive if you like */
-      --story-color:#2a1f1a;
+      /* Freestyle cursive + dark blue ink */
+      --story-font:"Dancing Script", cursive;
+      --story-color:#0d2a6b; /* dark navy blue */
     }
     *{box-sizing:border-box}
     body{
@@ -22,14 +23,9 @@
       font-family:var(--story-font); overflow:hidden;
     }
 
-    /* Fixed aspect for stability (no weird stretching => no “glitch”) */
-    #stage{
-      width:1000px; height:650px;  /* tune if you want */
-      position:relative;
-    }
-    #book{
-      position:absolute; inset:0;
-    }
+    /* Fixed stage for stable geometry (no opening glitch) */
+    #stage{ width:1000px; height:650px; position:relative; }
+    #book{ position:absolute; inset:0; }
 
     /* Pages */
     .page{
@@ -44,10 +40,12 @@
     .page-canvas{
       position:relative; width:100%; height:100%; padding:28px;
       color:var(--story-color); font-family:var(--story-font);
-      pointer-events:auto;   /* re-enabled even when flip is disabled */
+      pointer-events:auto;
+      /* cursive benefits from slightly bigger base size */
+      font-size:22px; line-height:1.35;
     }
 
-    /* ---- Printed look (view mode) ---- */
+    /* --- Printed look (view mode) --- */
     .scrap-item{ position:absolute; user-select:none; cursor:default; }
     .scrap-item.selected{ box-shadow:none; }
     .scrap-text{
@@ -58,7 +56,7 @@
     .scrap-img{ display:block; border:0; border-radius:0; box-shadow:none; max-width:100%; max-height:100%; pointer-events:none; }
     .resizer{ display:none; }
 
-    /* ---- Edit mode (only when body.editing) ---- */
+    /* --- Edit mode (only when body.editing) --- */
     body.editing .scrap-item{ cursor:move; }
     body.editing .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
     body.editing .scrap-text{ background:rgba(255,255,255,.55); padding:10px 12px; border:1px solid rgba(0,0,0,.1); border-radius:8px; }
@@ -68,16 +66,12 @@
       background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize;
     }
 
-    /* ✅ Kill flip interactions when editing, but keep canvases interactive */
+    /* Kill flip interactions in edit mode, keep canvases interactive */
     body.editing .stf__block,
     body.editing .stf__item,
-    body.editing .stf__wrapper{
-      pointer-events:none !important;
-    }
+    body.editing .stf__wrapper{ pointer-events:none !important; }
     body.editing .page-canvas,
-    body.editing .scrap-item{
-      pointer-events:auto !important;
-    }
+    body.editing .scrap-item{ pointer-events:auto !important; }
 
     /* Toolbar (hidden until 123) */
     #toolbar{
@@ -102,7 +96,7 @@
       border-radius:14px; padding:20px; box-shadow:0 20px 40px rgba(0,0,0,.45);
     }
     .modal-card h3{ margin:0 0 10px; font-size:22px; letter-spacing:.3px; }
-    .modal-card textarea{ width:100%; background:#0f1430; color:#fff; border:1px solid #2b3258; border-radius:10px; padding:10px 12px; margin-top:10px; font-family:inherit; font-size:16px; resize:vertical; }
+    .modal-card textarea{ width:100%; background:#0f1430; color:#fff; border:1px solid #2b3258; border-radius:10px; padding:10px 12px; margin-top:10px; font-family:inherit; font-size:18px; resize:vertical; }
     .modal-actions{ margin-top:12px; display:flex; gap:8px; justify-content:flex-end; }
     .modal-actions button{ border:0; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
     .btn-mint{ background:var(--mint); color:#05201f; }
@@ -136,7 +130,7 @@
       <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
       <button id="clearPageBtn" class="warn">Clear Page</button>
       <button id="saveBtn" class="mint">Save</button>
-      <span class="hint">Press ESC to exit edit</span>
+      <span class="hint">Type 123 to edit • ESC to exit</span>
       <input id="fileInput" type="file" accept="image/*" />
     </div>
 
@@ -159,26 +153,25 @@
   <script src="./flipbook/page-flip.browser.js"></script>
   <script>
     const PASSCODE = '123';
-    const STORAGE_KEY = 'scrapbook_pages_v2';
-    const stage = document.getElementById('stage');
-    const bookEl = document.getElementById('book');
-    const toolbar = document.getElementById('toolbar');
-    const fileInput = document.getElementById('fileInput');
+    const STORAGE_KEY = 'scrapbook_pages_v3';
+
+    const bookEl   = document.getElementById('book');
+    const toolbar  = document.getElementById('toolbar');
+    const fileInput= document.getElementById('fileInput');
     const textModal= document.getElementById('textModal');
     const textInput= document.getElementById('textInput');
     const textAdd  = document.getElementById('textAdd');
     const textCancel = document.getElementById('textCancel');
     const toast    = document.getElementById('toast');
 
-    /* Load saved content BEFORE init */
-    applySaved();
+    applySaved(); // load saved content BEFORE init
 
-    /* PageFlip — clean, coverless start = no opening glitch */
+    // PageFlip: no cover + fixed size for stable open (no glitch)
     const pageFlip = new St.PageFlip(bookEl, {
-      width: 500,       // tuned for our 1000x650 stage (two pages ~ 500 each)
+      width: 500,
       height: 650,
-      size: "fixed",    // fixed to stage size => stable geometry
-      showCover: false, // ✅ no cover mode → no odd half-open state
+      size: "fixed",
+      showCover: false,
       drawShadow: true,
       flippingTime: 800,
       maxShadowOpacity: 0.25,
@@ -188,13 +181,16 @@
     });
     pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-    /* Pick the side you click; keep track of active canvas */
+    // Active side (left/right)
     let activeCanvas = document.querySelector('#book .page .page-canvas');
+
+    // Choose side you click; DO NOT preventDefault so drag can start
+    let editEnabled = false;
     bookEl.addEventListener('pointerdown', (ev) => {
       const c = ev.target.closest('.page .page-canvas');
       if (c) {
         activeCanvas = c;
-        if (editEnabled) { ev.stopPropagation(); ev.preventDefault(); }
+        if (editEnabled) ev.stopPropagation(); // only stop flip, keep default so mousedown still fires
       }
     }, true);
 
@@ -215,8 +211,8 @@
       return canvases[idx] || canvases[0];
     }
 
-    /* Edit mode toggling */
-    let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+    // Edit mode
+    let selectedItem=null, keyBuffer='', keyTimer=null;
     document.addEventListener('keydown',(e)=>{
       if(e.key==='Escape' && editEnabled){ exitEdit(); return; }
       keyBuffer += e.key;
@@ -236,7 +232,6 @@
     }
     function enterEdit(){
       editEnabled=true; toolbar.style.display='flex'; setEditing(true);
-      // CSS already kills flip events; API tweak is a bonus
       try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
       toastShow('Edit mode unlocked ✨');
     }
@@ -245,10 +240,11 @@
       try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
     }
 
-    /* Drag / resize */
+    // Drag / resize
     function makeDraggable(el){
       let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
       const res=el.querySelector('.resizer');
+
       if(res){
         res.addEventListener('mousedown',(e)=>{
           if(!editEnabled) return; e.stopPropagation();
@@ -285,7 +281,7 @@
     function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
     document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-    /* Toolbar actions */
+    // Toolbar actions
     document.getElementById('addTextBtn').addEventListener('click',()=>{
       textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10);
     });
@@ -319,30 +315,34 @@
       const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
       bookEl.appendChild(p);
       pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
-      const canvases = document.querySelectorAll('#book .page .page-canvas');
+      const canvases=document.querySelectorAll('#book .page .page-canvas');
       activeCanvas = canvases[canvases.length-1];
       toastShow('Page added');
     });
     document.getElementById('saveBtn').addEventListener('click',()=>{
       const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
+      localStorage.setItem('scrapbook_pages_v3', JSON.stringify(pages));
       toastShow('Saved ✓');
     });
 
-    /* Utils */
+    // Utils
     function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
     function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
     function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 
     function applySaved(){
       try{
-        const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+        const raw=localStorage.getItem('scrapbook_pages_v3'); if(!raw) return;
         const arr=JSON.parse(raw);
         const canvases=document.querySelectorAll('#book .page .page-canvas');
         for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
         document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
         setEditing(false);
       }catch(e){}
+    }
+    function setEditing(on){
+      if(on){ document.body.classList.add('editing'); document.querySelectorAll('#book .scrap-text').forEach(el=>el.setAttribute('contenteditable','true')); }
+      else  { document.body.classList.remove('editing'); document.querySelectorAll('#book .scrap-text').forEach(el=>el.setAttribute('contenteditable','false')); }
     }
     setEditing(false);
   </script>
