@@ -2,236 +2,233 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Love Story Scrapbook</title>
-  <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.min.js"></script>
+  <title>Our Scrapbook Story</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/turn.js/4.1.0/turn.min.js"></script>
   <style>
     body {
       margin: 0;
+      background: midnightblue;
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background: #0d0f2d; /* midnight blue */
-      font-family: 'Patrick Hand', cursive;
-      color: #fff;
+      font-family: 'Georgia', serif;
+      overflow: hidden;
     }
-
-    #scrapbook {
-      width: 90%;
-      height: 90%;
+    #book {
+      width: 900px;
+      height: 600px;
     }
-
     .page {
-      width: 100%;
-      height: 100%;
-      background: url("https://www.transparenttextures.com/patterns/cardboard-flat.png"); /* scrapbook texture */
+      background: url('https://www.transparenttextures.com/patterns/aged-paper.png');
       background-size: cover;
+      box-shadow: inset 0 0 40px rgba(0,0,0,0.4);
       padding: 20px;
-      box-sizing: border-box;
-      border: 4px dashed #67e4ca;
       position: relative;
     }
-
-    .page h2 {
-      margin: 0;
-      font-size: 22px;
-      color: #ffe9ec;
+    .scrap-item {
+      position: absolute;
+      cursor: move;
+      resize: both;
+      overflow: auto;
     }
-
-    .floating-btns {
+    .scrap-item img {
+      max-width: 100%;
+      max-height: 100%;
+      display: block;
+    }
+    /* Password modal */
+    #passwordModal {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
-      display: none;
-      flex-direction: column;
-      gap: 10px;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.7);
+      display: flex; justify-content: center; align-items: center;
       z-index: 1000;
     }
-
-    .floating-btns button {
-      padding: 10px 15px;
-      border: none;
-      border-radius: 8px;
-      background: #67e4ca;
-      color: #0d0f2d;
-      cursor: pointer;
-      font-weight: bold;
+    #passwordBox {
+      background: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      text-align: center;
+      box-shadow: 0 5px 20px rgba(0,0,0,0.5);
     }
-
-    /* Themed modal */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 2000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
+    #passwordBox input {
+      padding: 8px; margin: 10px;
+    }
+    /* Themed popup */
+    #editorModal {
+      position: fixed; top:0; left:0;
+      width:100%; height:100%;
       background: rgba(0,0,0,0.7);
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      display:none; justify-content:center; align-items:center;
+      z-index: 2000;
     }
-
-    .modal-content {
-      background: #1a1f2e;
+    #editorBox {
+      background: #f5deb3;
+      border: 3px solid #8b5a2b;
       padding: 20px;
       border-radius: 12px;
-      border: 3px solid #67e4ca;
-      color: #fff;
-      min-width: 300px;
+      text-align: center;
     }
-
-    .modal-content textarea,
-    .modal-content input {
-      width: 100%;
-      margin-top: 10px;
-      padding: 8px;
-      border-radius: 6px;
-      border: none;
-      outline: none;
+    #editorBox textarea {
+      width: 300px; height: 100px;
     }
-
-    .modal-content button {
-      margin-top: 10px;
+    .toolbar {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.9);
+      border-radius: 10px;
+      padding: 10px;
+      display: none;
+      z-index: 1500;
+    }
+    .toolbar button {
+      margin: 5px;
       padding: 8px 12px;
-      border: none;
-      border-radius: 6px;
-      background: #67e4ca;
-      color: #0d0f2d;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    img.scrap-img {
-      max-width: 200px;
-      margin: 10px;
-      border: 3px solid #ffe9ec;
-      border-radius: 6px;
-    }
-
-    .text-block {
-      background: rgba(255,255,255,0.1);
-      padding: 8px;
-      margin: 10px;
-      border-radius: 6px;
-      display: inline-block;
     }
   </style>
 </head>
 <body>
-  <div id="scrapbook"></div>
-
-  <!-- Floating buttons -->
-  <div class="floating-btns" id="editorTools">
-    <button onclick="openModal('text')">➕ Add Text</button>
-    <button onclick="openModal('image')">🖼️ Add Image</button>
-  </div>
-
-  <!-- Modal -->
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <h3 id="modalTitle">Add Content</h3>
-      <div id="modalBody"></div>
-      <button onclick="closeModal()">Cancel</button>
+  <!-- Password Modal -->
+  <div id="passwordModal">
+    <div id="passwordBox">
+      <h2>Enter Password</h2>
+      <input type="password" id="passwordInput" placeholder="Password">
+      <button onclick="checkPassword()">Unlock</button>
     </div>
   </div>
 
-  <script>
-    const pageFlip = new St.PageFlip(document.getElementById("scrapbook"), {
-      width: 500,
-      height: 700,
-      size: "stretch",
-      minWidth: 315,
-      minHeight: 420,
-      maxWidth: 1000,
-      maxHeight: 1350,
-      drawShadow: true,
-      flippingTime: 700
+  <!-- Scrapbook -->
+  <div id="book">
+    <div class="page">Cover</div>
+    <div class="page"></div>
+    <div class="page"></div>
+    <div class="page"></div>
+    <div class="page"></div>
+    <div class="page"></div>
+    <div class="page"></div>
+    <div class="page"></div>
+    <div class="page"></div>
+    <div class="page"></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="toolbar" id="toolbar">
+    <button onclick="openTextEditor()">Add Text</button>
+    <input type="file" id="imageUpload" accept="image/*">
+    <button onclick="saveScrapbook()">Save</button>
+  </div>
+
+  <!-- Themed Editor Modal -->
+  <div id="editorModal">
+    <div id="editorBox">
+      <h3>Add Text</h3>
+      <textarea id="editorText"></textarea><br>
+      <button onclick="addText()">Add</button>
+      <button onclick="closeEditor()">Cancel</button>
+    </div>
+  </div>
+
+<script>
+  const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
+  const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
+  const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+  let editMode = false;
+
+  // Init book
+  document.addEventListener("DOMContentLoaded", () => {
+    $('#book').turn({ width: 900, height: 600, autoCenter: true });
+  });
+
+  function checkPassword() {
+    const val = document.getElementById("passwordInput").value;
+    if (val === "123") {
+      editMode = true;
+      document.getElementById("toolbar").style.display = "block";
+      alert("Edit mode unlocked!");
+    } else {
+      alert("Read-only mode");
+    }
+    document.getElementById("passwordModal").style.display = "none";
+    loadScrapbook();
+  }
+
+  function openTextEditor() {
+    document.getElementById("editorModal").style.display = "flex";
+  }
+
+  function closeEditor() {
+    document.getElementById("editorModal").style.display = "none";
+  }
+
+  function addText() {
+    const txt = document.getElementById("editorText").value;
+    if (!txt) return;
+    const node = document.createElement("div");
+    node.className = "scrap-item";
+    node.style.left = "50px";
+    node.style.top = "50px";
+    node.textContent = txt;
+    makeDraggable(node);
+    document.querySelector(".page:nth-child(2)").appendChild(node);
+    document.getElementById("editorModal").style.display = "none";
+  }
+
+  document.getElementById("imageUpload").addEventListener("change", e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const imgDiv = document.createElement("div");
+      imgDiv.className = "scrap-item";
+      imgDiv.style.left = "100px";
+      imgDiv.style.top = "100px";
+      imgDiv.innerHTML = `<img src="${ev.target.result}">`;
+      makeDraggable(imgDiv);
+      document.querySelector(".page:nth-child(2)").appendChild(imgDiv);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  function makeDraggable(el) {
+    let offsetX, offsetY;
+    el.onmousedown = function(e) {
+      offsetX = e.clientX - el.offsetLeft;
+      offsetY = e.clientY - el.offsetTop;
+      document.onmousemove = function(ev) {
+        el.style.left = (ev.clientX - offsetX) + "px";
+        el.style.top = (ev.clientY - offsetY) + "px";
+      };
+      document.onmouseup = function() {
+        document.onmousemove = null;
+      };
+    };
+  }
+
+  async function saveScrapbook() {
+    let pages = [];
+    document.querySelectorAll(".page").forEach((page, idx) => {
+      let content = page.innerHTML;
+      pages.push({page: idx, html: content});
     });
+    await supabase.from("scrapbook").upsert({id: 1, data: JSON.stringify(pages)});
+    alert("Saved!");
+  }
 
-    pageFlip.loadFromHTML([
-      { element: createPage("Cover Page") },
-      { element: createPage("Our Journey") },
-      { element: createPage("Memories Together") },
-      { element: createPage("Forever") }
-    ]);
-
-    function createPage(title) {
-      const div = document.createElement("div");
-      div.className = "page";
-      div.innerHTML = `<h2>${title}</h2>`;
-      return div;
+  async function loadScrapbook() {
+    let { data, error } = await supabase.from("scrapbook").select("data").eq("id",1).single();
+    if (data) {
+      const pages = JSON.parse(data.data);
+      pages.forEach(p => {
+        document.querySelectorAll(".page")[p.page].innerHTML = p.html;
+      });
     }
-
-    // Helper: get active page
-    function getActivePage() {
-      return document.querySelector(".stf__item--current .page");
-    }
-
-    // Modal control
-    let currentMode = null;
-    function openModal(type) {
-      currentMode = type;
-      const modal = document.getElementById("modal");
-      const body = document.getElementById("modalBody");
-      const title = document.getElementById("modalTitle");
-      body.innerHTML = "";
-
-      if (type === "text") {
-        title.innerText = "Add Text";
-        body.innerHTML = `<textarea id="newText" rows="3" placeholder="Type here..."></textarea>
-                          <button onclick="addText()">Add</button>`;
-      } else {
-        title.innerText = "Add Image";
-        body.innerHTML = `<input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload(event)">`;
-      }
-
-      modal.style.display = "flex";
-    }
-
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
-    }
-
-    // Add text
-    function addText() {
-      const text = document.getElementById("newText").value;
-      if (text.trim() !== "") {
-        const el = document.createElement("div");
-        el.className = "text-block";
-        el.innerText = text;
-        getActivePage().appendChild(el);
-      }
-      closeModal();
-    }
-
-    // Handle image upload
-    function handleImageUpload(event) {
-      const file = event.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-          const img = document.createElement("img");
-          img.src = e.target.result;
-          img.className = "scrap-img";
-          getActivePage().appendChild(img);
-        }
-        reader.readAsDataURL(file);
-      }
-      closeModal();
-    }
-
-    // Unlock editor with code
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "1" || e.key === "2" || e.key === "3") {
-        const code = prompt("Enter code to edit:");
-        if (code === "123") {
-          document.getElementById("editorTools").style.display = "flex";
-          alert("Editor unlocked!");
-        }
-      }
-    });
-  </script>
+  }
+</script>
 </body>
 </html>
