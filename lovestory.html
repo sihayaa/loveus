@@ -9,133 +9,70 @@
 
 <style>
 :root{
-  --bg:#0b0f2f;       /* midnight blue */
-  --paper:#f7eddc;    /* parchment */
-  --ink:#0d2a6b;      /* dark blue ink */
-  --accent:#7a5af8;
-  --mint:#67e4ca;
-  --font:"Dancing Script", cursive;
+  --bg:#0b0f2f;       --paper:#f7eddc;    --ink:#0d2a6b;
+  --accent:#7a5af8;   --mint:#67e4ca;     --font:"Dancing Script", cursive;
 }
-
 *{box-sizing:border-box}
 html,body{height:100%}
-body{
-  margin:0; background:var(--bg); color:var(--ink);
-  display:flex; align-items:center; justify-content:center; overflow:hidden;
-  font-family:var(--font);
-}
+body{margin:0;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font);}
+#stage{width:1000px;height:650px;position:relative;}
+#book{position:absolute;inset:0}
 
-/* Stage & book frame */
-#stage{ width:1000px; height:650px; position:relative; }
-#book{ position:absolute; inset:0; }
-
-/* Page visuals (parchment look) */
+/* page look */
 .page{
-  width:100%; height:100%; position:relative; overflow:hidden;
+  width:100%;height:100%;position:relative;overflow:hidden;
   background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%), var(--paper);
-  border:3px solid rgba(0,0,0,.06);
-  box-shadow:inset 0 0 60px rgba(0,0,0,.22);
+  border:3px solid rgba(0,0,0,.06); box-shadow:inset 0 0 60px rgba(0,0,0,.22);
   backface-visibility:hidden; transform:translateZ(0);
 }
-.page-canvas{
-  position:relative; width:100%; height:100%; padding:28px;
-  color:var(--ink); font-size:22px; line-height:1.35;
-  font-family:var(--font);
-}
+.page-canvas{position:relative;width:100%;height:100%;padding:28px;color:var(--ink);font-size:22px;line-height:1.35;font-family:var(--font)}
 
-/* ---------- CLOSED COVER OVERLAY (fits SAME rectangle as a page) ---------- */
-#closedCover{
-  position:absolute; inset:0; z-index:90; display:grid; place-items:center;
-  pointer-events:auto;      /* blocks click to flip while closed */
-}
-
-/* Use the same parchment frame as a page so it looks identical in size */
+/* closed cover overlay – same size as a page */
+#closedCover{position:absolute;inset:0;z-index:90;display:grid;place-items:center;pointer-events:auto}
 #closedCover .frame{
-  position:absolute; inset:0;
+  position:absolute;inset:0;
   background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%), var(--paper);
-  border:3px solid rgba(0,0,0,.06);
-  box-shadow:inset 0 0 60px rgba(0,0,0,.22), 0 25px 60px rgba(0,0,0,.45);
+  border:3px solid rgba(0,0,0,.06); box-shadow:inset 0 0 60px rgba(0,0,0,.22), 0 25px 60px rgba(0,0,0,.45);
   border-radius:6px;
 }
+#closedCover .cover3D{width:100%;height:100%;transform-style:preserve-3d;transform-origin:left center;transition:transform .9s ease-in-out;display:grid;place-items:center;padding:24px}
+#closedCover .cover-fit{width:100%;height:100%;object-fit:contain;border-radius:8px;display:block;background:#0b0f2f;box-shadow:0 10px 28px rgba(0,0,0,.35)}
+#closedCover.opening .cover3D{transform:rotateY(-120deg)}
+#closeBtn{position:absolute;top:10px;left:10px;z-index:96;background:rgba(0,0,0,.5);color:#fff;border:0;border-radius:8px;padding:6px 10px;display:none;cursor:pointer}
 
-/* The 3D “cover” that rotates to open, but image sits INSIDE the frame */
-#closedCover .cover3D{
-  width:100%; height:100%;
-  transform-style:preserve-3d;
-  transform-origin:left center;
-  transition:transform .9s ease-in-out;
-  display:grid; place-items:center;
-  padding:24px;             /* same inner padding as a page */
-}
+/* edit ui (same as before) */
+.scrap-item{position:absolute;user-select:none;cursor:default;transform-origin:center}
+.scrap-text{background:transparent;border:0;padding:0;white-space:pre-wrap}
+.scrap-text[contenteditable="true"]{outline:none}
+.scrap-img{display:block;max-width:100%;max-height:100%;border:0;border-radius:0;box-shadow:none;pointer-events:none}
+.resizer{display:none}
+.rotator{display:none;position:absolute;left:50%;top:-18px;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab}
+.rotator:active{cursor:grabbing}
+body.editing .scrap-item{cursor:move}
+body.editing .scrap-item.selected{box-shadow:0 0 0 3px var(--accent)}
+body.editing .scrap-text{background:rgba(255,255,255,.55);padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:8px}
+body.editing .scrap-img{border:6px solid #fff;border-radius:8px;box-shadow:4px 6px 18px rgba(0,0,0,.25)}
+body.editing .scrap-item .resizer{display:block;position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:4px;background:var(--mint);border:2px solid #0b2c28;cursor:nwse-resize}
+body.editing .scrap-item .rotator{display:block}
+body.editing .stf__block,body.editing .stf__item,body.editing .stf__wrapper{pointer-events:none!important}
+body.editing .page-canvas,body.editing .scrap-item{pointer-events:auto!important}
 
-/* Actual cover image: FIT, not crop */
-#closedCover .cover-fit{
-  width:100%; height:100%;
-  object-fit:contain;       /* keep the whole PNG visible */
-  border-radius:8px;
-  display:block;
-  box-shadow:0 10px 28px rgba(0,0,0,.35);
-  background:#0b0f2f;
-}
-
-/* Opening animation */
-#closedCover.opening .cover3D{ transform:rotateY(-120deg); }
-
-/* ---------- edit-mode helpers (kept, unchanged) ---------- */
-.scrap-item{ position:absolute; user-select:none; cursor:default; transform-origin:center center; }
-.scrap-text{ background:transparent; border:0; padding:0; color:inherit; font:inherit; white-space:pre-wrap; }
-.scrap-text[contenteditable="true"]{ outline:none; }
-.scrap-img{ display:block; max-width:100%; max-height:100%; border:0; border-radius:0; box-shadow:none; pointer-events:none; }
-.resizer{ display:none; }
-.rotator{
-  display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%);
-  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
-}
-.rotator:active{ cursor:grabbing; }
-
-body.editing .scrap-item{ cursor:move; }
-body.editing .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
-body.editing .scrap-text{ background:rgba(255,255,255,.55); padding:10px 12px; border:1px solid rgba(0,0,0,.1); border-radius:8px; }
-body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4px 6px 18px rgba(0,0,0,.25); }
-body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
-body.editing .scrap-item .rotator{ display:block; }
-
-/* Disable flip capture while editing; keep canvases interactive */
-body.editing .stf__block, body.editing .stf__item, body.editing .stf__wrapper{ pointer-events:none !important; }
-body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !important; }
-
-/* Toolbar (kept) */
-#toolbar{
-  position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
-  display:none; z-index:60; background:rgba(255,255,255,.92);
-  border:2px solid #e8dcc6; border-radius:14px; padding:10px; gap:8px;
-  box-shadow:0 10px 22px rgba(0,0,0,.25); align-items:center; flex-wrap:wrap;
-}
-#toolbar button{
-  border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent);
-}
-#toolbar button.secondary{ background:#5d47d4; }
-#toolbar button.mint{ background:var(--mint); color:#022d2c; }
-#toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
-#toolbar .group{ display:flex; gap:8px; align-items:center; }
-#fileInput{ display:none; }
-
-#toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
-.page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
-
-/* small close button (optional) */
-#closeBtn{
-  position:absolute; top:10px; left:10px; z-index:96;
-  background:rgba(0,0,0,.5); color:#fff; border:0; border-radius:8px; padding:6px 10px;
-  display:none; cursor:pointer;
-}
+/* toolbar */
+#toolbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:none;z-index:60;background:rgba(255,255,255,.92);border:2px solid #e8dcc6;border-radius:14px;padding:10px;gap:8px;box-shadow:0 10px 22px rgba(0,0,0,.25);align-items:center;flex-wrap:wrap}
+#toolbar button{border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:#fff;background:var(--accent)}
+#toolbar button.secondary{background:#5d47d4}
+#toolbar button.mint{background:var(--mint);color:#022d2c}
+#toolbar button.warn{background:#ff9aa2;color:#4c0a17}
+#toolbar .group{display:flex;gap:8px;align-items:center}
+#fileInput{display:none}
+#toast{position:absolute;top:12px;right:12px;z-index:95;background:#11172f;color:#fff;border:2px solid var(--mint);padding:8px 12px;border-radius:10px;display:none}
+.page-canvas.active-side{outline:3px dashed var(--accent);outline-offset:-12px}
 </style>
 </head>
 <body>
 
 <div id="stage">
-  <!-- CLOSED COVER OVERLAY (same size as a single page) -->
+  <!-- Closed cover overlay -->
   <div id="closedCover" title="Drag or click to open">
     <div class="frame"></div>
     <div class="cover3D">
@@ -143,9 +80,9 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     </div>
   </div>
 
-  <!-- Flipbook pages -->
+  <!-- Flipbook -->
   <div id="book">
-    <div class="page"><div class="page-canvas"></div></div><!-- cover becomes page 0 too -->
+    <div class="page"><div class="page-canvas"></div></div><!-- page 0 (cover page area) -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -158,10 +95,9 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- optional close control -->
   <button id="closeBtn" type="button">Close book</button>
 
-  <!-- Toolbar (kept) -->
+  <!-- Toolbar -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
@@ -184,244 +120,145 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
-<!-- LOCAL library -->
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ------------ Config ------------- */
-const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v7';
-const COVER_URL   = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
+const PASSCODE='123';
+const STORAGE_KEY='scrapbook_v7';
+const COVER_URL='https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png'; // <-- your PNG
 
-/* ------------ Elements ------------- */
-const stage     = document.getElementById('stage');
-const bookEl    = document.getElementById('book');
-const coverUI   = document.getElementById('closedCover');
-const cover3D   = coverUI.querySelector('.cover3D');
-const coverImg  = document.getElementById('coverImg');
-coverImg.src    = COVER_URL;
+const bookEl=document.getElementById('book');
+const coverUI=document.getElementById('closedCover');
+const cover3D=coverUI.querySelector('.cover3D');
+const coverImg=document.getElementById('coverImg'); coverImg.src=COVER_URL;
 
-const toolbar   = document.getElementById('toolbar');
-const toast     = document.getElementById('toast');
-const fileInput = document.getElementById('fileInput');
-const targetLeftBtn  = document.getElementById('targetLeft');
-const targetRightBtn = document.getElementById('targetRight');
-const closeBtn  = document.getElementById('closeBtn');
+const toolbar=document.getElementById('toolbar');
+const toast=document.getElementById('toast');
+const fileInput=document.getElementById('fileInput');
+const closeBtn=document.getElementById('closeBtn');
+const targetLeftBtn=document.getElementById('targetLeft');
+const targetRightBtn=document.getElementById('targetRight');
 
-/* Load saved content BEFORE init */
+/* restore saved */
 applySaved();
 
-/* -------- Flipbook init -------- */
-if (!window.St || !St.PageFlip) {
-  alert("PageFlip library not found. Make sure ./flipbook/page-flip.browser.js exists.");
-}
-const pageFlip = new St.PageFlip(bookEl, {
-  width: 500, height: 650,
-  size: "fixed",
-  showCover: true,
-  drawShadow: true,
-  flippingTime: 800,
-  maxShadowOpacity: 0.25,
-  useMouseEvents: true,
-  mobileScrollSupport: false,
-  startPage: 0
+/* Flipbook */
+if(!window.St||!St.PageFlip){alert("PageFlip library not found. Make sure ./flipbook/page-flip.browser.js exists.");}
+const pageFlip=new St.PageFlip(bookEl,{
+  width:500,height:650,size:"fixed",showCover:true,drawShadow:true,
+  flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,mobileScrollSupport:false,startPage:0
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* --- Drag-only flipping: block taps to avoid accidental page changes --- */
-let tapStart = null;
-function isTap(d, t){ return d<8 && t<300; }
-bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
-bookEl.addEventListener('pointerup',(e)=>{ if(!tapStart) return; const d=Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y); const dt=Date.now()-tapStart.t; if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); } tapStart=null; }, true);
-bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
-bookEl.addEventListener('dblclick',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
+/* block tap to avoid accidental flips while clicking */
+let tapStart=null;
+function isTap(d,t){return d<8&&t<300}
+bookEl.addEventListener('pointerdown',e=>{tapStart={x:e.clientX,y:e.clientY,t:Date.now()}},true);
+bookEl.addEventListener('pointerup',e=>{if(!tapStart)return;const d=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y);const dt=Date.now()-tapStart.t;if(isTap(d,dt)){e.preventDefault();e.stopPropagation()}tapStart=null},true);
+bookEl.addEventListener('click',e=>{e.preventDefault();e.stopPropagation()},true);
+bookEl.addEventListener('dblclick',e=>{e.preventDefault();e.stopPropagation()},true);
 
-/* ------------- Cover open/close ------------- */
+/* cover open/close */
 function openCover(){
   coverUI.classList.add('opening');
-  setTimeout(()=>{
-    coverUI.style.display='none';
-    closeBtn.style.display='block';   // show helper close control once opened
-    try{ pageFlip.turnToPage(1); }catch(_){}
-  }, 900);
+  setTimeout(()=>{coverUI.style.display='none';closeBtn.style.display='block';try{pageFlip.turnToPage(1);}catch(_){}} ,900);
 }
 function showCover(){
-  // redisplay cover (when you flip back to page 0)
   coverUI.classList.remove('opening');
-  cover3D.style.transform = 'rotateY(0deg)';
+  cover3D.style.transform='rotateY(0deg)';
   coverUI.style.display='grid';
   closeBtn.style.display='none';
 }
 let dragStart=null;
-coverUI.addEventListener('pointerdown', (e)=>{ dragStart = {x:e.clientX, y:e.clientY}; });
-coverUI.addEventListener('pointerup', (e)=>{
-  if(!dragStart) return;
-  const dx=e.clientX-dragStart.x;
-  if(Math.abs(dx)>40 || isTap(Math.abs(dx), 200)) openCover();
-  dragStart=null;
+coverUI.addEventListener('pointerdown',e=>{dragStart={x:e.clientX,y:e.clientY}});
+coverUI.addEventListener('pointerup',e=>{if(!dragStart)return;const dx=e.clientX-dragStart.x;if(Math.abs(dx)>40||isTap(Math.abs(dx),200))openCover();dragStart=null});
+coverUI.addEventListener('click',openCover);
+if(pageFlip.on){pageFlip.on('flip',()=>{const idx=pageFlip.getCurrentPageIndex?.()??0; if(idx===0){showCover()}else{coverUI.style.display='none'}});}
+closeBtn.addEventListener('click',()=>{pageFlip.turnToPage(0)}); // flip handler will show cover
+
+/* edit mode */
+let editEnabled=false,selectedItem=null,keyBuffer='',keyTimer=null,activeCanvas=null;
+document.addEventListener('keydown',e=>{
+  keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
+  if(keyBuffer.endsWith(PASSCODE)){keyBuffer=''; enterEdit();}
 });
-coverUI.addEventListener('click', openCover);
-
-/* When user flips back to the very first page, restore the closed cover */
-if (pageFlip.on){
-  pageFlip.on('flip', ()=>{
-    const idx = pageFlip.getCurrentPageIndex?.() ?? 0;
-    if (idx === 0){ showCover(); }
-    else { coverUI.style.display='none'; }
-  });
-}
-
-/* Optional close button to go back to cover */
-closeBtn.addEventListener('click', ()=>{
-  pageFlip.turnToPage(0);
-  // the 'flip' handler above will call showCover() once we’re on page 0
-});
-
-/* ----------------- Edit helpers (unchanged) ----------------- */
-let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
-
-document.addEventListener('keydown',(e)=>{
-  keyBuffer += e.key;
-  clearTimeout(keyTimer);
-  keyTimer=setTimeout(()=> keyBuffer='', 1200);
-  if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
-});
-function setAllTextEditable(on){
-  document.querySelectorAll('#book .scrap-text')
-    .forEach(el => el.setAttribute('contenteditable', on ? 'true' : 'false'));
-}
+function setAllTextEditable(on){document.querySelectorAll('#book .scrap-text').forEach(el=>el.setAttribute('contenteditable',on?'true':'false'))}
 function setEditing(on){
-  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'; }
-  else  { document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none';
-          document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
+  if(on){document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'}
+  else{document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none'; document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null}
 }
-function enterEdit(){
-  editEnabled=true; setEditing(true); setActiveCanvas('right');
-  try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
-  toastShow('Edit mode unlocked ✨');
-}
-function exitEdit(){
-  editEnabled=false; setEditing(false); deselect();
-  try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
-}
+function enterEdit(){editEnabled=true; setEditing(true); setActiveCanvas('right'); try{pageFlip.update?.({useMouseEvents:false,swipeDistance:10000})}catch(_){ } toastShow('Edit mode unlocked ✨')}
+function exitEdit(){editEnabled=false; setEditing(false); deselect(); try{pageFlip.update?.({useMouseEvents:true,swipeDistance:30})}catch(_){ }}
 
+/* drag/resize/rotate */
 function makeDraggable(el){
-  let startX=0,startY=0,origX=0,origY=0;
-  let resizing=false,startW=0,startH=0;
-  let rotating=false,startAngle=0,startPointerAngle=0;
-
-  const res=el.querySelector('.resizer');
-  let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
-  function getAngle(){ return parseFloat(el.dataset.rot||'0')||0; }
-  function setAngle(deg){ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; }
-
-  if(res){
-    res.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
-      resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
-      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
-    });
-  }
-  rot.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
-    rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-    startPointerAngle=Math.atan2(e.clientY-cy, e.clientX-cx); startAngle=getAngle();
-    document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate);
-  });
-  function onRotate(e){ if(!rotating) return;
-    const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-    const a=Math.atan2(e.clientY-cy, e.clientX-cx);
-    setAngle(startAngle + (a-startPointerAngle)*180/Math.PI);
-  }
-  function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
-
-  el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return;
-    if(e.target.classList.contains('resizer') || e.target.classList.contains('rotator')) return;
-    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
-    startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
-    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); e.stopPropagation();
-  });
-  function onMove(e){ if(!editEnabled) return;
-    if(resizing){ const dx=e.clientX-startX, dy=e.clientY-startY;
-      el.style.width=Math.max(60,startW+dx)+'px'; el.style.height=Math.max(60,startH+dy)+'px';
-    }else{ const dx=e.clientX-startX, dy=e.clientY-startY;
-      el.style.left=(origX+dx)+'px'; el.style.top =(origY+dy)+'px';
-    }
-  }
-  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
+  let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0,rotating=false,startAngle=0,startPointerAngle=0;
+  const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){rot=document.createElement('div');rot.className='rotator';el.appendChild(rot);}
+  function getAngle(){return parseFloat(el.dataset.rot||'0')||0} function setAngle(deg){el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`}
+  if(res){res.addEventListener('mousedown',e=>{if(!editEnabled)return;e.stopPropagation();e.preventDefault();resizing=true;startX=e.clientX;startY=e.clientY;startW=el.offsetWidth;startH=el.offsetHeight;document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);});}
+  rot.addEventListener('mousedown',e=>{if(!editEnabled)return;e.stopPropagation();e.preventDefault();rotating=true;const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx);startAngle=getAngle();document.addEventListener('mousemove',onRotate);document.addEventListener('mouseup',endRotate);});
+  function onRotate(e){if(!rotating)return;const r=el.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;const a=Math.atan2(e.clientY-cy,e.clientX-cx);setAngle(startAngle+(a-startPointerAngle)*180/Math.PI)}
+  function endRotate(){rotating=false;document.removeEventListener('mousemove',onRotate);document.removeEventListener('mouseup',endRotate)}
+  el.addEventListener('mousedown',e=>{if(!editEnabled)return;if(e.target.classList.contains('resizer')||e.target.classList.contains('rotator'))return;selectedItem?.classList.remove('selected');selectedItem=el;el.classList.add('selected');startX=e.clientX;startY=e.clientY;origX=el.offsetLeft;origY=el.offsetTop;document.addEventListener('mousemove',onMove);document.addEventListener('mouseup',onUp);e.stopPropagation();});
+  function onMove(e){if(!editEnabled)return;if(resizing){const dx=e.clientX-startX,dy=e.clientY-startY;el.style.width=Math.max(60,startW+dx)+'px';el.style.height=Math.max(60,startH+dy)+'px'}else{const dx=e.clientX-startX,dy=e.clientY-startY;el.style.left=(origX+dx)+'px';el.style.top=(origY+dy)+'px'}}
+  function onUp(){document.removeEventListener('mousemove',onMove);document.removeEventListener('mouseup',onUp);resizing=false}
 }
-function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
-document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
+function deselect(){selectedItem?.classList.remove('selected');selectedItem=null}
+document.addEventListener('click',e=>{if(editEnabled&&!e.target.closest('.scrap-item'))deselect()});
 
-/* Right/Left target */
-let activeCanvas=null;
+/* left/right targeting */
 function getVisibleCanvases(){
-  let left = document.querySelector('.stf__item--left  .page .page-canvas');
-  let right= document.querySelector('.stf__item--right .page .page-canvas');
-  if(left || right) return {left,right};
+  let left=document.querySelector('.stf__item--left .page .page-canvas');
+  let right=document.querySelector('.stf__item--right .page .page-canvas');
+  if(left||right) return {left,right};
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-  const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
-  if(idx===0) return {left:null, right:canvases[0]};
-  const base = idx%2===0 ? idx : idx-1;
-  return {left:canvases[base], right:canvases[base+1]||null};
+  const idx=pageFlip.getCurrentPageIndex?.()??0;
+  if(idx===0) return {left:null,right:canvases[0]};
+  const base=idx%2===0?idx:idx-1; return {left:canvases[base],right:canvases[base+1]||null};
 }
 function setActiveCanvas(side){
-  const {left,right}=getVisibleCanvases();
-  const next = side==='left'? left : right;
-  if(!next) return;
+  const {left,right}=getVisibleCanvases(); const next=side==='left'?left:right; if(!next)return;
   document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
-  next.classList.add('active-side');
-  activeCanvas = next;
+  next.classList.add('active-side'); activeCanvas=next;
 }
-document.getElementById('targetLeft').addEventListener('click', ()=> setActiveCanvas('left'));
-document.getElementById('targetRight').addEventListener('click',()=> setActiveCanvas('right'));
-if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
+targetLeftBtn.addEventListener('click',()=>setActiveCanvas('left'));
+targetRightBtn.addEventListener('click',()=>setActiveCanvas('right'));
+if(pageFlip.on){pageFlip.on('flip',()=>{if(!activeCanvas)setActiveCanvas('right')});}
 
-/* Add text / photo / stickers / page / save (same as before) */
+/* add content */
 document.getElementById('addTextBtn').addEventListener('click',()=>{
-  const val = prompt("Type text:","");
-  if(!val) return;
-  const box=document.createElement('div');
-  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
+  const val=prompt("Type text:",""); if(!val) return;
+  const box=document.createElement('div'); box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
   const isEditing=document.body.classList.contains('editing');
   box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 });
-document.getElementById('addPhotoBtn').addEventListener('click',()=> fileInput.click());
-fileInput.addEventListener('change',(e)=>{
-  const f=e.target.files[0]; if(!f) return;
+document.getElementById('addPhotoBtn').addEventListener('click',()=>fileInput.click());
+fileInput.addEventListener('change',e=>{
+  const f=e.target.files[0]; if(!f)return;
   const r=new FileReader();
-  r.onload=(ev)=>{
-    const box=document.createElement('div');
-    box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+  r.onload=ev=>{
+    const box=document.createElement('div'); box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
     box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
     (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); fileInput.value='';
   };
   r.readAsDataURL(f);
 });
 document.getElementById('addPageBtn').addEventListener('click',()=>{
-  const p=document.createElement('div'); p.className='page';
-  const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  bookEl.appendChild(p);
-  pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
-  toastShow('Page added');
+  const p=document.createElement('div'); p.className='page'; const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
+  bookEl.appendChild(p); pageFlip.loadFromHTML(document.querySelectorAll('#book .page')); toastShow('Page added');
 });
-document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
-document.getElementById('clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
+document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{if(selectedItem){selectedItem.remove();selectedItem=null;}});
+document.getElementById('clearPageBtn').addEventListener('click',()=>{(activeCanvas||getVisibleCanvases().right).innerHTML='';deselect()});
 document.getElementById('saveBtn').addEventListener('click',()=>{
   const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-  toastShow('Saved ✓'); setTimeout(()=> exitEdit(), 300);
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(pages)); toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
 });
 
-/* Utils */
-function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
-function applySaved(){
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
-    const arr=JSON.parse(raw);
-    const canvases=document.querySelectorAll('#book .page .page-canvas');
-    for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
-    document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
-  }catch(e){}
-}
+/* utils */
+function toastShow(msg){toast.textContent=msg;toast.style.display='block';setTimeout(()=>toast.style.display='none',1200)}
+function applySaved(){try{const raw=localStorage.getItem(STORAGE_KEY); if(!raw)return; const arr=JSON.parse(raw);
+  const canvases=document.querySelectorAll('#book .page .page-canvas'); for(let i=0;i<Math.min(arr.length,canvases.length);i++){canvases[i].innerHTML=arr[i];}
+  document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);}catch(e){}}
 </script>
 </body>
 </html>
