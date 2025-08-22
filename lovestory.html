@@ -1,55 +1,149 @@
-<script>
-(function(){
-  // --- config ---
-  const PASSCODE='123';
-  const STORAGE_KEY='scrapbook_edits_v1';
-  const EMOJIS=("🎮,👾,🕹️,🖥️,⌨️,💞,🩷,🧡,💛,💚,💙,🩵,🤎,🖤,🩶,🤍,💋,💯,💢,🏜️,🏝️,✈️,♾️,🍎,🍏,🍞,🥐,🥖,🫓,🥨,🥯,🥞,🧇,🧀,🍖,🍗,🥩,🥓,🍔,🍟,🍕,🌭,🥪,🌮,🌯,🫔,🥙,🧆,🥚,🍳,🥘,🫕,🥣,🥗,🍿,🧈,🧂,🥫,🍝,🍐,🍑,🍒,🍦,🍧,🍨,🍩,🍪,🎂,🍰,🧁,🥧,🍫,🍬,🍭,🍮,🍯").split(",");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Our Scrapbook Story</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="data:,">
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
 
-  const stage=document.getElementById('stage');
-  const book =document.getElementById('book');
-  if(!stage || !book) return;
+<style>
+:root{
+  --bg:#0b0f2f;       /* midnight blue */
+  --paper:#f7eddc;    /* parchment */
+  --ink:#0d2a6b;      /* dark blue ink */
+  --accent:#7a5af8;
+  --mint:#67e4ca;
+  --font:"Dancing Script", cursive;
+}
 
-  // --- minimal editor styles (injected) ---
-  const css = `
-  .sb-toast{position:absolute;top:12px;right:12px;z-index:95;background:#11172f;color:#fff;border:2px solid #67e4ca;padding:8px 12px;border-radius:10px;display:none}
-  body.sb-editing .stf__block, body.sb-editing .stf__item, body.sb-editing .stf__wrapper{pointer-events:none!important}
-  body.sb-editing .sb-canvas, body.sb-editing .sb-item{pointer-events:auto!important}
-  .sb-canvas.active{outline:3px dashed #7a5af8; outline-offset:-12px}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  font-family:var(--font);
+}
 
-  .sb-toolbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:none;z-index:60;background:rgba(255,255,255,.92);border:2px solid #e8dcc6;border-radius:14px;padding:10px;gap:8px;box-shadow:0 10px 22px rgba(0,0,0,.25);align-items:center;flex-wrap:wrap}
-  .sb-toolbar button{border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:#fff;background:#7a5af8}
-  .sb-toolbar .sec{background:#5d47d4}.sb-toolbar .mint{background:#67e4ca;color:#022d2c}.sb-toolbar .warn{background:#ff9aa2;color:#4c0a17}
+/* Stage & book */
+#stage{ width:1000px; height:650px; position:relative; perspective:1600px; }
+#book{ position:absolute; inset:0; }
 
-  .sb-item{position:absolute;user-select:none;transform-origin:center}
-  .sb-text{background:transparent;border:0;padding:0;color:inherit;font:inherit;white-space:pre-wrap}
-  .sb-text[contenteditable="true"]{outline:none}
-  .sb-img{display:block;max-width:100%;max-height:100%;border:0;pointer-events:none}
-  body.sb-editing .sb-img{border:6px solid #fff;border-radius:8px;box-shadow:4px 6px 18px rgba(0,0,0,.25)}
-  body.sb-editing .sb-item.selected{box-shadow:0 0 0 3px #7a5af8}
-  body.sb-editing .sb-item .sb-res{display:block;position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:4px;background:#67e4ca;border:2px solid #0b2c28;cursor:nwse-resize}
-  .sb-res{display:none}
-  .sb-rot{display:none;position:absolute;left:50%;top:-18px;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid #7a5af8;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab}
-  body.sb-editing .sb-rot{display:block}
-  .sb-modal{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:70;background:rgba(0,0,0,.55)}
-  .sb-modal.open{display:flex}
-  .sb-card{width:min(96%,560px);background:#151a30;color:#fff;border:2px solid #67e4ca;border-radius:14px;padding:16px;box-shadow:0 20px 40px rgba(0,0,0,.45)}
-  .sb-card h3{margin:0 0 10px;font-size:20px}
-  .sb-card textarea{width:100%;background:#0f1430;color:#fff;border:1px solid #2b3258;border-radius:10px;padding:10px 12px;font-family:inherit;font-size:20px;resize:vertical}
-  .sb-actions{margin-top:12px;display:flex;justify-content:flex-end;gap:8px}
-  .sb-actions button{border:0;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700}
-  .sb-btn-mint{background:#67e4ca;color:#05201f}.sb-btn-ghost{background:#2a315d;color:#fff}
-  .sb-stickers{display:grid;grid-template-columns:repeat(8,1fr);gap:10px}
-  .sb-stickers button{background:#0f1430;border:1px solid #2b3258;border-radius:10px;padding:8px;cursor:pointer}
-  .sb-stickers img{width:100%;aspect-ratio:1;object-fit:contain}
-  `;
-  const style=document.createElement('style'); style.textContent=css; document.head.appendChild(style);
+/* Page visuals */
+.page{
+  width:100%; height:100%; position:relative; overflow:hidden;
+  background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%);
+  background-color: var(--paper);
+  border:3px solid rgba(0,0,0,.06);
+  box-shadow:inset 0 0 60px rgba(0,0,0,.22);
+  backface-visibility:hidden; transform:translateZ(0);
+}
+.page-canvas{
+  position:relative; width:100%; height:100%; padding:28px;
+  color:var(--ink); font-family:var(--font);
+  font-size:22px; line-height:1.35;
+}
 
-  // --- helper nodes ---
-  const toast=document.createElement('div'); toast.className='sb-toast'; toast.id='sbToast'; toast.textContent='Edit mode unlocked ✨'; stage.appendChild(toast);
+/* ---------- CLOSED COVER OVERLAY ---------- */
+#closedCover{
+  position:absolute; inset:0; z-index:90; display:grid; place-items:center;
+}
+#closedCover .cover3D{
+  width:1000px; height:650px; position:relative;
+  transform-style:preserve-3d; transform-origin:left center;
+  transition:transform .9s ease-in-out;
+}
+#closedCover .hard{
+  position:absolute; inset:0; background: center/contain no-repeat var(--paper);
+  /* ^ contain keeps your art fully visible, no crop */
+  box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
+  border-radius:6px;
+}
+#coverImage{ background-position:center; background-repeat:no-repeat; background-size:contain !important; background-color:var(--paper); }
+/* Spine (left) */
+#closedCover .spine{
+  content:""; position:absolute; left:0; top:0; bottom:0; width:28px;
+  background:linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(255,255,255,.1));
+  border-top-left-radius:6px; border-bottom-left-radius:6px;
+}
+/* Page-edge shimmer (right & bottom) */
+#closedCover .edges::before, #closedCover .edges::after{
+  content:""; position:absolute; pointer-events:none;
+}
+#closedCover .edges::before{
+  right:0; top:12px; width:20px; height:calc(100% - 24px);
+  background:linear-gradient(90deg, rgba(255,255,255,.65), rgba(180,170,150,.45));
+  border-top-right-radius:6px; border-bottom-right-radius:6px;
+  filter:blur(0.4px);
+}
+#closedCover .edges::after{
+  left:18px; right:18px; bottom:0; height:16px;
+  background:radial-gradient(ellipse at 50% 0%, rgba(0,0,0,.38), transparent 60%);
+  border-bottom-left-radius:6px; border-bottom-right-radius:6px;
+}
+#closedCover.opening .cover3D{ transform:rotateY(-120deg); }
 
-  // toolbar
-  const tb=document.createElement('div'); tb.className='sb-toolbar'; tb.id='sbToolbar';
-  tb.innerHTML=`
+/* --------- Editor (injected look) --------- */
+.sb-toast{position:absolute;top:12px;right:12px;z-index:95;background:#11172f;color:#fff;border:2px solid var(--mint);padding:8px 12px;border-radius:10px;display:none}
+body.sb-editing .stf__block, body.sb-editing .stf__item, body.sb-editing .stf__wrapper{pointer-events:none!important}
+body.sb-editing .sb-canvas, body.sb-editing .sb-item{pointer-events:auto!important}
+.sb-canvas.active{outline:3px dashed var(--accent); outline-offset:-12px}
+.sb-toolbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:none;z-index:60;background:rgba(255,255,255,.92);border:2px solid #e8dcc6;border-radius:14px;padding:10px;gap:8px;box-shadow:0 10px 22px rgba(0,0,0,.25);align-items:center;flex-wrap:wrap}
+.sb-toolbar button{border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:#fff;background:var(--accent)}
+.sb-toolbar .sec{background:#5d47d4}.sb-toolbar .mint{background:var(--mint);color:#022d2c}.sb-toolbar .warn{background:#ff9aa2;color:#4c0a17}
+.sb-item{position:absolute;user-select:none;transform-origin:center}
+.sb-text{background:transparent;border:0;padding:0;color:inherit;font:inherit;white-space:pre-wrap}
+.sb-text[contenteditable="true"]{outline:none}
+.sb-img{display:block;max-width:100%;max-height:100%;border:0;pointer-events:none}
+body.sb-editing .sb-img{border:6px solid #fff;border-radius:8px;box-shadow:4px 6px 18px rgba(0,0,0,.25)}
+body.sb-editing .sb-item.selected{box-shadow:0 0 0 3px var(--accent)}
+body.sb-editing .sb-item .sb-res{display:block;position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:4px;background:var(--mint);border:2px solid #0b2c28;cursor:nwse-resize}
+.sb-res{display:none}
+.sb-rot{display:none;position:absolute;left:50%;top:-18px;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab}
+body.sb-editing .sb-rot{display:block}
+.sb-modal{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:70;background:rgba(0,0,0,.55)}
+.sb-modal.open{display:flex}
+.sb-card{width:min(96%,560px);background:#151a30;color:#fff;border:2px solid var(--mint);border-radius:14px;padding:16px;box-shadow:0 20px 40px rgba(0,0,0,.45)}
+.sb-card h3{margin:0 0 10px;font-size:20px}
+.sb-card textarea{width:100%;background:#0f1430;color:#fff;border:1px solid #2b3258;border-radius:10px;padding:10px 12px;font-family:var(--font);font-size:20px;resize:vertical}
+.sb-actions{margin-top:12px;display:flex;justify-content:flex-end;gap:8px}
+.sb-actions button{border:0;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700}
+.sb-btn-mint{background:var(--mint);color:#05201f}.sb-btn-ghost{background:#2a315d;color:#fff}
+.sb-stickers{display:grid;grid-template-columns:repeat(8,1fr);gap:10px}
+.sb-stickers button{background:#0f1430;border:1px solid #2b3258;border-radius:10px;padding:8px;cursor:pointer}
+.sb-stickers img{width:100%;aspect-ratio:1;object-fit:contain}
+</style>
+</head>
+<body>
+
+<div id="stage">
+  <!-- CLOSED COVER OVERLAY -->
+  <div id="closedCover" title="Drag or click to open">
+    <div class="cover3D">
+      <div class="hard edges" id="coverImage"></div>
+      <div class="spine"></div>
+    </div>
+  </div>
+
+  <!-- Flipbook -->
+  <div id="book">
+    <!-- cover also exists as page 0 -->
+    <div class="page"><div class="page-canvas"></div></div>
+    <!-- inner pages -->
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="sb-toolbar" id="sbToolbar">
     <button id="sbLeft" class="sec">Edit Left</button>
     <button id="sbRight" class="sec">Edit Right</button>
     <button id="sbAddText" class="mint">Add Text</button>
@@ -59,12 +153,10 @@
     <button id="sbDelete" class="warn">Delete Selected</button>
     <button id="sbClear" class="warn">Clear Page</button>
     <button id="sbSave" class="mint">Save</button>
-  `;
-  stage.appendChild(tb);
-  const fileInput=document.createElement('input'); fileInput.type='file'; fileInput.accept='image/*'; fileInput.style.display='none'; stage.appendChild(fileInput);
+  </div>
 
-  // text modal
-  const textModal=document.createElement('div'); textModal.className='sb-modal'; textModal.innerHTML=`
+  <!-- Text modal -->
+  <div id="sbTextModal" class="sb-modal" aria-hidden="true">
     <div class="sb-card">
       <h3>Add Text</h3>
       <textarea id="sbTextArea" rows="5" placeholder="Write something sweet…"></textarea>
@@ -72,105 +164,209 @@
         <button class="sb-btn-ghost" id="sbTextCancel">Cancel</button>
         <button class="sb-btn-mint" id="sbTextOk">Add Text</button>
       </div>
-    </div>`; stage.appendChild(textModal);
+    </div>
+  </div>
 
-  // stickers modal
-  const stickModal=document.createElement('div'); stickModal.className='sb-modal'; stickModal.innerHTML=`
+  <!-- Stickers modal -->
+  <div id="sbStickModal" class="sb-modal" aria-hidden="true">
     <div class="sb-card">
       <h3>Pick a sticker</h3>
       <div class="sb-stickers" id="sbStickerGrid"></div>
       <div class="sb-actions"><button class="sb-btn-ghost" id="sbStickClose">Close</button></div>
-    </div>`; stage.appendChild(stickModal);
+    </div>
+  </div>
 
-  // --- state ---
-  let editing=false, selected=null, activeCanvas=null;
+  <div class="sb-toast" id="sbToast">Edit mode unlocked ✨</div>
+  <input id="sbFileInput" type="file" accept="image/*" style="display:none" />
+</div>
 
-  // canvases marker (class only; doesn’t change your DOM)
-  function markCanvases(){
-    document.querySelectorAll('#book .page .page-canvas').forEach(c=>c.classList.add('sb-canvas'));
-  }
-  markCanvases();
+<!-- Local library; will fall back to CDN if missing -->
+<script src="./flipbook/page-flip.browser.js"></script>
+<script>
+if(!window.St){ /* fallback if local file missing */
+  var s=document.createElement('script');
+  s.src='https://unpkg.com/stpageflip/dist/js/page-flip.browser.min.js';
+  document.head.appendChild(s);
+}
+</script>
 
-  // choose visible left/right
-  function getVisibleCanvases(){
-    const left  = document.querySelector('.stf__item--left  .page .page-canvas');
-    const right = document.querySelector('.stf__item--right .page .page-canvas');
-    if(left || right) return {left,right};
-    // fallback (single page view)
-    const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-    return {left:null, right:canvases[0]||null};
-  }
-  function setActive(side){
-    const {left,right}=getVisibleCanvases();
-    const next = side==='left'? left : right;
-    if(!next) return;
-    document.querySelectorAll('.sb-canvas').forEach(c=>c.classList.remove('active'));
-    next.classList.add('active'); activeCanvas=next;
-  }
+<script>
+/* ====== CONFIG ====== */
+const PASSCODE='123';
+const STORAGE_KEY='scrapbook_v8';
+const COVER_URL='https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
 
-  // enter/exit
-  function showToast(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
-  function enterEdit(){
-    if(editing) return; editing=true;
-    document.body.classList.add('sb-editing'); tb.style.display='flex';
-    setActive('right'); showToast('Edit mode unlocked ✨');
-  }
-  function exitEdit(){
-    editing=false; selected=null; document.body.classList.remove('sb-editing'); tb.style.display='none';
-    document.querySelectorAll('.sb-canvas').forEach(c=>c.classList.remove('active'));
-  }
+/* ====== ELEMENTS ====== */
+const stage=document.getElementById('stage');
+const bookEl=document.getElementById('book');
+const coverUI=document.getElementById('closedCover');
+const coverImage=document.getElementById('coverImage');
+coverImage.style.backgroundImage=`url('${COVER_URL}')`;
 
+const tb=document.getElementById('sbToolbar');
+const toast=document.getElementById('sbToast');
+const fileInput=document.getElementById('sbFileInput');
+const textModal=document.getElementById('sbTextModal');
+const textArea=document.getElementById('sbTextArea');
+const stickersModal=document.getElementById('sbStickModal');
+const stickersGrid=document.getElementById('sbStickerGrid');
+
+/* ====== STICKERS (emoji set you asked for) ====== */
+const EMOJIS=("🎮,👾,🕹️,🖥️,⌨️,💞,🩷,🧡,💛,💚,💙,🩵,🤎,🖤,🩶,🤍,💋,💯,💢,🏜️,🏝️,✈️,♾️,🍎,🍏,🍞,🥐,🥖,🫓,🥨,🥯,🥞,🧇,🧀,🍖,🍗,🥩,🥓,🍔,🍟,🍕,🌭,🥪,🌮,🌯,🫔,🥙,🧆,🥚,🍳,🥘,🫕,🥣,🥗,🍿,🧈,🧂,🥫,🍝,🍐,🍑,🍒,🍦,🍧,🍨,🍩,🍪,🎂,🍰,🧁,🥧,🍫,🍬,🍭,🍮,🍯").split(",");
+
+/* ====== STATE ====== */
+let pageFlip=null;
+let editing=false;
+let selected=null;
+let activeCanvas=null;
+
+/* ====== INIT ====== */
+function waitForPageFlipAndInit(){
+  if(window.St && St.PageFlip){
+    initFlip();
+    initEditor();
+  }else{
+    setTimeout(waitForPageFlipAndInit,40);
+  }
+}
+waitForPageFlipAndInit();
+
+function initFlip(){
+  pageFlip=new St.PageFlip(bookEl,{
+    width:500, height:650,   // per-page size (book = 1000x650)
+    size:"fixed",
+    showCover:true,
+    drawShadow:true,
+    flippingTime:800,
+    maxShadowOpacity:0.25,
+    useMouseEvents:true,
+    mobileScrollSupport:false,
+    startPage:0
+  });
+  pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
+
+  // Cover open (drag or click)
+  function openCover(){
+    coverUI.classList.add('opening');
+    setTimeout(()=>{ coverUI.style.display='none'; try{ pageFlip.turnToPage(1);}catch(_){} },900);
+  }
+  let dragStart=null;
+  coverUI.addEventListener('pointerdown', e=>{ dragStart={x:e.clientX}; });
+  coverUI.addEventListener('pointerup', e=>{
+    if(!dragStart) return; const dx=e.clientX-dragStart.x;
+    if(Math.abs(dx)>40){ openCover(); } else { openCover(); }
+    dragStart=null;
+  });
+  coverUI.addEventListener('click', openCover);
+
+  // mark canvases
+  document.querySelectorAll('#book .page .page-canvas').forEach(c=>c.classList.add('sb-canvas'));
+
+  // choose right by default on every flip
+  if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActive('right'); }); }
+
+  // Click should NOT flip pages (drag does)
+  let tapStart=null;
+  function isTap(d,t){ return d<8 && t<300; }
+  bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
+  bookEl.addEventListener('pointerup',(e)=>{
+    if(!tapStart) return;
+    const d=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y);
+    const dt=Date.now()-tapStart.t;
+    if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); }
+    tapStart=null;
+  }, true);
+  bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
+}
+
+function getVisibleCanvases(){
+  const left  = document.querySelector('.stf__item--left  .page .page-canvas');
+  const right = document.querySelector('.stf__item--right .page .page-canvas');
+  if(left || right) return {left,right};
+  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+  return {left:null, right:canvases[0]||null};
+}
+function setActive(side){
+  const {left,right}=getVisibleCanvases();
+  const next= side==='left'? left : right;
+  if(!next) return;
+  document.querySelectorAll('.sb-canvas').forEach(c=>c.classList.remove('active'));
+  next.classList.add('active');
+  activeCanvas=next;
+}
+
+function showToast(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
+
+/* ====== EDITOR ====== */
+function initEditor(){
+  // passcode to enter
   let keyBuf='', keyTimer=null;
-  document.addEventListener('keydown', (e)=>{
+  document.addEventListener('keydown',e=>{
     keyBuf+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuf='',1200);
     if(keyBuf.endsWith(PASSCODE)){ keyBuf=''; enterEdit(); }
   });
 
-  // dragging / resizing / rotating
-  function makeDraggable(el){
-    let sx=0,sy=0,ox=0,oy=0, resizing=false, sw=0,sh=0, rotating=false, sa=0, spa=0;
-    const res=el.querySelector('.sb-res'); let rot=el.querySelector('.sb-rot'); if(!rot){ rot=document.createElement('div'); rot.className='sb-rot'; el.appendChild(rot); }
+  function setTextEditable(on){
+    document.querySelectorAll('#book .sb-text').forEach(el=>el.setAttribute('contenteditable', on?'true':'false'));
+  }
+  function enterEdit(){
+    if(editing) return; editing=true;
+    document.body.classList.add('sb-editing'); tb.style.display='flex';
+    setTextEditable(true); setActive('right');
+    showToast('Edit mode unlocked ✨');
+    try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
+  }
+  function exitEdit(){
+    editing=false; selected=null;
+    document.body.classList.remove('sb-editing'); tb.style.display='none';
+    setTextEditable(false);
+    document.querySelectorAll('.sb-canvas').forEach(c=>c.classList.remove('active'));
+    try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
+  }
 
+  // drag/resize/rotate
+  function makeDraggable(el){
+    let sx=0,sy=0,ox=0,oy=0,resizing=false,sw=0,sh=0,rotating=false,sa=0,spa=0;
+    const res=el.querySelector('.sb-res'); let rot=el.querySelector('.sb-rot'); if(!rot){ rot=document.createElement('div'); rot.className='sb-rot'; el.appendChild(rot); }
     function getAngle(){ return parseFloat(el.dataset.rot||'0')||0; }
     function setAngle(d){ el.dataset.rot=d; el.style.transform=`rotate(${d}deg)`; }
 
     if(res){
-      res.addEventListener('mousedown', (e)=>{ if(!editing) return; e.stopPropagation(); e.preventDefault();
+      res.addEventListener('mousedown',e=>{ if(!editing) return; e.stopPropagation(); e.preventDefault();
         resizing=true; sx=e.clientX; sy=e.clientY; sw=el.offsetWidth; sh=el.offsetHeight;
-        document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp);
+        document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
       });
     }
-    rot.addEventListener('mousedown', (e)=>{ if(!editing) return; e.stopPropagation(); e.preventDefault();
+    rot.addEventListener('mousedown',e=>{ if(!editing) return; e.stopPropagation(); e.preventDefault();
       rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
       spa=Math.atan2(e.clientY-cy, e.clientX-cx); sa=getAngle();
-      document.addEventListener('mousemove', onRotate); document.addEventListener('mouseup', endRotate);
+      document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate);
     });
     function onRotate(e){
       if(!rotating) return; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
       const a=Math.atan2(e.clientY-cy, e.clientX-cx); setAngle(sa + (a-spa)*180/Math.PI);
     }
-    function endRotate(){ rotating=false; document.removeEventListener('mousemove', onRotate); document.removeEventListener('mouseup', endRotate); }
+    function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
-    el.addEventListener('mousedown', (e)=>{ if(!editing) return;
+    el.addEventListener('mousedown',e=>{ if(!editing) return;
       if(e.target.classList.contains('sb-res') || e.target.classList.contains('sb-rot')) return;
       selected?.classList.remove('selected'); selected=el; el.classList.add('selected');
       sx=e.clientX; sy=e.clientY; ox=el.offsetLeft; oy=el.offsetTop;
-      document.addEventListener('mousemove', onMove); document.addEventListener('mouseup', onUp); e.stopPropagation();
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); e.stopPropagation();
     });
     function onMove(e){
       if(!editing) return;
       if(resizing){ const dx=e.clientX-sx, dy=e.clientY-sy; el.style.width=Math.max(60,sw+dx)+'px'; el.style.height=Math.max(60,sh+dy)+'px'; }
       else{ const dx=e.clientX-sx, dy=e.clientY-sy; el.style.left=(ox+dx)+'px'; el.style.top=(oy+dy)+'px'; }
     }
-    function onUp(){ document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+    function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
   }
-  document.addEventListener('click', (e)=>{ if(editing && !e.target.closest('.sb-item')){ selected?.classList.remove('selected'); selected=null; }});
+  document.addEventListener('click',(e)=>{ if(editing && !e.target.closest('.sb-item')){ selected?.classList.remove('selected'); selected=null; }});
 
-  // add text/photo/sticker
+  // helpers to add content
   function addText(val){
     const box=document.createElement('div'); box.className='sb-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
-    const isEd = document.body.classList.contains('sb-editing');
-    box.innerHTML=`<div class="sb-text" contenteditable="${isEd?'true':'false'}">${val}</div><div class="sb-res"></div><div class="sb-rot"></div>`;
+    box.innerHTML=`<div class="sb-text" contenteditable="true">${val}</div><div class="sb-res"></div><div class="sb-rot"></div>`;
     (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
   }
   function addPhoto(dataUrl){
@@ -183,69 +379,67 @@
     return "data:image/svg+xml;utf8,"+encodeURIComponent(svg);
   }
 
-  // UI wiring
-  tb.querySelector('#sbLeft').onclick = ()=> setActive('left');
-  tb.querySelector('#sbRight').onclick= ()=> setActive('right');
+  /* ---- wire toolbar ---- */
+  document.getElementById('sbLeft').onclick=()=> setActive('left');
+  document.getElementById('sbRight').onclick=()=> setActive('right');
 
-  tb.querySelector('#sbAddText').onclick= ()=>{
-    textModal.classList.add('open'); setTimeout(()=>document.getElementById('sbTextArea').focus(),10);
+  document.getElementById('sbAddText').onclick=()=>{
+    textModal.classList.add('open'); setTimeout(()=>textArea.focus(),10);
   };
-  textModal.querySelector('#sbTextCancel').onclick= ()=> textModal.classList.remove('open');
-  textModal.querySelector('#sbTextOk').onclick= ()=>{
-    const v=document.getElementById('sbTextArea').value.trim(); textModal.classList.remove('open'); if(v) addText(v);
+  document.getElementById('sbTextCancel').onclick=()=> textModal.classList.remove('open');
+  document.getElementById('sbTextOk').onclick=()=>{
+    const v=textArea.value.trim(); textModal.classList.remove('open'); if(v) addText(v);
   };
 
-  tb.querySelector('#sbAddPhoto').onclick= ()=> fileInput.click();
-  fileInput.onchange = (e)=>{
+  document.getElementById('sbAddPhoto').onclick=()=> fileInput.click();
+  fileInput.onchange=(e)=>{
     const f=e.target.files[0]; if(!f) return; const r=new FileReader();
-    r.onload = ev=>{ addPhoto(ev.target.result); fileInput.value=''; }; r.readAsDataURL(f);
+    r.onload=ev=>{ addPhoto(ev.target.result); fileInput.value=''; };
+    r.readAsDataURL(f);
   };
 
-  tb.querySelector('#sbStickers').onclick = ()=>{
-    const grid=stickModal.querySelector('#sbStickerGrid'); grid.innerHTML='';
+  document.getElementById('sbStickers').onclick=()=>{
+    stickersGrid.innerHTML='';
     EMOJIS.forEach(ch=>{
-      const b=document.createElement('button'); const img=document.createElement('img'); img.src=emojiUrl(ch); img.alt=ch;
-      b.appendChild(img); b.onclick=()=>{ addPhoto(emojiUrl(ch)); };
-      grid.appendChild(b);
+      const b=document.createElement('button'); const img=document.createElement('img'); img.src=emojiUrl(ch); img.alt=ch; b.appendChild(img);
+      b.onclick=()=> addPhoto(emojiUrl(ch));
+      stickersGrid.appendChild(b);
     });
-    stickModal.classList.add('open');
+    stickersModal.classList.add('open');
   };
-  stickModal.querySelector('#sbStickClose').onclick= ()=> stickModal.classList.remove('open');
+  document.getElementById('sbStickClose').onclick=()=> stickersModal.classList.remove('open');
 
-  tb.querySelector('#sbAddPage').onclick = ()=>{
+  document.getElementById('sbAddPage').onclick=()=>{
     const p=document.createElement('div'); p.className='page';
     const c=document.createElement('div'); c.className='page-canvas sb-canvas'; p.appendChild(c);
-    book.appendChild(p);
-    // If PageFlip is present, reload pages:
-    try{ if(window.St && book._pageFlipInstance){ book._pageFlipInstance.loadFromHTML(document.querySelectorAll('#book .page')); } }catch(_){}
+    bookEl.appendChild(p);
+    try{ pageFlip.loadFromHTML(document.querySelectorAll('#book .page')); }catch(_){}
     showToast('Page added');
   };
 
-  tb.querySelector('#sbDelete').onclick = ()=>{ if(selected){ selected.remove(); selected=null; } };
-  tb.querySelector('#sbClear').onclick  = ()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; };
+  document.getElementById('sbDelete').onclick=()=>{ if(selected){ selected.remove(); selected=null; } };
+  document.getElementById('sbClear').onclick =()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; };
 
-  tb.querySelector('#sbSave').onclick = ()=>{
+  document.getElementById('sbSave').onclick =()=>{
     const pages=[...document.querySelectorAll('#book .page .page-canvas')].map(c=>c.innerHTML);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
     showToast('Saved ✓ Exiting…'); setTimeout(()=>exitEdit(),300);
   };
 
-  // load saved
-  (function applySaved(){
-    try{
-      const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
+  /* ---- restore saved ---- */
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw){
       const arr=JSON.parse(raw);
       const canvases=document.querySelectorAll('#book .page .page-canvas');
       for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
       document.querySelectorAll('#book .sb-item').forEach(makeDraggable);
-    }catch(_){}
-  })();
+    }
+  }catch(_){}
+}
 
-  // block tap-to-flip so you can click to edit; drag still flips
-  let tapStart=null;
-  function isTap(d,t){ return d<8 && t<300; }
-  book.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
-  book.addEventListener('pointerup',  (e)=>{ if(!tapStart) return; const d=Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y); const dt=Date.now()-tapStart.t; if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); } tapStart=null; }, true);
-  book.addEventListener('click',      (e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
-})();
+/* ====== ensure canvases are marked even before init ====== */
+document.querySelectorAll('#book .page .page-canvas').forEach(c=>c.classList.add('sb-canvas'));
 </script>
+</body>
+</html>
