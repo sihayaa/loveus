@@ -16,7 +16,7 @@
   --mint:#67e4ca;
   --font:"Dancing Script", cursive;
 
-  /* Cover vertical focus (smaller shows more of the top). Try 26–35% */
+  /* Cover vertical focus */
   --cover-y: 28%;
 }
 
@@ -50,7 +50,7 @@ body{
 .cover-img{
   position:absolute; inset:0; width:100%; height:100%;
   object-fit:cover;
-  object-position: 50% var(--cover-y); /* <<< lowered further */
+  object-position: 50% var(--cover-y);
   display:block; border:0;
 }
 
@@ -74,7 +74,7 @@ body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4p
 body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 
-/* Keep PageFlip wrappers interactive; we disable flips via JS during editing */
+/* Toolbar */
 #toolbar{
   position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
   display:none; z-index:60; background:rgba(255,255,255,.95);
@@ -118,7 +118,7 @@ body.editing .scrap-item .rotator{ display:block; }
 
 <div id="stage">
   <div id="book">
-    <!-- PAGE 0: COVER (stays when you flip back) -->
+    <!-- PAGE 0: COVER -->
     <div class="page cover">
       <div class="page-canvas">
         <img id="coverImg" class="cover-img"
@@ -191,7 +191,7 @@ body.editing .scrap-item .rotator{ display:block; }
 <script>
 /* ------------ Config ------------- */
 const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v11';
+const STORAGE_KEY = 'scrapbook_v12';
 
 /* ------------ Elements ------------- */
 const bookEl    = document.getElementById('book');
@@ -245,14 +245,18 @@ bookEl.addEventListener('pointerup',(e)=>{
   bookEl.addEventListener(evt,(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 });
 
-/* ------------- Active side targeting ------------- */
-let activeCanvas=null;
+/* ---------------- Side targeting: robust ---------------- */
+let targetSide = 'right';          // 'left' or 'right' (what the user intends)
+let activeCanvas = null;           // DOM node we highlight
+let pendingAfterFlip = null;       // callback to run once flip finishes (e.g., add text to left)
+
 function getVisibleCanvases(){
+  // Use PageFlip DOM flags when present
   const left  = document.querySelector('.stf__item--left  .page .page-canvas');
   const right = document.querySelector('.stf__item--right .page .page-canvas');
   if (left || right) return {left,right};
 
-  // Fallback if DOM markers unavailable
+  // Fallback based on current index
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
   if(idx===0) return {left:null, right:canvases[0]}; // cover only
@@ -267,32 +271,39 @@ function highlightCanvas(canvas){
   activeCanvas = canvas;
 }
 
-/* Buttons */
-targetLeftBtn.addEventListener('click', ()=>{
-  const {left,right}=getVisibleCanvases();
-  // If we're on the cover (no left page), auto-flip to first spread:
-  if (!left && right && pageFlip.getCurrentPageIndex?.()===0) {
-    toastShow('Opening first spread…');
+function ensureSideReady(side, cb){
+  const {left, right} = getVisibleCanvases();
+  const canvas = (side==='left') ? left : right;
+  if (canvas) {
+    cb(canvas);
+  } else {
+    // If we want the left but we're on the cover, flip to first spread
     try { pageFlip.turnToPage(1); } catch(_) {}
-    setTimeout(()=> { const lr=getVisibleCanvases(); highlightCanvas(lr.left||lr.right); }, 450);
-    return;
+    pendingAfterFlip = () => {
+      const {left: L, right: R} = getVisibleCanvases();
+      cb( (side==='left' ? (L||R) : (R||L)) );
+      pendingAfterFlip = null;
+    };
   }
-  highlightCanvas(left);
-});
+}
 
+/* Buttons: set intent, then ensure and highlight */
+targetLeftBtn.addEventListener('click', ()=>{
+  targetSide='left';
+  ensureSideReady('left', (canvas)=> highlightCanvas(canvas));
+});
 targetRightBtn.addEventListener('click', ()=>{
-  const {right}=getVisibleCanvases();
-  highlightCanvas(right);
+  targetSide='right';
+  ensureSideReady('right', (canvas)=> highlightCanvas(canvas));
 });
 
-/* Keep selection on flips (don’t force a side) */
+/* Keep intent on flips; run any pending action after flip */
 if(pageFlip.on){
   pageFlip.on('flip', ()=>{
-    if(!document.body.classList.contains('editing')) return;
-    const lr=getVisibleCanvases();
-    // If we had left selected and it's still there, keep left; else prefer right
-    const wantLeft = activeCanvas && activeCanvas.closest('.stf__item--left');
-    highlightCanvas(wantLeft ? (lr.left||lr.right) : (lr.right||lr.left));
+    if (pendingAfterFlip) setTimeout(pendingAfterFlip, 10);
+    if (!document.body.classList.contains('editing')) return;
+    const {left,right} = getVisibleCanvases();
+    highlightCanvas( targetSide==='left' ? (left||right) : (right||left) );
   });
 }
 
@@ -317,10 +328,10 @@ function setEditing(on){
 }
 function enterEdit(){
   editEnabled=true; setEditing(true);
-  // Default to right (cover or right page)
-  const {right}=getVisibleCanvases();
-  highlightCanvas(right);
-  // Disable flips while editing (via API)
+  // Default to whichever side is visible (cover => right)
+  const {left,right}=getVisibleCanvases();
+  targetSide = right ? 'right' : 'left';
+  highlightCanvas(right || left);
   try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
   toastShow('Edit mode unlocked ✨');
 }
@@ -376,16 +387,20 @@ function makeDraggable(el){
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
 document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ------------- Add text / photo ------------- */
-document.getElementById('addTextBtn').addEventListener('click',()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); });
+/* ------------- Add text / photo (use ensureSideReady) ------------- */
+document.getElementById('addTextBtn').addEventListener('click',()=>{
+  openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10);
+});
 textCancel.addEventListener('click',()=> closeModal(textModal));
 textAdd.addEventListener('click',()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
-  const box=document.createElement('div');
-  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
-  const isEditing=document.body.classList.contains('editing');
-  box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
-  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+  ensureSideReady(targetSide, (canvas)=>{
+    const box=document.createElement('div');
+    box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
+    const isEditing=document.body.classList.contains('editing');
+    box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
+    canvas.appendChild(box); makeDraggable(box);
+  });
 });
 
 document.getElementById('addPhotoBtn').addEventListener('click',()=> fileInput.click());
@@ -393,10 +408,12 @@ fileInput.addEventListener('change',(e)=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=(ev)=>{
-    const box=document.createElement('div');
-    box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
-    box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
-    (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); fileInput.value='';
+    ensureSideReady(targetSide, (canvas)=>{
+      const box=document.createElement('div');
+      box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+      box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
+      canvas.appendChild(box); makeDraggable(box); fileInput.value='';
+    });
   };
   r.readAsDataURL(f);
 });
@@ -413,10 +430,12 @@ function openStickers(){
   STICKERS_EMOJI.forEach(ch=>{
     const b=document.createElement('button'); b.textContent=ch; b.title=ch;
     b.addEventListener('click',()=>{
-      const box=document.createElement('div');
-      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
-      box.innerHTML=`<div class="scrap-text" style="font-size:64px; line-height:1;" contenteditable="false">${ch}</div><div class="resizer"></div><div class="rotator"></div>`;
-      (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+      ensureSideReady(targetSide, (canvas)=>{
+        const box=document.createElement('div');
+        box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
+        box.innerHTML=`<div class="scrap-text" style="font-size:64px; line-height:1;" contenteditable="false">${ch}</div><div class="resizer"></div><div class="rotator"></div>`;
+        canvas.appendChild(box); makeDraggable(box);
+      });
     });
     stickersGrid.appendChild(b);
   });
@@ -435,7 +454,9 @@ document.getElementById('addPageBtn').addEventListener('click',()=>{
   toastShow('Page added');
 });
 document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
-document.getElementById('clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
+document.getElementById('clearPageBtn').addEventListener('click',()=>{
+  ensureSideReady(targetSide, (canvas)=>{ canvas.innerHTML=''; deselect(); });
+});
 
 /* Save => persist + auto-exit */
 document.getElementById('saveBtn').addEventListener('click',()=>{
