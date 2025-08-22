@@ -6,8 +6,6 @@
 <title>Our Scrapbook Story</title>
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-
-<!-- Preload cover to avoid flicker/white seams -->
 <link rel="preload" as="image" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png">
 
 <style>
@@ -20,19 +18,19 @@
   --font:"Dancing Script", cursive;
 }
 
-*{ box-sizing:border-box }
-html,body{ height:100% }
+*{box-sizing:border-box}
+html,body{height:100%}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   display:flex; align-items:center; justify-content:center; overflow:hidden;
   font-family:var(--font);
 }
 
-/* Stage & fixed-size book */
+/* Stage & book (same size you used) */
 #stage{ width:1000px; height:650px; position:relative; perspective:1600px; }
 #book{ position:absolute; inset:0; }
 
-/* Page visuals */
+/* Pages (unchanged look) */
 .page{
   width:100%; height:100%; position:relative; overflow:hidden;
   background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%);
@@ -47,52 +45,64 @@ body{
   font-size:22px; line-height:1.35;
 }
 
-/* ---------- CLOSED COVER OVERLAY (book board, no zoom, no seams) ---------- */
-#closedCover{
-  position:absolute; inset:0; z-index:90; display:grid; place-items:center;
-}
+/* ---------- CLOSED COVER OVERLAY (same structure, no zooming) ---------- */
+#closedCover{ position:absolute; inset:0; z-index:90; display:grid; place-items:center; }
 #closedCover .cover3D{
   width:1000px; height:650px; position:relative;
   transform-style:preserve-3d; transform-origin:left center;
   transition:transform .9s ease-in-out;
 }
-#closedCover .board{
-  position:absolute; inset:0;
-  background: #efe4cf;            /* board color */
-  border-radius:18px;
-  box-shadow: 0 20px 40px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.35);
+
+/* hard board */
+#closedCover .hard{
+  position:absolute; inset:0; background:var(--paper);
+  border-radius:16px;
+  box-shadow:0 25px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.35);
   overflow:hidden;
 }
-/* inner jacket with 1px bleed to kill hairlines */
-#closedCover .jacket{
-  position:absolute; left:15px; right:15px; top:15px; bottom:15px; /* 1px bleed vs 16px lip */
+
+/* spine + page-edge shimmer (same as before) */
+#closedCover .spine{
+  position:absolute; left:0; top:0; bottom:0; width:28px;
+  background:linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(255,255,255,.1));
+  border-top-left-radius:16px; border-bottom-left-radius:16px;
+}
+#closedCover .edges::before, #closedCover .edges::after{
+  content:""; position:absolute; pointer-events:none;
+}
+#closedCover .edges::before{
+  right:0; top:12px; width:20px; height:calc(100% - 24px);
+  background:linear-gradient(90deg, rgba(255,255,255,.65), rgba(180,170,150,.45));
+  border-top-right-radius:16px; border-bottom-right-radius:16px;
+  filter:blur(.4px);
+}
+#closedCover .edges::after{
+  left:18px; right:18px; bottom:0; height:16px;
+  background:radial-gradient(ellipse at 50% 0%, rgba(0,0,0,.38), transparent 60%);
+  border-bottom-left-radius:16px; border-bottom-right-radius:16px;
+}
+
+/* jacket area INSIDE the board: uses contain so the portrait fits without cropping */
+#coverImage{
+  position:absolute; left:18px; right:18px; top:18px; bottom:18px; /* integer insets kill hairlines */
   border-radius:12px;
-  background: center / cover no-repeat url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png");
-  outline:1px solid #efe4cf; outline-offset:-1px;
+  background: center / contain no-repeat;
+  background-color:#0b1020; /* subtle black under the image */
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.12);
   opacity:0; transition:opacity .12s ease-out;
 }
-#closedCover.ready .jacket{ opacity:1 }
-
-/* spine shimmer + page edge hint to look like a book */
-#closedCover .spine{
-  position:absolute; left:0; top:0; bottom:0; width:30px; border-top-left-radius:18px; border-bottom-left-radius:18px;
-  background:linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(255,255,255,.12));
-}
+#closedCover.ready #coverImage{ opacity:1 }
 
 /* open animation */
 #closedCover.opening .cover3D{ transform:rotateY(-120deg); }
 
-/* -------------- Edit items -------------- */
+/* --------- Editing (same behavior) --------- */
 .scrap-item{ position:absolute; user-select:none; cursor:default; transform-origin:center center; }
 .scrap-text{ background:transparent; border:0; padding:0; color:inherit; font:inherit; white-space:pre-wrap; }
 .scrap-text[contenteditable="true"]{ outline:none; }
 .scrap-img{ display:block; max-width:100%; max-height:100%; border:0; border-radius:0; box-shadow:none; pointer-events:none; }
 .resizer{ display:none; }
-.rotator{
-  display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%);
-  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
-}
+.rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; }
 .rotator:active{ cursor:grabbing; }
 
 body.editing .scrap-item{ cursor:move; }
@@ -102,25 +112,24 @@ body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4p
 body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 
+/* disable flip capture while editing; keep canvases interactive */
 body.editing .stf__block, body.editing .stf__item, body.editing .stf__wrapper{ pointer-events:none !important; }
 body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !important; }
 
+/* Toolbar + Modals */
 #toolbar{
   position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
   display:none; z-index:60; background:rgba(255,255,255,.92);
   border:2px solid #e8dcc6; border-radius:14px; padding:10px; gap:8px;
   box-shadow:0 10px 22px rgba(0,0,0,.25); align-items:center; flex-wrap:wrap;
 }
-#toolbar button{
-  border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent);
-}
+#toolbar button{ border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent); }
 #toolbar button.secondary{ background:#5d47d4; }
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
 #toolbar .group{ display:flex; gap:8px; align-items:center; }
 #fileInput{ display:none; }
 
-/* Modals */
 .modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
 .modal.open{ display:flex; }
 .modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
@@ -131,10 +140,8 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 .btn-mint{ background:var(--mint); color:#05201f; }
 .btn-ghost{ background:#2a315d; color:#fff; }
 
-/* Stickers grid */
 .stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:8px; }
 .stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:10px; cursor:pointer; font-size:26px; line-height:1; }
-.stickers img{ width:100%; aspect-ratio:1; object-fit:contain; }
 
 #toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
@@ -146,16 +153,18 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
   <!-- CLOSED COVER OVERLAY -->
   <div id="closedCover" title="Drag or click to open">
     <div class="cover3D">
-      <div class="board">
-        <div class="jacket"></div>
+      <div class="hard edges">
         <div class="spine"></div>
+        <div id="coverImage"></div>
       </div>
     </div>
   </div>
 
-  <!-- Flipbook (pages are blank; you add content in edit mode) -->
+  <!-- Flipbook -->
   <div id="book">
+    <!-- cover page (stays blank parchment; closed cover overlay shows the art) -->
     <div class="page"><div class="page-canvas"></div></div>
+    <!-- inner pages -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -197,7 +206,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     </div>
   </div>
 
-  <!-- Stickers (emoji) modal -->
+  <!-- Stickers modal (emoji set you asked for) -->
   <div id="stickerModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <h3>Pick a sticker</h3>
@@ -211,66 +220,50 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
-<!-- Try local lib first -->
+<!-- Local PageFlip (falls back to CDN if missing) -->
 <script id="pf-local" src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ---------- Loader: local -> CDN fallback ---------- */
 (function(){
   const PASSCODE='123';
-  const STORAGE_KEY='scrapbook_v8';
+  const STORAGE_KEY='scrapbook_final_v1';
   const COVER_URL='https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
 
   function start(){
-    // Cover preload (no seams/flicker)
-    const cc = document.getElementById('closedCover');
-    const pre = new Image(); pre.decoding='async'; pre.src=COVER_URL;
-    if (pre.complete) cc.classList.add('ready'); else pre.onload = ()=> cc.classList.add('ready');
+    // Put cover image; show after it loads (preloaded above to avoid seams)
+    const coverImage=document.getElementById('coverImage');
+    coverImage.style.backgroundImage=`url('${COVER_URL}')`;
+    const cc=document.getElementById('closedCover');
+    const probe=new Image(); probe.src=COVER_URL;
+    if(probe.complete) cc.classList.add('ready'); else probe.onload=()=>cc.classList.add('ready');
 
-    const bookEl = document.getElementById('book');
-    /* Flipbook init */
-    const pageFlip = new St.PageFlip(bookEl, {
-      width: 500, height: 650,
-      size: "fixed",
-      showCover: true,
-      drawShadow: true,
-      flippingTime: 800,
-      maxShadowOpacity: 0.25,
-      useMouseEvents: true,
-      mobileScrollSupport: false,
-      startPage: 0
+    const bookEl=document.getElementById('book');
+    const pageFlip=new St.PageFlip(bookEl,{
+      width:500,height:650,size:"fixed",
+      showCover:true, drawShadow:true, flippingTime:800,
+      maxShadowOpacity:0.25, useMouseEvents:true,
+      mobileScrollSupport:false, startPage:0
     });
     pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-    /* Drag-only flipping: block taps/clicks */
+    /* drag-only flipping */
     let tapStart=null;
     function isTap(d,t){ return d<8 && t<300; }
-    bookEl.addEventListener('pointerdown',e=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
-    bookEl.addEventListener('pointerup',e=>{
-      if(!tapStart) return;
-      const d=Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y);
-      const dt=Date.now()-tapStart.t;
-      if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); }
-      tapStart=null;
-    }, true);
-    bookEl.addEventListener('click',e=>{ e.preventDefault(); e.stopPropagation(); }, true);
-    bookEl.addEventListener('dblclick',e=>{ e.preventDefault(); e.stopPropagation(); }, true);
+    bookEl.addEventListener('pointerdown',e=>{tapStart={x:e.clientX,y:e.clientY,t:Date.now()};},true);
+    bookEl.addEventListener('pointerup',e=>{ if(!tapStart) return; const d=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y); const dt=Date.now()-tapStart.t; if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); } tapStart=null; },true);
+    bookEl.addEventListener('click',e=>{e.preventDefault(); e.stopPropagation();},true);
+    bookEl.addEventListener('dblclick',e=>{e.preventDefault(); e.stopPropagation();},true);
 
-    /* Cover open */
+    /* Open cover */
     function openCover(){
       cc.classList.add('opening');
-      setTimeout(()=>{ cc.style.display='none'; try{ pageFlip.turnToPage(1);}catch(_){ } }, 900);
+      setTimeout(()=>{ cc.style.display='none'; try{ pageFlip.turnToPage(1);}catch(_){} },900);
     }
-    let dragStart=null;
-    cc.addEventListener('pointerdown',e=> dragStart={x:e.clientX,y:e.clientY});
-    cc.addEventListener('pointerup',e=>{
-      if(!dragStart) return;
-      const dx=e.clientX-dragStart.x;
-      if(Math.abs(dx)>40) openCover(); else openCover(); // click or short drag
-      dragStart=null;
-    });
+    let drag0=null;
+    cc.addEventListener('pointerdown',e=> drag0={x:e.clientX,y:e.clientY});
+    cc.addEventListener('pointerup',e=>{ if(!drag0) return; const dx=e.clientX-drag0.x; if(Math.abs(dx)>40 || Math.abs(dx)<40) openCover(); drag0=null; });
     cc.addEventListener('click', openCover);
 
-    /* --------- Editing --------- */
+    /* -------- Editing -------- */
     const toolbar=document.getElementById('toolbar');
     const toast=document.getElementById('toast');
     const textModal=document.getElementById('textModal');
@@ -309,37 +302,34 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
       if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
     });
 
-    /* Which canvases are visible */
     function getVisibleCanvases(){
-      let left = document.querySelector('.stf__item--left  .page .page-canvas');
-      let right= document.querySelector('.stf__item--right .page .page-canvas');
+      let left=document.querySelector('.stf__item--left  .page .page-canvas');
+      let right=document.querySelector('.stf__item--right .page .page-canvas');
       if(left || right) return {left,right};
-      const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+      const cvs=[...document.querySelectorAll('#book .page .page-canvas')];
       const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
-      if(idx===0) return {left:null, right:canvases[0]};
-      const base = idx%2===0 ? idx : idx-1;
-      return {left:canvases[base], right:canvases[base+1]||null};
+      if(idx===0) return {left:null, right:cvs[0]};
+      const base= idx%2===0 ? idx : idx-1;
+      return {left:cvs[base], right:cvs[base+1]||null};
     }
     function setActiveCanvas(side){
       const {left,right}=getVisibleCanvases();
-      const next = side==='left'? left : right;
+      const next= side==='left'? left : right;
       if(!next) return;
       document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
       next.classList.add('active-side');
-      activeCanvas = next;
+      activeCanvas=next;
     }
-    document.getElementById('targetLeft').addEventListener('click', ()=> setActiveCanvas('left'));
-    document.getElementById('targetRight').addEventListener('click',()=> setActiveCanvas('right'));
+    document.getElementById('targetLeft').addEventListener('click',()=>setActiveCanvas('left'));
+    document.getElementById('targetRight').addEventListener('click',()=>setActiveCanvas('right'));
     if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
 
-    /* Drag/Resize/Rotate */
     function makeDraggable(el){
       let startX=0,startY=0,origX=0,origY=0, resizing=false,startW=0,startH=0, rotating=false,startAngle=0,startPointerAngle=0;
       const res=el.querySelector('.resizer');
       let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
       function getAngle(){ return parseFloat(el.dataset.rot||'0')||0; }
       function setAngle(d){ el.dataset.rot=String(d); el.style.transform=`rotate(${d}deg)`; }
-
       if(res){ res.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
         resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
         document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); });
@@ -354,7 +344,6 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
         setAngle(startAngle + (a-startPointerAngle)*180/Math.PI);
       }
       function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
-
       el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return;
         if(e.target.classList.contains('resizer') || e.target.classList.contains('rotator')) return;
         selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
@@ -370,7 +359,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
           }
         }else{
           const dx=e.clientX-startX, dy=e.clientY-startY;
-          el.style.left=(origX+dx)+'px'; el.style.top =(origY+dy)+'px';
+          el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
         }
       }
       function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
@@ -378,7 +367,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
     document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-    /* Add text / photo */
+    /* Add Text / Photo */
     document.getElementById('addTextBtn').addEventListener('click',()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); });
     document.getElementById('textCancel').addEventListener('click',()=> closeModal(textModal));
     document.getElementById('textAdd').addEventListener('click',()=>{
@@ -403,7 +392,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
       r.readAsDataURL(f);
     });
 
-    /* Emoji stickers */
+    /* Stickers (emoji set) */
     const EMOJIS = ["🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","🤎","🖤","🩶","🤍","💋","💯","💢","🏜️","🏝️","✈️","♾️","🍎","🍏","🍞","🥐","🥖","🫓","🥨","🥯","🥞","🧇","🧀","🍖","🍗","🥩","🥓","🍔","🍟","🍕","🌭","🥪","🌮","🌯","🫔","🥙","🧆","🥚","🍳","🥘","🫕","🥣","🥗","🍿","🧈","🧂","🥫","🍝","🍐","🍑","🍒","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯"];
     function openStickers(){
       stickersGrid.innerHTML='';
@@ -423,7 +412,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     stickerModal.addEventListener('click',(e)=>{ if(e.target===stickerModal) closeModal(stickerModal); });
     document.getElementById('stickersClose').addEventListener('click',()=> closeModal(stickerModal));
 
-    /* Page tools */
+    /* Page tools + Save */
     document.getElementById('addPageBtn').addEventListener('click',()=>{
       const p=document.createElement('div'); p.className='page';
       const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
@@ -434,7 +423,6 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
     document.getElementById('clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
 
-    /* Save => persist + auto-exit */
     document.getElementById('saveBtn').addEventListener('click',()=>{
       const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
       localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
@@ -442,7 +430,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
       setTimeout(()=> exitEdit(), 300);
     });
 
-    /* Apply saved content */
+    /* Rehydrate */
     (function applySaved(){
       try{
         const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
@@ -454,21 +442,21 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     })();
   }
 
-  function tryStart(){
+  /* Load PageFlip: local then CDN */
+  function boot(){
     if(window.St && St.PageFlip){ start(); return; }
-    // local script tag
-    const s=document.getElementById('pf-local');
-    function go(){ if(window.St && St.PageFlip) start(); else fallback(); }
-    function fallback(){
-      const cdn=document.createElement('script');
-      cdn.src='https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js';
-      cdn.onload=()=> (window.St && St.PageFlip) ? start() : alert('PageFlip library not found.');
-      document.head.appendChild(cdn);
+    const tag=document.getElementById('pf-local');
+    function ok(){ (window.St && St.PageFlip) ? start() : cdn(); }
+    function cdn(){
+      const s=document.createElement('script');
+      s.src='https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js';
+      s.onload=()=> (window.St && St.PageFlip) ? start() : alert('PageFlip library not found.');
+      document.head.appendChild(s);
     }
-    if(s){ s.addEventListener('load', go); s.addEventListener('error', fallback); }
-    else { fallback(); }
+    if(tag){ tag.addEventListener('load',ok); tag.addEventListener('error',cdn); }
+    else cdn();
   }
-  tryStart();
+  boot();
 })();
 </script>
 </body>
