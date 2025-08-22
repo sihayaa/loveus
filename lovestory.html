@@ -8,100 +8,139 @@
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
 
 <style>
-:root{ --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b; --accent:#7a5af8; --mint:#67e4ca; --font:"Dancing Script",cursive; }
+:root{
+  --bg:#0b0f2f;       /* midnight blue */
+  --paper:#f7eddc;    /* parchment */
+  --ink:#0d2a6b;      /* dark blue ink */
+  --accent:#7a5af8;
+  --mint:#67e4ca;
+  --font:"Dancing Script", cursive;
+}
+
 *{box-sizing:border-box}
 html,body{height:100%}
-body{margin:0;background:var(--bg);color:var(--ink);display:flex;align-items:center;justify-content:center;overflow:hidden;font-family:var(--font)}
-#stage{width:1000px;height:650px;position:relative}
-#book{position:absolute;inset:0}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  display:flex; align-items:center; justify-content:center; overflow:hidden;
+  font-family:var(--font);
+}
 
-/* page look */
+/* Stage & book */
+#stage{ width:1000px; height:650px; position:relative; perspective:1600px; }
+#book{ position:absolute; inset:0; }
+
+/* Page visuals */
 .page{
-  width:100%;height:100%;position:relative;overflow:hidden;
-  background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%), var(--paper);
+  width:100%; height:100%; position:relative; overflow:hidden;
+  background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%);
+  background-color: var(--paper);
   border:3px solid rgba(0,0,0,.06);
   box-shadow:inset 0 0 60px rgba(0,0,0,.22);
   backface-visibility:hidden; transform:translateZ(0);
 }
-.page-canvas{position:relative;width:100%;height:100%;padding:28px;color:var(--ink);font-size:22px;line-height:1.35}
+.page-canvas{
+  position:relative; width:100%; height:100%; padding:28px;
+  color:var(--ink); font-family:var(--font);
+  font-size:22px; line-height:1.35;
+}
 
-/* ========== CLOSED COVER (wide board overlay) ========== */
-#closedCover{position:absolute;inset:0;z-index:90;display:grid;place-items:center}
+/* ---------- CLOSED COVER OVERLAY (the book board) ---------- */
+#closedCover{ position:absolute; inset:0; z-index:90; display:grid; place-items:center; }
 #closedCover .cover3D{
-  width:1000px;height:650px;position:relative;
-  transform-style:preserve-3d;transform-origin:left center;
+  width:1000px; height:650px; position:relative;
+  transform-style:preserve-3d; transform-origin:left center;
   transition:transform .9s ease-in-out;
 }
 #closedCover .hard{
-  position:absolute;inset:0;border-radius:10px;background:#d7cbb5;
-  box-shadow:0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
+  position:absolute; inset:0;
+  background: center/cover no-repeat var(--paper); /* base; overridden by #coverImage below */
+  box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
+  border-radius:6px;
 }
+#coverImage{
+  /* *** Stop zooming: show the whole image like a real printed cover *** */
+  background-position:center;
+  background-repeat:no-repeat;
+  background-size:contain;      /* <— key change (no crop / no zoom-in) */
+  background-color:var(--paper);
+}
+
+/* Spine (left) */
 #closedCover .spine{
-  position:absolute;left:0;top:0;bottom:0;width:28px;border-top-left-radius:10px;border-bottom-left-radius:10px;
-  background:linear-gradient(90deg, rgba(0,0,0,.55), rgba(0,0,0,.18) 50%, rgba(255,255,255,.25));
+  content:""; position:absolute; left:0; top:0; bottom:0; width:28px;
+  background:linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(255,255,255,.1));
+  border-top-left-radius:6px; border-bottom-left-radius:6px;
 }
-#closedCover .edges::before, #closedCover .edges::after{content:"";position:absolute;pointer-events:none}
+/* Page-edge shimmer (right & bottom) */
+#closedCover .edges::before, #closedCover .edges::after{ content:""; position:absolute; pointer-events:none; }
 #closedCover .edges::before{
-  right:0;top:12px;width:20px;height:calc(100% - 24px);
+  right:0; top:12px; width:20px; height:calc(100% - 24px);
   background:linear-gradient(90deg, rgba(255,255,255,.65), rgba(180,170,150,.45));
-  border-top-right-radius:10px;border-bottom-right-radius:10px;filter:blur(.4px)
+  border-top-right-radius:6px; border-bottom-right-radius:6px; filter:blur(0.4px);
 }
 #closedCover .edges::after{
-  left:18px;right:18px;bottom:0;height:16px;border-bottom-left-radius:10px;border-bottom-right-radius:10px;
+  left:18px; right:18px; bottom:0; height:16px;
   background:radial-gradient(ellipse at 50% 0%, rgba(0,0,0,.38), transparent 60%);
+  border-bottom-left-radius:6px; border-bottom-right-radius:6px;
 }
+#closedCover.opening .cover3D{ transform:rotateY(-120deg); }
 
-/* cover art fills the board (no letterbox). If you ever want no-crop instead, change cover -> contain */
-#coverArt{
-  position:absolute;left:28px;right:20px;top:16px;bottom:16px;border-radius:8px;overflow:hidden;
-  background: #0b0f2f center/cover no-repeat;
+/* -------------- Edit items -------------- */
+.scrap-item{ position:absolute; user-select:none; cursor:default; transform-origin:center center; }
+.scrap-text{ background:transparent; border:0; padding:0; color:inherit; font:inherit; white-space:pre-wrap; }
+.scrap-text[contenteditable="true"]{ outline:none; }
+.scrap-img{ display:block; max-width:100%; max-height:100%; border:0; border-radius:0; box-shadow:none; pointer-events:none; }
+.resizer{ display:none; }
+.rotator{
+  display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%);
+  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
+  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
 }
-#closedCover.opening .cover3D{ transform:rotateY(-120deg) }
-#closeBtn{position:absolute;top:10px;left:10px;z-index:96;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:8px;padding:6px 10px;display:none;cursor:pointer}
+.rotator:active{ cursor:grabbing; }
 
-/* ========== Editing UI ========== */
-.scrap-item{position:absolute;user-select:none;cursor:default;transform-origin:center}
-.scrap-text{background:transparent;border:0;padding:0;white-space:pre-wrap}
-.scrap-text[contenteditable="true"]{outline:none}
-.scrap-img{display:block;max-width:100%;max-height:100%;border:0;border-radius:0;box-shadow:none;pointer-events:none}
-.resizer{display:none}
-.rotator{display:none;position:absolute;left:50%;top:-18px;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab}
-.rotator:active{cursor:grabbing}
-body.editing .scrap-item{cursor:move}
-body.editing .scrap-item.selected{box-shadow:0 0 0 3px var(--accent)}
-body.editing .scrap-text{background:rgba(255,255,255,.55);padding:10px 12px;border:1px solid rgba(0,0,0,.1);border-radius:8px}
-body.editing .scrap-img{border:6px solid #fff;border-radius:8px;box-shadow:4px 6px 18px rgba(0,0,0,.25)}
-body.editing .scrap-item .resizer{display:block;position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:4px;background:var(--mint);border:2px solid #0b2c28;cursor:nwse-resize}
-body.editing .scrap-item .rotator{display:block}
+body.editing .scrap-item{ cursor:move; }
+body.editing .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
+body.editing .scrap-text{ background:rgba(255,255,255,.55); padding:10px 12px; border:1px solid rgba(0,0,0,.1); border-radius:8px; }
+body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4px 6px 18px rgba(0,0,0,.25); }
+body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
+body.editing .scrap-item .rotator{ display:block; }
 
-/* hard-block flips while editing */
-body.editing .stf__block,body.editing .stf__item,body.editing .stf__wrapper{pointer-events:none!important}
-body.editing .page-canvas, body.editing .scrap-item{pointer-events:auto!important}
-.page-canvas.active-side{outline:3px dashed var(--accent);outline-offset:-12px}
+/* Disable flip capture while editing; keep canvases interactive */
+body.editing .stf__block, body.editing .stf__item, body.editing .stf__wrapper{ pointer-events:none !important; }
+body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !important; }
 
-/* Toolbar & modals */
-#toolbar{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);display:none;z-index:60;background:rgba(255,255,255,.92);border:2px solid #e8dcc6;border-radius:14px;padding:10px;gap:8px;box-shadow:0 10px 22px rgba(0,0,0,.25);align-items:center;flex-wrap:wrap}
-#toolbar button{border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:#fff;background:var(--accent)}
-#toolbar button.secondary{background:#5d47d4}
-#toolbar button.mint{background:var(--mint);color:#022d2c}
-#toolbar button.warn{background:#ff9aa2;color:#4c0a17}
-#toolbar .group{display:flex;gap:8px;align-items:center}
-#fileInput{display:none}
-#toast{position:absolute;top:12px;right:12px;z-index:95;background:#11172f;color:#fff;border:2px solid var(--mint);padding:8px 12px;border-radius:10px;display:none}
+/* Toolbar */
+#toolbar{
+  position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
+  display:none; z-index:60; background:rgba(255,255,255,.92);
+  border:2px solid #e8dcc6; border-radius:14px; padding:10px; gap:8px;
+  box-shadow:0 10px 22px rgba(0,0,0,.25); align-items:center; flex-wrap:wrap;
+}
+#toolbar button{ border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent); }
+#toolbar button.secondary{ background:#5d47d4; }
+#toolbar button.mint{ background:var(--mint); color:#022d2c; }
+#toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
+#toolbar .group{ display:flex; gap:8px; align-items:center; }
+#fileInput{ display:none; }
 
-.modal{position:absolute;inset:0;display:none;align-items:center;justify-content:center;z-index:80;background:rgba(0,0,0,.55)}
-.modal.open{display:flex}
-.modal-card{width:min(96%,560px);background:#151a30;color:#fff;border:2px solid var(--mint);border-radius:14px;padding:16px;box-shadow:0 20px 40px rgba(0,0,0,.45)}
-.modal-card h3{margin:0 0 10px;font-size:20px}
-.modal-actions{margin-top:12px;display:flex;justify-content:flex-end;gap:8px}
-.modal-actions button{border:0;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700}
-.btn-mint{background:var(--mint);color:#05201f}
-.btn-ghost{background:#2a315d;color:#fff}
-#textInput{width:100%;background:#0f1430;color:#fff;border:1px solid #2b3258;border-radius:10px;padding:10px 12px;font-family:var(--font);font-size:20px;resize:vertical}
+/* Modals */
+.modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
+.modal.open{ display:flex; }
+.modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
+.modal-card h3{ margin:0 0 10px; font-size:20px; }
+#textModal textarea{ width:100%; background:#0f1430; color:#fff; border:1px solid #2b3258; border-radius:10px; padding:10px 12px; font-family:var(--font); font-size:20px; resize:vertical; }
+.modal-actions{ margin-top:12px; display:flex; justify-content:flex-end; gap:8px; }
+.modal-actions button{ border:0; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
+.btn-mint{ background:var(--mint); color:#05201f; }
+.btn-ghost{ background:#2a315d; color:#fff; }
 
-.stickers{display:grid;grid-template-columns:repeat(8,1fr);gap:10px}
-.stickers button{background:#0f1430;border:1px solid #2b3258;border-radius:10px;padding:8px;cursor:pointer}
-.stickers img{width:100%;aspect-ratio:1;object-fit:contain}
+/* Stickers grid */
+.stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:10px; }
+.stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; }
+.stickers img{ width:100%; aspect-ratio:1; object-fit:contain; }
+
+#toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
+.page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 </style>
 </head>
 <body>
@@ -110,16 +149,16 @@ body.editing .page-canvas, body.editing .scrap-item{pointer-events:auto!importan
   <!-- CLOSED COVER OVERLAY -->
   <div id="closedCover" title="Drag or click to open">
     <div class="cover3D">
-      <div class="hard edges">
-        <div class="spine"></div>
-        <div id="coverArt"></div>
-      </div>
+      <div class="hard edges" id="coverImage"></div>
+      <div class="spine"></div>
     </div>
   </div>
 
   <!-- Flipbook -->
   <div id="book">
+    <!-- real cover becomes page 0 too (for consistency after open) -->
     <div class="page"><div class="page-canvas"></div></div>
+    <!-- inner pages -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -131,8 +170,6 @@ body.editing .page-canvas, body.editing .scrap-item{pointer-events:auto!importan
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
   </div>
-
-  <button id="closeBtn" type="button">Close book</button>
 
   <!-- Toolbar -->
   <div id="toolbar">
@@ -182,219 +219,253 @@ body.editing .page-canvas, body.editing .scrap-item{pointer-events:auto!importan
 
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ===== Config ===== */
-const PASSCODE='123';
-const STORAGE_KEY='scrapbook_v8';
-const COVER_URL='https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
+/* ------------ Config ------------- */
+const PASSCODE    = '123';
+const STORAGE_KEY = 'scrapbook_v8';
+const COVER_URL   = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
 
-/* ===== Elements ===== */
-const bookEl=document.getElementById('book');
-const coverUI=document.getElementById('closedCover');
-const coverArt=document.getElementById('coverArt'); coverArt.style.backgroundImage=`url('${COVER_URL}')`;
-const closeBtn=document.getElementById('closeBtn');
-const toolbar=document.getElementById('toolbar');
-const toast=document.getElementById('toast');
-const fileInput=document.getElementById('fileInput');
+/* ------------ Elements ------------- */
+const bookEl    = document.getElementById('book');
+const coverUI   = document.getElementById('closedCover');
+const coverImage= document.getElementById('coverImage');
+coverImage.style.backgroundImage = `url('${COVER_URL}')`;
 
-const textModal=document.getElementById('textModal');
-const textInput=document.getElementById('textInput');
-const textAdd=document.getElementById('textAdd');
-const textCancel=document.getElementById('textCancel');
+const toolbar   = document.getElementById('toolbar');
+const toast     = document.getElementById('toast');
+const fileInput = document.getElementById('fileInput');
+const targetLeftBtn  = document.getElementById('targetLeft');
+const targetRightBtn = document.getElementById('targetRight');
 
-const stickerModal=document.getElementById('stickerModal');
-const stickersGrid=document.getElementById('stickersGrid');
-const stickersClose=document.getElementById('stickersClose');
+const textModal = document.getElementById('textModal');
+const textInput = document.getElementById('textInput');
+const textAdd   = document.getElementById('textAdd');
+const textCancel= document.getElementById('textCancel');
 
-const targetLeftBtn=document.getElementById('targetLeft');
-const targetRightBtn=document.getElementById('targetRight');
+const stickerModal = document.getElementById('stickerModal');
+const stickersGrid = document.getElementById('stickersGrid');
+const stickersClose= document.getElementById('stickersClose');
 
-/* ===== Restore before init ===== */
+/* Load saved content BEFORE init */
 applySaved();
 
-/* ===== Flipbook ===== */
-if(!window.St||!St.PageFlip){alert("PageFlip library not found. Make sure ./flipbook/page-flip.browser.js exists.");}
-const pageFlip=new St.PageFlip(bookEl,{
-  width:500,height:650,size:"fixed",showCover:true,drawShadow:true,
-  flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,mobileScrollSupport:false,startPage:0
+/* Flipbook init (start on page 1 after open) */
+const pageFlip = new St.PageFlip(bookEl, {
+  width: 500, height: 650,
+  size: "fixed",
+  showCover: true,
+  drawShadow: true,
+  flippingTime: 800,
+  maxShadowOpacity: 0.25,
+  useMouseEvents: true,
+  mobileScrollSupport: false,
+  startPage: 0
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* block flips while editing */
-function blockIfEditing(ev){ if(document.body.classList.contains('editing')){ ev.preventDefault(); ev.stopPropagation(); } }
-['pointerdown','pointerup','click','dblclick'].forEach(t=>bookEl.addEventListener(t,blockIfEditing,true));
+/* Drag-only flipping: block taps (even when NOT editing) */
+let tapStart = null;
+function isTap(d, t){ return d<8 && t<300; }
+bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
+bookEl.addEventListener('pointerup',(e)=>{ if(!tapStart) return; const d=Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y); const dt=Date.now()-tapStart.t; if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); } tapStart=null; }, true);
+bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
+bookEl.addEventListener('dblclick',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 
-/* ===== Cover open/close ===== */
+/* ------------- Cover open animation ------------- */
 function openCover(){
   coverUI.classList.add('opening');
-  setTimeout(()=>{ coverUI.style.display='none'; closeBtn.style.display='block'; try{pageFlip.turnToPage(1);}catch(_){}} ,900);
+  setTimeout(()=>{ coverUI.style.display='none'; try{ pageFlip.turnToPage(1); }catch(_){ } }, 900);
 }
-function showCover(){ coverUI.classList.remove('opening'); coverUI.style.display='grid'; closeBtn.style.display='none'; }
-
 let dragStart=null;
-coverUI.addEventListener('pointerdown',e=>dragStart={x:e.clientX,y:e.clientY});
-coverUI.addEventListener('pointerup',e=>{
-  if(!dragStart) return;
-  const dx=e.clientX-dragStart.x;
-  if(Math.abs(dx)>40 || Math.abs(dx)<8) openCover();
+coverUI.addEventListener('pointerdown', (e)=>{ dragStart = {x:e.clientX, y:e.clientY}; });
+coverUI.addEventListener('pointerup', (e)=>{
+  if(!dragStart) return; const dx=e.clientX-dragStart.x;
+  if(Math.abs(dx)>40 || isTap(Math.abs(dx), 200)) openCover();
   dragStart=null;
 });
-coverUI.addEventListener('click',openCover);
-closeBtn.addEventListener('click',()=>pageFlip.turnToPage(0));
+coverUI.addEventListener('click', openCover);
 
-if(pageFlip.on){
-  pageFlip.on('flip',()=>{
-    const i=pageFlip.getCurrentPageIndex?.() ?? 0;
-    if(i===0) showCover(); else coverUI.style.display='none';
-  });
+/* ------------- Active side targeting ------------- */
+let activeCanvas=null;
+function getVisibleCanvases(){
+  let left = document.querySelector('.stf__item--left  .page .page-canvas');
+  let right= document.querySelector('.stf__item--right .page .page-canvas');
+  if(left || right) return {left,right};
+  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+  const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
+  if(idx===0) return {left:null, right:canvases[0]};
+  const base = idx%2===0 ? idx : idx-1;
+  return {left:canvases[base], right:canvases[base+1]||null};
 }
+function setActiveCanvas(side){
+  const {left,right}=getVisibleCanvases();
+  const next = side==='left'? left : right;
+  if(!next) return;
+  document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
+  next.classList.add('active-side');
+  activeCanvas = next;
+}
+targetLeftBtn.addEventListener('click', ()=> setActiveCanvas('left'));
+targetRightBtn.addEventListener('click',()=> setActiveCanvas('right'));
+if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
 
-/* ===== Edit mode (type 123) ===== */
-let editEnabled=false, selectedItem=null, activeCanvas=null, keyBuffer='', keyTimer=null;
+/* ------------- Secret Edit Mode (type 123) ------------- */
+let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
 
 document.addEventListener('keydown',(e)=>{
-  keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
+  keyBuffer += e.key;
+  clearTimeout(keyTimer);
+  keyTimer=setTimeout(()=> keyBuffer='', 1200);
   if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
 });
 function setAllTextEditable(on){
-  document.querySelectorAll('#book .scrap-text').forEach(el=>el.setAttribute('contenteditable', on?'true':'false'));
+  document.querySelectorAll('#book .scrap-text')
+    .forEach(el => el.setAttribute('contenteditable', on ? 'true' : 'false'));
 }
 function setEditing(on){
-  if(on){
-    document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex';
-    try{pageFlip.update?.({useMouseEvents:false,swipeDistance:10000})}catch(_){}
-  }else{
-    document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none';
-    try{pageFlip.update?.({useMouseEvents:true,swipeDistance:30})}catch(_){}
-    document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null;
-  }
+  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); }
+  else  { document.body.classList.remove('editing'); setAllTextEditable(false);
+          document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
-function enterEdit(){ editEnabled=true; setEditing(true); setActiveCanvas('right'); toastShow('Edit mode unlocked ✨'); }
-function exitEdit(){ editEnabled=false; setEditing(false); deselect(); }
+function enterEdit(){
+  editEnabled=true; toolbar.style.display='flex'; setEditing(true);
+  setActiveCanvas('right');
+  try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
+  toastShow('Edit mode unlocked ✨');
+}
+function exitEdit(){
+  editEnabled=false; toolbar.style.display='none'; setEditing(false); deselect();
+  try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
+}
 
-function getVisibleCanvases(){
-  let left=document.querySelector('.stf__item--left .page .page-canvas');
-  let right=document.querySelector('.stf__item--right .page .page-canvas');
-  if(left||right) return {left,right};
-  const canv=[...document.querySelectorAll('#book .page .page-canvas')];
-  const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
-  if(idx===0) return {left:null,right:canv[0]};
-  const base=idx%2===0?idx:idx-1; return {left:canv[base], right:canv[base+1]||null};
-}
-function setActiveCanvas(side){
-  const {left,right}=getVisibleCanvases(); const next=(side==='left')?left:right; if(!next) return;
-  document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
-  next.classList.add('active-side'); activeCanvas=next;
-}
-targetLeftBtn.addEventListener('click',()=>setActiveCanvas('left'));
-targetRightBtn.addEventListener('click',()=>setActiveCanvas('right'));
-if(pageFlip.on){ pageFlip.on('flip',()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
-
-/* ===== Drag / Resize / Rotate ===== */
+/* ------------- Drag / Resize / Rotate ------------- */
 function makeDraggable(el){
-  let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0,rotating=false,startAngle=0,startPointerAngle=0;
-  const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){rot=document.createElement('div');rot.className='rotator';el.appendChild(rot);}
-  function getAngle(){return parseFloat(el.dataset.rot||'0')||0}
-  function setAngle(d){el.dataset.rot=String(d); el.style.transform=`rotate(${d}deg)`}
-  if(res){ res.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
-    resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
-    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
-  });}
+  let startX=0,startY=0,origX=0,origY=0;
+  let resizing=false,startW=0,startH=0;
+  let rotating=false,startAngle=0,startPointerAngle=0;
+
+  const res=el.querySelector('.resizer');
+  let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
+  function getAngle(){ return parseFloat(el.dataset.rot||'0')||0; }
+  function setAngle(deg){ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; }
+
+  if(res){
+    res.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
+      resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
+      document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    });
+  }
   rot.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
     rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-    startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx); startAngle=getAngle();
+    startPointerAngle=Math.atan2(e.clientY-cy, e.clientX-cx); startAngle=getAngle();
     document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate);
   });
-  function onRotate(e){ if(!rotating) return; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-    const a=Math.atan2(e.clientY-cy,e.clientX-cx); setAngle(startAngle + (a-startPointerAngle)*180/Math.PI); }
+  function onRotate(e){ if(!rotating) return;
+    const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+    const a=Math.atan2(e.clientY-cy, e.clientX-cx);
+    setAngle(startAngle + (a-startPointerAngle)*180/Math.PI);
+  }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
-  el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; if(e.target.classList.contains('resizer')||e.target.classList.contains('rotator')) return;
+
+  el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return;
+    if(e.target.classList.contains('resizer') || e.target.classList.contains('rotator')) return;
     selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
     startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
     document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); e.stopPropagation();
   });
   function onMove(e){ if(!editEnabled) return;
-    if(resizing){ const dx=e.clientX-startX, dy=e.clientY-startY; el.style.width=Math.max(60,startW+dx)+'px'; el.style.height=Math.max(60,startH+dy)+'px'; }
-    else{ const dx=e.clientX-startX, dy=e.clientY-startY; el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px'; }
+    if(resizing){ const dx=e.clientX-startX, dy=e.clientY-startY;
+      el.style.width=Math.max(60,startW+dx)+'px'; el.style.height=Math.max(60,startH+dy)+'px';
+    }else{ const dx=e.clientX-startX, dy=e.clientY-startY;
+      el.style.left=(origX+dx)+'px'; el.style.top =(origY+dy)+'px';
+    }
   }
   function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
 }
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
-document.addEventListener('click',e=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
+document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ===== Add Text ===== */
-document.getElementById('addTextBtn').addEventListener('click',()=>{
-  textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10);
-});
-textCancel.addEventListener('click',()=>closeModal(textModal));
+/* ------------- Add text / photo ------------- */
+document.getElementById('addTextBtn').addEventListener('click',()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); });
+textCancel.addEventListener('click',()=> closeModal(textModal));
 textAdd.addEventListener('click',()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
-  const box=document.createElement('div'); box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
+  const box=document.createElement('div');
+  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
   const isEditing=document.body.classList.contains('editing');
   box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 });
 
-/* ===== Add Photo ===== */
-document.getElementById('addPhotoBtn').addEventListener('click',()=>fileInput.click());
+document.getElementById('addPhotoBtn').addEventListener('click',()=> fileInput.click());
 fileInput.addEventListener('change',(e)=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=(ev)=>{
-    const box=document.createElement('div'); box.className='scrap-item';
-    box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+    const box=document.createElement('div');
+    box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
     box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
     (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); fileInput.value='';
   };
   r.readAsDataURL(f);
 });
 
-/* ===== Stickers (emoji) ===== */
-const EMOJIS="🎮,👾,🕹️,🖥️,⌨️,💞,🩷,🧡,💛,💚,💙,🩵,🤎,🖤,🩶,🤍,💋,💯,💢,🏜️,🏝️,✈️,♾️,🍎,🍏,🍞,🥐,🥖,🫓,🥨,🥯,🥞,🧇,🧀,🍖,🍗,🥩,🥓,🍔,🍟,🍕,🌭,🥪,🌮,🌯,🫔,🥙,🧆,🥚,🍳,🥘,🫕,🥣,🥗,🍿,🧈,🧂,🥫,🍝,🍐,🍑,🍒,🍦,🍧,🍨,🍩,🍪,🎂,🍰,🧁,🥧,🍫,🍬,🍭,🍮,🍯".split(",");
+/* ------------- Stickers (emoji pack you asked for) ------------- */
+const EMOJIS = "🎮,👾,🕹️,🖥️,⌨️,💞,🩷,🧡,💛,💚,💙,🩵,🤎,🖤,🩶,🤍,💋,💯,💢,🏜️,🏝️,✈️,♾️,🍎,🍏,🍞,🥐,🥖,🫓,🥨,🥯,🥞,🧇,🧀,🍖,🍗,🥩,🥓,🍔,🍟,🍕,🌭,🥪,🌮,🌯,🫔,🥙,🧆,🥚,🍳,🥘,🫕,🥣,🥗,🍿,🧈,🧂,🥫,🍝,🍐,🍑,🍒,🍦,🍧,🍨,🍩,🍪,🎂,🍰,🧁,🥧,🍫,🍬,🍭,🍮,🍯".split(",");
 function emojiDataUrl(ch){
   const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
     <rect width='100%' height='100%' fill='white'/>
     <text x='50%' y='55%' font-size='160' text-anchor='middle' dominant-baseline='middle'>${ch}</text>
   </svg>`;
-  return "data:image/svg+xml;utf8,"+encodeURIComponent(svg);
+  return "data:image/svg+xml;utf8," + encodeURIComponent(svg);
 }
-document.getElementById('stickersBtn').addEventListener('click',()=>{
+function openStickers(){
   stickersGrid.innerHTML='';
   EMOJIS.forEach(e=>{
-    const b=document.createElement('button'); const img=document.createElement('img'); img.src=emojiDataUrl(e); img.alt=e; b.appendChild(img);
+    const b=document.createElement('button'); const img=document.createElement('img');
+    img.src=emojiDataUrl(e); img.alt=e; b.appendChild(img);
     b.addEventListener('click',()=>{
-      const box=document.createElement('div'); box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='160px'; box.style.height='160px';
-      box.innerHTML=`<img class="scrap-img" src="${emojiDataUrl(e)}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
+      const box=document.createElement('div');
+      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='160px'; box.style.height='160px';
+      box.innerHTML=`<img class="scrap-img" src="${emojiDataUrl(e)}" alt="${e}"><div class="resizer"></div><div class="rotator"></div>`;
       (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
     });
     stickersGrid.appendChild(b);
   });
   openModal(stickerModal);
-});
-stickersClose.addEventListener('click',()=>closeModal(stickerModal));
-stickerModal.addEventListener('click',e=>{ if(e.target===stickerModal) closeModal(stickerModal); });
+}
+document.getElementById('stickersBtn').addEventListener('click', openStickers);
+stickerModal.addEventListener('click',(e)=>{ if(e.target===stickerModal) closeModal(stickerModal); });
+stickersClose.addEventListener('click',()=> closeModal(stickerModal));
 
-/* ===== Page tools ===== */
+/* Page tools */
 document.getElementById('addPageBtn').addEventListener('click',()=>{
-  const p=document.createElement('div'); p.className='page'; const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  bookEl.appendChild(p); pageFlip.loadFromHTML(document.querySelectorAll('#book .page')); toastShow('Page added');
+  const p=document.createElement('div'); p.className='page';
+  const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
+  bookEl.appendChild(p);
+  pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
+  toastShow('Page added');
 });
-document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; } });
+document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
 document.getElementById('clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
+
+/* Save => persist + auto-exit */
 document.getElementById('saveBtn').addEventListener('click',()=>{
   const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-  toastShow('Saved ✓'); setTimeout(()=>exitEdit(), 300);
+  toastShow('Saved ✓ Exiting…');
+  setTimeout(()=> exitEdit(), 300);
 });
 
-/* ===== Utils ===== */
+/* Utils */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 function applySaved(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
-    const arr=JSON.parse(raw); const canv=document.querySelectorAll('#book .page .page-canvas');
-    for(let i=0;i<Math.min(arr.length,canv.length);i++){ canv[i].innerHTML=arr[i]; }
+    const arr=JSON.parse(raw);
+    const canvases=document.querySelectorAll('#book .page .page-canvas');
+    for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
     document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
   }catch(e){}
 }
