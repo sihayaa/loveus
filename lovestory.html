@@ -6,15 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-
 <style>
 :root{
-  --bg:#0b0f2f;       /* midnight blue */
-  --paper:#f7eddc;    /* parchment */
-  --ink:#0d2a6b;      /* dark blue ink */
+  --bg:#0b0f2f;
+  --paper:#f7eddc;
+  --ink:#0d2a6b;
   --accent:#7a5af8;
   --mint:#67e4ca;
   --font:"Dancing Script", cursive;
+  --coverTop:12%; /* nudge cover image downward a bit so title isn't cramped */
 }
 
 *{box-sizing:border-box}
@@ -44,10 +44,8 @@ body{
   font-size:22px; line-height:1.35;
 }
 
-/* ---------- CLOSED COVER OVERLAY ---------- */
-#closedCover{
-  position:absolute; inset:0; z-index:90; display:grid; place-items:center;
-}
+/* closed cover overlay */
+#closedCover{ position:absolute; inset:0; z-index:90; display:grid; place-items:center; }
 #closedCover .cover3D{
   width:1000px; height:650px; position:relative;
   transform-style:preserve-3d; transform-origin:left center;
@@ -55,10 +53,8 @@ body{
 }
 #closedCover .hard{
   position:absolute; inset:0;
-  /* cover image placed on hard front; slight down-bias so "OUR CO-OP" isn’t cramped */
-  background-position:center 8%;
-  background-size:cover;
-  background-repeat:no-repeat;
+  background-position:center var(--coverTop);
+  background-size:cover; background-repeat:no-repeat;
   box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
   border-radius:6px;
 }
@@ -67,9 +63,7 @@ body{
   background:linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(255,255,255,.1));
   border-top-left-radius:6px; border-bottom-left-radius:6px;
 }
-#closedCover .edges::before, #closedCover .edges::after{
-  content:""; position:absolute; pointer-events:none;
-}
+#closedCover .edges::before, #closedCover .edges::after{ content:""; position:absolute; pointer-events:none; }
 #closedCover .edges::before{
   right:0; top:12px; width:20px; height:calc(100% - 24px);
   background:linear-gradient(90deg, rgba(255,255,255,.65), rgba(180,170,150,.45));
@@ -81,10 +75,19 @@ body{
   background:radial-gradient(ellipse at 50% 0%, rgba(0,0,0,.38), transparent 60%);
   border-bottom-left-radius:6px; border-bottom-right-radius:6px;
 }
-
 #closedCover.opening .cover3D{ transform:rotateY(-120deg); }
 
-/* -------------- Edit items -------------- */
+/* inside-book cover (page 0) */
+.cover-inside{
+  position:absolute; inset:28px; /* same padding as page canvas */
+  background-position:center var(--coverTop);
+  background-size:contain; background-repeat:no-repeat;
+  border-radius:10px;
+  box-shadow:0 6px 20px rgba(0,0,0,.25);
+  pointer-events:none; /* not draggable; avoids hijacking edits */
+}
+
+/* editables */
 .scrap-item{ position:absolute; user-select:none; cursor:default; transform-origin:center center; }
 .scrap-text{ background:transparent; border:0; padding:0; color:inherit; font:inherit; white-space:pre-wrap; }
 .scrap-text[contenteditable="true"]{ outline:none; }
@@ -104,27 +107,24 @@ body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4p
 body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 
-/* Disable flip capture while editing; keep canvases interactive */
+/* let the canvases receive events while editing */
 body.editing .stf__block, body.editing .stf__item, body.editing .stf__wrapper{ pointer-events:none !important; }
 body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !important; }
 
-/* Toolbar */
+/* toolbar */
 #toolbar{
   position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
   display:none; z-index:60; background:rgba(255,255,255,.92);
   border:2px solid #e8dcc6; border-radius:14px; padding:10px; gap:8px;
   box-shadow:0 10px 22px rgba(0,0,0,.25); align-items:center; flex-wrap:wrap;
 }
-#toolbar button{
-  border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent);
-}
+#toolbar button{ border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent); }
 #toolbar button.secondary{ background:#5d47d4; }
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
 #toolbar .group{ display:flex; gap:8px; align-items:center; }
 #fileInput{ display:none; }
 
-/* Modals */
 .modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
 .modal.open{ display:flex; }
 .modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
@@ -135,7 +135,6 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 .btn-mint{ background:var(--mint); color:#05201f; }
 .btn-ghost{ background:#2a315d; color:#fff; }
 
-/* Stickers grid */
 .stickers{ display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
 .stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; }
 .stickers img{ width:100%; aspect-ratio:1; object-fit:contain; }
@@ -157,8 +156,8 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 
   <!-- Flipbook -->
   <div id="book">
-    <!-- page 0 (cover INSIDE book too) -->
-    <div class="page"><div class="page-canvas"></div></div>
+    <!-- page 0 (inside cover image will be injected here) -->
+    <div class="page"><div class="page-canvas" id="p0"></div></div>
     <!-- inner pages -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -222,15 +221,23 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 <script>
 /* ------------ Config ------------- */
 const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v8';
+const STORAGE_KEY = 'scrapbook_v9';
 const COVER_URL   = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
 
 /* ------------ Elements ------------- */
 const bookEl    = document.getElementById('book');
 const coverUI   = document.getElementById('closedCover');
-const cover3D   = coverUI.querySelector('.cover3D');
 const coverImage= document.getElementById('coverImage');
 coverImage.style.backgroundImage = `url('${COVER_URL}')`;
+
+/* Put the SAME cover image onto page 0 inside the book */
+(function injectInsideCover(){
+  const p0 = document.getElementById('p0');
+  const inner = document.createElement('div');
+  inner.className = 'cover-inside';
+  inner.style.backgroundImage = `url('${COVER_URL}')`;
+  p0.appendChild(inner);
+})();
 
 const toolbar   = document.getElementById('toolbar');
 const toast     = document.getElementById('toast');
@@ -263,35 +270,29 @@ const pageFlip = new St.PageFlip(bookEl, {
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* ---- Utility: find canvases currently visible in the spread ---- */
+/* ---- Visible canvases helper ---- */
 function getVisibleCanvases(){
   const left  = document.querySelector('.stf__item--left  .page .page-canvas');
   const right = document.querySelector('.stf__item--right .page .page-canvas');
   if (left || right) return {left, right};
-
-  // Only one side visible (e.g., cover)
   const single = document.querySelector('.stf__item .page .page-canvas');
   return {left:null, right:single};
 }
 
-/* ---- Active canvas (for where new items land) ---- */
+/* ---- Active canvas (where new items land) ---- */
 let activeCanvas=null;
 function setActiveCanvas(which){
   const {left,right} = getVisibleCanvases();
-  let next = null;
-  if (which === 'left')  next = left;
-  else if (which === 'right') next = right;
-  else if (which instanceof Element) next = which;
-
-  if (!next) next = right || left; // fallback
+  let next = (which==='left')?left : (which==='right')?right : null;
+  if (!next) next = right || left;
   document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
   if (next){ next.classList.add('active-side'); activeCanvas = next; }
 }
 targetLeftBtn.addEventListener('click', ()=> setActiveCanvas('left'));
 targetRightBtn.addEventListener('click',()=> setActiveCanvas('right'));
-pageFlip.on('flip', ()=> setActiveCanvas('right')); // default focus to right page when flipping
+pageFlip.on('flip', ()=> setActiveCanvas('right'));
 
-/* ----- Disable tap-to-flip so editing clicks don’t flip ----- */
+/* ---- Stop click flip so editing works ---- */
 let tapStart=null;
 bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
 bookEl.addEventListener('pointerup',(e)=>{
@@ -301,66 +302,44 @@ bookEl.addEventListener('pointerup',(e)=>{
   if(d<8 && dt<300){ e.preventDefault(); e.stopPropagation(); }
   tapStart=null;
 }, true);
-bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
-bookEl.addEventListener('dblclick',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
+['click','dblclick'].forEach(ev=>bookEl.addEventListener(ev,(e)=>{ e.preventDefault(); e.stopPropagation(); }, true));
 
-/* ------------- Closed cover: open animation ------------- */
+/* ---- Cover open ---- */
 function openCover(){
   coverUI.classList.add('opening');
-  setTimeout(()=>{
-    coverUI.style.display='none';
-    try{ pageFlip.turnToPage(1); }catch(_){}
-  }, 900);
+  setTimeout(()=>{ coverUI.style.display='none'; pageFlip.turnToPage(1); }, 900);
 }
 let dragStart=null;
 coverUI.addEventListener('pointerdown', (e)=>{ dragStart = {x:e.clientX, y:e.clientY}; });
 coverUI.addEventListener('pointerup', (e)=>{
   if(!dragStart) return;
   const dx=e.clientX-dragStart.x;
-  if(Math.abs(dx)>40 || Math.abs(dx)<8){ openCover(); }
+  if(Math.abs(dx)>40 || Math.abs(dx)<8) openCover();
   dragStart=null;
 });
 coverUI.addEventListener('click', openCover);
 
-/* ------------- Secret Edit Mode (type 123) ------------- */
+/* ---- Edit mode (type 123) ---- */
 let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
-
 document.addEventListener('keydown',(e)=>{
   keyBuffer += e.key;
   clearTimeout(keyTimer);
   keyTimer=setTimeout(()=> keyBuffer='', 1200);
   if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
 });
-
 function setAllTextEditable(on){
   document.querySelectorAll('#book .scrap-text')
     .forEach(el => el.setAttribute('contenteditable', on ? 'true' : 'false'));
 }
 function setEditing(on){
-  if(on){
-    document.body.classList.add('editing');
-    setAllTextEditable(true);
-    toolbar.style.display='flex';
-  }else{
-    document.body.classList.remove('editing');
-    setAllTextEditable(false);
-    toolbar.style.display='none';
-    document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
-    activeCanvas=null;
-  }
+  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'; }
+  else  { document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none';
+          document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
-function enterEdit(){
-  editEnabled=true; setEditing(true);
-  setActiveCanvas('right');
-  try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
-  toastShow('Edit mode unlocked ✨');
-}
-function exitEdit(){
-  editEnabled=false; setEditing(false); deselect();
-  try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
-}
+function enterEdit(){ editEnabled=true; setEditing(true); setActiveCanvas('right'); pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); toastShow('Edit mode unlocked ✨'); }
+function exitEdit(){ editEnabled=false; setEditing(false); selectedItem=null; pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }
 
-/* ------------- Drag / Resize / Rotate (cross-gutter) ------------- */
+/* ---- Drag / Resize / Rotate with cross-gutter moving ---- */
 function currentSpread(){ return getVisibleCanvases(); }
 function pointInRect(x,y,r){ return r && x>=r.left && x<=r.right && y>=r.top && y<=r.bottom; }
 
@@ -376,31 +355,22 @@ function makeDraggable(el){
   function getAngle(){ return parseFloat(el.dataset.rot||'0')||0; }
   function setAngle(deg){ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; }
 
-  // track the canvas we are currently in
   let parentCanvas = el.parentElement;
   let parentRect   = parentCanvas.getBoundingClientRect();
-  function refreshParent(){
-    parentCanvas = el.parentElement;
-    parentRect   = parentCanvas.getBoundingClientRect();
-  }
+  function refreshParent(){ parentCanvas = el.parentElement; parentRect = parentCanvas.getBoundingClientRect(); }
 
   if(res){
     res.addEventListener('mousedown',(e)=>{
-      if(!editEnabled) return;
-      e.stopPropagation(); e.preventDefault();
+      if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
       resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
       document.addEventListener('mousemove',onMove);
       document.addEventListener('mouseup',onUp);
     });
   }
-
   rot.addEventListener('mousedown',(e)=>{
-    if(!editEnabled) return;
-    e.stopPropagation(); e.preventDefault();
-    rotating=true;
-    const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-    startPointerAngle=Math.atan2(e.clientY-cy, e.clientX-cx);
-    startAngle=getAngle();
+    if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
+    rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
+    startPointerAngle=Math.atan2(e.clientY-cy, e.clientX-cx); startAngle=getAngle();
     document.addEventListener('mousemove',onRotate);
     document.addEventListener('mouseup',endRotate);
   });
@@ -410,11 +380,7 @@ function makeDraggable(el){
     const a=Math.atan2(e.clientY-cy, e.clientX-cx);
     setAngle(startAngle + (a-startPointerAngle)*180/Math.PI);
   }
-  function endRotate(){
-    rotating=false;
-    document.removeEventListener('mousemove',onRotate);
-    document.removeEventListener('mouseup',endRotate);
-  }
+  function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
   el.addEventListener('mousedown',(e)=>{
     if(!editEnabled) return;
@@ -437,21 +403,18 @@ function makeDraggable(el){
       return;
     }
 
-    // proposed new position inside current canvas
     let newL = origX + (e.clientX-startX);
     let newT = origY + (e.clientY-startY);
 
-    // element centre in viewport coords
+    // centre point of element in viewport
     const cx = parentRect.left + newL + el.offsetWidth/2;
     const cy = parentRect.top  + newT + el.offsetHeight/2;
 
-    // check if we crossed into the other page
     const {left,right} = currentSpread();
     const otherCanvas = (parentCanvas === left ? right : left);
     const otherRect   = otherCanvas ? otherCanvas.getBoundingClientRect() : null;
 
     if(otherCanvas && otherRect && pointInRect(cx,cy,otherRect)){
-      // move to other canvas keeping visual position
       const localL = cx - otherRect.left - el.offsetWidth/2;
       const localT = cy - otherRect.top  - el.offsetHeight/2;
       el.style.left = localL + 'px';
@@ -459,31 +422,23 @@ function makeDraggable(el){
       otherCanvas.appendChild(el);
       setActiveCanvas(otherCanvas);
       refreshParent();
-
-      // reset drag reference so it continues smoothly
+      // reset drag baseline for smooth continue
       origX = localL; origY = localT; startX = e.clientX; startY = e.clientY;
       return;
     }
 
-    // clamp within current canvas
     newL = Math.max(0, Math.min(newL, parentCanvas.clientWidth  - el.offsetWidth));
     newT = Math.max(0, Math.min(newT, parentCanvas.clientHeight - el.offsetHeight));
     el.style.left = newL + 'px';
     el.style.top  = newT + 'px';
   }
-
-  function onUp(){
-    document.removeEventListener('mousemove',onMove);
-    document.removeEventListener('mouseup',onUp);
-  }
+  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
 }
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
 document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ------------- Add text / photo ------------- */
-document.getElementById('addTextBtn').addEventListener('click',()=>{
-  openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10);
-});
+/* ---- Add text / photo ---- */
+document.getElementById('addTextBtn').addEventListener('click',()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); });
 textCancel.addEventListener('click',()=> closeModal(textModal));
 textAdd.addEventListener('click',()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
@@ -507,7 +462,7 @@ fileInput.addEventListener('change',(e)=>{
   r.readAsDataURL(f);
 });
 
-/* ------------- Stickers (simple set) ------------- */
+/* ---- Stickers (sample) ---- */
 const STICKERS = [
   {name:'Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><path fill='%23ff5a7a' d='M60 105s-8-6-26-22S3 51 18 33c9-10 26-9 34 3 8-12 25-13 34-3 15 18-4 38-16 50S60 105 60 105z'/></svg>", w:140,h:120},
   {name:'Star',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><polygon points='60,10 72,44 108,44 78,66 90,100 60,78 30,100 42,66 12,44 48,44' fill='%23ffd65c'/></svg>", w:120,h:120},
