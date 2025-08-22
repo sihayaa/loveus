@@ -41,6 +41,7 @@ body{
   color:var(--ink); font-family:var(--font);
   font-size:22px; line-height:1.35;
 }
+.page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 
 /* Closed cover overlay */
 #closedCover{ position:absolute; inset:0; z-index:90; display:grid; place-items:center; }
@@ -124,11 +125,10 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 .btn-ghost{ background:#2a315d; color:#fff; }
 
 .stickers{ display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
-.stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; }
+.stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; color:#fff; font-size:28px; line-height:1; }
 .stickers img{ width:100%; aspect-ratio:1; object-fit:contain; }
 
 #toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
-.page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 </style>
 </head>
 <body>
@@ -211,13 +211,13 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 
 <script>
 /* ========= Config ========= */
-const PASSCODE = '123';
-const STORAGE_KEY = 'scrapbook_final_v2';
-const COVER_URL  = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/book.png';
+const PASSCODE   = '123';
+const STORAGE_KEY= 'scrapbook_final_v3';
+const COVER_URL  = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png';
 
-/* ========= Small helpers ========= */
-const $ = (sel, ctx=document) => ctx.querySelector(sel);
-const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
+/* ========= Helpers ========= */
+const $  = (s, c=document)=>c.querySelector(s);
+const $$ = (s, c=document)=>Array.from(c.querySelectorAll(s));
 const openModal  = el => { el.classList.add('open'); el.setAttribute('aria-hidden','false'); };
 const closeModal = el => { el.classList.remove('open'); el.setAttribute('aria-hidden','true'); };
 function toastShow(msg){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
@@ -226,7 +226,7 @@ window.addEventListener('load', () => {
   if (!window.St || !St.PageFlip) { console.error('PageFlip not loaded – check the script tags or blockers.'); return; }
 
   /* ====== Cover image ====== */
-  const coverEl = document.getElementById('coverImage');
+  const coverEl = $('#coverImage');
   if (coverEl) {
     coverEl.style.backgroundImage =
       `url('${COVER_URL}'),
@@ -236,7 +236,7 @@ window.addEventListener('load', () => {
     coverEl.style.backgroundPosition = 'center, center, center';
   }
 
-  const bookEl = $('#book');
+  const bookEl  = $('#book');
   const coverUI = $('#closedCover');
 
   /* ====== Flipbook init ====== */
@@ -270,26 +270,27 @@ window.addEventListener('load', () => {
   coverUI.addEventListener('pointerup',(e)=>{ if(!drag) return; const dx=e.clientX-drag.x; if(Math.abs(dx)>40 || isTap(Math.abs(dx), 200)) openCover(); drag=null; });
   coverUI.addEventListener('click', openCover);
 
-  /* ====== Visible side targeting ====== */
+  /* ====== Targeting pages for editing ====== */
   let activeCanvas=null;
-  function getVisibleCanvases(){
-    let left = $('.stf__item--left  .page .page-canvas');
-    let right= $('.stf__item--right .page .page-canvas');
-    if(left || right) return {left,right};
-    const canvases=$$('#book .page .page-canvas');
-    const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
-    if(idx===0) return {left:null, right:canvases[0]};
-    const base = idx%2===0 ? idx : idx-1;
-    return {left:canvases[base], right:canvases[base+1]||null};
+  function highlightCanvas(c){
+    $$('#book .page-canvas').forEach(x=>x.classList.remove('active-side'));
+    if (c){ c.classList.add('active-side'); activeCanvas = c; }
   }
   function setActiveCanvas(side){
-    const {left,right}=getVisibleCanvases();
-    const next = side==='left'? left : right;
-    if(!next) return;
-    $$('#book .page-canvas').forEach(c=>c.classList.remove('active-side'));
-    next.classList.add('active-side');
-    activeCanvas = next;
+    const cand = document.querySelector(
+      side === 'left'
+        ? '.stf__item--left  .page .page-canvas'
+        : '.stf__item--right .page .page-canvas'
+    ) || document.querySelector('#book .page .page-canvas');
+    if (cand) highlightCanvas(cand);
   }
+  // click-to-target while editing
+  document.addEventListener('click', (e) => {
+    if (!editEnabled) return;
+    const canvas = e.target.closest('.page-canvas');
+    if (canvas){ highlightCanvas(canvas); e.stopPropagation(); }
+  }, true);
+
   $('#targetLeft').addEventListener('click', ()=> setActiveCanvas('left'));
   $('#targetRight').addEventListener('click',()=> setActiveCanvas('right'));
   if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
@@ -313,7 +314,12 @@ window.addEventListener('load', () => {
             $$('#book .page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
   }
   function enterEdit(){
-    editEnabled=true; setEditing(true); setActiveCanvas('right');
+    editEnabled=true; setEditing(true);
+    setTimeout(()=>{ // pick visible right or any canvas
+      const cand = document.querySelector('.stf__item--right .page .page-canvas')
+                || document.querySelector('#book .page .page-canvas');
+      highlightCanvas(cand);
+    }, 0);
     try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
     toastShow('Edit mode unlocked ✨');
   }
@@ -384,10 +390,14 @@ window.addEventListener('load', () => {
     const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
     const box=document.createElement('div');
     box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
-    const isEditing=document.body.classList.contains('editing');
-    box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div>
+    const editable=document.body.classList.contains('editing') ? 'true':'false';
+    box.innerHTML=`<div class="scrap-text" contenteditable="${editable}">${val}</div>
                    <div class="resizer"></div><div class="rotator"></div>`;
-    (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+    const target = activeCanvas
+                || document.querySelector('.page-canvas.active-side')
+                || document.querySelector('.stf__item--right .page .page-canvas')
+                || document.querySelector('#book .page .page-canvas');
+    target.appendChild(box); makeDraggable(box);
   });
 
   $('#addPhotoBtn').addEventListener('click',()=> fileInput.click());
@@ -400,33 +410,43 @@ window.addEventListener('load', () => {
       box.style.width='320px'; box.style.height='230px';
       box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt="">
                      <div class="resizer"></div><div class="rotator"></div>`;
-      (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); fileInput.value='';
+      const target = activeCanvas
+                  || document.querySelector('.page-canvas.active-side')
+                  || document.querySelector('.stf__item--right .page .page-canvas')
+                  || document.querySelector('#book .page .page-canvas');
+      target.appendChild(box); makeDraggable(box); fileInput.value='';
     };
     reader.readAsDataURL(f);
   });
 
-  /* ====== Stickers ====== */
+  /* ====== Stickers (emoji set) ====== */
   const stickerModal = $('#stickerModal');
   const stickersGrid = $('#stickersGrid');
   $('#stickersBtn').addEventListener('click', openStickers);
   $('#stickersClose').addEventListener('click',()=> closeModal(stickerModal));
 
-  const STICKERS = [
-    {name:'Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><path fill='%23ff5a7a' d='M60 105s-8-6-26-22S3 51 18 33c9-10 26-9 34 3 8-12 25-13 34-3 15 18-4 38-16 50S60 105 60 105z'/></svg>", w:140,h:120},
-    {name:'Leaf',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><path d='M10 80 C 40 60, 70 40, 150 20' stroke='%2348b36b' stroke-width='6' fill='none' stroke-linecap='round'/><circle cx='40' cy='60' r='10' fill='%235fd089'/><circle cx='75' cy='45' r='12' fill='%235fd089'/><circle cx='110' cy='32' r='9' fill='%235fd089'/></svg>", w:180,h:120},
-    {name:'Star',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><polygon points='60,10 72,44 108,44 78,66 90,100 60,78 30,100 42,66 12,44 48,44' fill='%23ffd65c'/></svg>", w:120,h:120},
-    {name:'Tape',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 70'><defs><pattern id='d' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10 L10 0' stroke='%23ffb3c1' stroke-width='2'/></pattern></defs><rect x='10' y='10' width='180' height='50' rx='8' ry='8' fill='url(%23d)' stroke='%23ff86a1' stroke-width='3'/></svg>", w:220,h:90},
+  const EMOJI_STICKERS = [
+    "🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","🤎","🖤","🩶","🤍","💋","💯",
+    "💢","🏜️","🏝️","✈️","♾️","🍎","🍏","🍞","🥐","🥖","🫓","🥨","🥯","🥞","🧇","🧀","🍖","🍗","🥩","🥓",
+    "🍔","🍟","🍕","🌭","🥪","🌮","🌯","🫔","🥙","🧆","🥚","🍳","🥘","🫕","🥣","🥗","🍿","🧈","🧂","🥫",
+    "🍝","🍐","🍑","🍒","🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯"
   ];
   function openStickers(){
     stickersGrid.innerHTML='';
-    STICKERS.forEach(s=>{
-      const b=document.createElement('button'); b.title=s.name;
-      const img=document.createElement('img'); img.src=s.src; img.alt=s.name; b.appendChild(img);
+    EMOJI_STICKERS.forEach(ch=>{
+      const b=document.createElement('button');
+      b.type='button'; b.textContent=ch; b.title=ch;
       b.addEventListener('click',()=>{
         const box=document.createElement('div');
-        box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width=s.w+'px'; box.style.height=s.h+'px';
-        box.innerHTML=`<img class="scrap-img" src="${s.src}" alt="${s.name}"><div class="resizer"></div><div class="rotator"></div>`;
-        (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+        box.className='scrap-item'; box.style.left='60px'; box.style.top='60px';
+        box.style.width='100px'; box.style.height='100px'; box.style.display='flex'; box.style.alignItems='center'; box.style.justifyContent='center';
+        box.innerHTML=`<div class="scrap-text" style="font-size:64px; line-height:1" contenteditable="false">${ch}</div>
+                       <div class="resizer"></div><div class="rotator"></div>`;
+        const target = activeCanvas
+                    || document.querySelector('.page-canvas.active-side')
+                    || document.querySelector('.stf__item--right .page .page-canvas')
+                    || document.querySelector('#book .page .page-canvas');
+        target.appendChild(box); makeDraggable(box);
       });
       stickersGrid.appendChild(b);
     });
@@ -442,7 +462,7 @@ window.addEventListener('load', () => {
     toastShow('Page added');
   });
   $('#deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
-  $('#clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
+  $('#clearPageBtn').addEventListener('click',()=>{ (activeCanvas||document.querySelector('.page-canvas.active-side')||document.querySelector('.stf__item--right .page .page-canvas')||document.querySelector('#book .page .page-canvas')).innerHTML=''; selectedItem=null; });
 
   $('#saveBtn').addEventListener('click',()=>{
     const pages=$$('#book .page').map(p=>$('.page-canvas',p).innerHTML);
