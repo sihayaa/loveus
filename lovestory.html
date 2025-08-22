@@ -1,290 +1,166 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Our Co-Op Adventure — Storybook</title>
+  <meta charset="utf-8" />
+  <title>Our Love Story</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-<link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><text x="50%" y="54%" text-anchor="middle" font-size="46">💜</text></svg>'/>
-<link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+  <!-- Pretty fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Inter:wght@400;600&display=swap" rel="stylesheet">
 
-<style>
-  :root{ --bg:#0a0f2b; --paper:#f6eddc; --ink:#13224a; --accent:#6df0d0; }
-  *{box-sizing:border-box}
-  html,body{height:100%;margin:0;background:var(--bg);color:var(--ink);font-family:Georgia,serif;overscroll-behavior:none}
-  .stage{min-height:100%;display:flex;align-items:center;justify-content:center;padding:40px 18px 70px}
-  #book{width:1100px;max-width:calc(100vw - 36px);aspect-ratio:1100/720;position:relative}
-  .page{background:var(--paper);width:100%;height:100%;position:relative;
-        box-shadow:inset 0 0 0 1px #dccfb6, inset 0 0 90px rgba(0,0,0,.09)}
-  .page .inner{position:relative;height:100%;padding:36px 40px}
-  .cover{background:#000 center/cover no-repeat url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png");
-         box-shadow:inset 0 0 0 2px rgba(255,255,255,.08), inset 0 0 140px rgba(0,0,0,.45)}
-  [data-density="hard"]{box-shadow:inset 0 0 0 2px rgba(255,255,255,.08), inset 0 0 140px rgba(0,0,0,.45)}
-  .script{font-family:"Great Vibes",cursive;font-size:42px}
-  .hud{position:absolute;left:50%;bottom:-58px;transform:translateX(-50%);display:none;gap:10px;flex-wrap:wrap;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
-  .hud.show{display:flex}
-  .btn{appearance:none;border:0;cursor:pointer;padding:10px 14px;border-radius:12px;font-weight:700;background:#eee;color:#0a0f2b;box-shadow:0 8px 22px rgba(0,0,0,.3)}
-  .btn.primary{background:var(--accent)} .btn.danger{background:#ffb3b3}
-  .sep{width:1px;background:rgba(255,255,255,.2);margin:0 2px}
-  .hint{position:absolute;right:20px;bottom:-44px;color:#c9d2ff;font-style:italic;font-size:14px;opacity:.85;user-select:none}
-  .el{position:absolute;left:100px;top:120px;user-select:none;touch-action:none;cursor:move;transform-origin:center center}
-  .el.selected{outline:2px dashed #18d2ac;outline-offset:2px}
-  .el.text{padding:10px 14px;background:rgba(255,255,255,.5);border-radius:10px;color:var(--ink);font-size:26px}
-  .handle,.rot{position:absolute;width:18px;height:18px;border-radius:50%;box-shadow:0 4px 10px rgba(0,0,0,.35)}
-  .handle{background:#18d2ac;right:-10px;bottom:-10px;cursor:nwse-resize}
-  .rot{background:#9bb3ff;left:50%;top:-14px;transform:translateX(-50%);cursor:grab}
-  .shield{position:absolute;inset:0;display:none;pointer-events:none}
-  .shield.editing{display:block;pointer-events:auto}
-  .sticker-panel{position:fixed;inset:0;display:none;place-items:center;background:rgba(0,0,0,.45)}
-  .sticker-card{background:#1b213f;color:#fff;padding:18px;border-radius:16px;box-shadow:0 30px 60px rgba(0,0,0,.45);display:flex;gap:14px;align-items:center;flex-wrap:wrap;max-width:560px}
-  .sticker{width:72px;height:72px;background:#fff;border-radius:12px;display:grid;place-items:center;cursor:pointer}
-  .sticker svg{width:54px;height:54px} .sticker-close{margin-left:auto}
-  .sticker-panel.show{display:grid}
-  @media (max-width:920px){#book{width:96vw}}
-</style>
+  <style>
+    :root{
+      --bg:#0c1130;           /* midnight blue */
+      --paper:#f4eadd;        /* warm parchment */
+      --ink:#1c2a5c;          /* deep blue text */
+      --accent:#8f7cf5;
+    }
+    *{ box-sizing:border-box }
+    html,body{ height:100%; margin:0 }
+    body{
+      background:var(--bg);
+      color:var(--ink);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+      display:flex; align-items:center; justify-content:center;
+      overscroll-behavior:none;
+    }
+
+    /* Center stage */
+    .stage{ width: min(1200px, 96vw); padding:20px 10px }
+
+    /* Book container (StPageFlip converts these children into pages) */
+    #book{ width:1100px; max-width:100%; margin:auto }
+
+    /* A single page look */
+    .page{
+      background: var(--paper);
+      background-image:
+        radial-gradient(ellipse at top, rgba(0,0,0,.10), transparent 62%),
+        radial-gradient(ellipse at bottom, rgba(0,0,0,.15), transparent 68%);
+      border-radius: 8px;
+      box-shadow: 0 6px 28px rgba(0,0,0,.25);
+      padding: 32px 36px;
+    }
+    .page h1{
+      font-family:"Great Vibes", cursive; font-weight:400;
+      font-size: clamp(28px, 4vw, 52px);
+      margin: 4px 0 14px;
+      letter-spacing:.4px;
+    }
+    .page p{ line-height:1.75; font-size: clamp(16px, 1.6vw, 18px); }
+
+    /* Cover pages (hard) */
+    .cover{ padding:0; overflow:hidden; }
+    .cover img{ width:100%; height:100%; object-fit:cover; display:block; }
+
+    /* Drag hint */
+    .hint{
+      position: fixed; bottom: 14px; left:50%; transform: translateX(-50%);
+      color:#cfd7ffcc; font-size:14px; letter-spacing:.3px; user-select:none;
+    }
+  </style>
 </head>
 <body>
   <div class="stage">
     <div id="book">
-      <!-- pages -->
-      <div class="page cover" data-density="hard" aria-label="Cover"></div>
-
-      <div class="page"><div class="inner">
-        <h1 class="script">Our Story Begins</h1>
-        <p>Once upon a Discord, a queue became a doorway. Games and laughter grew into late-night talks and quiet promises.</p>
-      </div></div>
-
-      <div class="page"><div class="inner"><h2>How We Met</h2><p>We chatted on an Overwatch server. I didn’t reply right away—fate gave us a small pause before everything began.</p></div></div>
-      <div class="page"><div class="inner"><h2>Little Things</h2><p>Science tangents, history rants, games you crush without trying—those sparks became a warm light.</p></div></div>
-      <div class="page"><div class="inner"><h2>October 13, 2024</h2><p>“You are now officially my girlfriend.” Simple words that melted my heart. The start of us.</p></div></div>
-      <div class="page"><div class="inner"><h2>Everyday</h2><p>Not a day without each other—calls, games, smiles, quiet support. A rhythm that felt like home.</p></div></div>
-      <div class="page"><div class="inner"><h2>Looking Ahead</h2><p>I want your good days and your hard days. Your dreams, your quiet, your everything. I choose you.</p></div></div>
-      <div class="page"><div class="inner"><h2>Scrapbook</h2><p>Add photos, notes, and stickers. Make it ours.</p></div></div>
-      <div class="page"><div class="inner"><h2>More Memories</h2></div></div>
-      <div class="page" data-density="hard"><div class="inner" style="display:flex;align-items:center;justify-content:center;">
-        <div><h2 style="text-align:center;margin:0 0 8px">The End (for now)</h2><p style="text-align:center;opacity:.8">Turn the cover to begin again.</p></div>
-      </div></div>
-
-      <!-- edit shields -->
-      <div id="shield-left" class="shield"></div>
-      <div id="shield-right" class="shield"></div>
-
-      <!-- HUD -->
-      <div id="hud" class="hud">
-        <button class="btn" id="editLeft">Edit Left</button>
-        <button class="btn" id="editRight">Edit Right</button>
-        <div class="sep"></div>
-        <button class="btn" id="addText">Add Text</button>
-        <input type="file" id="addPhoto" accept="image/*" style="display:none" />
-        <button class="btn" id="addPhotoBtn">Add Photo</button>
-        <button class="btn" id="addSticker">Stickers</button>
-        <div class="sep"></div>
-        <input type="color" id="color" value="#13224a" title="Text color" />
-        <select id="font">
-          <option value="Georgia,serif">Georgia</option>
-          <option value='"Great Vibes",cursive'>Great Vibes (script)</option>
-          <option value='Times New Roman,serif'>Times</option>
-        </select>
-        <div class="sep"></div>
-        <button class="btn danger" id="deleteSelected">Delete Selected</button>
-        <button class="btn primary" id="save">Save</button>
+      <!-- FRONT COVER (hard) -->
+      <div class="page cover" data-density="hard" aria-label="Front cover">
+        <!-- your cover art -->
+        <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png" alt="Our Love Story cover">
       </div>
-      <div class="hint">Drag the corners to turn pages · Type <b>123</b> to edit</div>
+
+      <!-- Inside pages -->
+      <div class="page">
+        <h1>Our Story Begins</h1>
+        <p>
+          Once upon a Discord… I was just looking for someone to queue with. Your
+          message waited a day — like fate pressed pause — and when I finally replied,
+          the talking never really stopped.
+        </p>
+      </div>
+
+      <div class="page">
+        <h1>Overwatch & Laughter</h1>
+        <p>
+          We started with games and ended up exploring tiny new worlds: your excited
+          science tangents, random history facts, and that effortless way you’re good
+          at every game you touch.
+        </p>
+      </div>
+
+      <div class="page">
+        <h1>Rocky First Chapter</h1>
+        <p>
+          It wasn’t perfect. There were bumps and doubts. But even in the shaky parts,
+          something kept pulling us back together — stronger each time.
+        </p>
+      </div>
+
+      <div class="page">
+        <h1>October 13</h1>
+        <p>
+          You asked for a selfie. I sent it, nervous. Then you said:
+          “You are now officially my girlfriend.” Simple words — instant melt.
+          It felt like the first time someone claimed me with no hesitation.
+        </p>
+      </div>
+
+      <div class="page">
+        <h1>Everyday Us</h1>
+        <p>
+          Since then: daily calls, late-night laughs, mornings that arrive too soon.
+          What began as a message became a promise to keep choosing each other.
+        </p>
+      </div>
+
+      <div class="page">
+        <h1>Looking Forward</h1>
+        <p>
+          I want to be in your future — for the good days and the hard days —
+          to watch your dreams unfold and be right there beside you.
+        </p>
+      </div>
+
+      <!-- BACK COVER (hard) -->
+      <div class="page cover" data-density="hard" aria-label="Back cover">
+        <!-- a soft parchment back cover look -->
+        <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/paper_back_soft.png" alt="Back cover" onerror="this.remove()">
+      </div>
     </div>
   </div>
 
-  <!-- Stickers -->
-  <div id="stickerPanel" class="sticker-panel">
-    <div class="sticker-card">
-      <div class="sticker" data-stk="heart">
-        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-          <path d="M32 56s-22-13-22-28a12 12 0 0 1 22-7 12 12 0 0 1 22 7c0 15-22 28-22 28z" fill="#ff66a3"/>
-        </svg>
-      </div>
-      <div class="sticker" data-stk="leaf">
-        <svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-          <path d="M10 34c18-24 36-24 44-18-4 20-18 34-44 34 10-6 16-14 18-20-6 4-12 6-18 4z" fill="#59c174"/>
-        </svg>
-      </div>
-      <button class="btn sticker-close" id="closeSticker">Close</button>
-    </div>
-  </div>
+  <div class="hint">Drag a corner to turn the page</div>
 
-  <!-- Robust loader: tries two CDNs; runs init ONLY when St is ready -->
+  <!-- IMPORTANT: this must be in the same folder as this HTML -->
+  <script src="page-flip.browser.js"></script>
+
   <script>
-    (function loadPageFlip(done){
-      function add(src, next){
-        var s=document.createElement('script');
-        s.src=src; s.onload=done; s.onerror=next; document.head.appendChild(s);
-      }
-      // try official scoped package first, then fallback
-      add('https://unpkg.com/@stpageflip/page-flip@2.0.7/dist/js/pageflip.min.js', function(){
-        if (window.St) return done();
-        add('https://unpkg.com/st-pageflip@2.0.7/dist/js/pageflip.min.js', done);
-      });
-    })(function(){
-      if (!window.St){ console.error('PageFlip failed to load'); return; }
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('book');
 
-      // ====== BOOK INIT ======
-      const book = document.getElementById('book');
-      const pageFlip = new St.PageFlip(book, {
-        width: 550, height: 720, size:'fixed',
-        maxShadowOpacity:.35, showCover:true,
-        usePortrait:true, startPage:0, startZIndex:3, flippingTime:900, autoSize:true
-      });
-      const pages = book.querySelectorAll('.page');
-      pageFlip.loadFromHTML(pages);
-
-      // ====== EDIT MODE ======
-      const hud = document.getElementById('hud');
-      const shieldLeft  = document.getElementById('shield-left');
-      const shieldRight = document.getElementById('shield-right');
-      let editMode = false, editSide = 'right', selectedEl = null;
-
-      // Secret 123
-      let seq = '';
-      window.addEventListener('keydown', (e)=>{
-        if (['1','2','3'].includes(e.key)){ seq += e.key; if(seq==='123'){ enterEdit(); seq=''; } }
-        else { seq=''; }
-        if (!editMode){
-          if (e.key==='ArrowLeft') pageFlip.turnToPrevPage();
-          if (e.key==='ArrowRight') pageFlip.turnToNextPage();
-        }
-      });
-
-      function enterEdit(){
-        editMode = true; hud.classList.add('show'); setSide('right');
-        shieldLeft.classList.add('editing'); shieldRight.classList.add('editing');
-      }
-      function exitEdit(){
-        editMode = false; hud.classList.remove('show');
-        shieldLeft.classList.remove('editing'); shieldRight.classList.remove('editing');
-        deselect();
-      }
-
-      const STORAGE_KEY='storybook-v1';
-      document.getElementById('save').addEventListener('click', ()=>{
-        const data=[];
-        pages.forEach((p)=> {
-          const items=[...p.querySelectorAll('.el')].map(el=>({
-            t:el.dataset.t, html:el.dataset.t==='text'?el.innerHTML:'',
-            src:el.dataset.t==='img'?el.querySelector('img')?.src:'',
-            svg:el.dataset.t==='stk'?el.querySelector('svg')?.outerHTML:'',
-            left:el.style.left, top:el.style.top, w:el.style.width, h:el.style.height,
-            tr:el.style.transform, color:el.style.color, ff:el.style.fontFamily, fs:el.style.fontSize
-          })); data.push(items);
+      try {
+        // Initialize StPageFlip
+        const pageFlip = new St.PageFlip(el, {
+          width: 560,          // page width in px
+          height: 780,         // page height in px
+          size: 'stretch',     // scale to fit container
+          minWidth: 320,
+          maxWidth: 1600,
+          minHeight: 420,
+          maxHeight: 2200,
+          drawShadow: true,
+          flippingTime: 900,   // ms
+          usePortrait: true,
+          showCover: true,     // treat first/last as hard covers
+          autoSize: true
         });
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        exitEdit();
-      });
 
-      // Load saved
-      try{
-        const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
-        if (saved) saved.forEach((items,idx)=>{
-          const p=pages[idx]; if (!p) return;
-          items.forEach(it=>{
-            if (it.t==='text') addText(p,it);
-            if (it.t==='img')  addImage(p,it);
-            if (it.t==='stk')  addSticker(p,it);
-          });
-        });
-      }catch{}
-
-      function currentIndices(){
-        const i=pageFlip.getCurrentPageIndex();
-        return pageFlip.getOrientation()==='portrait' ? {left:null,right:i} : {left:i,right:i+1};
+        // Turn the .page children into the book
+        pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
+      } catch (err) {
+        console.error('PageFlip failed to load', err);
+        alert('PageFlip failed to load. Make sure "page-flip.browser.js" is in the same folder as this HTML.');
       }
-      function pageFor(side){ const idx=currentIndices()[side]; return idx==null?null:pages[idx]; }
-
-      function setSide(side){
-        editSide=side;
-        // split shields 50/50, enable only non-edited side to block flipping
-        shieldLeft.style.left='0';  shieldLeft.style.top='0'; shieldLeft.style.width='50%';  shieldLeft.style.height='100%';
-        shieldRight.style.left='50%'; shieldRight.style.top='0'; shieldRight.style.width='50%'; shieldRight.style.height='100%';
-        shieldLeft.style.pointerEvents  = (side==='right'?'auto':'none');
-        shieldRight.style.pointerEvents = (side==='left' ?'auto':'none');
-      }
-
-      document.getElementById('editLeft').addEventListener('click', ()=>setSide('left'));
-      document.getElementById('editRight').addEventListener('click',()=>setSide('right'));
-
-      document.getElementById('addText').addEventListener('click', ()=>{
-        const p=pageFor(editSide); if(!p) return;
-        addText(p,{html:'Your text',left:'120px',top:'120px',color:document.getElementById('color').value,ff:document.getElementById('font').value});
-      });
-
-      document.getElementById('addPhotoBtn').addEventListener('click', ()=>document.getElementById('addPhoto').click());
-      document.getElementById('addPhoto').addEventListener('change',(e)=>{
-        const file=e.target.files[0]; if(!file) return;
-        const r=new FileReader();
-        r.onload=()=>{ const p=pageFor(editSide); if(!p) return; addImage(p,{src:r.result,left:'140px',top:'160px',w:'260px'}); };
-        r.readAsDataURL(file); e.target.value='';
-      });
-
-      const panel=document.getElementById('stickerPanel');
-      document.getElementById('addSticker').addEventListener('click', ()=>panel.classList.add('show'));
-      document.getElementById('closeSticker').addEventListener('click', ()=>panel.classList.remove('show'));
-      panel.addEventListener('click',(e)=>{
-        const btn=e.target.closest('.sticker'); if(!btn) return;
-        const p=pageFor(editSide); if(!p) return;
-        addSticker(p,{svg:btn.querySelector('svg').outerHTML,left:'160px',top:'180px',w:'120px',h:'120px'}); panel.classList.remove('show');
-      });
-
-      document.getElementById('deleteSelected').addEventListener('click', ()=>{ if(selectedEl){selectedEl.remove(); selectedEl=null;} });
-
-      // builders
-      function baseEl(page,opts){
-        const el=document.createElement('div');
-        el.className='el'; el.style.left=opts.left||'120px'; el.style.top=opts.top||'120px';
-        if (opts.w) el.style.width=opts.w; if (opts.h) el.style.height=opts.h;
-        if (opts.tr) el.style.transform=opts.tr; if (opts.color) el.style.color=opts.color;
-        if (opts.ff) el.style.fontFamily=opts.ff; if (opts.fs) el.style.fontSize=opts.fs;
-        el.dataset.t=opts.t;
-        const handle=document.createElement('div'); handle.className='handle';
-        const rot=document.createElement('div'); rot.className='rot';
-        el.appendChild(handle); el.appendChild(rot);
-        page.querySelector('.inner').appendChild(el);
-        makeInteractive(el,handle,rot); select(el); return el;
-      }
-      function addText(page,opts){ const el=baseEl(page,{...opts,t:'text'}); el.classList.add('text'); el.contentEditable="true"; el.innerHTML=opts.html||'Your text'; }
-      function addImage(page,opts){ const el=baseEl(page,{...opts,t:'img'}); const img=document.createElement('img'); img.src=opts.src; img.style.display='block'; img.style.width='100%'; img.style.height='100%'; img.style.borderRadius='12px'; el.appendChild(img); if(!opts.w)el.style.width='280px'; if(!opts.h)el.style.height='200px'; }
-      function addSticker(page,opts){ const el=baseEl(page,{...opts,t:'stk'}); el.innerHTML=(opts.svg||'')+el.innerHTML; if(!opts.w)el.style.width='120px'; if(!opts.h)el.style.height='120px'; }
-
-      function select(el){ deselect(); selectedEl=el; el.classList.add('selected'); }
-      function deselect(){ if(selectedEl){selectedEl.classList.remove('selected'); selectedEl=null;} }
-      document.addEventListener('pointerdown',(e)=>{ const el=e.target.closest('.el'); if(el && book.contains(el)) select(el); else if(!e.target.closest('#hud') && !e.target.closest('.sticker-panel')) deselect(); });
-
-      function makeInteractive(el,handle,rot){
-        let startX,startY,startL,startT,startW,startH,startAngle=0;
-        el.addEventListener('pointerdown',(e)=>{ if(e.target===handle||e.target===rot) return; e.preventDefault(); el.setPointerCapture(e.pointerId);
-          startX=e.clientX; startY=e.clientY; startL=parseFloat(el.style.left); startT=parseFloat(el.style.top);
-          const move=(ev)=>{ el.style.left=(startL+ev.clientX-startX)+'px'; el.style.top=(startT+ev.clientY-startY)+'px'; };
-          const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
-          el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
-        });
-        handle.addEventListener('pointerdown',(e)=>{ e.preventDefault(); el.setPointerCapture(e.pointerId);
-          startX=e.clientX; startY=e.clientY; startW=parseFloat(getComputedStyle(el).width); startH=parseFloat(getComputedStyle(el).height);
-          const move=(ev)=>{ el.style.width=(startW+(ev.clientX-startX))+'px'; el.style.height=(startH+(ev.clientY-startY))+'px'; };
-          const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
-          el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
-        });
-        rot.addEventListener('pointerdown',(e)=>{ e.preventDefault(); el.setPointerCapture(e.pointerId);
-          const r=el.getBoundingClientRect(); const cx=r.left+r.width/2, cy=r.top+r.height/2;
-          const cur=el.style.transform.match(/rotate\(([-0-9.]+)rad\)/); startAngle=cur?parseFloat(cur[1]):0;
-          const move=(ev)=>{ const ang=Math.atan2(ev.clientY-cy,ev.clientX-cx); el.style.transform=`rotate(${ang}rad)`; };
-          const up=()=>{ el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
-          el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
-        });
-      }
-
-      document.getElementById('color').addEventListener('input',e=>{ if(selectedEl && selectedEl.dataset.t==='text') selectedEl.style.color=e.target.value; });
-      document.getElementById('font').addEventListener('change',e=>{ if(selectedEl && selectedEl.dataset.t==='text') selectedEl.style.fontFamily=e.target.value; });
-
-      shieldLeft.addEventListener('pointerdown', e=>e.preventDefault());
-      shieldRight.addEventListener('pointerdown',e=>e.preventDefault());
-
-      window._flip = pageFlip; // for debugging if needed
     });
   </script>
 </body>
