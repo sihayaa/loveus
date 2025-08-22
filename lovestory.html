@@ -23,6 +23,7 @@ body{
   display:flex; align-items:center; justify-content:center; overflow:hidden;
   font-family:var(--font);
 }
+
 #stage{ width:1000px; height:650px; position:relative; perspective:1600px; }
 #book{ position:absolute; inset:0; }
 
@@ -41,7 +42,7 @@ body{
   font-size:22px; line-height:1.35;
 }
 
-/* Closed cover overlay (no PNG; clean hardback) */
+/* Closed cover overlay */
 #closedCover{ position:absolute; inset:0; z-index:90; display:grid; place-items:center; }
 #closedCover .cover3D{
   width:1000px; height:650px; position:relative;
@@ -50,9 +51,9 @@ body{
 }
 #closedCover .hard{
   position:absolute; inset:0; border-radius:6px;
-  background:
-    radial-gradient(120% 80% at 30% 10%, rgba(255,255,255,.2), transparent 60%),
-    linear-gradient(135deg, #2a2f64, #151a3a);
+  background-position:center;
+  background-repeat:no-repeat;
+  background-size:cover;
   box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
 }
 #closedCover .spine{
@@ -136,14 +137,14 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
   <!-- CLOSED COVER (drag or click to open) -->
   <div id="closedCover" title="Drag or click to open">
     <div class="cover3D">
-      <div class="hard edges"></div>
+      <div class="hard edges" id="coverImage" aria-label="Cover"></div>
       <div class="spine"></div>
     </div>
   </div>
 
   <!-- Flipbook -->
   <div id="book">
-    <!-- 10+ pages to start -->
+    <!-- 11 pages to start -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -211,27 +212,34 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 <script>
 /* ========= Config ========= */
 const PASSCODE = '123';
-const STORAGE_KEY = 'scrapbook_final_v1';
+const STORAGE_KEY = 'scrapbook_final_v2';
+const COVER_URL  = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/book.png';
 
-/* ========= Helpers ========= */
+/* ========= Small helpers ========= */
 const $ = (sel, ctx=document) => ctx.querySelector(sel);
 const $$ = (sel, ctx=document) => Array.from(ctx.querySelectorAll(sel));
-
-function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
-function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+const openModal  = el => { el.classList.add('open'); el.setAttribute('aria-hidden','false'); };
+const closeModal = el => { el.classList.remove('open'); el.setAttribute('aria-hidden','true'); };
 function toastShow(msg){ const t=$('#toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',1200); }
 
-/* ========= Main ========= */
 window.addEventListener('load', () => {
-  if (!window.St || !St.PageFlip) {
-    console.error('PageFlip not loaded – check the script tags or blockers.');
-    return;
+  if (!window.St || !St.PageFlip) { console.error('PageFlip not loaded – check the script tags or blockers.'); return; }
+
+  /* ====== Cover image ====== */
+  const coverEl = document.getElementById('coverImage');
+  if (coverEl) {
+    coverEl.style.backgroundImage =
+      `url('${COVER_URL}'),
+       radial-gradient(120% 80% at 30% 10%, rgba(255,255,255,.18), transparent 60%),
+       linear-gradient(135deg, #2a2f64, #151a3a)`;
+    coverEl.style.backgroundSize = 'cover, auto, auto';
+    coverEl.style.backgroundPosition = 'center, center, center';
   }
 
   const bookEl = $('#book');
   const coverUI = $('#closedCover');
 
-  // Flipbook
+  /* ====== Flipbook init ====== */
   const pageFlip = new St.PageFlip(bookEl, {
     width: 500, height: 650,
     size: "fixed",
@@ -245,14 +253,14 @@ window.addEventListener('load', () => {
   });
   pageFlip.loadFromHTML($$('#book .page'));
 
-  // DRAG-ONLY flipping (clicks don’t flip)
+  /* ====== Drag-only flipping (clicks don’t flip) ====== */
   let tapStart=null;
   function isTap(d,t){ return d<8 && t<300; }
   bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
   bookEl.addEventListener('pointerup',(e)=>{ if(!tapStart) return; const d=Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y); const dt=Date.now()-tapStart.t; if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); } tapStart=null; }, true);
   bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 
-  // COVER open
+  /* ====== Cover open ====== */
   function openCover(){
     coverUI.classList.add('opening');
     setTimeout(()=>{ coverUI.style.display='none'; try{ pageFlip.turnToPage(1); }catch(_){} }, 900);
@@ -262,7 +270,7 @@ window.addEventListener('load', () => {
   coverUI.addEventListener('pointerup',(e)=>{ if(!drag) return; const dx=e.clientX-drag.x; if(Math.abs(dx)>40 || isTap(Math.abs(dx), 200)) openCover(); drag=null; });
   coverUI.addEventListener('click', openCover);
 
-  // Active side targeting
+  /* ====== Visible side targeting ====== */
   let activeCanvas=null;
   function getVisibleCanvases(){
     let left = $('.stf__item--left  .page .page-canvas');
@@ -286,7 +294,7 @@ window.addEventListener('load', () => {
   $('#targetRight').addEventListener('click',()=> setActiveCanvas('right'));
   if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
 
-  // Secret edit
+  /* ====== Secret edit mode (type 123) ====== */
   const toolbar   = $('#toolbar');
   const fileInput = $('#fileInput');
   let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
@@ -314,7 +322,7 @@ window.addEventListener('load', () => {
     try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
   }
 
-  // Drag / resize / rotate
+  /* ====== Drag / resize / rotate ====== */
   function makeDraggable(el){
     let startX=0,startY=0,origX=0,origY=0;
     let resizing=false,startW=0,startH=0;
@@ -366,7 +374,7 @@ window.addEventListener('load', () => {
   function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
   document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-  // Add Text / Photo / Stickers
+  /* ====== Add Text / Photo ====== */
   const textModal = $('#textModal');
   const textInput = $('#textInput');
 
@@ -397,10 +405,11 @@ window.addEventListener('load', () => {
     reader.readAsDataURL(f);
   });
 
+  /* ====== Stickers ====== */
   const stickerModal = $('#stickerModal');
   const stickersGrid = $('#stickersGrid');
   $('#stickersBtn').addEventListener('click', openStickers);
-  $('#stickersClose')?.addEventListener('click',()=> closeModal(stickerModal));
+  $('#stickersClose').addEventListener('click',()=> closeModal(stickerModal));
 
   const STICKERS = [
     {name:'Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><path fill='%23ff5a7a' d='M60 105s-8-6-26-22S3 51 18 33c9-10 26-9 34 3 8-12 25-13 34-3 15 18-4 38-16 50S60 105 60 105z'/></svg>", w:140,h:120},
@@ -424,7 +433,7 @@ window.addEventListener('load', () => {
     openModal(stickerModal);
   }
 
-  // Page tools
+  /* ====== Page tools & persistence ====== */
   $('#addPageBtn').addEventListener('click',()=>{
     const p=document.createElement('div'); p.className='page';
     const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
@@ -435,7 +444,6 @@ window.addEventListener('load', () => {
   $('#deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
   $('#clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
 
-  // Save => persist + auto-exit
   $('#saveBtn').addEventListener('click',()=>{
     const pages=$$('#book .page').map(p=>$('.page-canvas',p).innerHTML);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
@@ -443,7 +451,7 @@ window.addEventListener('load', () => {
     setTimeout(()=> exitEdit(), 300);
   });
 
-  // Restore from localStorage
+  // Restore
   (function applySaved(){
     try{
       const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
