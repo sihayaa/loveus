@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-
 <style>
 :root{
   --bg:#0b0f2f;       /* midnight blue */
@@ -26,7 +25,7 @@ body{
 #stage{ width:1000px; height:650px; position:relative; perspective:1600px; }
 #book{ position:absolute; inset:0; }
 
-/* Page look */
+/* Pages */
 .page{
   width:100%; height:100%; position:relative; overflow:hidden;
   background: radial-gradient(ellipse at 50% -10%, rgba(0,0,0,.07), transparent 40%);
@@ -41,7 +40,7 @@ body{
   font-size:22px; line-height:1.35;
 }
 
-/* Closed cover overlay (pretty 3D hardback) */
+/* Closed cover overlay (no PNG by default) */
 #closedCover{ position:absolute; inset:0; z-index:90; display:grid; place-items:center; }
 #closedCover .cover3D{
   width:1000px; height:650px; position:relative;
@@ -49,18 +48,18 @@ body{
   transition:transform .9s ease-in-out;
 }
 #closedCover .hard{
-  position:absolute; inset:0; background: center/cover no-repeat var(--paper);
+  position:absolute; inset:0; border-radius:6px;
+  background:
+    radial-gradient(120% 80% at 30% 10%, rgba(255,255,255,.2), transparent 60%),
+    linear-gradient(135deg, #2a2f64, #151a3a);
   box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
-  border-radius:6px;
 }
 #closedCover .spine{
   position:absolute; left:0; top:0; bottom:0; width:28px;
   background:linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(255,255,255,.12));
   border-top-left-radius:6px; border-bottom-left-radius:6px;
 }
-#closedCover .edges::before, #closedCover .edges::after{
-  content:""; position:absolute; pointer-events:none;
-}
+#closedCover .edges::before, #closedCover .edges::after{ content:""; position:absolute; pointer-events:none; }
 #closedCover .edges::before{
   right:0; top:12px; width:20px; height:calc(100% - 24px);
   background:linear-gradient(90deg, rgba(255,255,255,.65), rgba(180,170,150,.45));
@@ -92,7 +91,7 @@ body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4p
 body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 
-/* disable flip capture while editing; keep canvases interactive */
+/* while editing, let canvases capture events (no accidental flip by click) */
 body.editing .stf__block, body.editing .stf__item, body.editing .stf__wrapper{ pointer-events:none !important; }
 body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !important; }
 
@@ -112,7 +111,6 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 #toolbar .group{ display:flex; gap:8px; align-items:center; }
 #fileInput{ display:none; }
 
-/* Modals & toast */
 .modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
 .modal.open{ display:flex; }
 .modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
@@ -134,7 +132,7 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 <body>
 
 <div id="stage">
-  <!-- CLOSED COVER -->
+  <!-- CLOSED COVER (click or drag to open) -->
   <div id="closedCover" title="Drag or click to open">
     <div class="cover3D">
       <div class="hard edges" id="coverImage"></div>
@@ -144,7 +142,6 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 
   <!-- Flipbook -->
   <div id="book">
-    <!-- cover page + 10 inner pages -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -173,7 +170,6 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     <div class="group">
       <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
       <button id="clearPageBtn" class="warn">Clear Page</button>
-      <button id="resetAllBtn" class="warn">Reset Book</button>
       <button id="saveBtn" class="mint">Save</button>
     </div>
     <input id="fileInput" type="file" accept="image/*" />
@@ -205,52 +201,26 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
-<!-- PageFlip via CDN (avoids path/404 issues) -->
+<!-- Use the CDN to guarantee PageFlip loads -->
 <script src="https://cdn.jsdelivr.net/gh/Nodlik/StPageFlip@2.0.0/dist/page-flip.browser.js"></script>
+<!-- If you insist on local file, comment the CDN above and uncomment this, and be sure the path exists -->
+<!-- <script src="flipbook/page-flip.browser.js"></script> -->
 
 <script>
-/* -------- Config -------- */
-const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v10';
-const COVER_URL   = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/book.png';
+/* === Config === */
+const PASSCODE = '123';
+const STORAGE_KEY = 'scrapbook_clean_v1';
+const COVER_URL = ''; // leave empty (no PNG). If you later have a *closed* cover image, put its URL here.
 
-/* -------- Globals (single declarations) -------- */
-let editEnabled = false;
-let selectedItem = null;
-let keyBuffer = '';
-let keyTimer = null;
-
-/* -------- Elements -------- */
-const bookEl    = document.getElementById('book');
-const coverUI   = document.getElementById('closedCover');
-const cover3D   = coverUI.querySelector('.cover3D');
-const coverImage= document.getElementById('coverImage');
-coverImage.style.backgroundImage = `url('${COVER_URL}')`;
-
-const toolbar   = document.getElementById('toolbar');
-const toast     = document.getElementById('toast');
-const fileInput = document.getElementById('fileInput');
-const targetLeftBtn  = document.getElementById('targetLeft');
-const targetRightBtn = document.getElementById('targetRight');
-
-const textModal = document.getElementById('textModal');
-const textInput = document.getElementById('textInput');
-const textAdd   = document.getElementById('textAdd');
-const textCancel= document.getElementById('textCancel');
-
-const stickerModal = document.getElementById('stickerModal');
-const stickersGrid = document.getElementById('stickersGrid');
-const stickersClose= document.getElementById('stickersClose');
-
-/* Load saved content before init */
-applySaved();
-
-/* Guard */
-if (!window.St || !St.PageFlip) {
-  console.error('PageFlip not loaded. (CDN blocked?)');
-}
+const bookEl = document.getElementById('book');
+const coverUI = document.getElementById('closedCover');
+const coverImage = document.getElementById('coverImage');
+if (COVER_URL) coverImage.style.background = `center/cover no-repeat url('${COVER_URL}')`;
 
 /* Flipbook init */
+if (!window.St || !St.PageFlip) {
+  console.error('PageFlip not loaded – check the script tag.');
+}
 const pageFlip = new St.PageFlip(bookEl, {
   width: 500, height: 650,
   size: "fixed",
@@ -264,22 +234,21 @@ const pageFlip = new St.PageFlip(bookEl, {
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* Drag-only flipping: block tap-to-flip */
-let tapStart = null;
+/* Drag-only flipping (clicks don’t flip) */
+let tapStart=null;
 function isTap(d,t){ return d<8 && t<300; }
 bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
 bookEl.addEventListener('pointerup',(e)=>{ if(!tapStart) return; const d=Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y); const dt=Date.now()-tapStart.t; if(isTap(d,dt)){ e.preventDefault(); e.stopPropagation(); } tapStart=null; }, true);
 bookEl.addEventListener('click',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
-bookEl.addEventListener('dblclick',(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 
 /* Cover open */
 function openCover(){
   coverUI.classList.add('opening');
   setTimeout(()=>{ coverUI.style.display='none'; try{ pageFlip.turnToPage(1); }catch(_){} }, 900);
 }
-let coverDrag=null;
-coverUI.addEventListener('pointerdown',(e)=>{ coverDrag={x:e.clientX,y:e.clientY}; });
-coverUI.addEventListener('pointerup',(e)=>{ if(!coverDrag) return; const dx=e.clientX-coverDrag.x; if(Math.abs(dx)>40 || isTap(Math.abs(dx), 200)) openCover(); coverDrag=null; });
+let drag=null;
+coverUI.addEventListener('pointerdown',(e)=> drag={x:e.clientX,y:e.clientY});
+coverUI.addEventListener('pointerup',(e)=>{ if(!drag) return; const dx=e.clientX-drag.x; if(Math.abs(dx)>40 || isTap(Math.abs(dx), 200)) openCover(); drag=null; });
 coverUI.addEventListener('click', openCover);
 
 /* Active-side targeting */
@@ -302,15 +271,18 @@ function setActiveCanvas(side){
   next.classList.add('active-side');
   activeCanvas = next;
 }
-targetLeftBtn.addEventListener('click', ()=> setActiveCanvas('left'));
-targetRightBtn.addEventListener('click',()=> setActiveCanvas('right'));
+document.getElementById('targetLeft').addEventListener('click', ()=> setActiveCanvas('left'));
+document.getElementById('targetRight').addEventListener('click',()=> setActiveCanvas('right'));
 if(pageFlip.on){ pageFlip.on('flip', ()=>{ if(!activeCanvas) setActiveCanvas('right'); }); }
 
-/* Secret edit mode (type 123) */
+/* Secret edit (type 123) */
+const toolbar   = document.getElementById('toolbar');
+const toast     = document.getElementById('toast');
+const fileInput = document.getElementById('fileInput');
+let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+
 document.addEventListener('keydown',(e)=>{
-  keyBuffer += e.key;
-  clearTimeout(keyTimer);
-  keyTimer=setTimeout(()=> keyBuffer='', 1200);
+  keyBuffer += e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=> keyBuffer='', 1200);
   if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
 });
 function setAllTextEditable(on){
@@ -318,18 +290,17 @@ function setAllTextEditable(on){
     .forEach(el => el.setAttribute('contenteditable', on ? 'true' : 'false'));
 }
 function setEditing(on){
-  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); }
-  else  { document.body.classList.remove('editing'); setAllTextEditable(false);
+  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'; }
+  else  { document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none';
           document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
 function enterEdit(){
-  editEnabled=true; toolbar.style.display='flex'; setEditing(true);
-  setActiveCanvas('right');
+  editEnabled=true; setEditing(true); setActiveCanvas('right');
   try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
   toastShow('Edit mode unlocked ✨');
 }
 function exitEdit(){
-  editEnabled=false; toolbar.style.display='none'; setEditing(false); deselect();
+  editEnabled=false; setEditing(false); selectedItem=null;
   try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
 }
 
@@ -338,12 +309,10 @@ function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0;
   let resizing=false,startW=0,startH=0;
   let rotating=false,startAngle=0,startPointerAngle=0;
-
   const res=el.querySelector('.resizer');
   let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
   function getAngle(){ return parseFloat(el.dataset.rot||'0')||0; }
   function setAngle(deg){ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; }
-
   if(res){
     res.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
       resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
@@ -361,7 +330,6 @@ function makeDraggable(el){
     setAngle(startAngle + (a-startPointerAngle)*180/Math.PI);
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
-
   el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return;
     if(e.target.classList.contains('resizer') || e.target.classList.contains('rotator')) return;
     selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
@@ -385,18 +353,18 @@ function makeDraggable(el){
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
 document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* Add text / photo */
-document.getElementById('addTextBtn').addEventListener('click',()=>{
-  openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10);
-});
-textCancel.addEventListener('click',()=> closeModal(textModal));
-textAdd.addEventListener('click',()=>{
+/* Add Text / Photo / Stickers */
+const textModal = document.getElementById('textModal');
+const textInput = document.getElementById('textInput');
+document.getElementById('textCancel').addEventListener('click',()=> closeModal(textModal));
+document.getElementById('addTextBtn').addEventListener('click',()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); });
+document.getElementById('textAdd').addEventListener('click',()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
   const isEditing=document.body.classList.contains('editing');
   box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div>
-                 <div class="resizer" title="Resize"></div><div class="rotator" title="Rotate"></div>`;
+                 <div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 });
 
@@ -409,23 +377,21 @@ fileInput.addEventListener('change',(e)=>{
     box.className='scrap-item'; box.style.left='90px'; box.style.top='90px';
     box.style.width='320px'; box.style.height='230px';
     box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt="">
-                   <div class="resizer" title="Resize"></div><div class="rotator" title="Rotate"></div>`;
+                   <div class="resizer"></div><div class="rotator"></div>`;
     (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); fileInput.value='';
   };
   reader.readAsDataURL(f);
 });
 
-/* Stickers */
+const stickerModal = document.getElementById('stickerModal');
+const stickersGrid = document.getElementById('stickersGrid');
+document.getElementById('stickersBtn').addEventListener('click', openStickers);
+document.getElementById('stickersClose')?.addEventListener('click',()=> closeModal(stickerModal));
 const STICKERS = [
   {name:'Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><path fill='%23ff5a7a' d='M60 105s-8-6-26-22S3 51 18 33c9-10 26-9 34 3 8-12 25-13 34-3 15 18-4 38-16 50S60 105 60 105z'/></svg>", w:140,h:120},
-  {name:'Pixel Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 14'><path fill='%23ff3b6a' d='M4 0h2v2h2V0h2v2h2v2h2v2h-2v2h-2v2H8v2H6v-2H4V8H2V6H0V4h2V2h2z'/></svg>", w:120,h:90},
-  {name:'Controller', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120'><rect x='30' y='40' rx='20' ry='20' width='140' height='60' fill='%232a2a35'/><circle cx='70' cy='70' r='12' fill='%23ffffff'/><rect x='62' y='68' width='16' height='4' fill='%232a2a35'/><rect x='68' y='62' width='4' height='16' fill='%232a2a35'/><circle cx='130' cy='60' r='7' fill='%23ff5a7a'/><circle cx='145' cy='60' r='7' fill='%23ffd65c'/><circle cx='130' cy='80' r='7' fill='%235fd089'/><circle cx='145' cy='80' r='7' fill='%2370aef0'/></svg>", w:200,h:120},
-  {name:'Headset', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 140'><path d='M80 20a40 40 0 0 0-40 40v40' fill='none' stroke='%232a2a35' stroke-width='10'/><path d='M80 20a40 40 0 0 1 40 40v40' fill='none' stroke='%232a2a35' stroke-width='10'/><rect x='18' y='86' width='24' height='40' rx='8' fill='%2367e4ca'/><rect x='118' y='86' width='24' height='40' rx='8' fill='%2367e4ca'/></svg>", w:180,h:140},
-  {name:'Keyboard', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 220 80'><rect x='10' y='10' width='200' height='60' rx='10' fill='%232a2a35'/><g fill='%23e6e6e6'><rect x='20' y='20' width='20' height='14' rx='3'/><rect x='44' y='20' width='20' height='14' rx='3'/><rect x='68' y='20' width='20' height='14' rx='3'/><rect x='92' y='20' width='20' height='14' rx='3'/><rect x='116' y='20' width='20' height='14' rx='3'/><rect x='140' y='20' width='20' height='14' rx='3'/><rect x='164' y='20' width='36' height='14' rx='3'/><rect x='20' y='38' width='18' height='14' rx='3'/><rect x='42' y='38' width='18' height='14' rx='3'/><rect x='64' y='38' width='18' height='14' rx='3'/><rect x='86' y='38' width='18' height='14' rx='3'/><rect x='108' y='38' width='18' height='14' rx='3'/><rect x='130' y='38' width='18' height='14' rx='3'/><rect x='152' y='38' width='48' height='14' rx='3'/><rect x='20' y='56' width='80' height='14' rx='3'/><rect x='104' y='56' width='96' height='14' rx='3'/></g></svg>", w:240,h:100},
-  {name:'Mouse', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 120'><rect x='20' y='20' width='50' height='80' rx='25' fill='%232a2a35'/><rect x='42' y='26' width='6' height='20' rx='3' fill='%23e6e6e6'/></svg>", w:100,h:120},
   {name:'Leaf',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 160 100'><path d='M10 80 C 40 60, 70 40, 150 20' stroke='%2348b36b' stroke-width='6' fill='none' stroke-linecap='round'/><circle cx='40' cy='60' r='10' fill='%235fd089'/><circle cx='75' cy='45' r='12' fill='%235fd089'/><circle cx='110' cy='32' r='9' fill='%235fd089'/></svg>", w:180,h:120},
   {name:'Star',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><polygon points='60,10 72,44 108,44 78,66 90,100 60,78 30,100 42,66 12,44 48,44' fill='%23ffd65c'/></svg>", w:120,h:120},
-  {name:'Tape',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 70'><defs><pattern id='d' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10 L10 0' stroke='%23ffb3c1' stroke-width='2'/></pattern></defs><rect x='10' y='10' width='180' height='50' rx='8' ry='8' fill='url(%23d)' stroke='%23ff86a1' stroke-width='3'/></svg>", w:220,h:90}
+  {name:'Tape',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 70'><defs><pattern id='d' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10 L10 0' stroke='%23ffb3c1' stroke-width='2'/></pattern></defs><rect x='10' y='10' width='180' height='50' rx='8' ry='8' fill='url(%23d)' stroke='%23ff86a1' stroke-width='3'/></svg>", w:220,h:90},
 ];
 function openStickers(){
   stickersGrid.innerHTML='';
@@ -442,9 +408,6 @@ function openStickers(){
   });
   openModal(stickerModal);
 }
-document.getElementById('stickersBtn').addEventListener('click', openStickers);
-stickerModal.addEventListener('click',(e)=>{ if(e.target===stickerModal) closeModal(stickerModal); });
-stickersClose.addEventListener('click',()=> closeModal(stickerModal));
 
 /* Page tools */
 document.getElementById('addPageBtn').addEventListener('click',()=>{
@@ -456,14 +419,8 @@ document.getElementById('addPageBtn').addEventListener('click',()=>{
 });
 document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
 document.getElementById('clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
-document.getElementById('resetAllBtn').addEventListener('click',()=>{
-  localStorage.removeItem(STORAGE_KEY);
-  document.querySelectorAll('#book .page .page-canvas').forEach(c=> c.innerHTML='');
-  deselect();
-  toastShow('Book cleared ✓');
-});
 
-/* Save (auto-exit) */
+/* Save => persist + auto-exit */
 document.getElementById('saveBtn').addEventListener('click',()=>{
   const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
@@ -471,11 +428,13 @@ document.getElementById('saveBtn').addEventListener('click',()=>{
   setTimeout(()=> exitEdit(), 300);
 });
 
-/* Utils */
+/* Modals + toast */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
-function applySaved(){
+
+/* Apply any previous saved content */
+(function applySaved(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
     const arr=JSON.parse(raw);
@@ -483,7 +442,7 @@ function applySaved(){
     for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
     document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
   }catch(e){}
-}
+})();
 </script>
 </body>
 </html>
