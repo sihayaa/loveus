@@ -74,6 +74,10 @@ body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4p
 body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 
+/* Let both pages be interactive while editing */
+body.editing .stf__block, body.editing .stf__item, body.editing .stf__wrapper{ pointer-events:none !important; }
+body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !important; }
+
 /* Toolbar */
 #toolbar{
   position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
@@ -190,7 +194,7 @@ body.editing .scrap-item .rotator{ display:block; }
 <script>
 /* ------------ Config ------------- */
 const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v13';
+const STORAGE_KEY = 'scrapbook_v14';
 
 /* ------------ Elements ------------- */
 const bookEl    = document.getElementById('book');
@@ -244,10 +248,9 @@ bookEl.addEventListener('pointerup',(e)=>{
   bookEl.addEventListener(evt,(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 });
 
-/* ---------------- Deterministic side targeting ---------------- */
-let targetSide = 'right';   // 'left' or 'right'
-let activeCanvas = null;
-let pendingAfterFlip = null;
+/* ---------------- CLICK-TO-TARGET PAGES ---------------- */
+let activeCanvas = null;    // whichever page you clicked last
+let editEnabled  = false;
 
 function canvasesList(){
   return document.querySelectorAll('#book .page .page-canvas');
@@ -256,52 +259,49 @@ function getPairByIndex() {
   const list = canvasesList();
   const idx = pageFlip.getCurrentPageIndex ? pageFlip.getCurrentPageIndex() : 0;
   if (idx === 0) return { left: null, right: list[0] || null }; // cover only
-  const base = (idx % 2 === 0) ? idx : idx - 1; // base is left page index of spread
+  const base = (idx % 2 === 0) ? idx : idx - 1; // left page index of the spread
   return { left: list[base] || null, right: list[base+1] || null };
 }
-
-function highlightCanvas(canvas){
+function defaultCanvas(){
+  if (activeCanvas) return activeCanvas;
+  const p = getPairByIndex();
+  return p.right || p.left;  // if on cover, this is first inner (right)
+}
+function setActiveCanvas(canvas){
   document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
   if (canvas){ canvas.classList.add('active-side'); activeCanvas = canvas; }
 }
 
-function ensureSideReady(side, cb){
-  const pair = getPairByIndex();
-  const canvas = side === 'left' ? pair.left : pair.right;
-  if (canvas){
-    cb(canvas);
-  } else {
-    // asking for left while on cover -> flip to first spread
-    try { pageFlip.turnToPage(1); } catch(_){}
-    pendingAfterFlip = () => {
-      const after = getPairByIndex();
-      cb(side === 'left' ? (after.left || after.right) : (after.right || after.left));
-      pendingAfterFlip = null;
-    };
-  }
-}
+/* Delegate clicks to choose the target page while editing */
+bookEl.addEventListener('pointerdown', (e)=>{
+  if (!editEnabled) return;
+  const canvas = e.target.closest('.page-canvas');
+  if (canvas) setActiveCanvas(canvas);
+}, true);
 
+/* Shortcuts for explicit left/right (optional) */
 targetLeftBtn.addEventListener('click', ()=>{
-  targetSide='left';
-  ensureSideReady('left', (canvas)=> highlightCanvas(canvas));
+  const p = getPairByIndex();
+  setActiveCanvas(p.left || p.right);
 });
 targetRightBtn.addEventListener('click', ()=>{
-  targetSide='right';
-  ensureSideReady('right', (canvas)=> highlightCanvas(canvas));
+  const p = getPairByIndex();
+  setActiveCanvas(p.right || p.left);
 });
 
+/* Keep a sensible selection after flip while editing */
 if(pageFlip.on){
   pageFlip.on('flip', ()=>{
-    if (pendingAfterFlip) setTimeout(pendingAfterFlip, 10);
-
-    if (!document.body.classList.contains('editing')) return;
-    const pair = getPairByIndex();
-    highlightCanvas( targetSide==='left' ? (pair.left || pair.right) : (pair.right || pair.left) );
+    if (!editEnabled) return;
+    const p = getPairByIndex();
+    if (!activeCanvas || !activeCanvas.isConnected) {
+      setActiveCanvas(p.right || p.left);
+    }
   });
 }
 
 /* ------------- Secret Edit Mode (type 123) ------------- */
-let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+let selectedItem=null, keyBuffer='', keyTimer=null;
 
 document.addEventListener('keydown',(e)=>{
   keyBuffer += e.key;
@@ -314,21 +314,19 @@ function setAllTextEditable(on){
   document.querySelectorAll('#book .scrap-text')
     .forEach(el => el.setAttribute('contenteditable', on ? 'true' : 'false'));
 }
-function setEditing(on){
-  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'; }
-  else  { document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none';
-          document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
-}
 function enterEdit(){
-  editEnabled=true; setEditing(true);
-  const pair = getPairByIndex();
-  targetSide = pair.right ? 'right' : 'left'; // cover -> right
-  highlightCanvas(pair.right || pair.left);
+  editEnabled=true; toolbar.style.display='flex';
+  document.body.classList.add('editing'); setAllTextEditable(true);
+  const p = getPairByIndex();
+  setActiveCanvas(p.right || p.left);   // start on visible right (or only)
   try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
-  toastShow('Edit mode unlocked ✨');
+  toastShow('Edit mode unlocked ✨ (click a page to target it)');
 }
 function exitEdit(){
-  editEnabled=false; setEditing(false); deselect();
+  editEnabled=false; toolbar.style.display='none';
+  document.body.classList.remove('editing'); setAllTextEditable(false);
+  document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
+  activeCanvas=null; deselect();
   try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
 }
 
@@ -374,25 +372,24 @@ function makeDraggable(el){
       el.style.left=(origX+dx)+'px'; el.style.top =(origY+dy)+'px';
     }
   }
-  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
+  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
 }
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
 document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ------------- Add text / photo (uses ensureSideReady) ------------- */
+/* ------------- Add text / photo (goes to selected page) ------------- */
 document.getElementById('addTextBtn').addEventListener('click',()=>{
   openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10);
 });
 textCancel.addEventListener('click',()=> closeModal(textModal));
 textAdd.addEventListener('click',()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
-  ensureSideReady(targetSide, (canvas)=>{
-    const box=document.createElement('div');
-    box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
-    const isEditing=document.body.classList.contains('editing');
-    box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
-    canvas.appendChild(box); makeDraggable(box);
-  });
+  const canvas = defaultCanvas(); if(!canvas) return;
+  const box=document.createElement('div');
+  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
+  const isEditing=document.body.classList.contains('editing');
+  box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
+  canvas.appendChild(box); makeDraggable(box);
 });
 
 document.getElementById('addPhotoBtn').addEventListener('click',()=> fileInput.click());
@@ -400,12 +397,11 @@ fileInput.addEventListener('change',(e)=>{
   const f=e.target.files[0]; if(!f) return;
   const r=new FileReader();
   r.onload=(ev)=>{
-    ensureSideReady(targetSide, (canvas)=>{
-      const box=document.createElement('div');
-      box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
-      box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
-      canvas.appendChild(box); makeDraggable(box); fileInput.value='';
-    });
+    const canvas = defaultCanvas(); if(!canvas) return;
+    const box=document.createElement('div');
+    box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+    box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
+    canvas.appendChild(box); makeDraggable(box); fileInput.value='';
   };
   r.readAsDataURL(f);
 });
@@ -422,12 +418,11 @@ function openStickers(){
   STICKERS_EMOJI.forEach(ch=>{
     const b=document.createElement('button'); b.textContent=ch; b.title=ch;
     b.addEventListener('click',()=>{
-      ensureSideReady(targetSide, (canvas)=>{
-        const box=document.createElement('div');
-        box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
-        box.innerHTML=`<div class="scrap-text" style="font-size:64px; line-height:1;" contenteditable="false">${ch}</div><div class="resizer"></div><div class="rotator"></div>`;
-        canvas.appendChild(box); makeDraggable(box);
-      });
+      const canvas = defaultCanvas(); if(!canvas) return;
+      const box=document.createElement('div');
+      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
+      box.innerHTML=`<div class="scrap-text" style="font-size:64px; line-height:1;" contenteditable="false">${ch}</div><div class="resizer"></div><div class="rotator"></div>`;
+      canvas.appendChild(box); makeDraggable(box);
     });
     stickersGrid.appendChild(b);
   });
@@ -447,7 +442,7 @@ document.getElementById('addPageBtn').addEventListener('click',()=>{
 });
 document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
 document.getElementById('clearPageBtn').addEventListener('click',()=>{
-  ensureSideReady(targetSide, (canvas)=>{ canvas.innerHTML=''; deselect(); });
+  const canvas = defaultCanvas(); if(!canvas) return; canvas.innerHTML=''; deselect();
 });
 
 /* Save => persist + auto-exit */
