@@ -35,7 +35,7 @@ body{
   color:var(--ink); font-size:22px; line-height:1.35;
 }
 
-/* Cover (unchanged) */
+/* Cover (uneditable) */
 .page.cover{ box-shadow: 0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{ padding:0; background:#0c102c; }
 .cover-img{
@@ -65,7 +65,7 @@ body.editing .scrap-item .rotator{ display:block; }
 /* CONTENT SHOULD FILL THE BOX (so resizing changes visible size) */
 .scrap-img{
   display:block; width:100%; height:100%;
-  object-fit:cover;      /* change to 'contain' if you prefer no cropping */
+  object-fit:cover;            /* use 'contain' if you prefer no cropping */
   border:0; pointer-events:none;
 }
 .scrap-text{
@@ -125,11 +125,11 @@ body.editing .scrap-item .rotator{ display:block; }
 
 <div id="stage">
   <div id="book">
-    <!-- COVER (leave as-is) -->
+    <!-- COVER (uneditable; image comes from Supabase table if labeled 'cover') -->
     <div class="page cover">
       <div class="page-canvas">
-        <img class="cover-img" alt="Cover"
-          src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png">
+        <img id="coverImg" class="cover-img" alt="Cover"
+             src="https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png">
       </div>
     </div>
 
@@ -220,22 +220,42 @@ const stickersGrid=document.getElementById('stickersGrid');
 const stickerModal=document.getElementById('stickerModal');
 const stickersClose=document.getElementById('stickersClose');
 
+const coverImg=document.getElementById('coverImg');
+const COVER_DEFAULT="https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png";
+
 let pageFlip, activeCanvas=null, selectedItem=null;
 
 /* ========= Init ========= */
 init().catch(console.error);
 async function init(){
-  await loadFromTables();
+  await loadCoverFromTable();   // sets the cover image if you stored one
+  await loadFromTables();       // rebuild pages/content
   if (!window.St || !St.PageFlip) alert("PageFlip library missing.");
   pageFlip = new St.PageFlip(bookEl,{width:500,height:650,size:"fixed",showCover:true,drawShadow:true,flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,mobileScrollSupport:false,startPage:0});
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
-  // flip listener (keep active page)
   pageFlip.on('flip', ()=>{
     if(!document.body.classList.contains('editing')) return;
     const {left,right}=getVisibleCanvases();
     if(activeCanvas===left||activeCanvas===right) highlightCanvas(activeCanvas);
     else highlightCanvas(right||left);
   });
+}
+
+/* ========= Load cover (from table row labeled 'cover') ========= */
+async function loadCoverFromTable(){
+  try{
+    const { data, error } = await supabase
+      .from(TABLE_IMAGES)
+      .select('content_type, data_base64')
+      .eq('label','cover')
+      .maybeSingle();
+    if(error || !data){ coverImg.src=COVER_DEFAULT; return; }
+    coverImg.src = `data:${data.content_type};base64,${data.data_base64}`;
+  }catch(e){
+    coverImg.src=COVER_DEFAULT;
+  }
+  // fallback if the data URL fails for any reason
+  coverImg.onerror = ()=>{ coverImg.src=COVER_DEFAULT; };
 }
 
 /* ========= Page targeting ========= */
@@ -278,7 +298,9 @@ document.addEventListener('keydown',(e)=>{
   if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
 });
 function setAllTextEditable(on){
-  document.querySelectorAll('#book .scrap-text').forEach(el=>el.setAttribute('contenteditable', on?'true':'false'));
+  document.querySelectorAll('#book .scrap-text').forEach(el=>{
+    if(!el.classList.contains('sticker')) el.setAttribute('contenteditable', on?'true':'false');
+  });
 }
 function setEditing(on){
   if(on){ document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'; }
@@ -338,13 +360,8 @@ function makeDraggable(el){
       const dx=e.clientX-startX, dy=e.clientY-startY;
       const newW=Math.max(60,startW+dx), newH=Math.max(60,startH+dy);
       el.style.width=newW+'px'; el.style.height=newH+'px';
-
-      // If it's a sticker, scale the emoji with the box
       const sticker=el.querySelector('.scrap-text.sticker');
-      if(sticker){
-        const scale=0.64; // 100px -> ~64px (same visual feel)
-        sticker.style.fontSize=Math.round(scale*Math.min(newW,newH))+'px';
-      }
+      if(sticker){ const scale=0.64; sticker.style.fontSize=Math.round(scale*Math.min(newW,newH))+'px'; }
     }else{
       const dx=e.clientX-startX, dy=e.clientY-startY;
       el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
@@ -368,14 +385,15 @@ document.getElementById('textAdd').onclick=()=>{
 };
 
 document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
-fileInput.addEventListener('change',e=>{
+fileInput.addEventListener('change',async (e)=>{
   const f=e.target.files[0]; if(!f) return;
-  const url=URL.createObjectURL(f);
+  const { mime, base64 } = await compressToBase64(f, 1600, 0.85); // keeps table size small
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
-  box.innerHTML=`<img class="scrap-img" alt="" src="${url}"><div class="resizer"></div><div class="rotator"></div>`;
+  box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}"><div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
-  box.querySelector('.scrap-img')._file=f; // keep file for SAVE
+  // stash encoded image for SAVE (so Save can insert to DB once)
+  box.querySelector('.scrap-img')._preb64 = { mime, base64 };
   fileInput.value='';
 });
 
@@ -398,10 +416,9 @@ document.getElementById('stickersBtn').onclick=()=>{
 stickersClose.onclick=()=> closeModal(stickerModal);
 stickerModal.addEventListener('click',e=>{ if(e.target===stickerModal) closeModal(stickerModal); });
 
-/* ========= Text font controls (A− / A+) ========= */
+/* ========= Text font controls ========= */
 document.getElementById('fontMinus').onclick=()=> nudgeTextFont(-4);
 document.getElementById('fontPlus').onclick =()=> nudgeTextFont(+4);
-
 function nudgeTextFont(delta){
   if(!selectedItem){ toastShow('Select a text box first'); return; }
   const el = selectedItem.querySelector('.scrap-text');
@@ -429,12 +446,18 @@ document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Sa
 async function saveToTables(){
   toastShow('Saving…');
 
-  /* 1) Upload any new local images into the images table (store base64) */
+  /* 1) Insert any new images (base64 already prepared) */
   const imgs=[...document.querySelectorAll('#book .scrap-img')];
   for(const img of imgs){
-    if(img.dataset.imgid) continue;         // already in DB
-    if(!img._file) continue;                // not a new file
-    const {base64, mime} = await fileToBase64(img._file);
+    if(img.dataset.imgid) continue;
+    let mime, base64;
+    if(img._preb64){ mime=img._preb64.mime; base64=img._preb64.base64; }
+    else{
+      // fallback: convert current src to base64 if possible
+      const r = await fetch(img.src); const b = await r.blob();
+      const enc = await compressToBase64(b, 1600, 0.85);
+      mime=enc.mime; base64=enc.base64;
+    }
     const { data, error } = await supabase
       .from(TABLE_IMAGES)
       .insert([{ content_type: mime, data_base64: base64 }])
@@ -442,11 +465,10 @@ async function saveToTables(){
       .single();
     if(error) throw error;
     img.dataset.imgid = data.id;
-    img.src = `data:${mime};base64,${base64}`; // stable data URL
-    delete img._file;
+    delete img._preb64;
   }
 
-  /* 2) Build lightweight layout JSON and upsert to state table */
+  /* 2) Build layout JSON and upsert to state table */
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
   canvases.forEach(canvas=>{
@@ -458,7 +480,7 @@ async function saveToTables(){
       if(img){ items.push({type:'image', style, rot, imageId: img.dataset.imgid||null}); }
       else{
         const txt=el.querySelector('.scrap-text');
-        items.push({type:'text', style, rot, html: txt?txt.outerHTML:''}); // store with inline styles/classes
+        items.push({type:'text', style, rot, html: txt?txt.outerHTML:''}); // keep inline styles/classes
       }
     });
     pages.push({items});
@@ -516,10 +538,8 @@ async function loadFromTables(){
           const url=urlMap[it.imageId]||'';
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
         }else if(it.type==='text' && it.html){
-          // restore the HTML we saved (keeps font-size, sticker class, etc.)
           const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
           const inner=holder.firstElementChild || document.createElement('div');
-          // make sure it's not editable until edit mode
           inner.setAttribute('contenteditable','false');
           box.appendChild(inner);
           box.insertAdjacentHTML('beforeend','<div class="resizer"></div><div class="rotator"></div>');
@@ -542,12 +562,23 @@ bookEl.addEventListener('pointerup',e=>{ if(!tapStart)return; const d=Math.hypot
 
 document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
 
-function fileToBase64(file){
-  return new Promise((resolve,reject)=>{
-    const r=new FileReader();
-    r.onload=()=>{ const dataUrl=r.result; const [head,base64]=String(dataUrl).split(','); const mime=head.substring(head.indexOf(':')+1, head.indexOf(';')); resolve({base64,mime}); };
-    r.onerror=reject; r.readAsDataURL(file);
-  });
+/* image compression to keep table small */
+async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
+  const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
+  const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
+  const canvas = document.createElement('canvas');
+  let {width:w, height:h} = img;
+  if(Math.max(w,h) > maxSide){
+    if(w>h){ h = Math.round(h * (maxSide / w)); w = maxSide; }
+    else   { w = Math.round(w * (maxSide / h)); h = maxSide; }
+  }
+  canvas.width=w; canvas.height=h;
+  const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+  const mime = 'image/jpeg'; // good balance; change to 'image/png' if needed
+  const dataUrl = canvas.toDataURL(mime, quality);
+  URL.revokeObjectURL(img.src);
+  const base64 = dataUrl.split(',')[1];
+  return { mime, base64 };
 }
 </script>
 </body>
