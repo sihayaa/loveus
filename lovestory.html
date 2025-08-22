@@ -6,15 +6,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+
 <style>
 :root{
-  --bg:#0b0f2f;
-  --paper:#f7eddc;
-  --ink:#0d2a6b;
+  --bg:#0b0f2f;       /* midnight blue */
+  --paper:#f7eddc;    /* parchment */
+  --ink:#0d2a6b;      /* dark blue ink */
   --accent:#7a5af8;
   --mint:#67e4ca;
   --font:"Dancing Script", cursive;
-  --coverTop:12%; /* nudge cover image downward a bit so title isn't cramped */
+
+  /* Cover tuning: move image slightly down to avoid cutting the title */
+  --cover-y: 12%;    /* try 10–16% if you want more/less top space */
+  --cover-pad: 22px; /* tiny inner padding so no white hairlines appear */
 }
 
 *{box-sizing:border-box}
@@ -25,7 +29,7 @@ body{
   font-family:var(--font);
 }
 
-/* Stage & book */
+/* Stage & book size */
 #stage{ width:1000px; height:650px; position:relative; perspective:1600px; }
 #book{ position:absolute; inset:0; }
 
@@ -44,50 +48,72 @@ body{
   font-size:22px; line-height:1.35;
 }
 
-/* closed cover overlay */
-#closedCover{ position:absolute; inset:0; z-index:90; display:grid; place-items:center; }
+/* Cover page inside the book (page 0) */
+.page.cover .page-canvas{
+  padding:var(--cover-pad);
+  background:
+    center var(--cover-y)/contain no-repeat
+    url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png");
+  pointer-events:none;  /* you won’t accidentally edit the cover */
+}
+
+/* ---------- CLOSED COVER OVERLAY (the nice book you liked) ---------- */
+#closedCover{
+  position:absolute; inset:0; z-index:90; display:grid; place-items:center;
+}
 #closedCover .cover3D{
   width:1000px; height:650px; position:relative;
   transform-style:preserve-3d; transform-origin:left center;
   transition:transform .9s ease-in-out;
+  will-change:transform;
 }
 #closedCover .hard{
   position:absolute; inset:0;
-  background-position:center var(--coverTop);
-  background-size:cover; background-repeat:no-repeat;
-  box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
+  background:
+    center var(--cover-y)/contain no-repeat
+    url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png");
+  background-color:#111; /* avoids any flash */
   border-radius:6px;
+  box-shadow: 0 25px 60px rgba(0,0,0,.45), inset 0 0 120px rgba(0,0,0,.35);
+  overflow:hidden;
+  padding:var(--cover-pad);
 }
+/* subtle paper frame so it looks like a book board around the image */
+#closedCover .hard::after{
+  content:"";
+  position:absolute; inset:var(--cover-pad);
+  border-radius:4px;
+  box-shadow: inset 0 0 0 12px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.15);
+  pointer-events:none;
+}
+
+/* Spine (left) */
 #closedCover .spine{
   content:""; position:absolute; left:0; top:0; bottom:0; width:28px;
   background:linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.15) 40%, rgba(255,255,255,.1));
   border-top-left-radius:6px; border-bottom-left-radius:6px;
 }
-#closedCover .edges::before, #closedCover .edges::after{ content:""; position:absolute; pointer-events:none; }
+/* Page-edge shimmer (right & bottom) */
+#closedCover .edges::before, #closedCover .edges::after{
+  content:""; position:absolute; pointer-events:none;
+}
 #closedCover .edges::before{
   right:0; top:12px; width:20px; height:calc(100% - 24px);
   background:linear-gradient(90deg, rgba(255,255,255,.65), rgba(180,170,150,.45));
   border-top-right-radius:6px; border-bottom-right-radius:6px;
-  filter:blur(0.4px);
+  filter:blur(0.3px);
 }
 #closedCover .edges::after{
   left:18px; right:18px; bottom:0; height:16px;
   background:radial-gradient(ellipse at 50% 0%, rgba(0,0,0,.38), transparent 60%);
   border-bottom-left-radius:6px; border-bottom-right-radius:6px;
 }
-#closedCover.opening .cover3D{ transform:rotateY(-120deg); }
 
-/* inside-book cover (page 0) */
-.cover-inside{
-  position:absolute; inset:28px; /* same padding as page canvas */
-  background-position:center var(--coverTop);
-  background-size:contain; background-repeat:no-repeat;
-  border-radius:10px;
-  box-shadow:0 6px 20px rgba(0,0,0,.25);
-  pointer-events:none; /* not draggable; avoids hijacking edits */
+#closedCover.opening .cover3D{
+  transform:rotateY(-120deg);
 }
 
-/* editables */
+/* -------------- Edit items -------------- */
 .scrap-item{ position:absolute; user-select:none; cursor:default; transform-origin:center center; }
 .scrap-text{ background:transparent; border:0; padding:0; color:inherit; font:inherit; white-space:pre-wrap; }
 .scrap-text[contenteditable="true"]{ outline:none; }
@@ -102,29 +128,31 @@ body{
 
 body.editing .scrap-item{ cursor:move; }
 body.editing .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
-body.editing .scrap-text{ background:rgba(255,255,255,.55); padding:10px 12px; border:1px solid rgba(0,0,0,.1); border-radius:8px; }
+body.editing .scrap-text{ background:rgba(255,255,255,.65); padding:10px 12px; border:1px solid rgba(0,0,0,.1); border-radius:8px; }
 body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4px 6px 18px rgba(0,0,0,.25); }
 body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 
-/* let the canvases receive events while editing */
+/* While editing, let us interact with canvases; block PageFlip grabs */
 body.editing .stf__block, body.editing .stf__item, body.editing .stf__wrapper{ pointer-events:none !important; }
 body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !important; }
 
-/* toolbar */
+/* Toolbar */
 #toolbar{
   position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
-  display:none; z-index:60; background:rgba(255,255,255,.92);
+  display:none; z-index:60; background:rgba(255,255,255,.96);
   border:2px solid #e8dcc6; border-radius:14px; padding:10px; gap:8px;
   box-shadow:0 10px 22px rgba(0,0,0,.25); align-items:center; flex-wrap:wrap;
 }
-#toolbar button{ border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent); }
-#toolbar button.secondary{ background:#5d47d4; }
+#toolbar button{
+  border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent);
+}
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
 #toolbar .group{ display:flex; gap:8px; align-items:center; }
 #fileInput{ display:none; }
 
+/* Modals */
 .modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
 .modal.open{ display:flex; }
 .modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
@@ -135,10 +163,11 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 .btn-mint{ background:var(--mint); color:#05201f; }
 .btn-ghost{ background:#2a315d; color:#fff; }
 
-.stickers{ display:grid; grid-template-columns:repeat(6,1fr); gap:10px; }
-.stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; }
-.stickers img{ width:100%; aspect-ratio:1; object-fit:contain; }
+/* Stickers grid */
+.stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:8px; }
+.stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; color:#fff; font-size:22px; line-height:1; }
 
+/* Toast */
 #toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 </style>
@@ -147,45 +176,36 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
 
 <div id="stage">
   <!-- CLOSED COVER OVERLAY -->
-  <div id="closedCover" title="Drag or click to open">
+  <div id="closedCover" title="Click to open">
     <div class="cover3D">
-      <div class="hard edges" id="coverImage"></div>
+      <div class="hard edges"></div>
       <div class="spine"></div>
     </div>
   </div>
 
   <!-- Flipbook -->
   <div id="book">
-    <!-- page 0 (inside cover image will be injected here) -->
-    <div class="page"><div class="page-canvas" id="p0"></div></div>
-    <!-- inner pages -->
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
+    <!-- page 0 = the same cover image -->
+    <div class="page cover"><div class="page-canvas"></div></div>
+
+    <!-- inner pages (start with 4) -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Toolbar -->
+  <!-- Toolbar (shown only in edit mode) -->
   <div id="toolbar">
     <div class="group">
-      <button id="targetLeft" class="secondary">Edit Left</button>
-      <button id="targetRight" class="secondary">Edit Right</button>
-    </div>
-    <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
-      <button id="addPhotoBtn" class="secondary">Add Photo</button>
-      <button id="stickersBtn" class="secondary">Stickers</button>
-      <button id="addPageBtn" class="secondary">Add Page</button>
+      <button id="addPhotoBtn">Add Photo</button>
+      <button id="stickersBtn">Stickers</button>
+      <button id="addPageBtn">Add Page</button>
     </div>
     <div class="group">
       <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
-      <button id="clearPageBtn" class="warn">Clear Page</button>
+      <button id="clearSpreadBtn" class="warn">Clear Spread</button>
       <button id="saveBtn" class="mint">Save</button>
     </div>
     <input id="fileInput" type="file" accept="image/*" />
@@ -214,9 +234,10 @@ body.editing .page-canvas, body.editing .scrap-item{ pointer-events:auto !import
     </div>
   </div>
 
-  <div id="toast">Edit mode unlocked ✨</div>
+  <div id="toast">Edit mode (type 123 to toggle)</div>
 </div>
 
+<!-- PageFlip (you already placed this file) -->
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
 /* ------------ Config ------------- */
@@ -227,23 +248,9 @@ const COVER_URL   = 'https://raw.githubusercontent.com/sihayaa/loveus/refs/heads
 /* ------------ Elements ------------- */
 const bookEl    = document.getElementById('book');
 const coverUI   = document.getElementById('closedCover');
-const coverImage= document.getElementById('coverImage');
-coverImage.style.backgroundImage = `url('${COVER_URL}')`;
-
-/* Put the SAME cover image onto page 0 inside the book */
-(function injectInsideCover(){
-  const p0 = document.getElementById('p0');
-  const inner = document.createElement('div');
-  inner.className = 'cover-inside';
-  inner.style.backgroundImage = `url('${COVER_URL}')`;
-  p0.appendChild(inner);
-})();
-
 const toolbar   = document.getElementById('toolbar');
 const toast     = document.getElementById('toast');
 const fileInput = document.getElementById('fileInput');
-const targetLeftBtn  = document.getElementById('targetLeft');
-const targetRightBtn = document.getElementById('targetRight');
 
 const textModal = document.getElementById('textModal');
 const textInput = document.getElementById('textInput');
@@ -254,14 +261,12 @@ const stickerModal = document.getElementById('stickerModal');
 const stickersGrid = document.getElementById('stickersGrid');
 const stickersClose= document.getElementById('stickersClose');
 
-/* Load saved content BEFORE init */
-applySaved();
-
-/* Flipbook init */
+/* ------------ Flipbook init ------------- */
 const pageFlip = new St.PageFlip(bookEl, {
   width: 500, height: 650,
   size: "fixed",
   showCover: true,
+  drawShadow: true,
   flippingTime: 800,
   maxShadowOpacity: 0.25,
   useMouseEvents: true,
@@ -270,183 +275,159 @@ const pageFlip = new St.PageFlip(bookEl, {
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* ---- Visible canvases helper ---- */
-function getVisibleCanvases(){
-  const left  = document.querySelector('.stf__item--left  .page .page-canvas');
-  const right = document.querySelector('.stf__item--right .page .page-canvas');
-  if (left || right) return {left, right};
-  const single = document.querySelector('.stf__item .page .page-canvas');
-  return {left:null, right:single};
-}
-
-/* ---- Active canvas (where new items land) ---- */
-let activeCanvas=null;
-function setActiveCanvas(which){
-  const {left,right} = getVisibleCanvases();
-  let next = (which==='left')?left : (which==='right')?right : null;
-  if (!next) next = right || left;
-  document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
-  if (next){ next.classList.add('active-side'); activeCanvas = next; }
-}
-targetLeftBtn.addEventListener('click', ()=> setActiveCanvas('left'));
-targetRightBtn.addEventListener('click',()=> setActiveCanvas('right'));
-pageFlip.on('flip', ()=> setActiveCanvas('right'));
-
-/* ---- Stop click flip so editing works ---- */
-let tapStart=null;
-bookEl.addEventListener('pointerdown',(e)=>{ tapStart={x:e.clientX,y:e.clientY,t:Date.now()}; }, true);
-bookEl.addEventListener('pointerup',(e)=>{
-  if(!tapStart) return;
-  const d=Math.hypot(e.clientX-tapStart.x, e.clientY-tapStart.y);
-  const dt=Date.now()-tapStart.t;
-  if(d<8 && dt<300){ e.preventDefault(); e.stopPropagation(); }
-  tapStart=null;
-}, true);
-['click','dblclick'].forEach(ev=>bookEl.addEventListener(ev,(e)=>{ e.preventDefault(); e.stopPropagation(); }, true));
-
-/* ---- Cover open ---- */
+/* Closed cover -> open animation */
 function openCover(){
   coverUI.classList.add('opening');
-  setTimeout(()=>{ coverUI.style.display='none'; pageFlip.turnToPage(1); }, 900);
+  setTimeout(()=>{ coverUI.style.display='none'; try{ pageFlip.turnToPage(1); }catch(_){} }, 900);
 }
-let dragStart=null;
-coverUI.addEventListener('pointerdown', (e)=>{ dragStart = {x:e.clientX, y:e.clientY}; });
-coverUI.addEventListener('pointerup', (e)=>{
-  if(!dragStart) return;
-  const dx=e.clientX-dragStart.x;
-  if(Math.abs(dx)>40 || Math.abs(dx)<8) openCover();
-  dragStart=null;
-});
 coverUI.addEventListener('click', openCover);
 
-/* ---- Edit mode (type 123) ---- */
+/* ------------ Saved content ------------- */
+applySaved();
+
+/* ------------ Edit mode toggle (type 123) ------------- */
 let editEnabled=false, selectedItem=null, keyBuffer='', keyTimer=null;
+let activeCanvas=null;   // whichever canvas you last clicked (left or right)
+
 document.addEventListener('keydown',(e)=>{
   keyBuffer += e.key;
   clearTimeout(keyTimer);
   keyTimer=setTimeout(()=> keyBuffer='', 1200);
-  if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
+  if(keyBuffer.endsWith(PASSCODE)){
+    keyBuffer='';
+    setEdit(!editEnabled);
+  }
 });
-function setAllTextEditable(on){
-  document.querySelectorAll('#book .scrap-text')
-    .forEach(el => el.setAttribute('contenteditable', on ? 'true' : 'false'));
-}
-function setEditing(on){
-  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'; }
-  else  { document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none';
-          document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
-}
-function enterEdit(){ editEnabled=true; setEditing(true); setActiveCanvas('right'); pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); toastShow('Edit mode unlocked ✨'); }
-function exitEdit(){ editEnabled=false; setEditing(false); selectedItem=null; pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }
 
-/* ---- Drag / Resize / Rotate with cross-gutter moving ---- */
-function currentSpread(){ return getVisibleCanvases(); }
-function pointInRect(x,y,r){ return r && x>=r.left && x<=r.right && y>=r.top && y<=r.bottom; }
+/* pick canvases for current spread */
+function getSpreadCanvases(){
+  const left  = document.querySelector('.stf__item--left  .page .page-canvas');
+  const right = document.querySelector('.stf__item--right .page .page-canvas');
+  // if at page 0 (cover shown), left is null
+  return {left, right};
+}
+function highlightActive(){
+  document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
+  if(activeCanvas) activeCanvas.classList.add('active-side');
+}
+function setEdit(on){
+  editEnabled = on;
+  if(on){
+    document.body.classList.add('editing');
+    toolbar.style.display='flex';
+    // disable flipping capture
+    try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
+    // default active canvas = right (or the only one visible)
+    const {left,right} = getSpreadCanvases();
+    activeCanvas = right || left || document.querySelector('#book .page .page-canvas');
+    highlightActive();
+    toastShow('Edit mode ON ✨ (type 123 to exit)');
+  }else{
+    document.body.classList.remove('editing');
+    toolbar.style.display='none';
+    selectedItem=null; activeCanvas=null;
+    try{ pageFlip.update?.({useMouseEvents:true, swipeDistance:30}); }catch(_){}
+    toastShow('Edit mode OFF');
+  }
+}
+/* clicking a page selects it as active */
+bookEl.addEventListener('click',(e)=>{
+  if(!editEnabled) return;
+  const pc = e.target.closest('.page-canvas');
+  if(pc && !pc.closest('.cover')){ activeCanvas = pc; highlightActive(); }
+}, true);
 
+/* ------------ Drag / Resize / Rotate + cross-gutter move ------------- */
 function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0;
   let resizing=false,startW=0,startH=0;
   let rotating=false,startAngle=0,startPointerAngle=0;
 
   const res=el.querySelector('.resizer');
-  let rot=el.querySelector('.rotator'); 
-  if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
-
+  let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
   function getAngle(){ return parseFloat(el.dataset.rot||'0')||0; }
   function setAngle(deg){ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; }
 
-  let parentCanvas = el.parentElement;
-  let parentRect   = parentCanvas.getBoundingClientRect();
-  function refreshParent(){ parentCanvas = el.parentElement; parentRect = parentCanvas.getBoundingClientRect(); }
-
   if(res){
-    res.addEventListener('mousedown',(e)=>{
-      if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
+    res.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
       resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
-      document.addEventListener('mousemove',onMove);
-      document.addEventListener('mouseup',onUp);
+      window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
     });
   }
-  rot.addEventListener('mousedown',(e)=>{
-    if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
+  rot.addEventListener('mousedown',(e)=>{ if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
     rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
     startPointerAngle=Math.atan2(e.clientY-cy, e.clientX-cx); startAngle=getAngle();
-    document.addEventListener('mousemove',onRotate);
-    document.addEventListener('mouseup',endRotate);
+    window.addEventListener('mousemove',onRotate); window.addEventListener('mouseup',endRotate);
   });
-  function onRotate(e){
-    if(!rotating) return;
+  function onRotate(e){ if(!rotating) return;
     const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
     const a=Math.atan2(e.clientY-cy, e.clientX-cx);
     setAngle(startAngle + (a-startPointerAngle)*180/Math.PI);
   }
-  function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
+  function endRotate(){ rotating=false; window.removeEventListener('mousemove',onRotate); window.removeEventListener('mouseup',endRotate); }
 
-  el.addEventListener('mousedown',(e)=>{
-    if(!editEnabled) return;
+  el.addEventListener('mousedown',(e)=>{ if(!editEnabled) return;
     if(e.target.classList.contains('resizer') || e.target.classList.contains('rotator')) return;
     selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
     startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
-    refreshParent();
-    document.addEventListener('mousemove',onMove);
-    document.addEventListener('mouseup',onUp);
+    window.addEventListener('mousemove',onMove); window.addEventListener('mouseup',onUp);
     e.stopPropagation();
   });
 
+  function moveAcrossGutter(){
+    const r = el.getBoundingClientRect();
+    const {left, right} = getSpreadCanvases();
+    if(!left && !right) return;
+
+    const centerX = r.left + r.width/2;
+    const leftRect  = left ? left.getBoundingClientRect() : null;
+    const rightRect = right? right.getBoundingClientRect(): null;
+
+    // Decide target canvas by where the center is
+    let target = null;
+    if(leftRect  && centerX >= leftRect.left  && centerX <= leftRect.right)  target=left;
+    if(rightRect && centerX >= rightRect.left && centerX <= rightRect.right) target=right;
+
+    if(target && el.parentElement !== target){
+      // convert global position to new parent's local coords
+      const tRect = target.getBoundingClientRect();
+      const newLeft = r.left - tRect.left;
+      const newTop  = r.top  - tRect.top;
+      el.style.left = `${newLeft}px`;
+      el.style.top  = `${newTop}px`;
+      target.appendChild(el);
+      activeCanvas = target;
+      highlightActive();
+    }
+  }
+
   function onMove(e){
     if(!editEnabled) return;
-
     if(resizing){
       const dx=e.clientX-startX, dy=e.clientY-startY;
-      el.style.width = Math.max(60, startW+dx)+'px';
-      el.style.height= Math.max(60, startH+dy)+'px';
-      return;
+      el.style.width=Math.max(60,startW+dx)+'px'; el.style.height=Math.max(60,startH+dy)+'px';
+    }else{
+      const dx=e.clientX-startX, dy=e.clientY-startY;
+      el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
+      moveAcrossGutter();
     }
-
-    let newL = origX + (e.clientX-startX);
-    let newT = origY + (e.clientY-startY);
-
-    // centre point of element in viewport
-    const cx = parentRect.left + newL + el.offsetWidth/2;
-    const cy = parentRect.top  + newT + el.offsetHeight/2;
-
-    const {left,right} = currentSpread();
-    const otherCanvas = (parentCanvas === left ? right : left);
-    const otherRect   = otherCanvas ? otherCanvas.getBoundingClientRect() : null;
-
-    if(otherCanvas && otherRect && pointInRect(cx,cy,otherRect)){
-      const localL = cx - otherRect.left - el.offsetWidth/2;
-      const localT = cy - otherRect.top  - el.offsetHeight/2;
-      el.style.left = localL + 'px';
-      el.style.top  = localT + 'px';
-      otherCanvas.appendChild(el);
-      setActiveCanvas(otherCanvas);
-      refreshParent();
-      // reset drag baseline for smooth continue
-      origX = localL; origY = localT; startX = e.clientX; startY = e.clientY;
-      return;
-    }
-
-    newL = Math.max(0, Math.min(newL, parentCanvas.clientWidth  - el.offsetWidth));
-    newT = Math.max(0, Math.min(newT, parentCanvas.clientHeight - el.offsetHeight));
-    el.style.left = newL + 'px';
-    el.style.top  = newT + 'px';
   }
-  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+  function onUp(){ window.removeEventListener('mousemove',onMove); window.removeEventListener('mouseup',onUp); }
 }
-function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
-document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ---- Add text / photo ---- */
-document.getElementById('addTextBtn').addEventListener('click',()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); });
+/* ------------ Add text / photo / stickers ------------- */
+document.getElementById('addTextBtn').addEventListener('click',()=>{
+  openModal(textModal); textInput.value='';
+  setTimeout(()=>textInput.focus(),10);
+});
 textCancel.addEventListener('click',()=> closeModal(textModal));
 textAdd.addEventListener('click',()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px';
-  const isEditing=document.body.classList.contains('editing');
-  box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
-  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+  box.innerHTML=`<div class="scrap-text" contenteditable="true">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
+  (activeCanvas || getSpreadCanvases().right || document.querySelector('#book .page:nth-child(2) .page-canvas')).appendChild(box);
+  makeDraggable(box);
 });
 
 document.getElementById('addPhotoBtn').addEventListener('click',()=> fileInput.click());
@@ -457,37 +438,35 @@ fileInput.addEventListener('change',(e)=>{
     const box=document.createElement('div');
     box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
     box.innerHTML=`<img class="scrap-img" src="${ev.target.result}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
-    (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); fileInput.value='';
+    (activeCanvas || getSpreadCanvases().right || document.querySelector('#book .page:nth-child(2) .page-canvas')).appendChild(box);
+    makeDraggable(box); fileInput.value='';
   };
   r.readAsDataURL(f);
 });
 
-/* ---- Stickers (sample) ---- */
-const STICKERS = [
-  {name:'Heart', src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><path fill='%23ff5a7a' d='M60 105s-8-6-26-22S3 51 18 33c9-10 26-9 34 3 8-12 25-13 34-3 15 18-4 38-16 50S60 105 60 105z'/></svg>", w:140,h:120},
-  {name:'Star',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'><polygon points='60,10 72,44 108,44 78,66 90,100 60,78 30,100 42,66 12,44 48,44' fill='%23ffd65c'/></svg>", w:120,h:120},
-  {name:'Tape',  src:"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 70'><defs><pattern id='d' width='10' height='10' patternUnits='userSpaceOnUse'><path d='M0 10 L10 0' stroke='%23ffb3c1' stroke-width='2'/></pattern></defs><rect x='10' y='10' width='180' height='50' rx='8' ry='8' fill='url(%23d)' stroke='%23ff86a1' stroke-width='3'/></svg>", w:220,h:90},
-];
-function openStickers(){
+/* Emoji stickers you asked for */
+const EMOJI = "🎮 👾🕹️🖥️ ⌨️ 💞 🩷 🧡 💛 💚 💙 🩵🤎 🖤 🩶 🤍 💋 💯 💢 🏜️ 🏝️ ✈️ ♾️ 🍎 🍏🍞 🥐 🥖 🫓 🥨 🥯 🥞 🧇 🧀 🍖 🍗 🥩 🥓 🍔 🍟 🍕 🌭 🥪 🌮 🌯 🫔 🥙 🧆 🥚 🍳 🥘 🫕 🥣 🥗 🍿 🧈 🧂 🥫 🍝 🍐 🍑 🍒 🍦 🍧 🍨 🍩 🍪 🎂 🍰 🧁 🥧 🍫 🍬 🍭 🍮 🍯".split(/\s+/).filter(Boolean);
+
+function buildStickers(){
   stickersGrid.innerHTML='';
-  STICKERS.forEach(s=>{
-    const b=document.createElement('button'); b.title=s.name;
-    const img=document.createElement('img'); img.src=s.src; img.alt=s.name; b.appendChild(img);
+  EMOJI.forEach(ch=>{
+    const b=document.createElement('button');
+    b.textContent=ch;
     b.addEventListener('click',()=>{
       const box=document.createElement('div');
-      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width=s.w+'px'; box.style.height=s.h+'px';
-      box.innerHTML=`<img class="scrap-img" src="${s.src}" alt="${s.name}"><div class="resizer"></div><div class="rotator"></div>`;
-      (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
+      box.innerHTML=`<div class="scrap-text" contenteditable="false" style="font-size:64px;line-height:1">${ch}</div><div class="resizer"></div><div class="rotator"></div>`;
+      (activeCanvas || getSpreadCanvases().right || document.querySelector('#book .page:nth-child(2) .page-canvas')).appendChild(box);
+      makeDraggable(box);
     });
     stickersGrid.appendChild(b);
   });
-  openModal(stickerModal);
 }
-document.getElementById('stickersBtn').addEventListener('click', openStickers);
+document.getElementById('stickersBtn').addEventListener('click',()=>{ buildStickers(); openModal(stickerModal); });
 stickerModal.addEventListener('click',(e)=>{ if(e.target===stickerModal) closeModal(stickerModal); });
 stickersClose.addEventListener('click',()=> closeModal(stickerModal));
 
-/* Page tools */
+/* Spread tools */
 document.getElementById('addPageBtn').addEventListener('click',()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
@@ -496,20 +475,19 @@ document.getElementById('addPageBtn').addEventListener('click',()=>{
   toastShow('Page added');
 });
 document.getElementById('deleteSelectedBtn').addEventListener('click',()=>{ if(selectedItem){ selectedItem.remove(); selectedItem=null; }});
-document.getElementById('clearPageBtn').addEventListener('click',()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); });
+document.getElementById('clearSpreadBtn').addEventListener('click',()=>{
+  const {left,right}=getSpreadCanvases();
+  if(left)  left.innerHTML='';
+  if(right) right.innerHTML='';
+  selectedItem=null;
+});
 
-/* Save => persist + auto-exit */
+/* Save & load */
 document.getElementById('saveBtn').addEventListener('click',()=>{
   const pages=[...document.querySelectorAll('#book .page')].map(p=>p.querySelector('.page-canvas').innerHTML);
   localStorage.setItem(STORAGE_KEY, JSON.stringify(pages));
-  toastShow('Saved ✓ Exiting…');
-  setTimeout(()=> exitEdit(), 300);
+  toastShow('Saved ✓');
 });
-
-/* Utils */
-function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
-function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
-function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 function applySaved(){
   try{
     const raw=localStorage.getItem(STORAGE_KEY); if(!raw) return;
@@ -518,6 +496,21 @@ function applySaved(){
     for(let i=0;i<Math.min(arr.length,canvases.length);i++){ canvases[i].innerHTML=arr[i]; }
     document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
   }catch(e){}
+}
+
+/* Utils */
+function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
+function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
+
+/* Keep active canvas when flipping */
+if(pageFlip.on){
+  pageFlip.on('flip', ()=>{
+    if(!editEnabled) return;
+    const {left,right}=getSpreadCanvases();
+    activeCanvas = right || left || activeCanvas;
+    highlightActive();
+  });
 }
 </script>
 </body>
