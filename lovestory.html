@@ -51,10 +51,10 @@ body{margin:0;background:var(--bg);color:var(--ink);display:flex;align-items:cen
   background:radial-gradient(ellipse at 50% 0%, rgba(0,0,0,.38), transparent 60%);
 }
 
-/* cover art sits inside with “contain” (no cropping) */
+/* cover art fills the board (no letterbox). If you ever want no-crop instead, change cover -> contain */
 #coverArt{
   position:absolute;left:28px;right:20px;top:16px;bottom:16px;border-radius:8px;overflow:hidden;
-  background: #0b0f2f center/contain no-repeat;
+  background: #0b0f2f center/cover no-repeat;
 }
 #closedCover.opening .cover3D{ transform:rotateY(-120deg) }
 #closeBtn{position:absolute;top:10px;left:10px;z-index:96;background:rgba(0,0,0,.55);color:#fff;border:0;border-radius:8px;padding:6px 10px;display:none;cursor:pointer}
@@ -107,7 +107,7 @@ body.editing .page-canvas, body.editing .scrap-item{pointer-events:auto!importan
 <body>
 
 <div id="stage">
-  <!-- CLOSED COVER OVERLAY (animation you liked) -->
+  <!-- CLOSED COVER OVERLAY -->
   <div id="closedCover" title="Drag or click to open">
     <div class="cover3D">
       <div class="hard edges">
@@ -219,7 +219,7 @@ const pageFlip=new St.PageFlip(bookEl,{
 });
 pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
 
-/* prevent tap flips (always) + especially while editing */
+/* block flips while editing */
 function blockIfEditing(ev){ if(document.body.classList.contains('editing')){ ev.preventDefault(); ev.stopPropagation(); } }
 ['pointerdown','pointerup','click','dblclick'].forEach(t=>bookEl.addEventListener(t,blockIfEditing,true));
 
@@ -321,7 +321,7 @@ function makeDraggable(el){
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
 document.addEventListener('click',e=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ===== Add Text (proper modal) ===== */
+/* ===== Add Text ===== */
 document.getElementById('addTextBtn').addEventListener('click',()=>{
   textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10);
 });
@@ -348,7 +348,7 @@ fileInput.addEventListener('change',(e)=>{
   r.readAsDataURL(f);
 });
 
-/* ===== Stickers (your emoji list) ===== */
+/* ===== Stickers (emoji) ===== */
 const EMOJIS="🎮,👾,🕹️,🖥️,⌨️,💞,🩷,🧡,💛,💚,💙,🩵,🤎,🖤,🩶,🤍,💋,💯,💢,🏜️,🏝️,✈️,♾️,🍎,🍏,🍞,🥐,🥖,🫓,🥨,🥯,🥞,🧇,🧀,🍖,🍗,🥩,🥓,🍔,🍟,🍕,🌭,🥪,🌮,🌯,🫔,🥙,🧆,🥚,🍳,🥘,🫕,🥣,🥗,🍿,🧈,🧂,🥫,🍝,🍐,🍑,🍒,🍦,🍧,🍨,🍩,🍪,🎂,🍰,🧁,🥧,🍫,🍬,🍭,🍮,🍯".split(",");
 function emojiDataUrl(ch){
   const svg=`<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'>
