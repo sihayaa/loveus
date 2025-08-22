@@ -16,8 +16,8 @@
   --mint:#67e4ca;
   --font:"Dancing Script", cursive;
 
-  /* tweak this to shift the cover cropping: lower number = show more top */
-  --cover-y: 34%;
+  /* Cover vertical focus (smaller shows more of the top). Try 26–35% */
+  --cover-y: 28%;
 }
 
 *{ box-sizing:border-box }
@@ -36,7 +36,7 @@ body{
 .page{
   width:100%; height:100%; position:relative; overflow:hidden;
   background:var(--paper);
-  border:0; /* no hairline borders */
+  border:0;
   box-shadow: inset 0 0 60px rgba(0,0,0,.22);
 }
 .page-canvas{
@@ -50,8 +50,7 @@ body{
 .cover-img{
   position:absolute; inset:0; width:100%; height:100%;
   object-fit:cover;
-  /* FIX #1: lower the image a bit so the title isn't cropped */
-  object-position: 50% var(--cover-y);
+  object-position: 50% var(--cover-y); /* <<< lowered further */
   display:block; border:0;
 }
 
@@ -75,7 +74,7 @@ body.editing .scrap-img{ border:6px solid #fff; border-radius:8px; box-shadow:4p
 body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 
-/* IMPORTANT: keep PageFlip wrappers interactive; we prevent flips via JS, not CSS */
+/* Keep PageFlip wrappers interactive; we disable flips via JS during editing */
 #toolbar{
   position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
   display:none; z-index:60; background:rgba(255,255,255,.95);
@@ -187,12 +186,12 @@ body.editing .scrap-item .rotator{ display:block; }
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
-<!-- PageFlip library: keep this path exactly -->
+<!-- PageFlip library -->
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
 /* ------------ Config ------------- */
 const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v10';
+const STORAGE_KEY = 'scrapbook_v11';
 
 /* ------------ Elements ------------- */
 const bookEl    = document.getElementById('book');
@@ -249,28 +248,51 @@ bookEl.addEventListener('pointerup',(e)=>{
 /* ------------- Active side targeting ------------- */
 let activeCanvas=null;
 function getVisibleCanvases(){
-  let left  = document.querySelector('.stf__item--left  .page .page-canvas');
-  let right = document.querySelector('.stf__item--right .page .page-canvas');
-  if(left || right) return {left,right};
+  const left  = document.querySelector('.stf__item--left  .page .page-canvas');
+  const right = document.querySelector('.stf__item--right .page .page-canvas');
+  if (left || right) return {left,right};
+
+  // Fallback if DOM markers unavailable
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
-  if(idx===0) return {left:null, right:canvases[0]};
+  if(idx===0) return {left:null, right:canvases[0]}; // cover only
   const base = idx%2===0 ? idx : idx-1;
   return {left:canvases[base], right:canvases[base+1]||null};
 }
-function setActiveCanvas(side){
-  const {left,right}=getVisibleCanvases();
-  const next = side==='left'? left : right;
-  if(!next) return;
+
+function highlightCanvas(canvas){
+  if(!canvas){ toastShow('That side is not visible here.'); return; }
   document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
-  next.classList.add('active-side');
-  activeCanvas = next;
+  canvas.classList.add('active-side');
+  activeCanvas = canvas;
 }
-targetLeftBtn.addEventListener('click', ()=> setActiveCanvas('left'));
-targetRightBtn.addEventListener('click',()=> setActiveCanvas('right'));
+
+/* Buttons */
+targetLeftBtn.addEventListener('click', ()=>{
+  const {left,right}=getVisibleCanvases();
+  // If we're on the cover (no left page), auto-flip to first spread:
+  if (!left && right && pageFlip.getCurrentPageIndex?.()===0) {
+    toastShow('Opening first spread…');
+    try { pageFlip.turnToPage(1); } catch(_) {}
+    setTimeout(()=> { const lr=getVisibleCanvases(); highlightCanvas(lr.left||lr.right); }, 450);
+    return;
+  }
+  highlightCanvas(left);
+});
+
+targetRightBtn.addEventListener('click', ()=>{
+  const {right}=getVisibleCanvases();
+  highlightCanvas(right);
+});
+
+/* Keep selection on flips (don’t force a side) */
 if(pageFlip.on){
   pageFlip.on('flip', ()=>{
-    if(document.body.classList.contains('editing')) setActiveCanvas('right');
+    if(!document.body.classList.contains('editing')) return;
+    const lr=getVisibleCanvases();
+    // If we had left selected and it's still there, keep left; else prefer right
+    const wantLeft = activeCanvas && activeCanvas.closest('.stf__item--left');
+    highlightCanvas(wantLeft ? (lr.left||lr.right) : (lr.right||lr.left));
   });
 }
 
@@ -295,8 +317,10 @@ function setEditing(on){
 }
 function enterEdit(){
   editEnabled=true; setEditing(true);
-  setActiveCanvas('right');
-  /* Disable flips via API, not CSS (so both pages accept pointer events) */
+  // Default to right (cover or right page)
+  const {right}=getVisibleCanvases();
+  highlightCanvas(right);
+  // Disable flips while editing (via API)
   try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
   toastShow('Edit mode unlocked ✨');
 }
@@ -438,7 +462,7 @@ function applySaved(){
   }catch(e){}
 }
 
-/* Core draggable hookup for any existing .scrap-item after load */
+/* Hook existing scraps (if any) */
 document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
 </script>
 </body>
