@@ -16,7 +16,7 @@
   --mint:#67e4ca;
   --font:"Dancing Script", cursive;
 
-  /* Cover vertical focus */
+  /* vertical focus for cover image (keeps the title fully visible) */
   --cover-y: 28%;
 }
 
@@ -186,12 +186,11 @@ body.editing .scrap-item .rotator{ display:block; }
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
-<!-- PageFlip library -->
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
 /* ------------ Config ------------- */
 const PASSCODE    = '123';
-const STORAGE_KEY = 'scrapbook_v12';
+const STORAGE_KEY = 'scrapbook_v13';
 
 /* ------------ Elements ------------- */
 const bookEl    = document.getElementById('book');
@@ -213,7 +212,7 @@ const stickersClose= document.getElementById('stickersClose');
 /* Restore BEFORE init */
 applySaved();
 
-/* Flipbook init (cover is page 0) */
+/* Flipbook init */
 if (!window.St || !St.PageFlip) {
   alert("PageFlip library not found. Make sure ./flipbook/page-flip.browser.js exists.");
 }
@@ -245,49 +244,43 @@ bookEl.addEventListener('pointerup',(e)=>{
   bookEl.addEventListener(evt,(e)=>{ e.preventDefault(); e.stopPropagation(); }, true);
 });
 
-/* ---------------- Side targeting: robust ---------------- */
-let targetSide = 'right';          // 'left' or 'right' (what the user intends)
-let activeCanvas = null;           // DOM node we highlight
-let pendingAfterFlip = null;       // callback to run once flip finishes (e.g., add text to left)
+/* ---------------- Deterministic side targeting ---------------- */
+let targetSide = 'right';   // 'left' or 'right'
+let activeCanvas = null;
+let pendingAfterFlip = null;
 
-function getVisibleCanvases(){
-  // Use PageFlip DOM flags when present
-  const left  = document.querySelector('.stf__item--left  .page .page-canvas');
-  const right = document.querySelector('.stf__item--right .page .page-canvas');
-  if (left || right) return {left,right};
-
-  // Fallback based on current index
-  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-  const idx=pageFlip.getCurrentPageIndex?.() ?? 0;
-  if(idx===0) return {left:null, right:canvases[0]}; // cover only
-  const base = idx%2===0 ? idx : idx-1;
-  return {left:canvases[base], right:canvases[base+1]||null};
+function canvasesList(){
+  return document.querySelectorAll('#book .page .page-canvas');
+}
+function getPairByIndex() {
+  const list = canvasesList();
+  const idx = pageFlip.getCurrentPageIndex ? pageFlip.getCurrentPageIndex() : 0;
+  if (idx === 0) return { left: null, right: list[0] || null }; // cover only
+  const base = (idx % 2 === 0) ? idx : idx - 1; // base is left page index of spread
+  return { left: list[base] || null, right: list[base+1] || null };
 }
 
 function highlightCanvas(canvas){
-  if(!canvas){ toastShow('That side is not visible here.'); return; }
   document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
-  canvas.classList.add('active-side');
-  activeCanvas = canvas;
+  if (canvas){ canvas.classList.add('active-side'); activeCanvas = canvas; }
 }
 
 function ensureSideReady(side, cb){
-  const {left, right} = getVisibleCanvases();
-  const canvas = (side==='left') ? left : right;
-  if (canvas) {
+  const pair = getPairByIndex();
+  const canvas = side === 'left' ? pair.left : pair.right;
+  if (canvas){
     cb(canvas);
   } else {
-    // If we want the left but we're on the cover, flip to first spread
-    try { pageFlip.turnToPage(1); } catch(_) {}
+    // asking for left while on cover -> flip to first spread
+    try { pageFlip.turnToPage(1); } catch(_){}
     pendingAfterFlip = () => {
-      const {left: L, right: R} = getVisibleCanvases();
-      cb( (side==='left' ? (L||R) : (R||L)) );
+      const after = getPairByIndex();
+      cb(side === 'left' ? (after.left || after.right) : (after.right || after.left));
       pendingAfterFlip = null;
     };
   }
 }
 
-/* Buttons: set intent, then ensure and highlight */
 targetLeftBtn.addEventListener('click', ()=>{
   targetSide='left';
   ensureSideReady('left', (canvas)=> highlightCanvas(canvas));
@@ -297,13 +290,13 @@ targetRightBtn.addEventListener('click', ()=>{
   ensureSideReady('right', (canvas)=> highlightCanvas(canvas));
 });
 
-/* Keep intent on flips; run any pending action after flip */
 if(pageFlip.on){
   pageFlip.on('flip', ()=>{
     if (pendingAfterFlip) setTimeout(pendingAfterFlip, 10);
+
     if (!document.body.classList.contains('editing')) return;
-    const {left,right} = getVisibleCanvases();
-    highlightCanvas( targetSide==='left' ? (left||right) : (right||left) );
+    const pair = getPairByIndex();
+    highlightCanvas( targetSide==='left' ? (pair.left || pair.right) : (pair.right || pair.left) );
   });
 }
 
@@ -328,10 +321,9 @@ function setEditing(on){
 }
 function enterEdit(){
   editEnabled=true; setEditing(true);
-  // Default to whichever side is visible (cover => right)
-  const {left,right}=getVisibleCanvases();
-  targetSide = right ? 'right' : 'left';
-  highlightCanvas(right || left);
+  const pair = getPairByIndex();
+  targetSide = pair.right ? 'right' : 'left'; // cover -> right
+  highlightCanvas(pair.right || pair.left);
   try{ pageFlip.update?.({useMouseEvents:false, swipeDistance:10000}); }catch(_){}
   toastShow('Edit mode unlocked ✨');
 }
@@ -387,7 +379,7 @@ function makeDraggable(el){
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
 document.addEventListener('click',(e)=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
-/* ------------- Add text / photo (use ensureSideReady) ------------- */
+/* ------------- Add text / photo (uses ensureSideReady) ------------- */
 document.getElementById('addTextBtn').addEventListener('click',()=>{
   openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10);
 });
