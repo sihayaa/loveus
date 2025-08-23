@@ -366,55 +366,41 @@ function setEditing(on){
   }
 }
 
-/* ===== Flip Guard v2: global hard-disable while editing ===== */
+/* ===== Flip Guard v2 (keep events off PageFlip while editing) ===== */
 let flipGuardOn = false;
-
 function flipGuardHandler(e){
   if (!document.body.classList.contains('editing')) return;
+
+  // allow toolbar/HUD/modals
   const t = e.target;
+  if (t.closest('#itemHud') || t.closest('#toolbar') || t.closest('.modal')) return;
 
-  // Allow interactions with items/HUD/toolbar/modals
-  if (t.closest('.scrap-item') || t.closest('#itemHud') || t.closest('#toolbar') || t.closest('.modal')) return;
-
-  // If you clicked a page, still let us target the side
   const pc = t.closest('.page-canvas'); if (pc) highlightCanvas(pc);
 
-  // Swallow so PageFlip never sees it
+  // swallow outside-item/page clicks so PageFlip never sees them
   e.preventDefault();
   if (e.stopImmediatePropagation) e.stopImmediatePropagation();
   e.stopPropagation();
 }
-
 function keyFlipGuard(e){
   if (!document.body.classList.contains('editing')) return;
-
-  // Typing in inputs/textarea/modal? Allow.
-  const tag = (e.target.tagName || '').toLowerCase();
-  const typing = tag === 'input' || tag === 'textarea' || e.target.isContentEditable || !!e.target.closest('.modal');
+  const tag=(e.target.tagName||'').toLowerCase();
+  const typing = tag==='input' || tag==='textarea' || e.target.isContentEditable || !!e.target.closest('.modal');
   if (typing) return;
-
-  const k = e.key;
-  // Keys PageFlip commonly uses
-  const blocks = ['ArrowLeft','ArrowRight','PageUp','PageDown','Home','End',' '];
-  if (blocks.includes(k)) {
-    // Prevent page turn but DO NOT stop propagation so our own handlers still run (e.g., arrow-nudge)
-    e.preventDefault();
-  }
+  const blocks=['ArrowLeft','ArrowRight','PageUp','PageDown','Home','End',' '];
+  if(blocks.includes(e.key)) e.preventDefault();
 }
-
 function setFlipGuard(on){
   if (flipGuardOn === on) return;
   flipGuardOn = on;
-
-  const opts = { capture: true, passive: false };
-  const types = ['pointerdown','pointerup','click','dblclick','touchstart','touchend','wheel'];
-
-  const targets = [bookEl, stageEl, document, window];
-  if (on) {
-    targets.forEach(tgt => types.forEach(type => tgt.addEventListener(type, flipGuardHandler, opts)));
+  const opts = { capture:true, passive:false };
+  const types=['pointerdown','pointerup','click','dblclick','touchstart','touchend','wheel'];
+  const targets=[bookEl,stageEl,document,window];
+  if (on){
+    targets.forEach(tgt=>types.forEach(type=>tgt.addEventListener(type,flipGuardHandler,opts)));
     window.addEventListener('keydown', keyFlipGuard, { capture:true });
-  } else {
-    targets.forEach(tgt => types.forEach(type => tgt.removeEventListener(type, flipGuardHandler, opts)));
+  }else{
+    targets.forEach(tgt=>types.forEach(type=>tgt.removeEventListener(type,flipGuardHandler,opts)));
     window.removeEventListener('keydown', keyFlipGuard, { capture:true });
   }
 }
@@ -598,15 +584,41 @@ function makeDraggable(el){
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
-  // --- Start drag (robust)
+  // --- Drag from anywhere on the item (except controls)
+  el.addEventListener('pointerdown', e=>{
+    if(!document.body.classList.contains('editing')) return;
+    const isControl = e.target.classList.contains('resizer')||
+                      e.target.classList.contains('rotator')||
+                      e.target.classList.contains('mover');
+    if(isControl) return;
+
+    // stop the event so PageFlip never sees it; then start dragging
+    e.preventDefault();
+    e.stopPropagation();
+
+    selectedItem?.classList.remove('selected');
+    selectedItem = el;
+    el.classList.add('selected');
+    updateToolbarState();
+    showItemHud(el);
+
+    startDrag(e);
+  });
+
+  // (Keep the explicit mover handle too)
+  mover.addEventListener('pointerdown', e=>{
+    if(!document.body.classList.contains('editing')) return;
+    e.preventDefault(); e.stopPropagation();
+    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
+    updateToolbarState(); showItemHud(el);
+    startDrag(e);
+  });
+
   function startDrag(e){
     dragging = true;
     dragPointerId = e.pointerId ?? 'mouse';
     try { if (e.pointerId != null && el.setPointerCapture) el.setPointerCapture(e.pointerId); } catch {}
-
-    startX = e.clientX; startY = e.clientY;
-    origX  = el.offsetLeft; origY  = el.offsetTop;
-
+    startX = e.clientX; startY = e.clientY; origX = el.offsetLeft; origY = el.offsetTop;
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup',    onPointerUp);
     window.addEventListener('pointercancel',onPointerUp);
@@ -625,36 +637,13 @@ function makeDraggable(el){
   function onPointerUp(){
     if (!dragging) return;
     try { if (dragPointerId != null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId); } catch {}
-    dragging = false;
-    dragPointerId = null;
+    dragging = false; dragPointerId = null;
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup',    onPointerUp);
     window.removeEventListener('pointercancel',onPointerUp);
     window.removeEventListener('mouseup',      onPointerUp);
     window.removeEventListener('touchend',     onPointerUp);
     el.removeEventListener('lostpointercapture', onPointerUp);
-  }
-
-  // Drag from handle
-  mover.addEventListener('pointerdown', e=>{
-    if(!document.body.classList.contains('editing')) return;
-    e.preventDefault(); e.stopPropagation(); selectThis(); startDrag(e);
-  });
-
-  // Click to select
-  el.addEventListener('pointerdown', e=>{
-    if(!document.body.classList.contains('editing')) return;
-    const isControl = e.target.classList.contains('resizer')||
-                      e.target.classList.contains('rotator')||
-                      e.target.classList.contains('mover');
-    if(isControl) return;
-    selectThis();
-  });
-
-  function selectThis(){
-    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
-    updateToolbarState();
-    showItemHud(el);
   }
 
   // auto-grow for normal text
