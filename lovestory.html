@@ -35,7 +35,7 @@ body{
   color:var(--ink); font-size:22px; line-height:1.35;
 }
 
-/* COVER (fixed, uneditable): pure CSS background with multi-url fallbacks */
+/* COVER (fixed, uneditable): CSS background with local + GitHub fallbacks */
 .page.cover{ box-shadow: 0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
   padding:0;
@@ -67,9 +67,20 @@ body.editing .scrap-item .resizer{
 }
 body.editing .scrap-item .rotator{ display:block; }
 
-/* Content fills the box so resize changes visible size */
-.scrap-img{ display:block; width:100%; height:100%; object-fit:cover; border:0; pointer-events:none; }
-.scrap-text{ display:block; width:100%; height:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:auto; }
+/* Images default to CONTAIN; per-item toggle to COVER */
+.scrap-img{
+  display:block; width:100%; height:100%;
+  object-fit:contain;
+  border:0; pointer-events:none;
+}
+.scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
+
+/* Text */
+.scrap-text{
+  display:block; width:100%; height:100%;
+  background:transparent; border:0; color:inherit; font:inherit;
+  white-space:pre-wrap; overflow:auto;
+}
 .scrap-text[contenteditable="true"]{ outline:none; }
 .scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
 
@@ -88,6 +99,10 @@ body.editing .scrap-item .rotator{ display:block; }
 #toolbar button.secondary{ background:#5d47d4; }
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
+#toolbar input[type="number"]{
+  width:74px; padding:7px 8px; border-radius:8px; border:2px solid #e8dcc6;
+  font-weight:700; color:#0d2a6b; background:#fff;
+}
 #fileInput{ display:none; }
 
 #toast{
@@ -117,7 +132,7 @@ body.editing .scrap-item .rotator{ display:block; }
 
 <div id="stage">
   <div id="book">
-    <!-- PAGE 0: COVER (stays when you flip back) -->
+    <!-- COVER (fixed) -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
     <!-- Inner pages -->
@@ -145,10 +160,27 @@ body.editing .scrap-item .rotator{ display:block; }
       <button id="stickersBtn" class="secondary">Stickers</button>
       <button id="addPageBtn" class="secondary">Add Page</button>
     </div>
+
+    <!-- Word-style font size box -->
     <div class="group">
-      <button id="fontMinus" class="secondary" title="Smaller text">A−</button>
-      <button id="fontPlus"  class="secondary" title="Larger text">A+</button>
+      <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Size</label>
+      <input id="fontSizeInput" type="number" min="8" max="200" step="1" placeholder="px" list="fontSizes" disabled>
+      <datalist id="fontSizes">
+        <option value="8"></option><option value="9"></option><option value="10"></option>
+        <option value="11"></option><option value="12"></option><option value="14"></option>
+        <option value="16"></option><option value="18"></option><option value="20"></option>
+        <option value="22"></option><option value="24"></option><option value="26"></option>
+        <option value="28"></option><option value="36"></option><option value="48"></option>
+        <option value="72"></option>
+      </datalist>
     </div>
+
+    <!-- Per-image controls -->
+    <div class="group">
+      <button id="fitToggleBtn"  class="secondary" title="Toggle photo fit">Fit: Contain</button>
+      <button id="lockToggleBtn" class="secondary" title="Lock aspect ratio">Lock: On</button>
+    </div>
+
     <div class="group">
       <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
       <button id="clearPageBtn" class="warn">Clear Page</button>
@@ -187,7 +219,7 @@ body.editing .scrap-item .rotator{ display:block; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ========= Supabase (tables for inner pages only) ========= */
+/* ========= Supabase (tables for inner pages) ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const TABLE_IMAGES = "scrapbook_images";
@@ -205,13 +237,16 @@ const textInput=document.getElementById('textInput');
 const stickersGrid=document.getElementById('stickersGrid');
 const stickerModal=document.getElementById('stickerModal');
 const stickersClose=document.getElementById('stickersClose');
+const fontSizeInput=document.getElementById('fontSizeInput');
+const fitBtn=document.getElementById('fitToggleBtn');
+const lockBtn=document.getElementById('lockToggleBtn');
 
 let pageFlip, activeCanvas=null, selectedItem=null;
 
 /* ========= Init ========= */
 init().catch(console.error);
 async function init(){
-  await loadFromTables(); // rebuild saved content first
+  await loadFromTables();
 
   if (!window.St || !St.PageFlip) alert("PageFlip library missing (./flipbook/page-flip.browser.js).");
   pageFlip = new St.PageFlip(bookEl,{
@@ -319,6 +354,7 @@ function makeDraggable(el){
     if(!editEnabled) return;
     if(e.target.classList.contains('resizer')||e.target.classList.contains('rotator')) return;
     selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
+    updateToolbarState();
     startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
     document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); e.stopPropagation();
   });
@@ -326,11 +362,28 @@ function makeDraggable(el){
   function onMove(e){
     if(!editEnabled) return;
     if(resizing){
-      const dx=e.clientX-startX, dy=e.clientY-startY;
-      const newW=Math.max(60,startW+dx), newH=Math.max(60,startH+dy);
-      el.style.width=newW+'px'; el.style.height=newH+'px';
-      const sticker=el.querySelector('.scrap-text.sticker');
-      if(sticker){ const scale=0.64; sticker.style.fontSize=Math.round(scale*Math.min(newW,newH))+'px'; }
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+
+      // aspect lock for images (unless Shift is held)
+      const hasImg   = !!el.querySelector('.scrap-img');
+      const lockOn   = hasImg && el.dataset.lock === '1' && !e.shiftKey;
+      const ratio    = parseFloat(el.dataset.aspect || (el.offsetWidth / Math.max(1, el.offsetHeight)));
+
+      let newW = Math.max(60, startW + dx);
+      let newH = Math.max(60, startH + dy);
+
+      if (lockOn && ratio > 0){
+        if (Math.abs(dx) >= Math.abs(dy)) { newH = Math.max(60, Math.round(newW / ratio)); }
+        else { newW = Math.max(60, Math.round(newH * ratio)); }
+      }
+      el.style.width  = newW + 'px';
+      el.style.height = newH + 'px';
+
+      const sticker = el.querySelector('.scrap-text.sticker');
+      if (sticker){
+        const scale = 0.64;
+        sticker.style.fontSize = Math.round(scale * Math.min(newW, newH)) + 'px';
+      }
     }else{
       const dx=e.clientX-startX, dy=e.clientY-startY;
       el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
@@ -338,7 +391,7 @@ function makeDraggable(el){
   }
   function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
 }
-function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; }
+function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
 document.addEventListener('click',e=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
 
 /* ========= Add text / photos / stickers ========= */
@@ -357,11 +410,23 @@ document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
 fileInput.addEventListener('change',async (e)=>{
   const f=e.target.files[0]; if(!f) return;
   const { mime, base64 } = await compressToBase64(f, 1600, 0.85);
+
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+  box.dataset.fit  = 'contain'; // default
+  box.dataset.lock = '1';       // lock aspect ratio
   box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}"><div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
-  box.querySelector('.scrap-img')._preb64 = { mime, base64 }; // Save will insert to DB
+
+  const imgEl = box.querySelector('.scrap-img');
+  const setAspect = () => {
+    if (imgEl.naturalWidth && imgEl.naturalHeight) {
+      box.dataset.aspect = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(5);
+    }
+  };
+  if (imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
+
+  imgEl._preb64 = { mime, base64 }; // Save will insert to DB
   fileInput.value='';
 });
 
@@ -384,18 +449,63 @@ document.getElementById('stickersBtn').onclick=()=>{
 stickersClose.onclick=()=> closeModal(stickerModal);
 stickerModal.addEventListener('click',e=>{ if(e.target===stickerModal) closeModal(stickerModal); });
 
-/* ========= Text font controls ========= */
-document.getElementById('fontMinus').onclick=()=> nudgeTextFont(-4);
-document.getElementById('fontPlus').onclick =()=> nudgeTextFont(+4);
-function nudgeTextFont(delta){
-  if(!selectedItem){ toastShow('Select a text box first'); return; }
-  const el = selectedItem.querySelector('.scrap-text');
-  if(!el || el.classList.contains('sticker')){ toastShow('A−/A+ work on text boxes'); return; }
-  const cs = window.getComputedStyle(el);
-  const curr = parseFloat(cs.fontSize || '22') || 22;
-  const next = Math.max(10, Math.min(120, curr + delta));
-  el.style.fontSize = next + 'px';
+/* ========= Word-style font size control ========= */
+function selectedTextEl(){
+  if(!selectedItem) return null;
+  const t=selectedItem.querySelector('.scrap-text');
+  if(!t || t.classList.contains('sticker')) return null;
+  return t;
 }
+function updateFontInput(){
+  const t = selectedTextEl();
+  if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; fontSizeInput.placeholder='px'; return; }
+  fontSizeInput.disabled=false;
+  const curr = Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
+  fontSizeInput.value = curr;
+}
+fontSizeInput.addEventListener('input', ()=>{
+  const t = selectedTextEl(); if(!t) return;
+  let v = parseInt(fontSizeInput.value,10);
+  if(isNaN(v)) return;
+  v = Math.max(8, Math.min(200, v));
+  t.style.fontSize = v + 'px';
+});
+
+/* ========= Image fit/lock controls ========= */
+function isImageBox(el){ return !!el?.querySelector?.('.scrap-img'); }
+function updateImageButtons(){
+  const onImg = isImageBox(selectedItem);
+  fitBtn.disabled  = !onImg;
+  lockBtn.disabled = !onImg;
+  if (onImg){
+    const fit  = selectedItem.dataset.fit  || 'contain';
+    const lock = selectedItem.dataset.lock === '1';
+    fitBtn.textContent  = 'Fit: ' + (fit === 'cover' ? 'Fill' : 'Contain');
+    lockBtn.textContent = 'Lock: ' + (lock ? 'On' : 'Off');
+  }else{
+    fitBtn.textContent  = 'Fit: Contain';
+    lockBtn.textContent = 'Lock: On';
+  }
+}
+fitBtn.addEventListener('click', ()=>{
+  if (!isImageBox(selectedItem)) return;
+  const cur = selectedItem.dataset.fit || 'contain';
+  selectedItem.dataset.fit = (cur === 'cover') ? 'contain' : 'cover';
+  updateImageButtons();
+});
+lockBtn.addEventListener('click', ()=>{
+  if (!isImageBox(selectedItem)) return;
+  selectedItem.dataset.lock = (selectedItem.dataset.lock === '1') ? '0' : '1';
+  updateImageButtons();
+});
+document.addEventListener('keydown', (e)=>{
+  if (!isImageBox(selectedItem)) return;
+  if (e.key.toLowerCase() === 'f'){ fitBtn.click(); }
+  if (e.key.toLowerCase() === 'r'){ lockBtn.click(); }
+});
+
+/* ========= Keep toolbar in sync ========= */
+function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
 
 /* ========= Page tools ========= */
 document.getElementById('addPageBtn').onclick=()=>{
@@ -405,7 +515,7 @@ document.getElementById('addPageBtn').onclick=()=>{
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
   toastShow('Page added');
 };
-document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); selectedItem=null;} };
+document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); selectedItem=null; updateToolbarState();} };
 document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
 
 /* ========= SAVE -> Supabase tables ========= */
@@ -413,7 +523,7 @@ document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Sa
 async function saveToTables(){
   toastShow('Saving…');
 
-  // 1) Insert any new images
+  // Insert any new images
   const imgs=[...document.querySelectorAll('#book .scrap-img')];
   for(const img of imgs){
     if(img.dataset.imgid) continue;
@@ -430,7 +540,7 @@ async function saveToTables(){
     delete img._preb64;
   }
 
-  // 2) Build layout JSON and upsert
+  // Build layout JSON and upsert
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
   canvases.forEach(canvas=>{
@@ -439,8 +549,14 @@ async function saveToTables(){
       const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height};
       const rot=parseFloat(el.dataset.rot||'0')||0;
       const img=el.querySelector('.scrap-img');
-      if(img){ items.push({type:'image', style, rot, imageId: img.dataset.imgid||null}); }
-      else{
+      if(img){
+        items.push({
+          type:'image', style, rot,
+          imageId: img.dataset.imgid||null,
+          fit: el.dataset.fit || 'contain',
+          lock: el.dataset.lock === '1'
+        });
+      }else{
         const txt=el.querySelector('.scrap-text');
         items.push({type:'text', style, rot, html: txt?txt.outerHTML:''});
       }
@@ -475,8 +591,7 @@ async function loadFromTables(){
     }
 
     // fetch needed images once
-    const ids=[];
-    state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image' && it.imageId) ids.push(it.imageId); }));
+    const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image' && it.imageId) ids.push(it.imageId); }));
     const idSet=[...new Set(ids)];
     const urlMap={};
     if(idSet.length){
@@ -498,7 +613,19 @@ async function loadFromTables(){
 
         if(it.type==='image' && it.imageId){
           const url=urlMap[it.imageId]||'';
+          box.dataset.fit  = it.fit  || 'contain';
+          box.dataset.lock = it.lock ? '1' : '0';
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
+
+          // compute aspect when image loads (for locked resize)
+          const imgEl = box.querySelector('.scrap-img');
+          const setAspect = () => {
+            if (imgEl.naturalWidth && imgEl.naturalHeight) {
+              box.dataset.aspect = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(5);
+            }
+          };
+          if (imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
+
         }else if(it.type==='text' && it.html){
           const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
           const inner=holder.firstElementChild || document.createElement('div');
