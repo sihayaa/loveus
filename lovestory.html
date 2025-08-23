@@ -40,7 +40,7 @@ body.editing #stage{ touch-action:none; } /* no rubber-banding while dragging */
 .page.cover .page-canvas{
   padding:0; background:#0c102c;
   background-image:
-    url("./lovestory_cover.png?v=7"),
+    url("./lovestory_cover.png?v=8"),
     url("https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png"),
     url("https://raw.githubusercontent.com/sihayaa/loveus/HEAD/lovestory_cover.png");
   background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat;
@@ -72,7 +72,7 @@ body.editing .scrap-item .mover{ display:block; }
 .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
 
-/* Text (no inner scrollbars; auto grows) */
+/* Text (auto grows; no scrollbars) */
 .scrap-text{
   display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
   white-space:pre-wrap; overflow:visible; min-height:1.2em;
@@ -98,8 +98,11 @@ body.editing .scrap-item .mover{ display:block; }
 #toolbar input[type="number"]{
   width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff;
 }
-
 #fileInput{ display:none; }
+
+/* Keep PageFlip overlay from blocking clicks while editing */
+body.editing .stf__wrapper,
+body.editing .stf__block{ pointer-events:none; }
 
 #toast{
   position:absolute; top:12px; right:12px; z-index:95;
@@ -162,7 +165,7 @@ body.editing .scrap-item .mover{ display:block; }
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Right toolbar (hidden until 123) -->
+  <!-- Right toolbar -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
@@ -280,7 +283,7 @@ const hudDelete = document.getElementById('hudDelete');
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10; // simple z-index counter for Front/Back
 
-/* ========= PageFlip helpers ========= */
+/* ========= PageFlip ========= */
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy(); }catch(_){}
   pageFlip = new St.PageFlip(bookEl,{
@@ -294,30 +297,6 @@ function initFlip(startIndex=0){
     const {left,right}=getVisibleCanvases();
     highlightCanvas((activeCanvas===left||activeCanvas===right)?activeCanvas:(right||left));
   });
-}
-
-/* Snapshot inner pages (skip cover) to keep content when we destroy PF */
-function snapshotInnerPages(){
-  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-  return canvases.slice(1).map(c=>c.innerHTML);
-}
-
-/* Rebuild simple DOM (cover + inner pages) for edit mode */
-function rebuildSimpleBook(innerHTMLArr){
-  bookEl.innerHTML='';
-  const cover=document.createElement('div');
-  cover.className='page cover';
-  cover.innerHTML='<div class="page-canvas"></div>';
-  bookEl.appendChild(cover);
-
-  innerHTMLArr.forEach(html=>{
-    const p=document.createElement('div'); p.className='page';
-    const c=document.createElement('div'); c.className='page-canvas'; c.innerHTML=html;
-    p.appendChild(c); bookEl.appendChild(p);
-  });
-
-  // Re-hook items
-  bookEl.querySelectorAll('.scrap-item').forEach(makeDraggable);
 }
 
 /* ========= Init ========= */
@@ -363,29 +342,32 @@ function setEditing(on){
   toolbar.classList.toggle('open', on);
   if(!on){ document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
+
+/* >>> THIS IS THE IMPORTANT CHANGE: we do NOT destroy PageFlip <<< */
 function enterEdit(){
   setEditing(true);
-
-  // Remember page & snapshot inner pages
   lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
-  let snapshot = snapshotInnerPages();
 
-  // Kill PF so it can't intercept clicks
-  try{ pageFlip?.destroy(); }catch(_){}
-  pageFlip=null;
+  // disable flipping & gestures while editing
+  try{
+    pageFlip.update({ useMouseEvents:false, swipeDistance:10000 });
+  }catch(_){}
 
-  // Fallback so book never disappears
-  if(!snapshot || snapshot.length===0){ snapshot=['','']; }
+  // ensure existing items are hooked for drag/resize/rotate
+  document.querySelectorAll('#book .scrap-item').forEach(el=>{
+    if(!el.dataset._hooked){ makeDraggable(el); el.dataset._hooked='1'; }
+  });
 
-  // Rebuild plain DOM for edit
-  rebuildSimpleBook(snapshot);
-
-  const {right,left}=getVisibleCanvases(); highlightCanvas(right||left);
+  const { right, left } = getVisibleCanvases();
+  highlightCanvas(right || left);
   toastShow('Edit mode unlocked ✨');
 }
 function exitEdit(){
   setEditing(false); deselect();
-  initFlip(lastPageIndex); // restore PF
+  try{
+    pageFlip.turnToPage(lastPageIndex);
+    pageFlip.update({ useMouseEvents:true, swipeDistance:30 });
+  }catch(_){}
 }
 
 /* ========= Per-item HUD ========= */
@@ -433,7 +415,6 @@ function makeDraggable(el){
 
   el.addEventListener('dragstart', e=>e.preventDefault());
 
-  // Resize
   if(res){
     res.addEventListener('mousedown',e=>{
       if(!document.body.classList.contains('editing')) return;
@@ -458,7 +439,6 @@ function makeDraggable(el){
   }
   function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
 
-  // Rotate
   rot.addEventListener('mousedown',e=>{
     if(!document.body.classList.contains('editing')) return;
     e.stopPropagation(); e.preventDefault();
@@ -475,7 +455,6 @@ function makeDraggable(el){
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
-  // Drag from anywhere on the item (except controls)
   el.addEventListener('pointerdown', e=>{
     if(!document.body.classList.contains('editing')) return;
     const isControl = e.target.classList.contains('resizer')||
@@ -483,14 +462,10 @@ function makeDraggable(el){
                       e.target.classList.contains('mover');
     if(isControl) return;
     e.preventDefault(); e.stopPropagation();
-
-    selectedItem?.classList.remove('selected');
-    selectedItem = el; el.classList.add('selected');
+    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
     updateToolbarState(); showItemHud(el);
-
     startDrag(e);
   });
-
   mover.addEventListener('pointerdown', e=>{
     if(!document.body.classList.contains('editing')) return;
     e.preventDefault(); e.stopPropagation();
@@ -500,91 +475,57 @@ function makeDraggable(el){
   });
 
   function startDrag(e){
-    dragging = true;
-    dragPointerId = e.pointerId ?? 'mouse';
-    try { if (e.pointerId != null && el.setPointerCapture) el.setPointerCapture(e.pointerId); } catch {}
-    startX = e.clientX; startY = e.clientY; origX = el.offsetLeft; origY = el.offsetTop;
-    window.addEventListener('pointermove', onPointerMove);
-    window.addEventListener('pointerup',    onPointerUp);
+    dragging=true;
+    dragPointerId=e.pointerId ?? 'mouse';
+    try{ if(e.pointerId!=null && el.setPointerCapture) el.setPointerCapture(e.pointerId);}catch{}
+    startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
+    window.addEventListener('pointermove',onPointerMove);
+    window.addEventListener('pointerup',onPointerUp);
     window.addEventListener('pointercancel',onPointerUp);
-    el.addEventListener('lostpointercapture', onPointerUp);
+    el.addEventListener('lostpointercapture',onPointerUp);
   }
   function onPointerMove(e){
-    if (!dragging) return;
-    const dx = e.clientX - startX;
-    const dy = e.clientY - startY;
-    el.style.left = (origX + dx) + 'px';
-    el.style.top  = (origY + dy) + 'px';
+    if(!dragging) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
     positionHud();
   }
   function onPointerUp(){
-    if (!dragging) return;
-    try { if (dragPointerId != null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId); } catch {}
-    dragging = false; dragPointerId = null;
-    window.removeEventListener('pointermove', onPointerMove);
-    window.removeEventListener('pointerup',    onPointerUp);
+    if(!dragging) return;
+    try{ if(dragPointerId!=null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId);}catch{}
+    dragging=false; dragPointerId=null;
+    window.removeEventListener('pointermove',onPointerMove);
+    window.removeEventListener('pointerup',onPointerUp);
     window.removeEventListener('pointercancel',onPointerUp);
-    el.removeEventListener('lostpointercapture', onPointerUp);
+    el.removeEventListener('lostpointercapture',onPointerUp);
   }
 
-  // Auto-grow for normal text
-  const tnode = el.querySelector('.scrap-text:not(.sticker)');
-  if(tnode) enableAutoGrow(el, tnode);
+  const tnode=el.querySelector('.scrap-text:not(.sticker)'); if(tnode) enableAutoGrow(el,tnode);
 }
-
-/* Auto-grow for text boxes */
-function enableAutoGrow(box, textEl){
-  const grow = ()=>{
-    textEl.style.height = 'auto';
-    const needed = Math.max(40, textEl.scrollHeight);
-    box.style.height = needed + 'px';
-    positionHud();
-  };
-  textEl.addEventListener('input', grow);
-  const ro = new ResizeObserver(grow);
-  ro.observe(textEl);
-  grow();
+function enableAutoGrow(box,textEl){
+  const grow=()=>{ textEl.style.height='auto'; box.style.height=Math.max(40,textEl.scrollHeight)+'px'; positionHud(); };
+  textEl.addEventListener('input',grow); new ResizeObserver(grow).observe(textEl); grow();
 }
 
 /* Selection */
-document.addEventListener('click', e=>{
+document.addEventListener('click',e=>{
   if(!document.body.classList.contains('editing')) return;
-  const onItem = e.target.closest('.scrap-item');
-  const onBar  = e.target.closest('#toolbar');
-  const onHud  = e.target.closest('#itemHud');
-  const onModal= e.target.closest('.modal');
+  const onItem=e.target.closest('.scrap-item'), onBar=e.target.closest('#toolbar'), onHud=e.target.closest('#itemHud'), onModal=e.target.closest('.modal');
   if(!onItem && !onBar && !onHud && !onModal) deselect();
 });
-function deselect(){
-  selectedItem?.classList.remove('selected');
-  selectedItem=null; updateToolbarState(); hideItemHud();
-}
+function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); hideItemHud(); }
 
-/* Text modal helpers */
-function openTextModalForAdd(){
-  workingBox = null;
-  textModalTitle.textContent = 'Add Text';
-  textAddBtn.textContent = 'Add Text';
-  textInput.value = '';
-  openModal(textModal); setTimeout(()=>textInput.focus(),10);
-}
-function openTextModalForEdit(box){
-  workingBox = box;
-  const t = box.querySelector('.scrap-text');
-  textModalTitle.textContent = 'Edit Text';
-  textAddBtn.textContent = 'Save';
-  textInput.value = t ? t.textContent : '';
-  openModal(textModal); setTimeout(()=>textInput.focus(),10);
-}
+/* Text modal */
 let workingBox=null;
+function openTextModalForAdd(){ workingBox=null; textModalTitle.textContent='Add Text'; textAddBtn.textContent='Add Text'; textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10); }
+function openTextModalForEdit(box){ workingBox=box; const t=box.querySelector('.scrap-text'); textModalTitle.textContent='Edit Text'; textAddBtn.textContent='Save'; textInput.value=t?t.textContent:''; openModal(textModal); setTimeout(()=>textInput.focus(),10); }
 
-document.getElementById('addTextBtn').onclick=()=> openTextModalForAdd();
-textCancel.onclick=()=> closeModal(textModal);
+document.getElementById('addTextBtn').onclick=()=>openTextModalForAdd();
+textCancel.onclick=()=>closeModal(textModal);
 textAddBtn.onclick=()=>{
   const val=textInput.value;
   if(workingBox){
-    const t = workingBox.querySelector('.scrap-text');
-    if(t){ t.textContent = val; t.style.height='auto'; workingBox.style.height=Math.max(40,t.scrollHeight)+'px'; }
+    const t=workingBox.querySelector('.scrap-text'); if(t){ t.textContent=val; t.style.height='auto'; workingBox.style.height=Math.max(40,t.scrollHeight)+'px'; }
     closeModal(textModal); showItemHud(workingBox); return;
   }
   const box=document.createElement('div');
@@ -592,114 +533,72 @@ textAddBtn.onclick=()=>{
   box.innerHTML=`<div class="scrap-text" contenteditable="false">${val.replace(/</g,"&lt;")}</div>
                  <div class="mover" title="Drag"></div>
                  <div class="resizer"></div><div class="rotator"></div>`;
-  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
   closeModal(textModal);
 };
-
-document.addEventListener('dblclick', e=>{
+document.addEventListener('dblclick',e=>{
   if(!document.body.classList.contains('editing')) return;
-  const t = e.target.closest('.scrap-text');
-  if(t && !t.classList.contains('sticker')){
-    const box=t.closest('.scrap-item'); if(box){ selectedItem=box; box.classList.add('selected'); updateToolbarState(); showItemHud(box); openTextModalForEdit(box); }
-  }
+  const t=e.target.closest('.scrap-text'); if(t && !t.classList.contains('sticker')){ const box=t.closest('.scrap-item'); if(box){ selectedItem=box; box.classList.add('selected'); updateToolbarState(); showItemHud(box); openTextModalForEdit(box); } }
 });
-document.addEventListener('keydown', e=>{
+document.addEventListener('keydown',e=>{
   if(!document.body.classList.contains('editing')) return;
-  if(!selectedItem) return;
-  const key=e.key.toLowerCase();
+  if(!selectedItem) return; const key=e.key.toLowerCase();
   if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
 });
 
-/* Text size controls */
-function selectedTextEl(){
-  if(!selectedItem) return null;
-  const t=selectedItem.querySelector('.scrap-text');
-  if(!t || t.classList.contains('sticker')) return null;
-  return t;
-}
+/* Font size (sidebar + HUD) */
+function selectedTextEl(){ if(!selectedItem) return null; const t=selectedItem.querySelector('.scrap-text'); return (t && !t.classList.contains('sticker'))?t:null; }
 function updateFontInput(){
-  const t = selectedTextEl();
-  if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; fontSizeInput.placeholder='px'; return; }
-  fontSizeInput.disabled=false;
-  const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
-  fontSizeInput.value=curr; hudFont.value=curr;
+  const t=selectedTextEl(); if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; fontSizeInput.placeholder='px'; return; }
+  fontSizeInput.disabled=false; const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr; hudFont.value=curr;
 }
-fontSizeInput.addEventListener('input', ()=>{
-  const t=selectedTextEl(); if(!t) return;
-  let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return;
-  v=Math.max(8,Math.min(200,v));
-  t.style.fontSize=v+'px';
-  t.style.height='auto';
-  const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px';
-  hudFont.value=v;
+fontSizeInput.addEventListener('input',()=>{
+  const t=selectedTextEl(); if(!t) return; let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return;
+  v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
+  const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; hudFont.value=v;
 });
-
-/* Image controls */
-function updateImageButtons(){
-  const onImg = !!selectedItem?.querySelector('.scrap-img');
-  fitBtn.disabled  = !onImg;
-  lockBtn.disabled = !onImg;
-  if(onImg){
-    const fit  = selectedItem.dataset.fit  || 'contain';
-    const lock = selectedItem.dataset.lock === '1';
-    fitBtn.textContent  = 'Fit: ' + (fit==='cover' ? 'Fill' : 'Contain');
-    lockBtn.textContent = 'Lock: ' + (lock ? 'On' : 'Off');
-  }else{
-    fitBtn.textContent='Fit: Contain';
-    lockBtn.textContent='Lock: On';
-  }
-}
-fitBtn.onclick=()=>{
-  if(!selectedItem?.querySelector('.scrap-img')) return;
-  const cur=selectedItem.dataset.fit||'contain';
-  selectedItem.dataset.fit=(cur==='cover')?'contain':'cover';
-  updateImageButtons(); showItemHud(selectedItem);
-};
-lockBtn.onclick=()=>{
-  if(!selectedItem?.querySelector('.scrap-img')) return;
-  selectedItem.dataset.lock = (selectedItem.dataset.lock==='1') ? '0' : '1';
-  updateImageButtons(); showItemHud(selectedItem);
-};
-function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
-
-/* HUD actions */
 hudEdit.onclick = ()=>{ if(selectedItem?.querySelector('.scrap-text:not(.sticker)')) openTextModalForEdit(selectedItem); };
 hudFont.addEventListener('input',()=>{
   const t=selectedTextEl(); if(!t) return; let v=parseInt(hudFont.value,10); if(isNaN(v)) return;
   v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
   const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; fontSizeInput.value=v;
 });
-hudDup.onclick = ()=>{
-  if(!selectedItem) return;
-  const clone=selectedItem.cloneNode(true);
-  clone.style.left=(selectedItem.offsetLeft+16)+'px';
-  clone.style.top =(selectedItem.offsetTop +16)+'px';
-  selectedItem.parentElement.appendChild(clone);
-  makeDraggable(clone);
-};
+
+/* Image fit/lock */
+function updateImageButtons(){
+  const onImg=!!selectedItem?.querySelector('.scrap-img');
+  fitBtn.disabled=!onImg; lockBtn.disabled=!onImg;
+  if(onImg){ const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1';
+    fitBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); lockBtn.textContent='Lock: '+(lock?'On':'Off'); }
+  else{ fitBtn.textContent='Fit: Contain'; lockBtn.textContent='Lock: On'; }
+}
+fitBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); };
+lockBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
+function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
+
+/* HUD buttons */
+hudDup.onclick = ()=>{ if(!selectedItem) return; const clone=selectedItem.cloneNode(true); clone.style.left=(selectedItem.offsetLeft+16)+'px'; clone.style.top=(selectedItem.offsetTop+16)+'px'; selectedItem.parentElement.appendChild(clone); makeDraggable(clone); clone.dataset._hooked='1'; };
 hudFront.onclick = ()=>{ if(selectedItem){ selectedItem.style.zIndex=++zCounter; } };
 hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; } };
 hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
 
 /* Photos & stickers */
-document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
-fileInput.addEventListener('change',async (e)=>{
+document.getElementById('addPhotoBtn').onclick=()=>fileInput.click();
+fileInput.addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
-  const { mime, base64 } = await compressToBase64(f,1600,0.85);
+  const {mime,base64}=await compressToBase64(f,1600,0.85);
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
   box.dataset.fit='contain'; box.dataset.lock='1';
   box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}">
                  <div class="mover" title="Drag"></div>
                  <div class="resizer"></div><div class="rotator"></div>`;
-  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
-
+  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
   const imgEl=box.querySelector('.scrap-img');
   const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-  if(imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
-  imgEl._preb64={ mime, base64 }; fileInput.value='';
+  if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
+  imgEl._preb64={mime,base64}; fileInput.value='';
 });
-
 const STICKERS_EMOJI=["🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","🤎","🖤","🩶","🤍","💋","💯","🍔","🍟","🍕","🌭","🥪","🍒","🍦","🍪","🎂","🍰","🧁","🍫"];
 document.getElementById('stickersBtn').onclick=()=>{
   stickersGrid.innerHTML='';
@@ -711,20 +610,19 @@ document.getElementById('stickersBtn').onclick=()=>{
       box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;">${ch}</div>
                      <div class="mover" title="Drag"></div>
                      <div class="resizer"></div><div class="rotator"></div>`;
-      (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+      (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
     });
     stickersGrid.appendChild(b);
   });
   openModal(stickerModal);
 };
-stickersClose.onclick=()=> closeModal(stickerModal);
+stickersClose.onclick=()=>closeModal(stickerModal);
 
 /* Page tools */
 document.getElementById('addPageBtn').onclick=()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  bookEl.appendChild(p);
-  toastShow('Page added');
+  bookEl.appendChild(p); toastShow('Page added');
 };
 
 /* Delete/Clear/Save */
@@ -735,124 +633,85 @@ document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Sa
 
 async function saveToTables(){
   toastShow('Saving…');
-
-  // Insert any new images into table
   const imgs=[...document.querySelectorAll('#book .scrap-img')];
   for(const img of imgs){
     if(img.dataset.imgid) continue;
-    let mime, base64;
-    if(img._preb64){ ({mime,base64}=img._preb64); }
-    else { const r=await fetch(img.src); const b=await r.blob(); const enc=await compressToBase64(b,1600,0.85); mime=enc.mime; base64=enc.base64; }
-    const { data, error } = await supabase.from(TABLE_IMAGES).insert([{ content_type:mime, data_base64:base64 }]).select('id').single();
-    if(error) throw error;
-    img.dataset.imgid = data.id; delete img._preb64;
+    let mime,base64;
+    if(img._preb64){({mime,base64}=img._preb64);}
+    else{ const r=await fetch(img.src); const b=await r.blob(); const enc=await compressToBase64(b,1600,0.85); mime=enc.mime; base64=enc.base64; }
+    const {data,error}=await supabase.from(TABLE_IMAGES).insert([{content_type:mime,data_base64:base64}]).select('id').single();
+    if(error) throw error; img.dataset.imgid=data.id; delete img._preb64;
   }
-
-  // Build layout JSON
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
-  canvases.forEach(canvas=>{
+  canvases.forEach(c=>{
     const items=[];
-    canvas.querySelectorAll('.scrap-item').forEach(el=>{
+    c.querySelectorAll('.scrap-item').forEach(el=>{
       const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height};
       const rot=parseFloat(el.dataset.rot||'0')||0;
       const img=el.querySelector('.scrap-img');
-      if(img){
-        items.push({ type:'image', style, rot, imageId:img.dataset.imgid||null, fit:el.dataset.fit||'contain', lock:el.dataset.lock==='1' });
-      }else{
-        const txt=el.querySelector('.scrap-text');
-        items.push({ type:'text', style, rot, html:txt?txt.outerHTML:'' });
-      }
+      if(img){ items.push({type:'image',style,rot,imageId:img.dataset.imgid||null,fit:el.dataset.fit||'contain',lock:el.dataset.lock==='1'}); }
+      else{ const txt=el.querySelector('.scrap-text'); items.push({type:'text',style,rot,html:txt?txt.outerHTML:''}); }
     });
     pages.push({items});
   });
-
-  const { error: upErr } = await supabase.from(TABLE_STATE).upsert({ id:STATE_ID, pages }).select('id').single();
+  const {error:upErr}=await supabase.from(TABLE_STATE).upsert({id:STATE_ID,pages}).select('id').single();
   if(upErr) throw upErr;
-
-  toastShow('Saved ✓');
-  setTimeout(()=>exitEdit(), 300);
+  toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
 }
 
 /* Load from tables */
 async function loadFromTables(){
   try{
-    const { data:state } = await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
-    if(!state || !state.pages) return;
-
-    // add pages if needed
-    const have=document.querySelectorAll('#book .page').length - 1;
-    const need=state.pages.length;
-    for(let i=have;i<need;i++){
-      const p=document.createElement('div'); p.className='page';
-      const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-      bookEl.appendChild(p);
-    }
-
-    // fetch all images needed
-    const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image' && it.imageId) ids.push(it.imageId); }));
+    const {data:state}=await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
+    if(!state||!state.pages) return;
+    const have=document.querySelectorAll('#book .page').length-1, need=state.pages.length;
+    for(let i=have;i<need;i++){ const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p); }
+    const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }));
     const uniq=[...new Set(ids)]; const urlMap={};
-    if(uniq.length){
-      const { data:imgs } = await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
-      imgs?.forEach(r=> urlMap[r.id] = `data:${r.content_type};base64,${r.data_base64}`);
-    }
-
-    // rebuild
+    if(uniq.length){ const {data:imgs}=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
+      imgs?.forEach(r=>urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`); }
     const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-    for(let i=0;i<Math.min(state.pages.length, canvases.length); i++){
-      const canvas=canvases[i]; canvas.innerHTML='';
+    for(let i=0;i<Math.min(state.pages.length,canvases.length);i++){
+      const c=canvases[i]; c.innerHTML='';
       for(const it of state.pages[i].items||[]){
         const box=document.createElement('div'); box.className='scrap-item';
         box.style.left=it.style?.left||'40px'; box.style.top=it.style?.top||'40px';
-        if(it.style?.width)  box.style.width=it.style.width;
+        if(it.style?.width) box.style.width=it.style.width;
         if(it.style?.height) box.style.height=it.style.height;
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
-
-        if(it.type==='image' && it.imageId){
-          const url=urlMap[it.imageId]||'';
-          box.dataset.fit  = it.fit  || 'contain';
-          box.dataset.lock = it.lock ? '1' : '0';
+        if(it.type==='image'&&it.imageId){
+          const url=urlMap[it.imageId]||''; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="">
-                         <div class="mover" title="Drag"></div>
-                         <div class="resizer"></div><div class="rotator"></div>`;
-          const imgEl=box.querySelector('.scrap-img');
-          const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-          if(imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
-        }else if(it.type==='text' && it.html){
+                         <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
+          const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+          if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
+        }else if(it.type==='text'&&it.html){
           const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
-          const inner=holder.firstElementChild || document.createElement('div');
-          inner.setAttribute('contenteditable','false');
-          box.appendChild(inner);
+          const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
           box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
         }
-        canvas.appendChild(box); makeDraggable(box);
+        c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
       }
     }
-  }catch(e){ console.warn('No saved state yet or load error', e); }
+  }catch(e){ console.warn('No saved state yet / load error',e); }
 }
 
 /* Utils */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
-document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
+document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
 
-/* Simple image compression -> base64 (for table storage) */
-async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
-  const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
-  const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
-  const canvas = document.createElement('canvas');
-  let {width:w, height:h} = img;
-  if(Math.max(w,h) > maxSide){
-    if(w>h){ h = Math.round(h * (maxSide / w)); w = maxSide; }
-    else   { w = Math.round(w * (maxSide / h)); h = maxSide; }
-  }
-  canvas.width=w; canvas.height=h;
-  canvas.getContext('2d').drawImage(img,0,0,w,h);
-  const mime='image/jpeg';
-  const dataUrl=canvas.toDataURL(mime, quality);
-  URL.revokeObjectURL(img.src);
-  return { mime, base64:dataUrl.split(',')[1] };
+/* Image -> base64 for table storage */
+async function compressToBase64(fileOrBlob,maxSide=1600,quality=0.85){
+  const blob=fileOrBlob instanceof Blob?fileOrBlob:new Blob([fileOrBlob]);
+  const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
+  const canvas=document.createElement('canvas'); let {width:w,height:h}=img;
+  if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*(maxSide/w)); w=maxSide; } else { w=Math.round(w*(maxSide/h)); h=maxSide; } }
+  canvas.width=w; canvas.height=h; canvas.getContext('2d').drawImage(img,0,0,w,h);
+  const dataUrl=canvas.toDataURL('image/jpeg',quality); URL.revokeObjectURL(img.src);
+  return { mime:'image/jpeg', base64:dataUrl.split(',')[1] };
 }
 </script>
 </body>
