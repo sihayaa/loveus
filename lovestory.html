@@ -84,23 +84,25 @@ body.editing .scrap-item .rotator{ display:block; }
 .scrap-text[contenteditable="true"]{ outline:none; }
 .scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
 
-/* Toolbar */
+/* RIGHT SIDEBAR TOOLBAR (fixed, doesn't cover the book) */
 #toolbar{
-  position:absolute; left:50%; bottom:14px; transform:translateX(-50%);
-  display:none; z-index:60; background:rgba(255,255,255,.95);
-  border:2px solid #e8dcc6; border-radius:14px; padding:10px; gap:8px;
-  box-shadow:0 10px 22px rgba(0,0,0,.25); align-items:center; flex-wrap:wrap;
+  position:fixed; right:16px; top:50%; transform:translateY(-50%);
+  display:none; z-index:100; background:rgba(255,255,255,.98);
+  border:2px solid #e8dcc6; border-radius:14px; padding:12px;
+  width: 240px; gap:10px;
+  box-shadow:0 10px 22px rgba(0,0,0,.25);
+  display:flex; flex-direction:column; align-items:stretch;
 }
-#toolbar .group{ display:flex; gap:8px; align-items:center; }
+#toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
 #toolbar button{
   border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
-  font-weight:700; color:#fff; background:var(--accent);
+  font-weight:700; color:#fff; background:var(--accent); width:100%;
 }
 #toolbar button.secondary{ background:#5d47d4; }
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
 #toolbar input[type="number"]{
-  width:74px; padding:7px 8px; border-radius:8px; border:2px solid #e8dcc6;
+  width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6;
   font-weight:700; color:#0d2a6b; background:#fff;
 }
 #fileInput{ display:none; }
@@ -148,12 +150,13 @@ body.editing .scrap-item .rotator{ display:block; }
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Toolbar -->
+  <!-- Right sidebar toolbar -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
       <button id="targetRight" class="secondary">Edit Right</button>
     </div>
+
     <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
@@ -161,9 +164,9 @@ body.editing .scrap-item .rotator{ display:block; }
       <button id="addPageBtn" class="secondary">Add Page</button>
     </div>
 
-    <!-- Word-style font size box -->
+    <!-- Word-style font size -->
     <div class="group">
-      <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Size</label>
+      <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
       <input id="fontSizeInput" type="number" min="8" max="200" step="1" placeholder="px" list="fontSizes" disabled>
       <datalist id="fontSizes">
         <option value="8"></option><option value="9"></option><option value="10"></option>
@@ -186,6 +189,7 @@ body.editing .scrap-item .rotator{ display:block; }
       <button id="clearPageBtn" class="warn">Clear Page</button>
       <button id="saveBtn" class="mint">Save</button>
     </div>
+
     <input id="fileInput" type="file" accept="image/*" />
   </div>
 
@@ -392,7 +396,15 @@ function makeDraggable(el){
   function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
 }
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
-document.addEventListener('click',e=>{ if(editEnabled && !e.target.closest('.scrap-item')) deselect(); });
+
+/* IMPORTANT: clicking toolbar or modal does NOT deselect */
+document.addEventListener('click', e=>{
+  if(!editEnabled) return;
+  const onItem   = e.target.closest('.scrap-item');
+  const onBar    = e.target.closest('#toolbar');
+  const onModal  = e.target.closest('.modal');
+  if(!onItem && !onBar && !onModal) deselect();
+});
 
 /* ========= Add text / photos / stickers ========= */
 document.getElementById('addTextBtn').onclick=()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); };
