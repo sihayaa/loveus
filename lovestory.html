@@ -35,7 +35,7 @@ body{
   color:var(--ink); font-size:22px; line-height:1.35;
 }
 
-/* COVER (fixed background image) */
+/* COVER (fixed) */
 .page.cover{ box-shadow: 0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
   padding:0;
@@ -50,9 +50,7 @@ body{
 }
 
 /* Scrap items */
-.scrap-item{
-  position:absolute; transform-origin:center; touch-action:none;
-}
+.scrap-item{ position:absolute; transform-origin:center; touch-action:none; }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
 .rotator{
@@ -61,8 +59,6 @@ body{
   box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
 }
 .rotator:active{ cursor:grabbing; }
-
-/* small drag handle (optional) */
 .mover{
   display:none; position:absolute; left:-10px; top:-10px;
   width:18px; height:18px; border-radius:50%;
@@ -88,26 +84,25 @@ body.editing .scrap-item .mover{ display:block; }
 }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
 
-/* Text */
+/* Text (auto-grow: no scrollbars) */
 .scrap-text{
-  display:block; width:100%; height:100%;
+  display:block; width:100%;
   background:transparent; border:0; color:inherit; font:inherit;
-  white-space:pre-wrap; overflow:auto;
+  white-space:pre-wrap; overflow:visible;   /* <= no inner scrollbar */
+  min-height:1.2em;                         /* natural line height */
 }
 .scrap-text[contenteditable="true"]{ outline:none; }
 .scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
 
-/* Right sidebar toolbar — hidden until 123 */
+/* Sidebar toolbar — hidden until 123 */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
   z-index:100; background:rgba(255,255,255,.98);
   border:2px solid #e8dcc6; border-radius:14px; padding:12px;
   width:240px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25);
-  display:none;           /* hidden by default */
-  flex-direction:column; align-items:stretch;
+  display:none; flex-direction:column; align-items:stretch;
 }
-#toolbar.open{ display:flex; } /* shown only in edit mode */
-
+#toolbar.open{ display:flex; }
 #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
 #toolbar button{
   border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
@@ -314,7 +309,7 @@ function setAllTextEditable(on){
 function setEditing(on){
   document.body.classList.toggle('editing', on);
   setAllTextEditable(on);
-  toolbar.classList.toggle('open', on);  // sidebar visible only in edit
+  toolbar.classList.toggle('open', on);
   if(!on){
     document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
     activeCanvas=null;
@@ -331,7 +326,7 @@ function exitEdit(){
   try{ pageFlip.update?.({useMouseEvents:true,swipeDistance:30}); }catch(_){}
 }
 
-/* ===== Drag / Resize / Rotate (PPT-style) ===== */
+/* ===== Drag / Resize / Rotate (robust pointer release + auto-grow for text) ===== */
 function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
   let rotating=false,startAngle=0,startPointerAngle=0;
@@ -369,6 +364,14 @@ function makeDraggable(el){
     }
     el.style.width=w+'px'; el.style.height=h+'px';
 
+    // if this is a plain text box, auto-grow height to content
+    const t = el.querySelector('.scrap-text:not(.sticker)');
+    if(t && !hasImg){
+      t.style.height='auto';
+      const needed = Math.max(40, t.scrollHeight);
+      el.style.height = needed + 'px';
+    }
+
     const sticker=el.querySelector('.scrap-text.sticker');
     if(sticker){ sticker.style.fontSize=Math.round(0.64*Math.min(w,h))+'px'; }
   }
@@ -390,33 +393,49 @@ function makeDraggable(el){
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
-  // --- Start drag
+  // --- Start drag (robust)
   function startDrag(e){
-    dragging=true; dragPointerId=e.pointerId;
-    el.setPointerCapture?.(dragPointerId);
-    startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
-    document.addEventListener('pointermove',onPointerMove);
-    document.addEventListener('pointerup',onPointerUp);
+    dragging = true;
+    dragPointerId = e.pointerId ?? 'mouse';
+    try { if (e.pointerId != null && el.setPointerCapture) el.setPointerCapture(e.pointerId); } catch {}
+
+    startX = e.clientX; startY = e.clientY;
+    origX  = el.offsetLeft; origY = el.offsetTop;
+
+    window.addEventListener('pointermove', onPointerMove);
+    window.addEventListener('pointerup',    onPointerUp);
+    window.addEventListener('pointercancel',onPointerUp);
+    window.addEventListener('mouseup',      onPointerUp);
+    window.addEventListener('touchend',     onPointerUp);
+    el.addEventListener('lostpointercapture', onPointerUp);
   }
   function onPointerMove(e){
-    if(!dragging) return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
-    el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
+    if (!dragging) return;
+    const dx = e.clientX - startX;
+    const dy = e.clientY - startY;
+    el.style.left = (origX + dx) + 'px';
+    el.style.top  = (origY + dy) + 'px';
   }
-  function onPointerUp(e){
-    if(dragPointerId!==null) el.releasePointerCapture?.(dragPointerId);
-    dragging=false; dragPointerId=null;
-    document.removeEventListener('pointermove',onPointerMove);
-    document.removeEventListener('pointerup',onPointerUp);
+  function onPointerUp(){
+    if (!dragging) return;
+    try { if (dragPointerId != null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId); } catch {}
+    dragging = false;
+    dragPointerId = null;
+    window.removeEventListener('pointermove', onPointerMove);
+    window.removeEventListener('pointerup',    onPointerUp);
+    window.removeEventListener('pointercancel',onPointerUp);
+    window.removeEventListener('mouseup',      onPointerUp);
+    window.removeEventListener('touchend',     onPointerUp);
+    el.removeEventListener('lostpointercapture', onPointerUp);
   }
 
-  // Drag from small handle
+  // Drag from handle
   mover.addEventListener('pointerdown', e=>{
     if(!document.body.classList.contains('editing')) return;
     e.preventDefault(); e.stopPropagation(); selectThis(); startDrag(e);
   });
 
-  // Click anywhere to select; drag anywhere unless actively editing text
+  // Click anywhere to select; drag anywhere unless editing text
   el.addEventListener('pointerdown', e=>{
     if(!document.body.classList.contains('editing')) return;
 
@@ -429,7 +448,6 @@ function makeDraggable(el){
     const isEditingText = !!(t && t.isContentEditable);
     selectThis();
 
-    // allow caret when editing text; Alt/Option still drags
     if(!isEditingText || e.altKey || e.metaKey || e.ctrlKey){
       e.preventDefault(); e.stopPropagation();
       startDrag(e);
@@ -439,6 +457,26 @@ function makeDraggable(el){
   function selectThis(){
     selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected'); updateToolbarState();
   }
+
+  // enable auto-grow if this box contains normal text
+  const tnode = el.querySelector('.scrap-text:not(.sticker)');
+  if(tnode) enableAutoGrow(el, tnode);
+}
+
+/* ===== Auto-grow for text boxes ===== */
+function enableAutoGrow(box, textEl){
+  // grow height to fit content; called on input + on resize observer
+  const grow = ()=>{
+    // compute required height based on content
+    textEl.style.height = 'auto';
+    const needed = Math.max(40, textEl.scrollHeight);
+    box.style.height = needed + 'px';
+  };
+  textEl.addEventListener('input', grow);
+  // when width changes, lines reflow -> grow again
+  const ro = new ResizeObserver(grow);
+  ro.observe(textEl);
+  grow();
 }
 
 /* deselect: clicking toolbar or modal will NOT deselect */
@@ -464,8 +502,7 @@ function exitTextEdit(node){
 }
 document.addEventListener('dblclick', e=>{
   if(!document.body.classList.contains('editing')) return;
-  const t = e.target.closest('.scrap-text'); if(!t) return;
-  enterTextEdit(t);
+  const t = e.target.closest('.scrap-text'); if(!t) return; enterTextEdit(t);
 });
 document.addEventListener('keydown', e=>{
   if(e.key === 'Escape'){
@@ -475,9 +512,7 @@ document.addEventListener('keydown', e=>{
 });
 document.addEventListener('mousedown', e=>{
   const t = document.activeElement?.closest?.('.scrap-text');
-  if(t && t.isContentEditable && !e.target.closest('.scrap-text')){
-    exitTextEdit(t);
-  }
+  if(t && t.isContentEditable && !e.target.closest('.scrap-text')){ exitTextEdit(t); }
 });
 document.addEventListener('keydown', e=>{
   if(e.key === 'Enter' && selectedItem && !document.activeElement?.isContentEditable){
@@ -506,12 +541,12 @@ document.getElementById('textCancel').onclick=()=> closeModal(textModal);
 document.getElementById('textAdd').onclick=()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
   const box=document.createElement('div');
-  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px'; box.style.height='72px';
-  // start NOT editable; double-click or Enter will enable
+  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px'; box.style.height='auto';
   box.innerHTML=`<div class="scrap-text" contenteditable="false">${val}</div>
                  <div class="mover" title="Drag (or Alt/Option-drag)"></div>
                  <div class="resizer"></div><div class="rotator"></div>`;
-  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+  (activeCanvas||getVisibleCanvases().right).appendChild(box);
+  makeDraggable(box);
 };
 
 document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
@@ -521,7 +556,9 @@ fileInput.addEventListener('change',async (e)=>{
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
   box.dataset.fit='contain'; box.dataset.lock='1';
-  box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}"><div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>`;
+  box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}">
+                 <div class="mover" title="Drag (or Alt-drag)"></div>
+                 <div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 
   const imgEl=box.querySelector('.scrap-img');
@@ -538,7 +575,7 @@ document.getElementById('stickersBtn').onclick=()=>{
     const b=document.createElement('button'); b.textContent=ch; b.title=ch;
     b.onclick=()=>{
       const box=document.createElement('div');
-      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
+      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
       box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;" contenteditable="false">${ch}</div>
                      <div class="mover" title="Drag (or Alt-drag)"></div>
                      <div class="resizer"></div><div class="rotator"></div>`;
@@ -570,6 +607,9 @@ fontSizeInput.addEventListener('input', ()=>{
   if(isNaN(v)) return;
   v = Math.max(8, Math.min(200, v));
   t.style.fontSize = v + 'px';
+  // font size may change height -> grow
+  const box = t.closest('.scrap-item');
+  if (box) { t.style.height='auto'; box.style.height=Math.max(40,t.scrollHeight)+'px'; }
 });
 
 /* ===== Image fit/lock controls ===== */
@@ -719,7 +759,6 @@ async function loadFromTables(){
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="">
                          <div class="mover" title="Drag (or Alt-drag)"></div>
                          <div class="resizer"></div><div class="rotator"></div>`;
-
           const imgEl = box.querySelector('.scrap-img');
           const setAspect = () => { if (imgEl.naturalWidth && imgEl.naturalHeight) { box.dataset.aspect = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(5);} };
           if (imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
