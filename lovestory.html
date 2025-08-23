@@ -6,6 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+
 <style>
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
@@ -34,7 +35,7 @@ body{
   color:var(--ink); font-size:22px; line-height:1.35;
 }
 
-/* COVER: fixed background image (local + GitHub fallbacks) */
+/* COVER (fixed background image) */
 .page.cover{ box-shadow: 0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
   padding:0;
@@ -50,8 +51,7 @@ body{
 
 /* Scrap items */
 .scrap-item{
-  position:absolute; transform-origin:center;
-  touch-action:none; /* consistent pointer dragging */
+  position:absolute; transform-origin:center; touch-action:none;
 }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
@@ -62,7 +62,7 @@ body{
 }
 .rotator:active{ cursor:grabbing; }
 
-/* NEW: mover handle */
+/* small drag handle (optional) */
 .mover{
   display:none; position:absolute; left:-10px; top:-10px;
   width:18px; height:18px; border-radius:50%;
@@ -304,8 +304,11 @@ document.addEventListener('keydown',(e)=>{
   if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
 });
 function setAllTextEditable(on){
+  // Word/PPT behavior: editing is opt-in (double-click or Enter)
   document.querySelectorAll('#book .scrap-text').forEach(el=>{
-    if(!el.classList.contains('sticker')) el.setAttribute('contenteditable', on?'true':'false');
+    if(!el.classList.contains('sticker')){
+      el.setAttribute('contenteditable','false');
+    }
   });
 }
 function setEditing(on){
@@ -328,7 +331,7 @@ function exitEdit(){
   try{ pageFlip.update?.({useMouseEvents:true,swipeDistance:30}); }catch(_){}
 }
 
-/* ===== Drag / Resize / Rotate (pointer-based, reliable) ===== */
+/* ===== Drag / Resize / Rotate (PPT-style) ===== */
 function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
   let rotating=false,startAngle=0,startPointerAngle=0;
@@ -343,18 +346,38 @@ function makeDraggable(el){
 
   el.addEventListener('dragstart', e=>e.preventDefault());
 
-  /* resize */
+  // --- Resize
   if(res){
     res.addEventListener('mousedown',e=>{
-      if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
+      if(!document.body.classList.contains('editing')) return; 
+      e.stopPropagation(); e.preventDefault();
       resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
       document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
     });
   }
+  function onMove(e){
+    if(!resizing) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    const hasImg=!!el.querySelector('.scrap-img');
+    const lockOn=hasImg && el.dataset.lock==='1' && !e.shiftKey;
+    const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight)));
 
-  /* rotate */
+    let w=Math.max(60,startW+dx), h=Math.max(60,startH+dy);
+    if(lockOn && ratio>0){
+      if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(60,Math.round(w/ratio));
+      else w=Math.max(60,Math.round(h*ratio));
+    }
+    el.style.width=w+'px'; el.style.height=h+'px';
+
+    const sticker=el.querySelector('.scrap-text.sticker');
+    if(sticker){ sticker.style.fontSize=Math.round(0.64*Math.min(w,h))+'px'; }
+  }
+  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
+
+  // --- Rotate
   rot.addEventListener('mousedown',e=>{
-    if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
+    if(!document.body.classList.contains('editing')) return; 
+    e.stopPropagation(); e.preventDefault();
     rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
     startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx); startAngle=getAngle();
     document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate);
@@ -367,7 +390,7 @@ function makeDraggable(el){
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
-  /* start drag from mover OR Alt/Option anywhere */
+  // --- Start drag
   function startDrag(e){
     dragging=true; dragPointerId=e.pointerId;
     el.setPointerCapture?.(dragPointerId);
@@ -387,48 +410,31 @@ function makeDraggable(el){
     document.removeEventListener('pointerup',onPointerUp);
   }
 
+  // Drag from small handle
   mover.addEventListener('pointerdown', e=>{
-    if(!editEnabled) return; e.preventDefault(); e.stopPropagation(); selectThis();
-    startDrag(e);
+    if(!document.body.classList.contains('editing')) return;
+    e.preventDefault(); e.stopPropagation(); selectThis(); startDrag(e);
   });
 
-  /* click the item:
-     - if Alt/Option/Ctrl/Meta held, drag anywhere
-     - if clicked on text without modifier, just select (caret OK), no forced drag
-  */
+  // Click anywhere to select; drag anywhere unless actively editing text
   el.addEventListener('pointerdown', e=>{
-    if(!editEnabled) return;
-    const isResize = e.target.classList.contains('resizer')||e.target.classList.contains('rotator')||e.target.classList.contains('mover');
-    if(isResize) return;
+    if(!document.body.classList.contains('editing')) return;
+
+    const isControl = e.target.classList.contains('resizer')||
+                      e.target.classList.contains('rotator')||
+                      e.target.classList.contains('mover');
+    if(isControl) return;
+
+    const t = e.target.closest('.scrap-text');
+    const isEditingText = !!(t && t.isContentEditable);
     selectThis();
 
-    const onText = !!e.target.closest('.scrap-text');
-    const dragByModifier = e.altKey || e.metaKey || e.ctrlKey;
-    if(!onText || dragByModifier){
+    // allow caret when editing text; Alt/Option still drags
+    if(!isEditingText || e.altKey || e.metaKey || e.ctrlKey){
       e.preventDefault(); e.stopPropagation();
       startDrag(e);
     }
   });
-
-  /* move, resize logic (mouse) */
-  function onMove(e){
-    if(!editEnabled) return;
-    if(resizing){
-      const dx=e.clientX-startX, dy=e.clientY-startY;
-      const hasImg   = !!el.querySelector('.scrap-img');
-      const lockOn   = hasImg && el.dataset.lock === '1' && !e.shiftKey;
-      const ratio    = parseFloat(el.dataset.aspect || (el.offsetWidth / Math.max(1, el.offsetHeight)));
-      let newW=Math.max(60,startW+dx), newH=Math.max(60,startH+dy);
-      if(lockOn && ratio>0){
-        if(Math.abs(dx)>=Math.abs(dy)) newH=Math.max(60,Math.round(newW/ratio));
-        else newW=Math.max(60,Math.round(newH*ratio));
-      }
-      el.style.width=newW+'px'; el.style.height=newH+'px';
-      const sticker=el.querySelector('.scrap-text.sticker');
-      if(sticker){ sticker.style.fontSize=Math.round(0.64*Math.min(newW,newH))+'px'; }
-    }
-  }
-  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
 
   function selectThis(){
     selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected'); updateToolbarState();
@@ -444,6 +450,41 @@ document.addEventListener('click', e=>{
   if(!onItem && !onBar && !onModal) deselect();
 });
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
+
+/* Double-click text to edit; Esc / click-out to stop; Enter to start edit */
+function enterTextEdit(node){
+  if(!node || node.classList.contains('sticker')) return;
+  node.setAttribute('contenteditable','true'); node.focus();
+  const sel=window.getSelection(); const r=document.createRange();
+  r.selectNodeContents(node); r.collapse(false); sel.removeAllRanges(); sel.addRange(r);
+}
+function exitTextEdit(node){
+  if(!node || node.classList.contains('sticker')) return;
+  node.setAttribute('contenteditable','false');
+}
+document.addEventListener('dblclick', e=>{
+  if(!document.body.classList.contains('editing')) return;
+  const t = e.target.closest('.scrap-text'); if(!t) return;
+  enterTextEdit(t);
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){
+    const t = document.activeElement?.closest?.('.scrap-text');
+    if(t && t.isContentEditable){ exitTextEdit(t); }
+  }
+});
+document.addEventListener('mousedown', e=>{
+  const t = document.activeElement?.closest?.('.scrap-text');
+  if(t && t.isContentEditable && !e.target.closest('.scrap-text')){
+    exitTextEdit(t);
+  }
+});
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Enter' && selectedItem && !document.activeElement?.isContentEditable){
+    const t = selectedItem.querySelector('.scrap-text');
+    if(t && !t.classList.contains('sticker')){ e.preventDefault(); enterTextEdit(t); }
+  }
+});
 
 /* Arrow-key nudges */
 document.addEventListener('keydown', e=>{
@@ -466,8 +507,10 @@ document.getElementById('textAdd').onclick=()=>{
   const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px'; box.style.height='72px';
-  const isEditing=document.body.classList.contains('editing');
-  box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>`;
+  // start NOT editable; double-click or Enter will enable
+  box.innerHTML=`<div class="scrap-text" contenteditable="false">${val}</div>
+                 <div class="mover" title="Drag (or Alt/Option-drag)"></div>
+                 <div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 };
 
@@ -496,7 +539,9 @@ document.getElementById('stickersBtn').onclick=()=>{
     b.onclick=()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
-      box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;" contenteditable="false">${ch}</div><div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>`;
+      box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;" contenteditable="false">${ch}</div>
+                     <div class="mover" title="Drag (or Alt-drag)"></div>
+                     <div class="resizer"></div><div class="rotator"></div>`;
       (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
     };
     stickersGrid.appendChild(b);
@@ -504,7 +549,6 @@ document.getElementById('stickersBtn').onclick=()=>{
   openModal(stickerModal);
 };
 stickersClose.onclick=()=> closeModal(stickerModal);
-stickerModal.addEventListener('click',e=>{ if(e.target===stickerModal) closeModal(stickerModal); });
 
 /* ===== Text size control ===== */
 function selectedTextEl(){
