@@ -47,13 +47,16 @@ body.editing #stage{ touch-action:none; } /* no rubber-banding while dragging */
 }
 
 /* Scrap items */
-.scrap-item{ position:absolute; transform-origin:center; touch-action:none; }
+.scrap-item{
+  position:absolute; transform-origin:center; touch-action:none;
+  overflow:visible; /* keep knobs clickable even outside the box */
+}
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
 .rotator{
   display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%);
   width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
+  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; pointer-events:auto;
 }
 .mover{
   display:none; position:absolute; left:-10px; top:-10px;
@@ -100,11 +103,9 @@ body.editing .scrap-item .mover{ display:block; }
 }
 #fileInput{ display:none; }
 
-/* ✅ allow events to pass through while editing */
+/* allow events to pass while editing */
 body.editing .page .page-canvas,
-body.editing .scrap-item {
-  pointer-events: auto;
-}
+body.editing .scrap-item { pointer-events:auto; }
 
 #toast{
   position:absolute; top:12px; right:12px; z-index:95;
@@ -230,6 +231,12 @@ body.editing .scrap-item {
     <input  id="hudFont"  class="only-text" type="number" min="8" max="200" step="1" placeholder="size">
     <button id="hudFit"   class="only-img">Fit: Contain</button>
     <button id="hudLock"  class="only-img">Lock: On</button>
+
+    <!-- rotation controls -->
+    <button id="hudRotL" title="Rotate left 5°">↺ 5°</button>
+    <input  id="hudRot"  type="number" step="1" style="width:70px" placeholder="deg">
+    <button id="hudRotR" title="Rotate right 5°">↻ 5°</button>
+
     <button id="hudDup">Duplicate</button>
     <button id="hudFront">Front</button>
     <button id="hudBack">Back</button>
@@ -281,6 +288,11 @@ const hudDup    = document.getElementById('hudDup');
 const hudFront  = document.getElementById('hudFront');
 const hudBack   = document.getElementById('hudBack');
 const hudDelete = document.getElementById('hudDelete');
+
+/* NEW: rotation HUD refs */
+const hudRot   = document.getElementById('hudRot');
+const hudRotL  = document.getElementById('hudRotL');
+const hudRotR  = document.getElementById('hudRotR');
 
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10; // simple z-index counter for Front/Back
@@ -345,21 +357,14 @@ function setEditing(on){
   if(!on){ document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
 
-/* >>> THIS IS THE IMPORTANT CHANGE: we do NOT destroy PageFlip <<< */
+/* keep PageFlip; just disable gestures while editing */
 function enterEdit(){
   setEditing(true);
   lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
-
-  // disable flipping & gestures while editing
-  try{
-    pageFlip.update({ useMouseEvents:false, swipeDistance:10000 });
-  }catch(_){}
-
-  // ensure existing items are hooked for drag/resize/rotate
+  try{ pageFlip.update({ useMouseEvents:false, swipeDistance:10000 }); }catch(_){}
   document.querySelectorAll('#book .scrap-item').forEach(el=>{
     if(!el.dataset._hooked){ makeDraggable(el); el.dataset._hooked='1'; }
   });
-
   const { right, left } = getVisibleCanvases();
   highlightCanvas(right || left);
   toastShow('Edit mode unlocked ✨');
@@ -381,6 +386,14 @@ function positionHud(){
   x=Math.max(8,Math.min(x,sr.width-hudW-8)); if(y<8) y=r.bottom-sr.top+8;
   itemHud.style.left=x+'px'; itemHud.style.top=y+'px';
 }
+function getRotation(el){ return parseFloat(el?.dataset.rot || '0') || 0; }
+function setRotation(el, deg){
+  if(!el) return;
+  el.dataset.rot = String(deg);
+  el.style.transform = `rotate(${deg}deg)`;
+  hudRot.value = Math.round(getRotation(el));
+  positionHud();
+}
 function showItemHud(el){
   if(!el){ hideItemHud(); return; }
   const onImg=!!el.querySelector('.scrap-img');
@@ -396,6 +409,7 @@ function showItemHud(el){
     const t=el.querySelector('.scrap-text');
     hudFont.value=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
   }
+  hudRot.value = Math.round(getRotation(el));   /* show current deg */
   itemHud.style.display='flex'; requestAnimationFrame(positionHud);
 }
 function hideItemHud(){ itemHud.style.display='none'; }
@@ -544,8 +558,14 @@ document.addEventListener('dblclick',e=>{
 });
 document.addEventListener('keydown',e=>{
   if(!document.body.classList.contains('editing')) return;
-  if(!selectedItem) return; const key=e.key.toLowerCase();
+  if(!selectedItem) return;
+  const key=e.key.toLowerCase();
   if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
+
+  /* NEW: rotate with keyboard: [ / ]  (Shift = 1°) */
+  const step = e.shiftKey ? 1 : 5;
+  if (e.key === '[') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) - step); }
+  if (e.key === ']') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) + step); }
 });
 
 /* Font size (sidebar + HUD) */
@@ -579,6 +599,15 @@ lockBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; sel
 function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
 
 /* HUD buttons */
+hudRot.addEventListener('input', ()=>{
+  if(!selectedItem) return;
+  const v = parseFloat(hudRot.value);
+  if (isNaN(v)) return;
+  setRotation(selectedItem, v);
+});
+hudRotL.onclick = ()=>{ if(!selectedItem) return; setRotation(selectedItem, getRotation(selectedItem) - 5); };
+hudRotR.onclick = ()=>{ if(!selectedItem) return; setRotation(selectedItem, getRotation(selectedItem) + 5); };
+
 hudDup.onclick = ()=>{ if(!selectedItem) return; const clone=selectedItem.cloneNode(true); clone.style.left=(selectedItem.offsetLeft+16)+'px'; clone.style.top=(selectedItem.offsetTop+16)+'px'; selectedItem.parentElement.appendChild(clone); makeDraggable(clone); clone.dataset._hooked='1'; };
 hudFront.onclick = ()=>{ if(selectedItem){ selectedItem.style.zIndex=++zCounter; } };
 hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; } };
