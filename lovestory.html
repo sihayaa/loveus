@@ -358,15 +358,36 @@ function setEditing(on){
     activeCanvas=null;
   }
 }
+
+/* ===== Flip Guard: hard-disable page flip while editing ===== */
+let flipGuardOn = false;
+function flipGuardHandler(e){
+  if (!document.body.classList.contains('editing')) return;
+  const t = e.target;
+  if (t.closest('.scrap-item') || t.closest('#itemHud') || t.closest('#toolbar') || t.closest('.modal')) return;
+  const pc = t.closest('.page-canvas'); if (pc) highlightCanvas(pc);
+  e.preventDefault(); if (e.stopImmediatePropagation) e.stopImmediatePropagation(); e.stopPropagation();
+}
+function setFlipGuard(on){
+  if (flipGuardOn === on) return;
+  flipGuardOn = on;
+  const opts = { capture: true, passive: false };
+  const types = ['pointerdown','pointerup','click','dblclick','touchstart','touchend','wheel'];
+  if (on) types.forEach(type => bookEl.addEventListener(type, flipGuardHandler, opts));
+  else    types.forEach(type => bookEl.removeEventListener(type, flipGuardHandler, opts));
+}
+
 function enterEdit(){
   editEnabled=true; setEditing(true);
   const {right,left}=getVisibleCanvases(); highlightCanvas(right||left);
   try{ pageFlip.update?.({useMouseEvents:false,swipeDistance:10000}); }catch(_){}
+  setFlipGuard(true);                 // Flip lock ON
   toastShow('Edit mode unlocked ✨');
 }
 function exitEdit(){
   editEnabled=false; setEditing(false); deselect();
   try{ pageFlip.update?.({useMouseEvents:true,swipeDistance:30}); }catch(_){}
+  setFlipGuard(false);                // Flip lock OFF
 }
 
 /* ===== Helpers ===== */
@@ -380,7 +401,7 @@ function positionHud(){
   const sr = stageEl.getBoundingClientRect();
   const hudW = itemHud.offsetWidth, hudH = itemHud.offsetHeight;
 
-  let x = r.right - sr.left - hudW;   // anchor top-right
+  let x = r.right - sr.left - hudW;
   let y = r.top   - sr.top  - hudH - 8;
   x = Math.max(8, Math.min(x, sr.width  - hudW - 8));
   if (y < 8) y = r.bottom - sr.top + 8;
@@ -413,13 +434,9 @@ window.addEventListener('resize', positionHud);
 itemHud.addEventListener('mousedown', e=>e.stopPropagation());
 
 /* HUD actions */
-hudEdit.onclick = ()=>{
-  const t = selectedItem?.querySelector('.scrap-text:not(.sticker)');
-  if(t) enterTextEdit(t);
-};
+hudEdit.onclick = ()=>{ const t = selectedItem?.querySelector('.scrap-text:not(.sticker)'); if(t) enterTextEdit(t); };
 hudFont.addEventListener('input', ()=>{
-  const t = selectedItem?.querySelector('.scrap-text:not(.sticker)');
-  if(!t) return;
+  const t = selectedItem?.querySelector('.scrap-text:not(.sticker)'); if(!t) return;
   let v = parseInt(hudFont.value,10); if(isNaN(v)) return;
   v = Math.max(8, Math.min(200, v));
   t.style.fontSize = v+'px';
@@ -527,7 +544,7 @@ function makeDraggable(el){
     try { if (e.pointerId != null && el.setPointerCapture) el.setPointerCapture(e.pointerId); } catch {}
 
     startX = e.clientX; startY = e.clientY;
-    origX  = el.offsetLeft; origY = el.offsetTop;
+    origX  = el.offsetLeft; origY  = el.offsetTop;
 
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup',    onPointerUp);
@@ -914,11 +931,6 @@ async function loadFromTables(){
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
-
-let tapStart=null; function isTap(d,t){return d<8&&t<280}
-bookEl.addEventListener('pointerdown',e=>{tapStart={x:e.clientX,y:e.clientY,t:Date.now()}},true);
-bookEl.addEventListener('pointerup',e=>{ if(!tapStart)return; const d=Math.hypot(e.clientX-tapStart.x,e.clientY-tapStart.y); const dt=Date.now()-tapStart.t; if(isTap(d,dt)){e.preventDefault();e.stopPropagation()} tapStart=null },true);
-['click','dblclick'].forEach(evt=>bookEl.addEventListener(evt,e=>{e.preventDefault();e.stopPropagation()},true));
 
 document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
 
