@@ -62,7 +62,7 @@ body.editing .scrap-item .resizer{
 }
 body.editing .scrap-item .rotator{ display:block; }
 
-/* Content fills the box so resize changes visible size */
+/* Make content fill box so resizing changes visible size */
 .scrap-img{
   display:block; width:100%; height:100%;
   object-fit:cover; border:0; pointer-events:none;
@@ -121,11 +121,25 @@ body.editing .scrap-item .rotator{ display:block; }
 
 <div id="stage">
   <div id="book">
-    <!-- COVER (fixed, uneditable) -->
+    <!-- COVER (fixed, uneditable). Tries local first, then GitHub main, then HEAD, then an inline SVG -->
     <div class="page cover">
       <div class="page-canvas">
-        <img id="coverImg" class="cover-img" alt="Cover"
-             src="https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png">
+        <img
+          id="coverImg"
+          class="cover-img"
+          alt="Cover"
+          src="./lovestory_cover.png?v=2"
+          onerror="
+            this.onerror = function (){
+              this.onerror = function () {
+                this.onerror = null;
+                this.src = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1200 800%22><rect width=%221200%22 height=%22800%22 fill=%230c102c/><text x=%2250%25%22 y=%2250%25%22 fill=%23ffffffaa%22 font-size=%2272%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>cover not found</text></svg>';
+              };
+              this.src = 'https://raw.githubusercontent.com/sihayaa/loveus/HEAD/lovestory_cover.png?v=2';
+            };
+            this.src = 'https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png?v=2';
+          "
+        />
       </div>
     </div>
 
@@ -196,17 +210,13 @@ body.editing .scrap-item .rotator{ display:block; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ========= Supabase (tables only for page content) ========= */
+/* ========= Supabase (tables only for inner pages) ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const TABLE_IMAGES = "scrapbook_images";
 const TABLE_STATE  = "scrapbook_state";
 const STATE_ID     = "main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-/* ========= Cover stays permanent (no DB) ========= */
-const coverImg=document.getElementById('coverImg');
-coverImg.onerror = () => { coverImg.src = "https://raw.githubusercontent.com/sihayaa/loveus/HEAD/lovestory_cover.png"; };
 
 /* ========= Refs ========= */
 const bookEl=document.getElementById('book');
@@ -224,9 +234,14 @@ let pageFlip, activeCanvas=null, selectedItem=null;
 /* ========= Init ========= */
 init().catch(console.error);
 async function init(){
-  await loadFromTables(); // rebuild pages/content first
+  await loadFromTables(); // rebuild saved content first
+
   if (!window.St || !St.PageFlip) alert("PageFlip library missing (./flipbook/page-flip.browser.js).");
-  pageFlip = new St.PageFlip(bookEl,{width:500,height:650,size:"fixed",showCover:true,drawShadow:true,flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,mobileScrollSupport:false,startPage:0});
+  pageFlip = new St.PageFlip(bookEl,{
+    width:500,height:650,size:"fixed",showCover:true,drawShadow:true,
+    flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
+    mobileScrollSupport:false,startPage:0
+  });
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
   pageFlip.on('flip', ()=>{
     if(!document.body.classList.contains('editing')) return;
@@ -235,7 +250,7 @@ async function init(){
   });
 }
 
-/* ========= Page targeting ========= */
+/* ========= Visible page targeting ========= */
 function getVisibleCanvases(){
   const bookR = bookEl.getBoundingClientRect();
   const list=[...document.querySelectorAll('#book .page .page-canvas')].map(el=>{
@@ -364,7 +379,7 @@ document.getElementById('textAdd').onclick=()=>{
 document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
 fileInput.addEventListener('change',async (e)=>{
   const f=e.target.files[0]; if(!f) return;
-  const { mime, base64 } = await compressToBase64(f, 1600, 0.85); // smaller rows
+  const { mime, base64 } = await compressToBase64(f, 1600, 0.85);
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
   box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}"><div class="resizer"></div><div class="rotator"></div>`;
@@ -489,7 +504,8 @@ async function loadFromTables(){
     if(idSet.length){
       const { data:imgs } = await supabase
         .from(TABLE_IMAGES).select('id, content_type, data_base64').in('id', idSet);
-      imgs?.forEach(r=> urlMap[r.id] = `data:${r.content_type};base64,${r.data_base64}`);
+      imgs?.forEach(r=> urlMap[r.id] = `data:${r.content_type};base64,${r.data_base64}`;
+      );
     }
 
     // rebuild
@@ -519,7 +535,7 @@ async function loadFromTables(){
   }catch(e){ console.warn('No saved state yet or load error', e); }
 }
 
-/* ========= Utils ========= */
+/* ========= Utilities ========= */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
@@ -543,7 +559,7 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
   }
   canvas.width=w; canvas.height=h;
   const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-  const mime = 'image/jpeg';               /* change to 'image/png' for lossless */
+  const mime = 'image/jpeg'; /* change to 'image/png' for lossless */
   const dataUrl = canvas.toDataURL(mime, quality);
   URL.revokeObjectURL(img.src);
   const base64 = dataUrl.split(',')[1];
@@ -552,3 +568,4 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
 </script>
 </body>
 </html>
+
