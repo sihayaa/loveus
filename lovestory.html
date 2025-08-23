@@ -121,25 +121,11 @@ body.editing .scrap-item .rotator{ display:block; }
 
 <div id="stage">
   <div id="book">
-    <!-- COVER (fixed, uneditable). Tries local first, then GitHub main, then HEAD, then an inline SVG -->
+    <!-- COVER (fixed, uneditable). Uses your GitHub URL; simple JS fallback to HEAD if needed -->
     <div class="page cover">
       <div class="page-canvas">
-        <img
-          id="coverImg"
-          class="cover-img"
-          alt="Cover"
-          src="./lovestory_cover.png?v=2"
-          onerror="
-            this.onerror = function (){
-              this.onerror = function () {
-                this.onerror = null;
-                this.src = 'data:image/svg+xml;utf8,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 1200 800%22><rect width=%221200%22 height=%22800%22 fill=%230c102c/><text x=%2250%25%22 y=%2250%25%22 fill=%23ffffffaa%22 font-size=%2272%22 text-anchor=%22middle%22 dominant-baseline=%22middle%22>cover not found</text></svg>';
-              };
-              this.src = 'https://raw.githubusercontent.com/sihayaa/loveus/HEAD/lovestory_cover.png?v=2';
-            };
-            this.src = 'https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png?v=2';
-          "
-        />
+        <img id="coverImg" class="cover-img" alt="Cover"
+             src="https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png">
       </div>
     </div>
 
@@ -217,6 +203,10 @@ const TABLE_IMAGES = "scrapbook_images";
 const TABLE_STATE  = "scrapbook_state";
 const STATE_ID     = "main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ========= Cover fallback (very simple) ========= */
+const coverImg=document.getElementById('coverImg');
+coverImg.onerror = () => { coverImg.src = "https://raw.githubusercontent.com/sihayaa/loveus/HEAD/lovestory_cover.png"; };
 
 /* ========= Refs ========= */
 const bookEl=document.getElementById('book');
@@ -498,14 +488,16 @@ async function loadFromTables(){
     }
 
     // fetch needed images once
-    const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }));
+    const ids=[];
+    state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image' && it.imageId) ids.push(it.imageId); }));
     const idSet=[...new Set(ids)];
     const urlMap={};
     if(idSet.length){
       const { data:imgs } = await supabase
         .from(TABLE_IMAGES).select('id, content_type, data_base64').in('id', idSet);
-      imgs?.forEach(r=> urlMap[r.id] = `data:${r.content_type};base64,${r.data_base64}`;
-      );
+      if (imgs) {
+        imgs.forEach(r => { urlMap[r.id] = `data:${r.content_type};base64,${r.data_base64}`; });
+      }
     }
 
     // rebuild
@@ -568,4 +560,3 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
 </script>
 </body>
 </html>
-
