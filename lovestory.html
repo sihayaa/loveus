@@ -734,16 +734,49 @@ function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidd
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
 
-/* Image -> base64 for table storage */
-async function compressToBase64(fileOrBlob,maxSide=1600,quality=0.85){
-  const blob=fileOrBlob instanceof Blob?fileOrBlob:new Blob([fileOrBlob]);
-  const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
-  const canvas=document.createElement('canvas'); let {width:w,height:h}=img;
-  if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*(maxSide/w)); w=maxSide; } else { w=Math.round(w*(maxSide/h)); h=maxSide; } }
-  canvas.width=w; canvas.height=h; canvas.getContext('2d').drawImage(img,0,0,w,h);
-  const dataUrl=canvas.toDataURL('image/jpeg',quality); URL.revokeObjectURL(img.src);
-  return { mime:'image/jpeg', base64:dataUrl.split(',')[1] };
+// preserves transparency for PNG/WebP; uses JPEG for opaque photos
+async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, pageColor = '#f7eddc') {
+  const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
+  const inputMime = blob.type || 'image/png';
+
+  // load image from a safe blob URL
+  const img = await new Promise((res, rej) => {
+    const i = new Image();
+    i.onload = () => res(i);
+    i.onerror = rej;
+    i.src = URL.createObjectURL(blob);
+  });
+
+  // scale to fit maxSide
+  let w = img.width, h = img.height;
+  if (Math.max(w, h) > maxSide) {
+    if (w > h) { h = Math.round(h * (maxSide / w)); w = maxSide; }
+    else       { w = Math.round(w * (maxSide / h)); h = maxSide; }
+  }
+
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+
+  // keep alpha for PNG/WebP; use JPEG otherwise
+  const wantsAlpha = /png|webp|gif/i.test(inputMime);
+
+  if (!wantsAlpha) {
+    // when exporting JPEG, paint your page color first to avoid “black” transparency
+    ctx.fillStyle = pageColor;
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  ctx.drawImage(img, 0, 0, w, h);
+
+  const outMime = wantsAlpha ? 'image/png' : 'image/jpeg';
+  const dataUrl = canvas.toDataURL(outMime, wantsAlpha ? 1.0 : quality);
+
+  URL.revokeObjectURL(img.src);
+  return { mime: outMime, base64: dataUrl.split(',')[1] };
 }
+
 </script>
 </body>
 </html>
