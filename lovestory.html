@@ -50,7 +50,10 @@ body{
 }
 
 /* Scrap items */
-.scrap-item{ position:absolute; user-select:none; transform-origin:center; }
+.scrap-item{
+  position:absolute; user-select:none; transform-origin:center;
+  touch-action:none; /* reliable pointer dragging */
+}
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
 .rotator{
@@ -72,6 +75,7 @@ body.editing .scrap-item .rotator{ display:block; }
   display:block; width:100%; height:100%;
   object-fit:contain;
   border:0; pointer-events:none;
+  -webkit-user-drag:none; user-select:none;
 }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
 
@@ -84,7 +88,7 @@ body.editing .scrap-item .rotator{ display:block; }
 .scrap-text[contenteditable="true"]{ outline:none; }
 .scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
 
-/* RIGHT SIDEBAR TOOLBAR (fixed, doesn't cover the book) */
+/* RIGHT SIDEBAR TOOLBAR (secret, fixed) */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
   display:none; z-index:100; background:rgba(255,255,255,.98);
@@ -326,12 +330,15 @@ function exitEdit(){
   try{ pageFlip.update?.({useMouseEvents:true,swipeDistance:30}); }catch(_){}
 }
 
-/* ========= Drag / Resize / Rotate ========= */
+/* ========= Drag / Resize / Rotate (fixed) ========= */
 function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0,rotating=false,startAngle=0,startPointerAngle=0;
   const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot);}
   const getAngle=()=>parseFloat(el.dataset.rot||'0')||0;
   const setAngle=(deg)=>{ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; };
+
+  // prevent native drag
+  el.addEventListener('dragstart', e=>e.preventDefault());
 
   if(res){
     res.addEventListener('mousedown',e=>{
@@ -357,18 +364,24 @@ function makeDraggable(el){
   el.addEventListener('mousedown',e=>{
     if(!editEnabled) return;
     if(e.target.classList.contains('resizer')||e.target.classList.contains('rotator')) return;
-    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected');
-    updateToolbarState();
+
+    // allow caret when clicking text, but still start drag if you move
+    const clickedText = e.target.closest('.scrap-text');
+    if(!clickedText) e.preventDefault();
+
+    selectedItem?.classList.remove('selected');
+    selectedItem=el; el.classList.add('selected'); updateToolbarState();
+
     startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
-    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); e.stopPropagation();
+    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+    e.stopPropagation();
   });
 
   function onMove(e){
     if(!editEnabled) return;
+
     if(resizing){
       const dx = e.clientX - startX, dy = e.clientY - startY;
-
-      // aspect lock for images (unless Shift is held)
       const hasImg   = !!el.querySelector('.scrap-img');
       const lockOn   = hasImg && el.dataset.lock === '1' && !e.shiftKey;
       const ratio    = parseFloat(el.dataset.aspect || (el.offsetWidth / Math.max(1, el.offsetHeight)));
@@ -390,10 +403,17 @@ function makeDraggable(el){
       }
     }else{
       const dx=e.clientX-startX, dy=e.clientY-startY;
-      el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
+      // only treat as drag if movement > a few pixels (so single click can place caret)
+      if (Math.abs(dx) + Math.abs(dy) > 2){
+        el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
+      }
     }
   }
-  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
+  function onUp(){
+    document.removeEventListener('mousemove',onMove);
+    document.removeEventListener('mouseup',onUp);
+    resizing=false;
+  }
 }
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
 
@@ -629,7 +649,6 @@ async function loadFromTables(){
           box.dataset.lock = it.lock ? '1' : '0';
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
 
-          // compute aspect when image loads (for locked resize)
           const imgEl = box.querySelector('.scrap-img');
           const setAspect = () => {
             if (imgEl.naturalWidth && imgEl.naturalHeight) {
