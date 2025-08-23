@@ -219,7 +219,7 @@ body.editing .scrap-item .mover{ display:block; }
   <!-- Text modal -->
   <div id="textModal" class="modal" aria-hidden="true">
     <div class="modal-card">
-      <h3>Add Text</h3>
+      <h3 id="textModalTitle">Add Text</h3>
       <textarea id="textInput" rows="5" placeholder="Write something sweet…"></textarea>
       <div class="modal-actions">
         <button class="btn-ghost" id="textCancel">Cancel</button>
@@ -273,7 +273,10 @@ const toolbar=document.getElementById('toolbar');
 const toast=document.getElementById('toast');
 const fileInput=document.getElementById('fileInput');
 const textModal=document.getElementById('textModal');
+const textModalTitle=document.getElementById('textModalTitle');
 const textInput=document.getElementById('textInput');
+const textAddBtn=document.getElementById('textAdd');
+const textCancel=document.getElementById('textCancel');
 const stickersGrid=document.getElementById('stickersGrid');
 const stickerModal=document.getElementById('stickerModal');
 const stickersClose=document.getElementById('stickersClose');
@@ -293,6 +296,9 @@ const hudBack   = document.getElementById('hudBack');
 const hudDelete = document.getElementById('hudDelete');
 
 let pageFlip, activeCanvas=null, selectedItem=null;
+
+/* Track text modal mode */
+let editingBox = null;       // null = adding new; HTMLElement = editing this box
 
 /* ===== Init ===== */
 init().catch(console.error);
@@ -342,11 +348,9 @@ document.addEventListener('keydown',(e)=>{
   if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
 });
 function setAllTextEditable(on){
-  // Word/PPT behavior: editing is opt-in (double-click or Enter)
+  // Editing is via modal, so keep contenteditable OFF.
   document.querySelectorAll('#book .scrap-text').forEach(el=>{
-    if(!el.classList.contains('sticker')){
-      el.setAttribute('contenteditable','false');
-    }
+    el.setAttribute('contenteditable','false');
   });
 }
 function setEditing(on){
@@ -381,13 +385,13 @@ function enterEdit(){
   editEnabled=true; setEditing(true);
   const {right,left}=getVisibleCanvases(); highlightCanvas(right||left);
   try{ pageFlip.update?.({useMouseEvents:false,swipeDistance:10000}); }catch(_){}
-  setFlipGuard(true);                 // Flip lock ON
+  setFlipGuard(true);
   toastShow('Edit mode unlocked ✨');
 }
 function exitEdit(){
   editEnabled=false; setEditing(false); deselect();
   try{ pageFlip.update?.({useMouseEvents:true,swipeDistance:30}); }catch(_){}
-  setFlipGuard(false);                // Flip lock OFF
+  setFlipGuard(false);
 }
 
 /* ===== Helpers ===== */
@@ -433,8 +437,27 @@ function hideItemHud(){ itemHud.style.display='none'; }
 window.addEventListener('resize', positionHud);
 itemHud.addEventListener('mousedown', e=>e.stopPropagation());
 
+/* ===== Text modal helpers ===== */
+function openTextModalForAdd(){
+  editingBox = null;
+  textModalTitle.textContent = 'Add Text';
+  textAddBtn.textContent = 'Add Text';
+  textInput.value = '';
+  openModal(textModal);
+  setTimeout(()=>textInput.focus(),10);
+}
+function openTextModalForEdit(box){
+  editingBox = box;
+  const t = box.querySelector('.scrap-text');
+  textModalTitle.textContent = 'Edit Text';
+  textAddBtn.textContent = 'Save';
+  textInput.value = t ? t.textContent : '';
+  openModal(textModal);
+  setTimeout(()=>textInput.focus(),10);
+}
+
 /* HUD actions */
-hudEdit.onclick = ()=>{ const t = selectedItem?.querySelector('.scrap-text:not(.sticker)'); if(t) enterTextEdit(t); };
+hudEdit.onclick = ()=>{ if(selectedItem && isTextBox(selectedItem)) openTextModalForEdit(selectedItem); };
 hudFont.addEventListener('input', ()=>{
   const t = selectedItem?.querySelector('.scrap-text:not(.sticker)'); if(!t) return;
   let v = parseInt(hudFont.value,10); if(isNaN(v)) return;
@@ -580,21 +603,14 @@ function makeDraggable(el){
     e.preventDefault(); e.stopPropagation(); selectThis(); startDrag(e);
   });
 
-  // Click to select; drag unless editing text
+  // Click to select; drag unless editing via modal
   el.addEventListener('pointerdown', e=>{
     if(!document.body.classList.contains('editing')) return;
     const isControl = e.target.classList.contains('resizer')||
                       e.target.classList.contains('rotator')||
                       e.target.classList.contains('mover');
     if(isControl) return;
-
-    const t = e.target.closest('.scrap-text');
-    const isEditingText = !!(t && t.isContentEditable);
     selectThis();
-    if(!isEditingText || e.altKey || e.metaKey || e.ctrlKey){
-      e.preventDefault(); e.stopPropagation();
-      startDrag(e);
-    }
   });
 
   function selectThis(){
@@ -638,66 +654,48 @@ function deselect(){
   hideItemHud();
 }
 
-/* Double-click text to edit; Esc / click-out to stop; Enter to edit */
-function enterTextEdit(node){
-  if(!node || node.classList.contains('sticker')) return;
-  node.setAttribute('contenteditable','true'); node.focus();
-  const sel=window.getSelection(); const r=document.createRange();
-  r.selectNodeContents(node); r.collapse(false); sel.removeAllRanges(); sel.addRange(r);
-}
-function exitTextEdit(node){
-  if(!node || node.classList.contains('sticker')) return;
-  node.setAttribute('contenteditable','false');
-}
+/* ===== Open text modal on double-click / keyboard ===== */
 document.addEventListener('dblclick', e=>{
   if(!document.body.classList.contains('editing')) return;
-  const t = e.target.closest('.scrap-text'); if(!t) return; enterTextEdit(t);
-});
-document.addEventListener('keydown', e=>{
-  if(e.key === 'Escape'){
-    const t = document.activeElement?.closest?.('.scrap-text');
-    if(t && t.isContentEditable){ exitTextEdit(t); }
+  const t = e.target.closest('.scrap-text');
+  if(t && !t.classList.contains('sticker')){
+    const box=t.closest('.scrap-item'); if(box){ selectedItem=box; box.classList.add('selected'); updateToolbarState(); showItemHud(box); openTextModalForEdit(box); }
   }
 });
-document.addEventListener('mousedown', e=>{
-  const t = document.activeElement?.closest?.('.scrap-text');
-  if(t && t.isContentEditable && !e.target.closest('.scrap-text')){ exitTextEdit(t); }
-});
 document.addEventListener('keydown', e=>{
-  if(e.key === 'Enter' && selectedItem && !document.activeElement?.isContentEditable){
-    const t = selectedItem.querySelector('.scrap-text');
-    if(t && !t.classList.contains('sticker')){ e.preventDefault(); enterTextEdit(t); }
+  if(!document.body.classList.contains('editing')) return;
+  if(!selectedItem) return;
+  const key = e.key.toLowerCase();
+  if((key==='e' || key==='enter') && isTextBox(selectedItem)){
+    e.preventDefault();
+    openTextModalForEdit(selectedItem);
   }
 });
 
-/* Arrow-key nudges */
-document.addEventListener('keydown', e=>{
-  if(!editEnabled || !selectedItem) return;
-  const step = e.shiftKey ? 10 : 1;
-  const left = parseInt(selectedItem.style.left||'0'); const top = parseInt(selectedItem.style.top||'0');
-  if(e.key==='ArrowUp'){ selectedItem.style.top=(top-step)+'px'; e.preventDefault(); positionHud(); }
-  if(e.key==='ArrowDown'){ selectedItem.style.top=(top+step)+'px'; e.preventDefault(); positionHud(); }
-  if(e.key==='ArrowLeft'){ selectedItem.style.left=(left-step)+'px'; e.preventDefault(); positionHud(); }
-  if(e.key==='ArrowRight'){ selectedItem.style.left=(left+step)+'px'; e.preventDefault(); positionHud(); }
-});
-
-/* ===== Add text / photos / stickers ===== */
-document.getElementById('targetLeft').onclick=()=>{ const {left,right}=getVisibleCanvases(); if(!left && right && pageFlip.getCurrentPageIndex?.()===0){ toastShow('Opening first spread…'); try{pageFlip.turnToPage(1);}catch{} setTimeout(()=>{const lr=getVisibleCanvases(); highlightCanvas(lr.left||lr.right);},450); return;} highlightCanvas(left||right); };
-document.getElementById('targetRight').onclick=()=>{ const {right,left}=getVisibleCanvases(); highlightCanvas(right||left); };
-
-document.getElementById('addTextBtn').onclick=()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); };
-document.getElementById('textCancel').onclick=()=> closeModal(textModal);
-document.getElementById('textAdd').onclick=()=>{
-  const val=textInput.value.trim(); closeModal(textModal); if(!val) return;
+/* ===== Add / Edit text via modal ===== */
+document.getElementById('addTextBtn').onclick=()=> openTextModalForAdd();
+textCancel.onclick=()=> closeModal(textModal);
+textAddBtn.onclick=()=>{
+  const val = textInput.value;
+  if(editingBox){ // save changes to existing
+    const t = editingBox.querySelector('.scrap-text');
+    if(t){ t.textContent = val; t.style.height='auto'; editingBox.style.height=Math.max(40,t.scrollHeight)+'px'; }
+    closeModal(textModal);
+    showItemHud(editingBox);
+    return;
+  }
+  // create new
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px'; box.style.height='auto';
-  box.innerHTML=`<div class="scrap-text" contenteditable="false">${val}</div>
-                 <div class="mover" title="Drag (or Alt/Option-drag)"></div>
+  box.innerHTML=`<div class="scrap-text" contenteditable="false">${val.replace(/</g,"&lt;")}</div>
+                 <div class="mover" title="Drag"></div>
                  <div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box);
   makeDraggable(box);
+  closeModal(textModal);
 };
 
+/* ===== Stickers & Photos (unchanged) ===== */
 document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
 fileInput.addEventListener('change',async (e)=>{
   const f=e.target.files[0]; if(!f) return;
@@ -706,7 +704,7 @@ fileInput.addEventListener('change',async (e)=>{
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
   box.dataset.fit='contain'; box.dataset.lock='1';
   box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}">
-                 <div class="mover" title="Drag (or Alt-drag)"></div>
+                 <div class="mover" title="Drag"></div>
                  <div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 
@@ -716,7 +714,6 @@ fileInput.addEventListener('change',async (e)=>{
   imgEl._preb64={ mime, base64 }; fileInput.value='';
 });
 
-/* Stickers */
 const STICKERS_EMOJI=["🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","🤎","🖤","🩶","🤍","💋","💯","🍔","🍟","🍕","🌭","🥪","🍒","🍦","🍪","🎂","🍰","🧁","🍫"];
 document.getElementById('stickersBtn').onclick=()=>{
   stickersGrid.innerHTML='';
@@ -726,7 +723,7 @@ document.getElementById('stickersBtn').onclick=()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
       box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;" contenteditable="false">${ch}</div>
-                     <div class="mover" title="Drag (or Alt-drag)"></div>
+                     <div class="mover" title="Drag"></div>
                      <div class="resizer"></div><div class="rotator"></div>`;
       (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
     };
@@ -749,7 +746,7 @@ function updateFontInput(){
   fontSizeInput.disabled=false;
   const curr = Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
   fontSizeInput.value = curr;
-  hudFont.value = curr; // sync HUD input too
+  hudFont.value = curr;
 }
 fontSizeInput.addEventListener('input', ()=>{
   const t = selectedTextEl(); if(!t) return;
@@ -907,7 +904,7 @@ async function loadFromTables(){
           box.dataset.fit  = it.fit  || 'contain';
           box.dataset.lock = it.lock ? '1' : '0';
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="">
-                         <div class="mover" title="Drag (or Alt-drag)"></div>
+                         <div class="mover" title="Drag"></div>
                          <div class="resizer"></div><div class="rotator"></div>`;
 
           const imgEl = box.querySelector('.scrap-img');
@@ -919,7 +916,7 @@ async function loadFromTables(){
           const inner=holder.firstElementChild || document.createElement('div');
           inner.setAttribute('contenteditable','false');
           box.appendChild(inner);
-          box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>');
+          box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
         }
         canvas.appendChild(box); makeDraggable(box);
       }
