@@ -23,9 +23,7 @@ body{
 /* Stage & Book */
 #stage{ width:1000px; height:650px; position:relative; }
 #book { position:absolute; inset:0; }
-
-/* Disable touch gestures while editing to avoid rubber-banding */
-body.editing #stage{ touch-action:none; }
+body.editing #stage{ touch-action:none; } /* no rubber-banding while dragging */
 
 /* Pages */
 .page{
@@ -40,14 +38,12 @@ body.editing #stage{ touch-action:none; }
 /* COVER (fixed) */
 .page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
-  padding:0; background-color:#0c102c;
+  padding:0; background:#0c102c;
   background-image:
-    url("./lovestory_cover.png?v=5"),
+    url("./lovestory_cover.png?v=7"),
     url("https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png"),
     url("https://raw.githubusercontent.com/sihayaa/loveus/HEAD/lovestory_cover.png");
-  background-size:cover;
-  background-position:50% var(--cover-y);
-  background-repeat:no-repeat;
+  background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat;
 }
 
 /* Scrap items */
@@ -61,8 +57,7 @@ body.editing #stage{ touch-action:none; }
 }
 .mover{
   display:none; position:absolute; left:-10px; top:-10px;
-  width:18px; height:18px; border-radius:50%;
-  background:#fff; border:3px solid var(--accent);
+  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
   box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
 }
 body.editing .scrap-item{ cursor:move; }
@@ -84,7 +79,7 @@ body.editing .scrap-item .mover{ display:block; }
 }
 .scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
 
-/* Toolbar (hidden until 123) */
+/* Sidebar toolbar (hidden until 123) */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
   z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
@@ -243,12 +238,12 @@ body.editing .scrap-item .mover{ display:block; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ========= Supabase (table storage) ========= */
+/* ========= Supabase ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
-const TABLE_IMAGES = "scrapbook_images";
-const TABLE_STATE  = "scrapbook_state";
-const STATE_ID     = "main";
+const TABLE_IMAGES="scrapbook_images";
+const TABLE_STATE ="scrapbook_state";
+const STATE_ID="main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
 /* ========= Refs ========= */
@@ -257,14 +252,17 @@ const stageEl=document.getElementById('stage');
 const toolbar=document.getElementById('toolbar');
 const toast=document.getElementById('toast');
 const fileInput=document.getElementById('fileInput');
+
 const textModal=document.getElementById('textModal');
 const textModalTitle=document.getElementById('textModalTitle');
 const textInput=document.getElementById('textInput');
 const textAddBtn=document.getElementById('textAdd');
 const textCancel=document.getElementById('textCancel');
+
 const stickersGrid=document.getElementById('stickersGrid');
 const stickerModal=document.getElementById('stickerModal');
 const stickersClose=document.getElementById('stickersClose');
+
 const fontSizeInput=document.getElementById('fontSizeInput');
 const fitBtn=document.getElementById('fitToggleBtn');
 const lockBtn=document.getElementById('lockToggleBtn');
@@ -279,8 +277,8 @@ const hudFront  = document.getElementById('hudFront');
 const hudBack   = document.getElementById('hudBack');
 const hudDelete = document.getElementById('hudDelete');
 
-let pageFlip=null, activeCanvas=null, selectedItem=null;
-let lastPageIndex=0;
+let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
+let zCounter = 10; // simple z-index counter for Front/Back
 
 /* ========= PageFlip helpers ========= */
 function initFlip(startIndex=0){
@@ -298,6 +296,30 @@ function initFlip(startIndex=0){
   });
 }
 
+/* Snapshot inner pages (skip cover) to keep content when we destroy PF */
+function snapshotInnerPages(){
+  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+  return canvases.slice(1).map(c=>c.innerHTML);
+}
+
+/* Rebuild simple DOM (cover + inner pages) for edit mode */
+function rebuildSimpleBook(innerHTMLArr){
+  bookEl.innerHTML='';
+  const cover=document.createElement('div');
+  cover.className='page cover';
+  cover.innerHTML='<div class="page-canvas"></div>';
+  bookEl.appendChild(cover);
+
+  innerHTMLArr.forEach(html=>{
+    const p=document.createElement('div'); p.className='page';
+    const c=document.createElement('div'); c.className='page-canvas'; c.innerHTML=html;
+    p.appendChild(c); bookEl.appendChild(p);
+  });
+
+  // Re-hook items
+  bookEl.querySelectorAll('.scrap-item').forEach(makeDraggable);
+}
+
 /* ========= Init ========= */
 init().catch(console.error);
 async function init(){
@@ -306,10 +328,9 @@ async function init(){
   initFlip(0);
 }
 
-/* ========= Targeting left/right ========= */
+/* ========= Target left/right ========= */
 function getVisibleCanvases(){
-  // Works both with PageFlip (side-by-side) and without (stacked)
-  const pr = stageEl.getBoundingClientRect();
+  const pr=stageEl.getBoundingClientRect();
   const all=[...document.querySelectorAll('#book .page .page-canvas')].map(el=>{
     const r=el.getBoundingClientRect();
     const w=Math.max(0,Math.min(r.right,pr.right)-Math.max(r.left,pr.left));
@@ -331,7 +352,7 @@ stageEl.addEventListener('mousedown',e=>{
 document.getElementById('targetLeft').onclick = ()=>{ const {left,right}=getVisibleCanvases(); highlightCanvas(left||right); };
 document.getElementById('targetRight').onclick= ()=>{ const {left,right}=getVisibleCanvases(); highlightCanvas(right||left); };
 
-/* ========= Secret edit mode (type 123) ========= */
+/* ========= Secret Edit Mode (type 123) ========= */
 const PASSCODE='123'; let keyBuffer='', keyTimer=null;
 document.addEventListener('keydown',(e)=>{
   keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
@@ -340,58 +361,58 @@ document.addEventListener('keydown',(e)=>{
 function setEditing(on){
   document.body.classList.toggle('editing', on);
   toolbar.classList.toggle('open', on);
-  if(!on){
-    document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
-    activeCanvas=null;
-  }
+  if(!on){ document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
 function enterEdit(){
   setEditing(true);
-  // Remember where we are, then turn PageFlip completely OFF.
+
+  // Remember page & snapshot inner pages
   lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
+  let snapshot = snapshotInnerPages();
+
+  // Kill PF so it can't intercept clicks
   try{ pageFlip?.destroy(); }catch(_){}
-  pageFlip = null;
+  pageFlip=null;
+
+  // Fallback so book never disappears
+  if(!snapshot || snapshot.length===0){ snapshot=['','']; }
+
+  // Rebuild plain DOM for edit
+  rebuildSimpleBook(snapshot);
+
   const {right,left}=getVisibleCanvases(); highlightCanvas(right||left);
   toastShow('Edit mode unlocked ✨');
 }
 function exitEdit(){
   setEditing(false); deselect();
-  // Re-enable PageFlip where we left off
-  initFlip(lastPageIndex);
+  initFlip(lastPageIndex); // restore PF
 }
 
 /* ========= Per-item HUD ========= */
 function positionHud(){
   if(!selectedItem || itemHud.style.display==='none') return;
-  const r = selectedItem.getBoundingClientRect();
-  const sr = stageEl.getBoundingClientRect();
-  const hudW = itemHud.offsetWidth, hudH = itemHud.offsetHeight;
-  let x = r.right - sr.left - hudW;
-  let y = r.top   - sr.top  - hudH - 8;
-  x = Math.max(8, Math.min(x, sr.width  - hudW - 8));
-  if (y < 8) y = r.bottom - sr.top + 8;
-  itemHud.style.left = x + 'px';
-  itemHud.style.top  = y + 'px';
+  const r=selectedItem.getBoundingClientRect(), sr=stageEl.getBoundingClientRect();
+  const hudW=itemHud.offsetWidth, hudH=itemHud.offsetHeight;
+  let x=r.right-sr.left-hudW, y=r.top-sr.top-hudH-8;
+  x=Math.max(8,Math.min(x,sr.width-hudW-8)); if(y<8) y=r.bottom-sr.top+8;
+  itemHud.style.left=x+'px'; itemHud.style.top=y+'px';
 }
 function showItemHud(el){
   if(!el){ hideItemHud(); return; }
-  const onImg  = !!el.querySelector('.scrap-img');
-  const onText = !!el.querySelector('.scrap-text:not(.sticker)');
-  itemHud.querySelectorAll('.only-img' ).forEach(n=>n.style.display = onImg  ? '' : 'none');
-  itemHud.querySelectorAll('.only-text').forEach(n=>n.style.display = onText ? '' : 'none');
-
+  const onImg=!!el.querySelector('.scrap-img');
+  const onText=!!el.querySelector('.scrap-text:not(.sticker)');
+  itemHud.querySelectorAll('.only-img').forEach(n=>n.style.display=onImg?'':'none');
+  itemHud.querySelectorAll('.only-text').forEach(n=>n.style.display=onText?'':'none');
   if(onImg){
-    const fit  = el.dataset.fit || 'contain';
-    const lock = el.dataset.lock === '1';
-    hudFit.textContent  = 'Fit: ' + (fit==='cover' ? 'Fill' : 'Contain');
-    hudLock.textContent = 'Lock: ' + (lock ? 'On' : 'Off');
+    const fit=el.dataset.fit||'contain', lock=el.dataset.lock==='1';
+    hudFit.textContent='Fit: '+(fit==='cover'?'Fill':'Contain');
+    hudLock.textContent='Lock: '+(lock?'On':'Off');
   }
   if(onText){
-    const t = el.querySelector('.scrap-text');
-    hudFont.value = Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
+    const t=el.querySelector('.scrap-text');
+    hudFont.value=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
   }
-  itemHud.style.display='flex';
-  requestAnimationFrame(positionHud);
+  itemHud.style.display='flex'; requestAnimationFrame(positionHud);
 }
 function hideItemHud(){ itemHud.style.display='none'; }
 window.addEventListener('resize', positionHud);
@@ -428,19 +449,11 @@ function makeDraggable(el){
     const lockOn=hasImg && el.dataset.lock==='1' && !e.shiftKey;
     const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight)));
     let w=Math.max(60,startW+dx), h=Math.max(40,startH+dy);
-    if(lockOn && ratio>0){
-      if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio));
-      else w=Math.max(60,Math.round(h*ratio));
-    }
+    if(lockOn && ratio>0){ if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio)); else w=Math.max(60,Math.round(h*ratio)); }
     el.style.width=w+'px'; el.style.height=h+'px';
-
-    const t = el.querySelector('.scrap-text:not(.sticker)');
-    if(t && !hasImg){
-      t.style.height='auto';
-      el.style.height = Math.max(40, t.scrollHeight) + 'px';
-    }
-    const sticker=el.querySelector('.scrap-text.sticker');
-    if(sticker){ sticker.style.fontSize=Math.round(0.64*Math.min(w,h))+'px'; }
+    const t=el.querySelector('.scrap-text:not(.sticker)');
+    if(t && !hasImg){ t.style.height='auto'; el.style.height=Math.max(40,t.scrollHeight)+'px'; }
+    const st=el.querySelector('.scrap-text.sticker'); if(st){ st.style.fontSize=Math.round(0.64*Math.min(w,h))+'px'; }
     positionHud();
   }
   function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
@@ -533,7 +546,7 @@ function enableAutoGrow(box, textEl){
   grow();
 }
 
-/* Selection management */
+/* Selection */
 document.addEventListener('click', e=>{
   if(!document.body.classList.contains('editing')) return;
   const onItem = e.target.closest('.scrap-item');
@@ -568,7 +581,7 @@ let workingBox=null;
 document.getElementById('addTextBtn').onclick=()=> openTextModalForAdd();
 textCancel.onclick=()=> closeModal(textModal);
 textAddBtn.onclick=()=>{
-  const val = textInput.value;
+  const val=textInput.value;
   if(workingBox){
     const t = workingBox.querySelector('.scrap-text');
     if(t){ t.textContent = val; t.style.height='auto'; workingBox.style.height=Math.max(40,t.scrollHeight)+'px'; }
@@ -649,6 +662,25 @@ lockBtn.onclick=()=>{
 };
 function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
 
+/* HUD actions */
+hudEdit.onclick = ()=>{ if(selectedItem?.querySelector('.scrap-text:not(.sticker)')) openTextModalForEdit(selectedItem); };
+hudFont.addEventListener('input',()=>{
+  const t=selectedTextEl(); if(!t) return; let v=parseInt(hudFont.value,10); if(isNaN(v)) return;
+  v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
+  const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; fontSizeInput.value=v;
+});
+hudDup.onclick = ()=>{
+  if(!selectedItem) return;
+  const clone=selectedItem.cloneNode(true);
+  clone.style.left=(selectedItem.offsetLeft+16)+'px';
+  clone.style.top =(selectedItem.offsetTop +16)+'px';
+  selectedItem.parentElement.appendChild(clone);
+  makeDraggable(clone);
+};
+hudFront.onclick = ()=>{ if(selectedItem){ selectedItem.style.zIndex=++zCounter; } };
+hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; } };
+hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
+
 /* Photos & stickers */
 document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
 fileInput.addEventListener('change',async (e)=>{
@@ -673,14 +705,14 @@ document.getElementById('stickersBtn').onclick=()=>{
   stickersGrid.innerHTML='';
   STICKERS_EMOJI.forEach(ch=>{
     const b=document.createElement('button'); b.textContent=ch; b.title=ch;
-    b.onclick=()=>{
+    b.addEventListener('click',()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
       box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;">${ch}</div>
                      <div class="mover" title="Drag"></div>
                      <div class="resizer"></div><div class="rotator"></div>`;
       (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
-    };
+    });
     stickersGrid.appendChild(b);
   });
   openModal(stickerModal);
@@ -695,7 +727,7 @@ document.getElementById('addPageBtn').onclick=()=>{
   toastShow('Page added');
 };
 
-/* Delete/clear/save */
+/* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
 document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
 
@@ -704,7 +736,7 @@ document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Sa
 async function saveToTables(){
   toastShow('Saving…');
 
-  // Insert any new images
+  // Insert any new images into table
   const imgs=[...document.querySelectorAll('#book .scrap-img')];
   for(const img of imgs){
     if(img.dataset.imgid) continue;
@@ -805,7 +837,7 @@ function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidd
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
 
-/* Simple image compression to base64 for table storage */
+/* Simple image compression -> base64 (for table storage) */
 async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
   const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
   const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
