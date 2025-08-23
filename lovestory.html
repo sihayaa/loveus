@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-
 <style>
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
@@ -35,7 +34,7 @@ body{
   color:var(--ink); font-size:22px; line-height:1.35;
 }
 
-/* COVER (fixed, uneditable): CSS background with local + GitHub fallbacks */
+/* COVER: fixed background image (local + GitHub fallbacks) */
 .page.cover{ box-shadow: 0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
   padding:0;
@@ -51,8 +50,8 @@ body{
 
 /* Scrap items */
 .scrap-item{
-  position:absolute; user-select:none; transform-origin:center;
-  touch-action:none; /* reliable pointer dragging */
+  position:absolute; transform-origin:center;
+  touch-action:none; /* consistent pointer dragging */
 }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
@@ -63,14 +62,24 @@ body{
 }
 .rotator:active{ cursor:grabbing; }
 
+/* NEW: mover handle */
+.mover{
+  display:none; position:absolute; left:-10px; top:-10px;
+  width:18px; height:18px; border-radius:50%;
+  background:#fff; border:3px solid var(--accent);
+  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
+}
+.mover:active{ cursor:grabbing; }
+
 body.editing .scrap-item{ cursor:move; }
 body.editing .scrap-item .resizer{
   display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px;
   border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize;
 }
 body.editing .scrap-item .rotator{ display:block; }
+body.editing .scrap-item .mover{ display:block; }
 
-/* Images default to CONTAIN; per-item toggle to COVER */
+/* Images */
 .scrap-img{
   display:block; width:100%; height:100%;
   object-fit:contain;
@@ -88,15 +97,17 @@ body.editing .scrap-item .rotator{ display:block; }
 .scrap-text[contenteditable="true"]{ outline:none; }
 .scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
 
-/* RIGHT SIDEBAR TOOLBAR (secret, fixed) */
+/* Right sidebar toolbar — hidden until 123 */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
-  display:none; z-index:100; background:rgba(255,255,255,.98);
+  z-index:100; background:rgba(255,255,255,.98);
   border:2px solid #e8dcc6; border-radius:14px; padding:12px;
-  width: 240px; gap:10px;
-  box-shadow:0 10px 22px rgba(0,0,0,.25);
-  display:flex; flex-direction:column; align-items:stretch;
+  width:240px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25);
+  display:none;           /* hidden by default */
+  flex-direction:column; align-items:stretch;
 }
+#toolbar.open{ display:flex; } /* shown only in edit mode */
+
 #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
 #toolbar button{
   border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
@@ -109,6 +120,7 @@ body.editing .scrap-item .rotator{ display:block; }
   width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6;
   font-weight:700; color:#0d2a6b; background:#fff;
 }
+
 #fileInput{ display:none; }
 
 #toast{
@@ -160,15 +172,12 @@ body.editing .scrap-item .rotator{ display:block; }
       <button id="targetLeft" class="secondary">Edit Left</button>
       <button id="targetRight" class="secondary">Edit Right</button>
     </div>
-
     <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
       <button id="addPageBtn" class="secondary">Add Page</button>
     </div>
-
-    <!-- Word-style font size -->
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
       <input id="fontSizeInput" type="number" min="8" max="200" step="1" placeholder="px" list="fontSizes" disabled>
@@ -181,19 +190,15 @@ body.editing .scrap-item .rotator{ display:block; }
         <option value="72"></option>
       </datalist>
     </div>
-
-    <!-- Per-image controls -->
     <div class="group">
-      <button id="fitToggleBtn"  class="secondary" title="Toggle photo fit">Fit: Contain</button>
-      <button id="lockToggleBtn" class="secondary" title="Lock aspect ratio">Lock: On</button>
+      <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
+      <button id="lockToggleBtn" class="secondary">Lock: On</button>
     </div>
-
     <div class="group">
       <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
       <button id="clearPageBtn" class="warn">Clear Page</button>
       <button id="saveBtn" class="mint">Save</button>
     </div>
-
     <input id="fileInput" type="file" accept="image/*" />
   </div>
 
@@ -227,7 +232,7 @@ body.editing .scrap-item .rotator{ display:block; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ========= Supabase (tables for inner pages) ========= */
+/* ===== Supabase (tables for inner pages) ===== */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const TABLE_IMAGES = "scrapbook_images";
@@ -235,7 +240,7 @@ const TABLE_STATE  = "scrapbook_state";
 const STATE_ID     = "main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ========= Refs ========= */
+/* ===== Refs ===== */
 const bookEl=document.getElementById('book');
 const toolbar=document.getElementById('toolbar');
 const toast=document.getElementById('toast');
@@ -251,7 +256,7 @@ const lockBtn=document.getElementById('lockToggleBtn');
 
 let pageFlip, activeCanvas=null, selectedItem=null;
 
-/* ========= Init ========= */
+/* ===== Init ===== */
 init().catch(console.error);
 async function init(){
   await loadFromTables();
@@ -270,7 +275,7 @@ async function init(){
   });
 }
 
-/* ========= Visible page targeting ========= */
+/* ===== Visible page targeting ===== */
 function getVisibleCanvases(){
   const bookR = bookEl.getBoundingClientRect();
   const list=[...document.querySelectorAll('#book .page .page-canvas')].map(el=>{
@@ -291,19 +296,8 @@ document.getElementById('stage').addEventListener('mousedown',e=>{
   if(!document.body.classList.contains('editing')) return;
   const pc=e.target.closest('.page-canvas'); if(pc) highlightCanvas(pc);
 });
-document.getElementById('targetLeft').onclick=()=>{
-  const {left,right}=getVisibleCanvases();
-  if(!left && right && pageFlip.getCurrentPageIndex?.()===0){
-    toastShow('Opening first spread…'); try{pageFlip.turnToPage(1);}catch{}
-    setTimeout(()=>{const lr=getVisibleCanvases(); highlightCanvas(lr.left||lr.right);},450); return;
-  }
-  highlightCanvas(left||right);
-};
-document.getElementById('targetRight').onclick=()=>{
-  const {right,left}=getVisibleCanvases(); highlightCanvas(right||left);
-};
 
-/* ========= Edit mode (type 123) ========= */
+/* ===== Secret edit mode (type 123) ===== */
 const PASSCODE='123'; let editEnabled=false, keyBuffer='', keyTimer=null;
 document.addEventListener('keydown',(e)=>{
   keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
@@ -315,9 +309,13 @@ function setAllTextEditable(on){
   });
 }
 function setEditing(on){
-  if(on){ document.body.classList.add('editing'); setAllTextEditable(true); toolbar.style.display='flex'; }
-  else  { document.body.classList.remove('editing'); setAllTextEditable(false); toolbar.style.display='none';
-          document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
+  document.body.classList.toggle('editing', on);
+  setAllTextEditable(on);
+  toolbar.classList.toggle('open', on);  // sidebar visible only in edit
+  if(!on){
+    document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
+    activeCanvas=null;
+  }
 }
 function enterEdit(){
   editEnabled=true; setEditing(true);
@@ -330,16 +328,22 @@ function exitEdit(){
   try{ pageFlip.update?.({useMouseEvents:true,swipeDistance:30}); }catch(_){}
 }
 
-/* ========= Drag / Resize / Rotate (fixed) ========= */
+/* ===== Drag / Resize / Rotate (pointer-based, reliable) ===== */
 function makeDraggable(el){
-  let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0,rotating=false,startAngle=0,startPointerAngle=0;
-  const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot);}
+  let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
+  let rotating=false,startAngle=0,startPointerAngle=0;
+  let dragging=false, dragPointerId=null;
+
+  const res=el.querySelector('.resizer');
+  let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
+  let mover=el.querySelector('.mover');   if(!mover){ mover=document.createElement('div'); mover.className='mover';   el.appendChild(mover); }
+
   const getAngle=()=>parseFloat(el.dataset.rot||'0')||0;
   const setAngle=(deg)=>{ el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; };
 
-  // prevent native drag
   el.addEventListener('dragstart', e=>e.preventDefault());
 
+  /* resize */
   if(res){
     res.addEventListener('mousedown',e=>{
       if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
@@ -347,6 +351,8 @@ function makeDraggable(el){
       document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
     });
   }
+
+  /* rotate */
   rot.addEventListener('mousedown',e=>{
     if(!editEnabled) return; e.stopPropagation(); e.preventDefault();
     rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
@@ -361,72 +367,99 @@ function makeDraggable(el){
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
-  el.addEventListener('mousedown',e=>{
-    if(!editEnabled) return;
-    if(e.target.classList.contains('resizer')||e.target.classList.contains('rotator')) return;
-
-    // allow caret when clicking text, but still start drag if you move
-    const clickedText = e.target.closest('.scrap-text');
-    if(!clickedText) e.preventDefault();
-
-    selectedItem?.classList.remove('selected');
-    selectedItem=el; el.classList.add('selected'); updateToolbarState();
-
+  /* start drag from mover OR Alt/Option anywhere */
+  function startDrag(e){
+    dragging=true; dragPointerId=e.pointerId;
+    el.setPointerCapture?.(dragPointerId);
     startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
-    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
-    e.stopPropagation();
+    document.addEventListener('pointermove',onPointerMove);
+    document.addEventListener('pointerup',onPointerUp);
+  }
+  function onPointerMove(e){
+    if(!dragging) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
+  }
+  function onPointerUp(e){
+    if(dragPointerId!==null) el.releasePointerCapture?.(dragPointerId);
+    dragging=false; dragPointerId=null;
+    document.removeEventListener('pointermove',onPointerMove);
+    document.removeEventListener('pointerup',onPointerUp);
+  }
+
+  mover.addEventListener('pointerdown', e=>{
+    if(!editEnabled) return; e.preventDefault(); e.stopPropagation(); selectThis();
+    startDrag(e);
   });
 
+  /* click the item:
+     - if Alt/Option/Ctrl/Meta held, drag anywhere
+     - if clicked on text without modifier, just select (caret OK), no forced drag
+  */
+  el.addEventListener('pointerdown', e=>{
+    if(!editEnabled) return;
+    const isResize = e.target.classList.contains('resizer')||e.target.classList.contains('rotator')||e.target.classList.contains('mover');
+    if(isResize) return;
+    selectThis();
+
+    const onText = !!e.target.closest('.scrap-text');
+    const dragByModifier = e.altKey || e.metaKey || e.ctrlKey;
+    if(!onText || dragByModifier){
+      e.preventDefault(); e.stopPropagation();
+      startDrag(e);
+    }
+  });
+
+  /* move, resize logic (mouse) */
   function onMove(e){
     if(!editEnabled) return;
-
     if(resizing){
-      const dx = e.clientX - startX, dy = e.clientY - startY;
+      const dx=e.clientX-startX, dy=e.clientY-startY;
       const hasImg   = !!el.querySelector('.scrap-img');
       const lockOn   = hasImg && el.dataset.lock === '1' && !e.shiftKey;
       const ratio    = parseFloat(el.dataset.aspect || (el.offsetWidth / Math.max(1, el.offsetHeight)));
-
-      let newW = Math.max(60, startW + dx);
-      let newH = Math.max(60, startH + dy);
-
-      if (lockOn && ratio > 0){
-        if (Math.abs(dx) >= Math.abs(dy)) { newH = Math.max(60, Math.round(newW / ratio)); }
-        else { newW = Math.max(60, Math.round(newH * ratio)); }
+      let newW=Math.max(60,startW+dx), newH=Math.max(60,startH+dy);
+      if(lockOn && ratio>0){
+        if(Math.abs(dx)>=Math.abs(dy)) newH=Math.max(60,Math.round(newW/ratio));
+        else newW=Math.max(60,Math.round(newH*ratio));
       }
-      el.style.width  = newW + 'px';
-      el.style.height = newH + 'px';
-
-      const sticker = el.querySelector('.scrap-text.sticker');
-      if (sticker){
-        const scale = 0.64;
-        sticker.style.fontSize = Math.round(scale * Math.min(newW, newH)) + 'px';
-      }
-    }else{
-      const dx=e.clientX-startX, dy=e.clientY-startY;
-      // only treat as drag if movement > a few pixels (so single click can place caret)
-      if (Math.abs(dx) + Math.abs(dy) > 2){
-        el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
-      }
+      el.style.width=newW+'px'; el.style.height=newH+'px';
+      const sticker=el.querySelector('.scrap-text.sticker');
+      if(sticker){ sticker.style.fontSize=Math.round(0.64*Math.min(newW,newH))+'px'; }
     }
   }
-  function onUp(){
-    document.removeEventListener('mousemove',onMove);
-    document.removeEventListener('mouseup',onUp);
-    resizing=false;
+  function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
+
+  function selectThis(){
+    selectedItem?.classList.remove('selected'); selectedItem=el; el.classList.add('selected'); updateToolbarState();
   }
 }
-function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
 
-/* IMPORTANT: clicking toolbar or modal does NOT deselect */
+/* deselect: clicking toolbar or modal will NOT deselect */
 document.addEventListener('click', e=>{
   if(!editEnabled) return;
-  const onItem   = e.target.closest('.scrap-item');
-  const onBar    = e.target.closest('#toolbar');
-  const onModal  = e.target.closest('.modal');
+  const onItem=e.target.closest('.scrap-item');
+  const onBar=e.target.closest('#toolbar');
+  const onModal=e.target.closest('.modal');
   if(!onItem && !onBar && !onModal) deselect();
 });
+function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
 
-/* ========= Add text / photos / stickers ========= */
+/* Arrow-key nudges */
+document.addEventListener('keydown', e=>{
+  if(!editEnabled || !selectedItem) return;
+  const step = e.shiftKey ? 10 : 1;
+  const left = parseInt(selectedItem.style.left||'0'); const top = parseInt(selectedItem.style.top||'0');
+  if(e.key==='ArrowUp'){ selectedItem.style.top=(top-step)+'px'; e.preventDefault(); }
+  if(e.key==='ArrowDown'){ selectedItem.style.top=(top+step)+'px'; e.preventDefault(); }
+  if(e.key==='ArrowLeft'){ selectedItem.style.left=(left-step)+'px'; e.preventDefault(); }
+  if(e.key==='ArrowRight'){ selectedItem.style.left=(left+step)+'px'; e.preventDefault(); }
+});
+
+/* ===== Add text / photos / stickers ===== */
+document.getElementById('targetLeft').onclick=()=>{ const {left,right}=getVisibleCanvases(); if(!left && right && pageFlip.getCurrentPageIndex?.()===0){ toastShow('Opening first spread…'); try{pageFlip.turnToPage(1);}catch{} setTimeout(()=>{const lr=getVisibleCanvases(); highlightCanvas(lr.left||lr.right);},450); return;} highlightCanvas(left||right); };
+document.getElementById('targetRight').onclick=()=>{ const {right,left}=getVisibleCanvases(); highlightCanvas(right||left); };
+
 document.getElementById('addTextBtn').onclick=()=>{ openModal(textModal); textInput.value=''; setTimeout(()=>textInput.focus(),10); };
 document.getElementById('textCancel').onclick=()=> closeModal(textModal);
 document.getElementById('textAdd').onclick=()=>{
@@ -434,7 +467,7 @@ document.getElementById('textAdd').onclick=()=>{
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='260px'; box.style.height='72px';
   const isEditing=document.body.classList.contains('editing');
-  box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="resizer"></div><div class="rotator"></div>`;
+  box.innerHTML=`<div class="scrap-text" contenteditable="${isEditing?'true':'false'}">${val}</div><div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 };
 
@@ -442,24 +475,16 @@ document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
 fileInput.addEventListener('change',async (e)=>{
   const f=e.target.files[0]; if(!f) return;
   const { mime, base64 } = await compressToBase64(f, 1600, 0.85);
-
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
-  box.dataset.fit  = 'contain'; // default
-  box.dataset.lock = '1';       // lock aspect ratio
-  box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}"><div class="resizer"></div><div class="rotator"></div>`;
+  box.dataset.fit='contain'; box.dataset.lock='1';
+  box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}"><div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>`;
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
 
-  const imgEl = box.querySelector('.scrap-img');
-  const setAspect = () => {
-    if (imgEl.naturalWidth && imgEl.naturalHeight) {
-      box.dataset.aspect = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(5);
-    }
-  };
-  if (imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
-
-  imgEl._preb64 = { mime, base64 }; // Save will insert to DB
-  fileInput.value='';
+  const imgEl=box.querySelector('.scrap-img');
+  const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+  if(imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
+  imgEl._preb64={ mime, base64 }; fileInput.value='';
 });
 
 /* Stickers */
@@ -471,7 +496,7 @@ document.getElementById('stickersBtn').onclick=()=>{
     b.onclick=()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px'; box.style.height='100px';
-      box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;" contenteditable="false">${ch}</div><div class="resizer"></div><div class="rotator"></div>`;
+      box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;" contenteditable="false">${ch}</div><div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>`;
       (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
     };
     stickersGrid.appendChild(b);
@@ -481,7 +506,7 @@ document.getElementById('stickersBtn').onclick=()=>{
 stickersClose.onclick=()=> closeModal(stickerModal);
 stickerModal.addEventListener('click',e=>{ if(e.target===stickerModal) closeModal(stickerModal); });
 
-/* ========= Word-style font size control ========= */
+/* ===== Text size control ===== */
 function selectedTextEl(){
   if(!selectedItem) return null;
   const t=selectedItem.querySelector('.scrap-text');
@@ -503,7 +528,7 @@ fontSizeInput.addEventListener('input', ()=>{
   t.style.fontSize = v + 'px';
 });
 
-/* ========= Image fit/lock controls ========= */
+/* ===== Image fit/lock controls ===== */
 function isImageBox(el){ return !!el?.querySelector?.('.scrap-img'); }
 function updateImageButtons(){
   const onImg = isImageBox(selectedItem);
@@ -536,10 +561,10 @@ document.addEventListener('keydown', (e)=>{
   if (e.key.toLowerCase() === 'r'){ lockBtn.click(); }
 });
 
-/* ========= Keep toolbar in sync ========= */
+/* ===== Keep toolbar in sync ===== */
 function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
 
-/* ========= Page tools ========= */
+/* ===== Page tools ===== */
 document.getElementById('addPageBtn').onclick=()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
@@ -550,7 +575,7 @@ document.getElementById('addPageBtn').onclick=()=>{
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); selectedItem=null; updateToolbarState();} };
 document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
 
-/* ========= SAVE -> Supabase tables ========= */
+/* ===== SAVE -> Supabase ===== */
 document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Save failed: '+e));
 async function saveToTables(){
   toastShow('Saving…');
@@ -606,7 +631,7 @@ async function saveToTables(){
   toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
 }
 
-/* ========= LOAD <- Supabase tables ========= */
+/* ===== LOAD <- Supabase ===== */
 async function loadFromTables(){
   try{
     const { data:state } = await supabase
@@ -647,14 +672,12 @@ async function loadFromTables(){
           const url=urlMap[it.imageId]||'';
           box.dataset.fit  = it.fit  || 'contain';
           box.dataset.lock = it.lock ? '1' : '0';
-          box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt=""><div class="resizer"></div><div class="rotator"></div>`;
+          box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="">
+                         <div class="mover" title="Drag (or Alt-drag)"></div>
+                         <div class="resizer"></div><div class="rotator"></div>`;
 
           const imgEl = box.querySelector('.scrap-img');
-          const setAspect = () => {
-            if (imgEl.naturalWidth && imgEl.naturalHeight) {
-              box.dataset.aspect = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(5);
-            }
-          };
+          const setAspect = () => { if (imgEl.naturalWidth && imgEl.naturalHeight) { box.dataset.aspect = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(5);} };
           if (imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
 
         }else if(it.type==='text' && it.html){
@@ -662,7 +685,7 @@ async function loadFromTables(){
           const inner=holder.firstElementChild || document.createElement('div');
           inner.setAttribute('contenteditable','false');
           box.appendChild(inner);
-          box.insertAdjacentHTML('beforeend','<div class="resizer"></div><div class="rotator"></div>');
+          box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag (or Alt-drag)"></div><div class="resizer"></div><div class="rotator"></div>');
         }
         canvas.appendChild(box); makeDraggable(box);
       }
@@ -670,7 +693,7 @@ async function loadFromTables(){
   }catch(e){ console.warn('No saved state yet or load error', e); }
 }
 
-/* ========= Utilities ========= */
+/* ===== Utils ===== */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
@@ -682,7 +705,7 @@ bookEl.addEventListener('pointerup',e=>{ if(!tapStart)return; const d=Math.hypot
 
 document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
 
-/* image compression to keep table rows small */
+/* compress to base64 for table storage */
 async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
   const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
   const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
