@@ -100,9 +100,11 @@ body.editing .scrap-item .mover{ display:block; }
 }
 #fileInput{ display:none; }
 
-/* Keep PageFlip overlay from blocking clicks while editing */
-body.editing .stf__wrapper,
-body.editing .stf__block{ pointer-events:none; }
+/* ✅ allow events to pass through while editing */
+body.editing .page .page-canvas,
+body.editing .scrap-item {
+  pointer-events: auto;
+}
 
 #toast{
   position:absolute; top:12px; right:12px; z-index:95;
