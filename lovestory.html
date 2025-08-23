@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
-
 <style>
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
@@ -25,7 +24,7 @@ body{
 #stage{ width:1000px; height:650px; position:relative; }
 #book { position:absolute; inset:0; }
 
-/* While editing, kill native gestures (mobile swipe/scroll) */
+/* Disable touch gestures while editing to avoid rubber-banding */
 body.editing #stage{ touch-action:none; }
 
 /* Pages */
@@ -38,13 +37,12 @@ body.editing #stage{ touch-action:none; }
   color:var(--ink); font-size:22px; line-height:1.35;
 }
 
-/* COVER (fixed image) */
-.page.cover{ box-shadow: 0 8px 28px rgba(0,0,0,.35); }
+/* COVER (fixed) */
+.page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
-  padding:0;
-  background-color:#0c102c;
+  padding:0; background-color:#0c102c;
   background-image:
-    url("./lovestory_cover.png?v=4"),
+    url("./lovestory_cover.png?v=5"),
     url("https://raw.githubusercontent.com/sihayaa/loveus/main/lovestory_cover.png"),
     url("https://raw.githubusercontent.com/sihayaa/loveus/HEAD/lovestory_cover.png");
   background-size:cover;
@@ -61,15 +59,12 @@ body.editing #stage{ touch-action:none; }
   width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
   box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
 }
-.rotator:active{ cursor:grabbing; }
 .mover{
   display:none; position:absolute; left:-10px; top:-10px;
   width:18px; height:18px; border-radius:50%;
   background:#fff; border:3px solid var(--accent);
   box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
 }
-.mover:active{ cursor:grabbing; }
-
 body.editing .scrap-item{ cursor:move; }
 body.editing .scrap-item .resizer{
   display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px;
@@ -79,29 +74,20 @@ body.editing .scrap-item .rotator{ display:block; }
 body.editing .scrap-item .mover{ display:block; }
 
 /* Images */
-.scrap-img{
-  display:block; width:100%; height:100%;
-  object-fit:contain;
-  border:0; pointer-events:none;
-  -webkit-user-drag:none; user-select:none;
-}
+.scrap-img{ display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
 
-/* Text (auto-grow, no scrollbars) */
+/* Text (no inner scrollbars; auto grows) */
 .scrap-text{
-  display:block; width:100%;
-  background:transparent; border:0; color:inherit; font:inherit;
-  white-space:pre-wrap; overflow:visible;
-  min-height:1.2em;
+  display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
+  white-space:pre-wrap; overflow:visible; min-height:1.2em;
 }
-.scrap-text[contenteditable="true"]{ outline:none; }
 .scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
 
-/* Right sidebar toolbar (hidden until 123) */
+/* Toolbar (hidden until 123) */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
-  z-index:100; background:rgba(255,255,255,.98);
-  border:2px solid #e8dcc6; border-radius:14px; padding:12px;
+  z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
   width:240px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25);
   display:none; flex-direction:column; align-items:stretch;
 }
@@ -115,8 +101,7 @@ body.editing .scrap-item .mover{ display:block; }
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
 #toolbar input[type="number"]{
-  width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6;
-  font-weight:700; color:#0d2a6b; background:#fff;
+  width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff;
 }
 
 #fileInput{ display:none; }
@@ -143,12 +128,11 @@ body.editing .scrap-item .mover{ display:block; }
 .stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:10px; }
 .stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; font-size:26px; line-height:1; }
 
-/* --- Per-item floating HUD --- */
+/* Per-item HUD */
 #itemHud{
   position:absolute; z-index:120; display:none;
   background:#151a30; color:#fff; border:2px solid var(--mint);
-  border-radius:10px; padding:6px; gap:6px;
-  box-shadow:0 12px 24px rgba(0,0,0,.35);
+  border-radius:10px; padding:6px; gap:6px; box-shadow:0 12px 24px rgba(0,0,0,.35);
   align-items:center; flex-wrap:wrap;
 }
 #itemHud button{
@@ -183,7 +167,7 @@ body.editing .scrap-item .mover{ display:block; }
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Right sidebar toolbar -->
+  <!-- Right toolbar (hidden until 123) -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
@@ -199,12 +183,10 @@ body.editing .scrap-item .mover{ display:block; }
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
       <input id="fontSizeInput" type="number" min="8" max="200" step="1" placeholder="px" list="fontSizes" disabled>
       <datalist id="fontSizes">
-        <option value="8"></option><option value="9"></option><option value="10"></option>
-        <option value="11"></option><option value="12"></option><option value="14"></option>
-        <option value="16"></option><option value="18"></option><option value="20"></option>
-        <option value="22"></option><option value="24"></option><option value="26"></option>
-        <option value="28"></option><option value="36"></option><option value="48"></option>
-        <option value="72"></option>
+        <option value="12"></option><option value="14"></option><option value="16"></option>
+        <option value="18"></option><option value="20"></option><option value="22"></option>
+        <option value="24"></option><option value="28"></option><option value="36"></option>
+        <option value="48"></option><option value="72"></option>
       </datalist>
     </div>
     <div class="group">
@@ -242,7 +224,7 @@ body.editing .scrap-item .mover{ display:block; }
     </div>
   </div>
 
-  <!-- Per-item floating HUD -->
+  <!-- Per-item HUD -->
   <div id="itemHud" aria-hidden="true">
     <button id="hudEdit"  class="mint only-text">Edit</button>
     <input  id="hudFont"  class="only-text" type="number" min="8" max="200" step="1" placeholder="size">
@@ -261,7 +243,7 @@ body.editing .scrap-item .mover{ display:block; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
-/* ===== Supabase (tables for inner pages) ===== */
+/* ========= Supabase (table storage) ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const TABLE_IMAGES = "scrapbook_images";
@@ -269,7 +251,7 @@ const TABLE_STATE  = "scrapbook_state";
 const STATE_ID     = "main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ===== Refs ===== */
+/* ========= Refs ========= */
 const bookEl=document.getElementById('book');
 const stageEl=document.getElementById('stage');
 const toolbar=document.getElementById('toolbar');
@@ -287,7 +269,6 @@ const fontSizeInput=document.getElementById('fontSizeInput');
 const fitBtn=document.getElementById('fitToggleBtn');
 const lockBtn=document.getElementById('lockToggleBtn');
 
-/* HUD refs */
 const itemHud   = document.getElementById('itemHud');
 const hudEdit   = document.getElementById('hudEdit');
 const hudFont   = document.getElementById('hudFont');
@@ -298,21 +279,16 @@ const hudFront  = document.getElementById('hudFront');
 const hudBack   = document.getElementById('hudBack');
 const hudDelete = document.getElementById('hudDelete');
 
-let pageFlip, activeCanvas=null, selectedItem=null;
+let pageFlip=null, activeCanvas=null, selectedItem=null;
+let lastPageIndex=0;
 
-/* Track text modal mode */
-let editingBox = null;       // null = adding new; HTMLElement = editing this box
-
-/* ===== Init ===== */
-init().catch(console.error);
-async function init(){
-  await loadFromTables();
-
-  if (!window.St || !St.PageFlip) alert("PageFlip library missing (./flipbook/page-flip.browser.js).");
+/* ========= PageFlip helpers ========= */
+function initFlip(startIndex=0){
+  try{ pageFlip?.destroy(); }catch(_){}
   pageFlip = new St.PageFlip(bookEl,{
     width:500,height:650,size:"fixed",showCover:true,drawShadow:true,
     flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
-    mobileScrollSupport:false,startPage:0
+    mobileScrollSupport:false,startPage:startIndex
   });
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
   pageFlip.on('flip', ()=>{
@@ -322,16 +298,25 @@ async function init(){
   });
 }
 
-/* ===== Visible page targeting ===== */
+/* ========= Init ========= */
+init().catch(console.error);
+async function init(){
+  await loadFromTables();
+  if (!window.St || !St.PageFlip) alert("PageFlip library missing (./flipbook/page-flip.browser.js).");
+  initFlip(0);
+}
+
+/* ========= Targeting left/right ========= */
 function getVisibleCanvases(){
-  const bookR = bookEl.getBoundingClientRect();
-  const list=[...document.querySelectorAll('#book .page .page-canvas')].map(el=>{
+  // Works both with PageFlip (side-by-side) and without (stacked)
+  const pr = stageEl.getBoundingClientRect();
+  const all=[...document.querySelectorAll('#book .page .page-canvas')].map(el=>{
     const r=el.getBoundingClientRect();
-    const w=Math.max(0,Math.min(r.right,bookR.right)-Math.max(r.left,bookR.left));
-    const h=Math.max(0,Math.min(r.bottom,bookR.bottom)-Math.max(r.top,bookR.top));
+    const w=Math.max(0,Math.min(r.right,pr.right)-Math.max(r.left,pr.left));
+    const h=Math.max(0,Math.min(r.bottom,pr.bottom)-Math.max(r.top,pr.top));
     return {el,area:w*h,cx:r.left+r.width/2};
   }).filter(x=>x.area>1000).sort((a,b)=>b.area-a.area);
-  const top=list.slice(0,2).sort((a,b)=>a.cx-b.cx);
+  const top=all.slice(0,2).sort((a,b)=>a.cx-b.cx);
   return {left:top.length===2?top[0].el:null,right:top.length?top[top.length-1].el:null};
 }
 function highlightCanvas(canvas){
@@ -339,108 +324,59 @@ function highlightCanvas(canvas){
   document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
   canvas.classList.add('active-side'); activeCanvas=canvas;
 }
-document.getElementById('stage').addEventListener('mousedown',e=>{
+stageEl.addEventListener('mousedown',e=>{
   if(!document.body.classList.contains('editing')) return;
   const pc=e.target.closest('.page-canvas'); if(pc) highlightCanvas(pc);
 });
+document.getElementById('targetLeft').onclick = ()=>{ const {left,right}=getVisibleCanvases(); highlightCanvas(left||right); };
+document.getElementById('targetRight').onclick= ()=>{ const {left,right}=getVisibleCanvases(); highlightCanvas(right||left); };
 
-/* ===== Secret edit mode (type 123) ===== */
-const PASSCODE='123'; let editEnabled=false, keyBuffer='', keyTimer=null;
+/* ========= Secret edit mode (type 123) ========= */
+const PASSCODE='123'; let keyBuffer='', keyTimer=null;
 document.addEventListener('keydown',(e)=>{
   keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
   if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
 });
-function setAllTextEditable(on){
-  // Editing is via modal, so keep contenteditable OFF.
-  document.querySelectorAll('#book .scrap-text').forEach(el=>{
-    el.setAttribute('contenteditable','false');
-  });
-}
 function setEditing(on){
   document.body.classList.toggle('editing', on);
-  setAllTextEditable(on);
   toolbar.classList.toggle('open', on);
   if(!on){
     document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
     activeCanvas=null;
   }
 }
-
-/* ===== Flip Guard v2 (keep events off PageFlip while editing) ===== */
-let flipGuardOn = false;
-function flipGuardHandler(e){
-  if (!document.body.classList.contains('editing')) return;
-
-  // allow toolbar/HUD/modals
-  const t = e.target;
-  if (t.closest('#itemHud') || t.closest('#toolbar') || t.closest('.modal')) return;
-
-  const pc = t.closest('.page-canvas'); if (pc) highlightCanvas(pc);
-
-  // swallow outside-item/page clicks so PageFlip never sees them
-  e.preventDefault();
-  if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-  e.stopPropagation();
-}
-function keyFlipGuard(e){
-  if (!document.body.classList.contains('editing')) return;
-  const tag=(e.target.tagName||'').toLowerCase();
-  const typing = tag==='input' || tag==='textarea' || e.target.isContentEditable || !!e.target.closest('.modal');
-  if (typing) return;
-  const blocks=['ArrowLeft','ArrowRight','PageUp','PageDown','Home','End',' '];
-  if(blocks.includes(e.key)) e.preventDefault();
-}
-function setFlipGuard(on){
-  if (flipGuardOn === on) return;
-  flipGuardOn = on;
-  const opts = { capture:true, passive:false };
-  const types=['pointerdown','pointerup','click','dblclick','touchstart','touchend','wheel'];
-  const targets=[bookEl,stageEl,document,window];
-  if (on){
-    targets.forEach(tgt=>types.forEach(type=>tgt.addEventListener(type,flipGuardHandler,opts)));
-    window.addEventListener('keydown', keyFlipGuard, { capture:true });
-  }else{
-    targets.forEach(tgt=>types.forEach(type=>tgt.removeEventListener(type,flipGuardHandler,opts)));
-    window.removeEventListener('keydown', keyFlipGuard, { capture:true });
-  }
-}
-
 function enterEdit(){
-  editEnabled=true; setEditing(true);
+  setEditing(true);
+  // Remember where we are, then turn PageFlip completely OFF.
+  lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
+  try{ pageFlip?.destroy(); }catch(_){}
+  pageFlip = null;
   const {right,left}=getVisibleCanvases(); highlightCanvas(right||left);
-  try{ pageFlip.update?.({useMouseEvents:false,swipeDistance:10000}); }catch(_){}
-  setFlipGuard(true);
   toastShow('Edit mode unlocked ✨');
 }
 function exitEdit(){
-  editEnabled=false; setEditing(false); deselect();
-  try{ pageFlip.update?.({useMouseEvents:true,swipeDistance:30}); }catch(_){}
-  setFlipGuard(false);
+  setEditing(false); deselect();
+  // Re-enable PageFlip where we left off
+  initFlip(lastPageIndex);
 }
 
-/* ===== Helpers ===== */
-function isImgBox(el){ return !!el?.querySelector?.('.scrap-img'); }
-function isTextBox(el){ return !!el?.querySelector?.('.scrap-text:not(.sticker)'); }
-
-/* ===== Per-item HUD ===== */
+/* ========= Per-item HUD ========= */
 function positionHud(){
   if(!selectedItem || itemHud.style.display==='none') return;
   const r = selectedItem.getBoundingClientRect();
   const sr = stageEl.getBoundingClientRect();
   const hudW = itemHud.offsetWidth, hudH = itemHud.offsetHeight;
-
   let x = r.right - sr.left - hudW;
   let y = r.top   - sr.top  - hudH - 8;
   x = Math.max(8, Math.min(x, sr.width  - hudW - 8));
   if (y < 8) y = r.bottom - sr.top + 8;
-
   itemHud.style.left = x + 'px';
   itemHud.style.top  = y + 'px';
 }
 function showItemHud(el){
   if(!el){ hideItemHud(); return; }
-  const onImg  = isImgBox(el);
-  const onText = isTextBox(el);
+  const onImg  = !!el.querySelector('.scrap-img');
+  const onText = !!el.querySelector('.scrap-text:not(.sticker)');
   itemHud.querySelectorAll('.only-img' ).forEach(n=>n.style.display = onImg  ? '' : 'none');
   itemHud.querySelectorAll('.only-text').forEach(n=>n.style.display = onText ? '' : 'none');
 
@@ -461,63 +397,7 @@ function hideItemHud(){ itemHud.style.display='none'; }
 window.addEventListener('resize', positionHud);
 itemHud.addEventListener('mousedown', e=>e.stopPropagation());
 
-/* ===== Text modal helpers ===== */
-function openTextModalForAdd(){
-  editingBox = null;
-  textModalTitle.textContent = 'Add Text';
-  textAddBtn.textContent = 'Add Text';
-  textInput.value = '';
-  openModal(textModal);
-  setTimeout(()=>textInput.focus(),10);
-}
-function openTextModalForEdit(box){
-  editingBox = box;
-  const t = box.querySelector('.scrap-text');
-  textModalTitle.textContent = 'Edit Text';
-  textAddBtn.textContent = 'Save';
-  textInput.value = t ? t.textContent : '';
-  openModal(textModal);
-  setTimeout(()=>textInput.focus(),10);
-}
-
-/* HUD actions */
-hudEdit.onclick = ()=>{ if(selectedItem && isTextBox(selectedItem)) openTextModalForEdit(selectedItem); };
-hudFont.addEventListener('input', ()=>{
-  const t = selectedItem?.querySelector('.scrap-text:not(.sticker)'); if(!t) return;
-  let v = parseInt(hudFont.value,10); if(isNaN(v)) return;
-  v = Math.max(8, Math.min(200, v));
-  t.style.fontSize = v+'px';
-  t.style.height='auto';
-  const box = t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px';
-});
-hudFit.onclick = ()=>{
-  if(!isImgBox(selectedItem)) return;
-  const cur = selectedItem.dataset.fit || 'contain';
-  selectedItem.dataset.fit = (cur==='cover') ? 'contain' : 'cover';
-  hudFit.textContent = 'Fit: ' + (selectedItem.dataset.fit==='cover' ? 'Fill' : 'Contain');
-};
-hudLock.onclick = ()=>{
-  if(!isImgBox(selectedItem)) return;
-  selectedItem.dataset.lock = (selectedItem.dataset.lock==='1') ? '0' : '1';
-  hudLock.textContent = 'Lock: ' + (selectedItem.dataset.lock==='1' ? 'On' : 'Off');
-};
-hudDup.onclick = ()=>{
-  if(!selectedItem) return;
-  const clone = selectedItem.cloneNode(true);
-  clone.classList.remove('selected');
-  clone.style.left = (parseInt(selectedItem.style.left||'0') + 20) + 'px';
-  clone.style.top  = (parseInt(selectedItem.style.top ||'0') + 20) + 'px';
-  selectedItem.parentElement.appendChild(clone);
-  makeDraggable(clone);
-  selectedItem.classList.remove('selected');
-  selectedItem = clone; selectedItem.classList.add('selected');
-  showItemHud(selectedItem);
-};
-hudFront.onclick = ()=>{ if(selectedItem) selectedItem.parentNode.appendChild(selectedItem); };
-hudBack.onclick  = ()=>{ if(selectedItem){ const p=selectedItem.parentNode; p.insertBefore(selectedItem, p.firstElementChild); }};
-hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
-
-/* ===== Drag / Resize / Rotate (robust + auto-grow) ===== */
+/* ========= Drag / Resize / Rotate ========= */
 function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
   let rotating=false,startAngle=0,startPointerAngle=0;
@@ -532,10 +412,10 @@ function makeDraggable(el){
 
   el.addEventListener('dragstart', e=>e.preventDefault());
 
-  // --- Resize
+  // Resize
   if(res){
     res.addEventListener('mousedown',e=>{
-      if(!document.body.classList.contains('editing')) return; 
+      if(!document.body.classList.contains('editing')) return;
       e.stopPropagation(); e.preventDefault();
       resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight;
       document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
@@ -547,7 +427,6 @@ function makeDraggable(el){
     const hasImg=!!el.querySelector('.scrap-img');
     const lockOn=hasImg && el.dataset.lock==='1' && !e.shiftKey;
     const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight)));
-
     let w=Math.max(60,startW+dx), h=Math.max(40,startH+dy);
     if(lockOn && ratio>0){
       if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio));
@@ -562,14 +441,13 @@ function makeDraggable(el){
     }
     const sticker=el.querySelector('.scrap-text.sticker');
     if(sticker){ sticker.style.fontSize=Math.round(0.64*Math.min(w,h))+'px'; }
-
     positionHud();
   }
   function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
 
-  // --- Rotate
+  // Rotate
   rot.addEventListener('mousedown',e=>{
-    if(!document.body.classList.contains('editing')) return; 
+    if(!document.body.classList.contains('editing')) return;
     e.stopPropagation(); e.preventDefault();
     rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
     startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx); startAngle=getAngle();
@@ -584,28 +462,22 @@ function makeDraggable(el){
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
 
-  // --- Drag from anywhere on the item (except controls)
+  // Drag from anywhere on the item (except controls)
   el.addEventListener('pointerdown', e=>{
     if(!document.body.classList.contains('editing')) return;
     const isControl = e.target.classList.contains('resizer')||
                       e.target.classList.contains('rotator')||
                       e.target.classList.contains('mover');
     if(isControl) return;
-
-    // stop the event so PageFlip never sees it; then start dragging
-    e.preventDefault();
-    e.stopPropagation();
+    e.preventDefault(); e.stopPropagation();
 
     selectedItem?.classList.remove('selected');
-    selectedItem = el;
-    el.classList.add('selected');
-    updateToolbarState();
-    showItemHud(el);
+    selectedItem = el; el.classList.add('selected');
+    updateToolbarState(); showItemHud(el);
 
     startDrag(e);
   });
 
-  // (Keep the explicit mover handle too)
   mover.addEventListener('pointerdown', e=>{
     if(!document.body.classList.contains('editing')) return;
     e.preventDefault(); e.stopPropagation();
@@ -622,8 +494,6 @@ function makeDraggable(el){
     window.addEventListener('pointermove', onPointerMove);
     window.addEventListener('pointerup',    onPointerUp);
     window.addEventListener('pointercancel',onPointerUp);
-    window.addEventListener('mouseup',      onPointerUp);
-    window.addEventListener('touchend',     onPointerUp);
     el.addEventListener('lostpointercapture', onPointerUp);
   }
   function onPointerMove(e){
@@ -641,12 +511,10 @@ function makeDraggable(el){
     window.removeEventListener('pointermove', onPointerMove);
     window.removeEventListener('pointerup',    onPointerUp);
     window.removeEventListener('pointercancel',onPointerUp);
-    window.removeEventListener('mouseup',      onPointerUp);
-    window.removeEventListener('touchend',     onPointerUp);
     el.removeEventListener('lostpointercapture', onPointerUp);
   }
 
-  // auto-grow for normal text
+  // Auto-grow for normal text
   const tnode = el.querySelector('.scrap-text:not(.sticker)');
   if(tnode) enableAutoGrow(el, tnode);
 }
@@ -665,9 +533,9 @@ function enableAutoGrow(box, textEl){
   grow();
 }
 
-/* Deselect (ignore toolbar/HUD/modal) */
+/* Selection management */
 document.addEventListener('click', e=>{
-  if(!editEnabled) return;
+  if(!document.body.classList.contains('editing')) return;
   const onItem = e.target.closest('.scrap-item');
   const onBar  = e.target.closest('#toolbar');
   const onHud  = e.target.closest('#itemHud');
@@ -676,12 +544,45 @@ document.addEventListener('click', e=>{
 });
 function deselect(){
   selectedItem?.classList.remove('selected');
-  selectedItem=null;
-  updateToolbarState();
-  hideItemHud();
+  selectedItem=null; updateToolbarState(); hideItemHud();
 }
 
-/* ===== Open text modal on double-click / keyboard ===== */
+/* Text modal helpers */
+function openTextModalForAdd(){
+  workingBox = null;
+  textModalTitle.textContent = 'Add Text';
+  textAddBtn.textContent = 'Add Text';
+  textInput.value = '';
+  openModal(textModal); setTimeout(()=>textInput.focus(),10);
+}
+function openTextModalForEdit(box){
+  workingBox = box;
+  const t = box.querySelector('.scrap-text');
+  textModalTitle.textContent = 'Edit Text';
+  textAddBtn.textContent = 'Save';
+  textInput.value = t ? t.textContent : '';
+  openModal(textModal); setTimeout(()=>textInput.focus(),10);
+}
+let workingBox=null;
+
+document.getElementById('addTextBtn').onclick=()=> openTextModalForAdd();
+textCancel.onclick=()=> closeModal(textModal);
+textAddBtn.onclick=()=>{
+  const val = textInput.value;
+  if(workingBox){
+    const t = workingBox.querySelector('.scrap-text');
+    if(t){ t.textContent = val; t.style.height='auto'; workingBox.style.height=Math.max(40,t.scrollHeight)+'px'; }
+    closeModal(textModal); showItemHud(workingBox); return;
+  }
+  const box=document.createElement('div');
+  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
+  box.innerHTML=`<div class="scrap-text" contenteditable="false">${val.replace(/</g,"&lt;")}</div>
+                 <div class="mover" title="Drag"></div>
+                 <div class="resizer"></div><div class="rotator"></div>`;
+  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
+  closeModal(textModal);
+};
+
 document.addEventListener('dblclick', e=>{
   if(!document.body.classList.contains('editing')) return;
   const t = e.target.closest('.scrap-text');
@@ -692,41 +593,67 @@ document.addEventListener('dblclick', e=>{
 document.addEventListener('keydown', e=>{
   if(!document.body.classList.contains('editing')) return;
   if(!selectedItem) return;
-  const key = e.key.toLowerCase();
-  if((key==='e' || key==='enter') && isTextBox(selectedItem)){
-    e.preventDefault();
-    openTextModalForEdit(selectedItem);
-  }
+  const key=e.key.toLowerCase();
+  if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
 });
 
-/* ===== Add / Edit text via modal ===== */
-document.getElementById('addTextBtn').onclick=()=> openTextModalForAdd();
-textCancel.onclick=()=> closeModal(textModal);
-textAddBtn.onclick=()=>{
-  const val = textInput.value;
-  if(editingBox){ // save changes to existing
-    const t = editingBox.querySelector('.scrap-text');
-    if(t){ t.textContent = val; t.style.height='auto'; editingBox.style.height=Math.max(40,t.scrollHeight)+'px'; }
-    closeModal(textModal);
-    showItemHud(editingBox);
-    return;
-  }
-  // create new
-  const box=document.createElement('div');
-  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px'; box.style.height='auto';
-  box.innerHTML=`<div class="scrap-text" contenteditable="false">${val.replace(/</g,"&lt;")}</div>
-                 <div class="mover" title="Drag"></div>
-                 <div class="resizer"></div><div class="rotator"></div>`;
-  (activeCanvas||getVisibleCanvases().right).appendChild(box);
-  makeDraggable(box);
-  closeModal(textModal);
-};
+/* Text size controls */
+function selectedTextEl(){
+  if(!selectedItem) return null;
+  const t=selectedItem.querySelector('.scrap-text');
+  if(!t || t.classList.contains('sticker')) return null;
+  return t;
+}
+function updateFontInput(){
+  const t = selectedTextEl();
+  if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; fontSizeInput.placeholder='px'; return; }
+  fontSizeInput.disabled=false;
+  const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
+  fontSizeInput.value=curr; hudFont.value=curr;
+}
+fontSizeInput.addEventListener('input', ()=>{
+  const t=selectedTextEl(); if(!t) return;
+  let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return;
+  v=Math.max(8,Math.min(200,v));
+  t.style.fontSize=v+'px';
+  t.style.height='auto';
+  const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px';
+  hudFont.value=v;
+});
 
-/* ===== Stickers & Photos ===== */
+/* Image controls */
+function updateImageButtons(){
+  const onImg = !!selectedItem?.querySelector('.scrap-img');
+  fitBtn.disabled  = !onImg;
+  lockBtn.disabled = !onImg;
+  if(onImg){
+    const fit  = selectedItem.dataset.fit  || 'contain';
+    const lock = selectedItem.dataset.lock === '1';
+    fitBtn.textContent  = 'Fit: ' + (fit==='cover' ? 'Fill' : 'Contain');
+    lockBtn.textContent = 'Lock: ' + (lock ? 'On' : 'Off');
+  }else{
+    fitBtn.textContent='Fit: Contain';
+    lockBtn.textContent='Lock: On';
+  }
+}
+fitBtn.onclick=()=>{
+  if(!selectedItem?.querySelector('.scrap-img')) return;
+  const cur=selectedItem.dataset.fit||'contain';
+  selectedItem.dataset.fit=(cur==='cover')?'contain':'cover';
+  updateImageButtons(); showItemHud(selectedItem);
+};
+lockBtn.onclick=()=>{
+  if(!selectedItem?.querySelector('.scrap-img')) return;
+  selectedItem.dataset.lock = (selectedItem.dataset.lock==='1') ? '0' : '1';
+  updateImageButtons(); showItemHud(selectedItem);
+};
+function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
+
+/* Photos & stickers */
 document.getElementById('addPhotoBtn').onclick=()=> fileInput.click();
 fileInput.addEventListener('change',async (e)=>{
   const f=e.target.files[0]; if(!f) return;
-  const { mime, base64 } = await compressToBase64(f, 1600, 0.85);
+  const { mime, base64 } = await compressToBase64(f,1600,0.85);
   const box=document.createElement('div');
   box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
   box.dataset.fit='contain'; box.dataset.lock='1';
@@ -749,7 +676,7 @@ document.getElementById('stickersBtn').onclick=()=>{
     b.onclick=()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
-      box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;" contenteditable="false">${ch}</div>
+      box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;">${ch}</div>
                      <div class="mover" title="Drag"></div>
                      <div class="resizer"></div><div class="rotator"></div>`;
       (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box);
@@ -760,81 +687,20 @@ document.getElementById('stickersBtn').onclick=()=>{
 };
 stickersClose.onclick=()=> closeModal(stickerModal);
 
-/* ===== Text size (sidebar) ===== */
-function selectedTextEl(){
-  if(!selectedItem) return null;
-  const t=selectedItem.querySelector('.scrap-text');
-  if(!t || t.classList.contains('sticker')) return null;
-  return t;
-}
-function updateFontInput(){
-  const t = selectedTextEl();
-  if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; fontSizeInput.placeholder='px'; return; }
-  fontSizeInput.disabled=false;
-  const curr = Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
-  fontSizeInput.value = curr;
-  hudFont.value = curr;
-}
-fontSizeInput.addEventListener('input', ()=>{
-  const t = selectedTextEl(); if(!t) return;
-  let v = parseInt(fontSizeInput.value,10);
-  if(isNaN(v)) return;
-  v = Math.max(8, Math.min(200, v));
-  t.style.fontSize = v + 'px';
-  t.style.height='auto';
-  const box = t.closest('.scrap-item');
-  if (box) { box.style.height=Math.max(40,t.scrollHeight)+'px'; }
-  hudFont.value = v;
-});
-
-/* ===== Image fit/lock (sidebar) ===== */
-function updateImageButtons(){
-  const onImg = isImgBox(selectedItem);
-  fitBtn.disabled  = !onImg;
-  lockBtn.disabled = !onImg;
-  if (onImg){
-    const fit  = selectedItem.dataset.fit  || 'contain';
-    const lock = selectedItem.dataset.lock === '1';
-    fitBtn.textContent  = 'Fit: ' + (fit === 'cover' ? 'Fill' : 'Contain');
-    lockBtn.textContent = 'Lock: ' + (lock ? 'On' : 'Off');
-  }else{
-    fitBtn.textContent  = 'Fit: Contain';
-    lockBtn.textContent = 'Lock: On';
-  }
-}
-fitBtn.addEventListener('click', ()=>{
-  if (!isImgBox(selectedItem)) return;
-  const cur = selectedItem.dataset.fit || 'contain';
-  selectedItem.dataset.fit = (cur === 'cover') ? 'contain' : 'cover';
-  updateImageButtons(); showItemHud(selectedItem);
-});
-lockBtn.addEventListener('click', ()=>{
-  if (!isImgBox(selectedItem)) return;
-  selectedItem.dataset.lock = (selectedItem.dataset.lock === '1') ? '0' : '1';
-  updateImageButtons(); showItemHud(selectedItem);
-});
-document.addEventListener('keydown', (e)=>{
-  if (!isImgBox(selectedItem)) return;
-  if (e.key.toLowerCase() === 'f'){ fitBtn.click(); }
-  if (e.key.toLowerCase() === 'r'){ lockBtn.click(); }
-});
-
-/* ===== Keep toolbar in sync ===== */
-function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
-
-/* ===== Page tools ===== */
+/* Page tools */
 document.getElementById('addPageBtn').onclick=()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
   bookEl.appendChild(p);
-  pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
   toastShow('Page added');
 };
+
+/* Delete/clear/save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
 document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
 
-/* ===== SAVE -> Supabase ===== */
 document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Save failed: '+e));
+
 async function saveToTables(){
   toastShow('Saving…');
 
@@ -845,17 +711,12 @@ async function saveToTables(){
     let mime, base64;
     if(img._preb64){ ({mime,base64}=img._preb64); }
     else { const r=await fetch(img.src); const b=await r.blob(); const enc=await compressToBase64(b,1600,0.85); mime=enc.mime; base64=enc.base64; }
-    const { data, error } = await supabase
-      .from(TABLE_IMAGES)
-      .insert([{ content_type: mime, data_base64: base64 }])
-      .select('id')
-      .single();
+    const { data, error } = await supabase.from(TABLE_IMAGES).insert([{ content_type:mime, data_base64:base64 }]).select('id').single();
     if(error) throw error;
-    img.dataset.imgid = data.id;
-    delete img._preb64;
+    img.dataset.imgid = data.id; delete img._preb64;
   }
 
-  // Build layout JSON and upsert
+  // Build layout JSON
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
   canvases.forEach(canvas=>{
@@ -865,38 +726,29 @@ async function saveToTables(){
       const rot=parseFloat(el.dataset.rot||'0')||0;
       const img=el.querySelector('.scrap-img');
       if(img){
-        items.push({
-          type:'image', style, rot,
-          imageId: img.dataset.imgid||null,
-          fit: el.dataset.fit || 'contain',
-          lock: el.dataset.lock === '1'
-        });
+        items.push({ type:'image', style, rot, imageId:img.dataset.imgid||null, fit:el.dataset.fit||'contain', lock:el.dataset.lock==='1' });
       }else{
         const txt=el.querySelector('.scrap-text');
-        items.push({type:'text', style, rot, html: txt?txt.outerHTML:''});
+        items.push({ type:'text', style, rot, html:txt?txt.outerHTML:'' });
       }
     });
     pages.push({items});
   });
 
-  const { error: upErr } = await supabase
-    .from(TABLE_STATE)
-    .upsert({ id: STATE_ID, pages })
-    .select('id')
-    .single();
+  const { error: upErr } = await supabase.from(TABLE_STATE).upsert({ id:STATE_ID, pages }).select('id').single();
   if(upErr) throw upErr;
 
-  toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
+  toastShow('Saved ✓');
+  setTimeout(()=>exitEdit(), 300);
 }
 
-/* ===== LOAD <- Supabase ===== */
+/* Load from tables */
 async function loadFromTables(){
   try{
-    const { data:state } = await supabase
-      .from(TABLE_STATE).select('pages').eq('id', STATE_ID).maybeSingle();
+    const { data:state } = await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
     if(!state || !state.pages) return;
 
-    // ensure enough page shells
+    // add pages if needed
     const have=document.querySelectorAll('#book .page').length - 1;
     const need=state.pages.length;
     for(let i=have;i<need;i++){
@@ -905,14 +757,12 @@ async function loadFromTables(){
       bookEl.appendChild(p);
     }
 
-    // fetch needed images once
+    // fetch all images needed
     const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image' && it.imageId) ids.push(it.imageId); }));
-    const idSet=[...new Set(ids)];
-    const urlMap={};
-    if(idSet.length){
-      const { data:imgs } = await supabase
-        .from(TABLE_IMAGES).select('id, content_type, data_base64').in('id', idSet);
-      if (imgs) { imgs.forEach(r => { urlMap[r.id] = `data:${r.content_type};base64,${r.data_base64}`; }); }
+    const uniq=[...new Set(ids)]; const urlMap={};
+    if(uniq.length){
+      const { data:imgs } = await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
+      imgs?.forEach(r=> urlMap[r.id] = `data:${r.content_type};base64,${r.data_base64}`);
     }
 
     // rebuild
@@ -933,11 +783,9 @@ async function loadFromTables(){
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="">
                          <div class="mover" title="Drag"></div>
                          <div class="resizer"></div><div class="rotator"></div>`;
-
-          const imgEl = box.querySelector('.scrap-img');
-          const setAspect = () => { if (imgEl.naturalWidth && imgEl.naturalHeight) { box.dataset.aspect = (imgEl.naturalWidth / imgEl.naturalHeight).toFixed(5);} };
-          if (imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
-
+          const imgEl=box.querySelector('.scrap-img');
+          const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+          if(imgEl.complete) setAspect(); else imgEl.addEventListener('load', setAspect);
         }else if(it.type==='text' && it.html){
           const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
           const inner=holder.firstElementChild || document.createElement('div');
@@ -951,14 +799,13 @@ async function loadFromTables(){
   }catch(e){ console.warn('No saved state yet or load error', e); }
 }
 
-/* ===== Utils ===== */
+/* Utils */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
-
 document.querySelectorAll('#book .scrap-item').forEach(makeDraggable);
 
-/* compress to base64 for table storage */
+/* Simple image compression to base64 for table storage */
 async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
   const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
   const img = await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
@@ -969,12 +816,11 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85){
     else   { w = Math.round(w * (maxSide / h)); h = maxSide; }
   }
   canvas.width=w; canvas.height=h;
-  const ctx=canvas.getContext('2d'); ctx.drawImage(img,0,0,w,h);
-  const mime = 'image/jpeg';
-  const dataUrl = canvas.toDataURL(mime, quality);
+  canvas.getContext('2d').drawImage(img,0,0,w,h);
+  const mime='image/jpeg';
+  const dataUrl=canvas.toDataURL(mime, quality);
   URL.revokeObjectURL(img.src);
-  const base64 = dataUrl.split(',')[1];
-  return { mime, base64 };
+  return { mime, base64:dataUrl.split(',')[1] };
 }
 </script>
 </body>
