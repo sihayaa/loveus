@@ -189,8 +189,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
       <button id="addPageBtn" class="secondary">Add Page</button>
-      <!-- (You can hide/delete this button if you prefer) -->
-      <button id="removePageBtn" class="warn">Remove Page</button>
+      <button id="add3SheetsBtn" class="secondary">+3 Sheets</button>
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -310,6 +309,43 @@ const hudRotR   = document.getElementById('hudRotR');
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
 
+/* ========= SHEET HELPERS ========= */
+// Keep at least this many SHEETS (2 pages per sheet) after the cover.
+const MIN_SHEETS = 3;
+
+// Add N blank pages at the very end
+function addBlankPages(n){
+  for(let i=0;i<n;i++){
+    const p=document.createElement('div');
+    p.className='page';
+    p.innerHTML='<div class="page-canvas"></div>';
+    bookEl.appendChild(p);
+  }
+}
+
+// Count current sheets (excludes the cover)
+function countSheets(){
+  const totalPages = document.querySelectorAll('#book .page').length;
+  const innerPages = Math.max(0, totalPages - 1);
+  return Math.floor(innerPages / 2);
+}
+
+// Ensure we have at least N sheets (adds pages in pairs)
+function ensureMinSheets(minSheets=MIN_SHEETS){
+  const sheets = countSheets();
+  const missingSheets = Math.max(0, minSheets - sheets);
+  if(missingSheets>0){
+    addBlankPages(missingSheets * 2);
+  }
+}
+
+// Re-init PageFlip while keeping current page
+function refreshFlipKeepPage(){
+  const idx = pageFlip?.getCurrentPageIndex?.() ?? 0;
+  try{ pageFlip?.destroy(); }catch(_){}
+  initFlip(idx);
+}
+
 /* ========= PageFlip (robust init with fallback) ========= */
 function initFlipCore(startIndex=0, withShadow=true){
   try{ pageFlip?.destroy(); }catch(_){}
@@ -340,18 +376,19 @@ function initFlip(startIndex=0){
   catch(err){ console.warn('PageFlip retry without shadow',err); initFlipCore(startIndex,false); }
 }
 
-/* ========= Trim last N blank sheets ========= */
-function sheetTrimFromEnd(maxSheets=3){
-  // a sheet = 2 pages (left+right). Only trim when BOTH pages at the end are empty.
+/* ========= Trim last N blank sheets (never below minSheets) ========= */
+function sheetTrimFromEnd(maxSheets=3, minSheets=0){
   let pages=[...document.querySelectorAll('#book .page')];
   let removed=0;
   const isEmpty=(p)=> (p?.querySelectorAll('.scrap-item').length||0)===0;
 
   while(removed<maxSheets && pages.length>2){
-    if(pages.length<=2) break; // cover + 1 minimum
+    if(countSheets() <= minSheets) break; // respect minimum
+
     const last = pages[pages.length-1];
     const prev = pages[pages.length-2];
     if(prev.classList.contains('cover')) break;
+
     if(isEmpty(last) && isEmpty(prev)){
       last.remove(); prev.remove();
       removed++;
@@ -372,8 +409,9 @@ async function init(){
   // load any saved content
   await loadFromTables();
 
-  // then trim up to 3 blank sheets from the end
-  sheetTrimFromEnd(3);
+  // trim only if there are more than MIN_SHEETS sheets, then ensure minimum
+  sheetTrimFromEnd(3, MIN_SHEETS);
+  ensureMinSheets(MIN_SHEETS);
 
   // reveal + init flip
   bookEl.style.visibility='visible';
@@ -437,8 +475,6 @@ function exitEdit(){
 }
 
 /* ========= HUD, drag/resize/rotate, text tools, colors, images ========= */
-/* (unchanged from your prior version; keeping all existing behavior) */
-
 function positionHud(){
   if(!selectedItem || itemHud.style.display==='none') return;
   const r=selectedItem.getBoundingClientRect(), sr=stageEl.getBoundingClientRect();
@@ -719,93 +755,14 @@ stickersClose.onclick=()=>closeModal(stickerModal);
 document.getElementById('addPageBtn').onclick=()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  bookEl.appendChild(p); toastShow('Page added');
+  bookEl.appendChild(p); toastShow('Page added'); refreshFlipKeepPage();
 };
-
-/* Optional button (kept): Remove current page safely */
-const removePageBtn=document.getElementById('removePageBtn');
-removePageBtn.onclick = ()=> removeActivePage();
-
-function serializePages(){
-  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-  const pages=[];
-  canvases.forEach(c=>{
-    const items=[];
-    c.querySelectorAll('.scrap-item').forEach(el=>{
-      const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height};
-      const rot=parseFloat(el.dataset.rot||'0')||0;
-      const img=el.querySelector('.scrap-img');
-      if(img){
-        items.push({
-          type:'image', style, rot,
-          imageId:img.dataset.imgid||null,
-          fit:el.dataset.fit||'contain', lock:el.dataset.lock==='1',
-          src: img.currentSrc || img.src || ''
-        });
-      }else{
-        const txt=el.querySelector('.scrap-text');
-        items.push({type:'text',style,rot,html:txt?txt.outerHTML:''});
-      }
-    });
-    pages.push({items});
-  });
-  return pages;
-}
-function rebuildBookFromPages(pages){
-  bookEl.innerHTML='';
-  for(let i=0;i<pages.length;i++){
-    const p=document.createElement('div'); p.className='page'+(i===0?' cover':'');
-    const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-    for(const it of pages[i].items||[]){
-      const box=document.createElement('div'); box.className='scrap-item';
-      box.style.left=it.style?.left||'40px'; box.style.top=it.style?.top||'40px';
-      if(it.style?.width)  box.style.width=it.style.width;
-      if(it.style?.height) box.style.height=it.style.height;
-      if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
-      if(it.type==='image'){
-        const url = it.src || '';
-        box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
-        box.innerHTML=`<img class="scrap-img" ${it.imageId?`data-imgid="${it.imageId}"`:''} src="${url}" alt="" decoding="async">
-                       <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
-        const imgEl=box.querySelector('.scrap-img');
-        const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-        if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
-      }else if(it.type==='text'){
-        const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
-        const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
-        box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
-        if(inner.classList.contains('sticker')) box.dataset.emoji = looksLikeEmoji(inner.textContent) ? '1' : '0';
-      }
-      c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
-    }
-    bookEl.appendChild(p);
-  }
-}
-async function removeActivePage(){
-  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-  const canvas = activeCanvas || (getVisibleCanvases().right || getVisibleCanvases().left);
-  if(!canvas){ toastShow('Open the page you want to remove.'); return; }
-  const idx=canvases.indexOf(canvas);
-  if(idx<=0){ toastShow("Can't remove the cover."); return; }
-
-  const pages=serializePages();
-  const pageHasStuff = (pages[idx]?.items||[]).length>0;
-  if(pageHasStuff && !confirm('Delete this page and everything on it?')) return;
-
-  pages.splice(idx,1);
-  if(pages.length===1) pages.push({items:[]});
-
-  try{ pageFlip?.destroy(); }catch(_){}
-  bookEl.style.visibility='hidden';
-  rebuildBookFromPages(pages);
-  await new Promise(r=>requestAnimationFrame(()=>r()));
-  void bookEl.offsetHeight;
-  initFlip(Math.max(0,idx-1));
-  bookEl.style.visibility='visible';
-  deselect();
-  const vis=getVisibleCanvases(); highlightCanvas(vis.right||vis.left);
-  toastShow('Page removed');
-}
+// +3 Sheets button
+document.getElementById('add3SheetsBtn')?.addEventListener('click', ()=>{
+  addBlankPages(6);          // 3 sheets = 6 pages
+  refreshFlipKeepPage();
+  toastShow('+3 sheets added');
+});
 
 /* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
