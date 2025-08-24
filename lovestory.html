@@ -80,11 +80,21 @@ body.editing .scrap-item .mover{ display:block; }
   display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
   white-space:pre-wrap; overflow:visible; min-height:1.2em;
 }
+/* Stickers text */
 .scrap-text.sticker{
   display:flex; align-items:center; justify-content:center; line-height:1;
-  /* font fallbacks for fancy glyphs & emoji */
-  font-family: var(--font), "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Math", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+  /* Prefer color emoji fonts BEFORE symbol fonts */
+  font-family: var(--font),
+               "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
+               "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Math", sans-serif;
 }
+
+/* For emoji stickers (we set data-emoji="1" in JS), force color emoji fonts */
+.scrap-item[data-emoji="1"] .scrap-text.sticker{
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
+               system-ui, sans-serif;
+}
+
 
 /* Sidebar toolbar (hidden until 123) */
 #toolbar{
