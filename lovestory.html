@@ -171,7 +171,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
     <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
-    <!-- Inner pages (placeholders; extra blanks will be trimmed) -->
+    <!-- Inner pages (placeholders; extras will be adjusted at load) -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -189,7 +189,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
       <button id="addPageBtn" class="secondary">Add Page</button>
-      <button id="add3SheetsBtn" class="secondary">+3 Sheets</button>
+      <!-- Removed: Remove Page -->
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -309,37 +309,37 @@ const hudRotR   = document.getElementById('hudRotR');
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
 
-/* ========= SHEET HELPERS ========= */
-// Keep at least this many SHEETS (2 pages per sheet) after the cover.
-const MIN_SHEETS = 3;
+/* ========= TRAILING BLANK SHEETS (auto-restore 3 at end) ========= */
+const MIN_TRAILING_SHEETS = 3; // 3 sheets = 6 pages
 
-// Add N blank pages at the very end
+function isPageEmpty(pageEl){
+  return (pageEl?.querySelectorAll('.scrap-item').length||0) === 0;
+}
+function countTrailingBlankSheets(){
+  const pages=[...document.querySelectorAll('#book .page')];
+  let i=pages.length-1, sheets=0;
+  while(i>0){ // stop before cover
+    const right=pages[i], left=pages[i-1];
+    if(!left || left.classList.contains('cover')) break;
+    if(isPageEmpty(right) && isPageEmpty(left)){ sheets++; i-=2; }
+    else break;
+  }
+  return sheets;
+}
 function addBlankPages(n){
-  for(let i=0;i<n;i++){
+  for(let k=0;k<n;k++){
     const p=document.createElement('div');
     p.className='page';
     p.innerHTML='<div class="page-canvas"></div>';
     bookEl.appendChild(p);
   }
 }
-
-// Count current sheets (excludes the cover)
-function countSheets(){
-  const totalPages = document.querySelectorAll('#book .page').length;
-  const innerPages = Math.max(0, totalPages - 1);
-  return Math.floor(innerPages / 2);
-}
-
-// Ensure we have at least N sheets (adds pages in pairs)
-function ensureMinSheets(minSheets=MIN_SHEETS){
-  const sheets = countSheets();
-  const missingSheets = Math.max(0, minSheets - sheets);
-  if(missingSheets>0){
-    addBlankPages(missingSheets * 2);
+function ensureTrailingBlankSheets(minSheets=MIN_TRAILING_SHEETS){
+  const have=countTrailingBlankSheets();
+  if(have < minSheets){
+    addBlankPages((minSheets - have) * 2); // add in pairs
   }
 }
-
-// Re-init PageFlip while keeping current page
 function refreshFlipKeepPage(){
   const idx = pageFlip?.getCurrentPageIndex?.() ?? 0;
   try{ pageFlip?.destroy(); }catch(_){}
@@ -376,29 +376,6 @@ function initFlip(startIndex=0){
   catch(err){ console.warn('PageFlip retry without shadow',err); initFlipCore(startIndex,false); }
 }
 
-/* ========= Trim last N blank sheets (never below minSheets) ========= */
-function sheetTrimFromEnd(maxSheets=3, minSheets=0){
-  let pages=[...document.querySelectorAll('#book .page')];
-  let removed=0;
-  const isEmpty=(p)=> (p?.querySelectorAll('.scrap-item').length||0)===0;
-
-  while(removed<maxSheets && pages.length>2){
-    if(countSheets() <= minSheets) break; // respect minimum
-
-    const last = pages[pages.length-1];
-    const prev = pages[pages.length-2];
-    if(prev.classList.contains('cover')) break;
-
-    if(isEmpty(last) && isEmpty(prev)){
-      last.remove(); prev.remove();
-      removed++;
-      pages=[...document.querySelectorAll('#book .page')];
-    }else{
-      break;
-    }
-  }
-}
-
 /* ========= Init ========= */
 init().catch(console.error);
 async function init(){
@@ -406,14 +383,13 @@ async function init(){
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
   await Promise.allSettled([coverReady, fontsReady]);
 
-  // load any saved content
+  // 1) load any saved content
   await loadFromTables();
 
-  // trim only if there are more than MIN_SHEETS sheets, then ensure minimum
-  sheetTrimFromEnd(3, MIN_SHEETS);
-  ensureMinSheets(MIN_SHEETS);
+  // 2) make sure we end with 3 BLANK sheets (6 pages)
+  ensureTrailingBlankSheets(MIN_TRAILING_SHEETS);
 
-  // reveal + init flip
+  // 3) show + init
   bookEl.style.visibility='visible';
   initFlip(0);
   boot.classList.add('hide');
@@ -662,7 +638,7 @@ fontSizeInput.addEventListener('input',()=>{
   v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
   const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; hudFont.value=v;
 });
-hudEdit.onclick=()=>{ if(selectedItem?.querySelector('.scrap-text:not(.sticker)')) openTextModalForEdit(selectedItem); };
+hudEdit.onclick=()=>{ if(selectedItem?.querySelector('.scrap-text:not(.sticker))')) openTextModalForEdit(selectedItem); };
 hudFont.addEventListener('input',()=>{
   const t=selectedTextEl(); if(!t) return; let v=parseInt(hudFont.value,10); if(isNaN(v)) return;
   v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
@@ -749,7 +725,6 @@ document.getElementById('stickersBtn').onclick=()=>{
   });
   openModal(stickerModal);
 };
-stickersClose.onclick=()=>closeModal(stickerModal);
 
 /* Page tools */
 document.getElementById('addPageBtn').onclick=()=>{
@@ -757,12 +732,6 @@ document.getElementById('addPageBtn').onclick=()=>{
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
   bookEl.appendChild(p); toastShow('Page added'); refreshFlipKeepPage();
 };
-// +3 Sheets button
-document.getElementById('add3SheetsBtn')?.addEventListener('click', ()=>{
-  addBlankPages(6);          // 3 sheets = 6 pages
-  refreshFlipKeepPage();
-  toastShow('+3 sheets added');
-});
 
 /* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
