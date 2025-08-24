@@ -107,7 +107,7 @@ body.editing .scrap-item .mover{ display:block; }
 }
 #fileInput{ display:none; }
 
-/* NEW: color input styling */
+/* color input styling */
 #toolbar input[type="color"]{
   width:100%; height:40px; padding:0;
   border:2px solid #e8dcc6; border-radius:8px; background:#fff;
@@ -200,7 +200,7 @@ body.editing .scrap-item { pointer-events:auto; }
         <option value="48"></option><option value="72"></option>
       </datalist>
     </div>
-    <!-- NEW: Text Color -->
+    <!-- Text Color -->
     <div class="group">
       <label for="fontColorInput" style="font-weight:700;color:#0d2a6b;">Text Color</label>
       <input id="fontColorInput" type="color" value="#0d2a6b" disabled>
@@ -294,7 +294,7 @@ const fontSizeInput=document.getElementById('fontSizeInput');
 const fitBtn=document.getElementById('fitToggleBtn');
 const lockBtn=document.getElementById('lockToggleBtn');
 
-/* NEW: color input ref */
+/* color input ref */
 const fontColorInput=document.getElementById('fontColorInput');
 
 const itemHud   = document.getElementById('itemHud');
@@ -307,7 +307,7 @@ const hudFront  = document.getElementById('hudFront');
 const hudBack   = document.getElementById('hudBack');
 const hudDelete = document.getElementById('hudDelete');
 
-/* NEW: rotation HUD refs */
+/* rotation HUD refs */
 const hudRot   = document.getElementById('hudRot');
 const hudRotL  = document.getElementById('hudRotL');
 const hudRotR  = document.getElementById('hudRotR');
@@ -580,7 +580,7 @@ document.addEventListener('keydown',e=>{
   const key=e.key.toLowerCase();
   if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
 
-  /* NEW: rotate with keyboard: [ / ]  (Shift = 1°) */
+  /* rotate with keyboard: [ / ]  (Shift = 1°) */
   const step = e.shiftKey ? 1 : 5;
   if (e.key === '[') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) - step); }
   if (e.key === ']') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) + step); }
@@ -604,7 +604,7 @@ hudFont.addEventListener('input',()=>{
   const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; fontSizeInput.value=v;
 });
 
-/* NEW: Text color (sidebar) */
+/* ===== Text color (emoji-safe) ===== */
 function selectedAnyTextEl(){
   if(!selectedItem) return null;
   return selectedItem.querySelector('.scrap-text'); // includes normal text and sticker text
@@ -617,19 +617,40 @@ function rgbToHex(rgb){
   const b = (+m[3]).toString(16).padStart(2,'0');
   return `#${r}${g}${b}`;
 }
+// treat full-color emoji as emoji (uses Unicode property escapes)
+function looksLikeEmoji(s){
+  try{
+    return /\p{Extended_Pictographic}/u.test(s || "");
+  }catch{ // fallback (broad guess)
+    return /[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(s || "");
+  }
+}
 function updateColorInput(){
   const t = selectedAnyTextEl();
-  if(!t){
+  if(!t){ fontColorInput.disabled = true; fontColorInput.title = ""; return; }
+
+  const isSticker = t.classList.contains('sticker');
+  const emojiLocked = isSticker && (selectedItem?.dataset?.emoji === '1' || looksLikeEmoji(t.textContent));
+
+  if (emojiLocked){
     fontColorInput.disabled = true;
+    fontColorInput.title = "emoji color is locked";
     return;
   }
+
   fontColorInput.disabled = false;
+  fontColorInput.title = "";
   const comp = getComputedStyle(t).color;
   fontColorInput.value = comp.startsWith('#') ? comp : rgbToHex(comp);
 }
 fontColorInput.addEventListener('input', ()=>{
   const t = selectedAnyTextEl();
   if(!t) return;
+
+  const isSticker = t.classList.contains('sticker');
+  const emojiLocked = isSticker && (selectedItem?.dataset?.emoji === '1' || looksLikeEmoji(t.textContent));
+  if (emojiLocked) return; // do nothing for emoji stickers
+
   t.style.color = fontColorInput.value;  // saved via outerHTML
 });
 
@@ -693,6 +714,10 @@ document.getElementById('stickersBtn').onclick=()=>{
     b.addEventListener('click',()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
+      // mark emoji so color picker stays disabled
+      const isEmoji = looksLikeEmoji(ch);
+      box.dataset.emoji = isEmoji ? '1' : '0';
+
       box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;">${ch}</div>
                      <div class="mover" title="Drag"></div>
                      <div class="resizer"></div><div class="rotator"></div>`;
