@@ -83,12 +83,11 @@ body.editing .scrap-item .mover{ display:block; }
 /* Stickers text */
 .scrap-text.sticker{
   display:flex; align-items:center; justify-content:center; line-height:1;
-  /* Prefer color emoji fonts BEFORE symbol fonts */
   font-family: var(--font),
                "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
                "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Math", sans-serif;
 }
-/* Force full-color emoji for emoji stickers */
+/* Force color emoji for emoji stickers */
 .scrap-item[data-emoji="1"] .scrap-text.sticker{
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
                system-ui, sans-serif;
@@ -173,7 +172,9 @@ body.editing .scrap-item { pointer-events:auto; }
     <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
-    <!-- Inner pages (start with a couple; JS will add/remove as needed) -->
+    <!-- Inner pages -->
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
   </div>
@@ -189,9 +190,6 @@ body.editing .scrap-item { pointer-events:auto; }
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
       <button id="addPageBtn" class="secondary">Add Page</button>
-      <button id="removePageBtn" class="warn">Remove Page</button>
-      <button id="trimEmptyBtn" class="warn">Trim Empty</button>
-      <button id="undoBtn" class="secondary">Undo</button>
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -317,20 +315,15 @@ const hudRotR  = document.getElementById('hudRotR');
 
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10; // simple z-index counter for Front/Back
-const undoStack = [];
 
 /* ========= PageFlip ========= */
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy(); }catch(_){}
   if(!window.St || !St.PageFlip){ alert("PageFlip library missing (./flipbook/page-flip.browser.js)."); return; }
-
-  // guard: keep at least one interior page (cover + 1)
-  ensureAtLeastOneInterior();
-
   pageFlip = new St.PageFlip(bookEl,{
     width:500,height:650,size:"fixed",showCover:true,drawShadow:true,
     flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
-    mobileScrollSupport:false,startPage:clamp(startIndex,0,document.querySelectorAll('#book .page').length-1)
+    mobileScrollSupport:false,startPage:startIndex
   });
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
   pageFlip.on('flip', ()=>{
@@ -339,17 +332,20 @@ function initFlip(startIndex=0){
     highlightCanvas((activeCanvas===left||activeCanvas===right)?activeCanvas:(right||left));
   });
 }
-function reinitFlip(keepNearIndex){
-  const cur = pageFlip?.getCurrentPageIndex?.() ?? 0;
-  const next = keepNearIndex!=null ? keepNearIndex : cur;
-  initFlip(next);
-}
 
 /* ========= Init ========= */
-init().catch(console.error);
+init();
 async function init(){
-  await loadFromTables();         // restore saved pages/items (if any)
+  // 1) show the flipbook immediately
   initFlip(0);
+
+  // 2) then load saved content and refresh flipbook when done
+  try{
+    await loadFromTables();
+    initFlip(pageFlip?.getCurrentPageIndex?.() ?? 0);
+  }catch(e){
+    console.warn(e);
+  }
 }
 
 /* ========= Target left/right ========= */
@@ -387,6 +383,8 @@ function setEditing(on){
   toolbar.classList.toggle('open', on);
   if(!on){ document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
+
+/* keep PageFlip; just disable gestures while editing */
 function enterEdit(){
   setEditing(true);
   lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
@@ -594,7 +592,7 @@ document.addEventListener('keydown',e=>{
   /* rotate with keyboard: [ / ]  (Shift = 1°) */
   const step = e.shiftKey ? 1 : 5;
   if (e.key === '[') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) - step); }
-  if (e.key === ']') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) + step); }
+  if (e.key === ']') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) + 5); }
 });
 
 /* Font size (sidebar + HUD) */
@@ -628,7 +626,6 @@ function rgbToHex(rgb){
   const b = (+m[3]).toString(16).padStart(2,'0');
   return `#${r}${g}${b}`;
 }
-// detect pictographic emoji
 function looksLikeEmoji(s){
   try{ return /\p{Extended_Pictographic}/u.test(s || ""); }
   catch{ return /[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(s || ""); }
@@ -654,12 +651,10 @@ function updateColorInput(){
 fontColorInput.addEventListener('input', ()=>{
   const t = selectedAnyTextEl();
   if(!t) return;
-
   const isSticker = t.classList.contains('sticker');
   const emojiLocked = isSticker && (selectedItem?.dataset?.emoji === '1' || looksLikeEmoji(t.textContent));
   if (emojiLocked) return;
-
-  t.style.color = fontColorInput.value;  // saved via outerHTML
+  t.style.color = fontColorInput.value;
 });
 
 /* Image fit/lock */
@@ -689,7 +684,7 @@ hudRotR.onclick = ()=>{ if(!selectedItem) return; setRotation(selectedItem, getR
 hudDup.onclick = ()=>{ if(!selectedItem) return; const clone=selectedItem.cloneNode(true); clone.style.left=(selectedItem.offsetLeft+16)+'px'; clone.style.top=(selectedItem.offsetTop+16)+'px'; selectedItem.parentElement.appendChild(clone); makeDraggable(clone); clone.dataset._hooked='1'; };
 hudFront.onclick = ()=>{ if(selectedItem){ selectedItem.style.zIndex=++zCounter; } };
 hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; } };
-hudDelete.onclick= ()=>{ if(selectedItem){ pushUndo(); selectedItem.remove(); deselect(); } };
+hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
 
 /* Photos & stickers */
 document.getElementById('addPhotoBtn').onclick=()=>fileInput.click();
@@ -735,76 +730,22 @@ document.getElementById('stickersBtn').onclick=()=>{
 };
 stickersClose.onclick=()=>closeModal(stickerModal);
 
-/* ===== Page tools ===== */
-document.getElementById('addPageBtn').onclick=()=>{ pushUndo(); addBlankPage(); reinitFlip(); };
-document.getElementById('removePageBtn').onclick=()=>removeCurrentPage();
-document.getElementById('trimEmptyBtn').onclick=()=>trimEmptyPages();
-document.getElementById('undoBtn').onclick=()=>undoChange();
+/* Page tools */
+document.getElementById('addPageBtn').onclick=()=>{
+  const p=document.createElement('div'); p.className='page';
+  const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
+  bookEl.appendChild(p); toastShow('Page added');
+};
 
 /* Delete/Clear/Save */
-document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ pushUndo(); selectedItem.remove(); deselect(); } };
-document.getElementById('clearPageBtn').onclick=()=>{ const c=(activeCanvas||getVisibleCanvases().right); if(c){ pushUndo(); c.innerHTML=''; deselect(); } };
+document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
+document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
 
 document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Save failed: '+e));
 
-/* ===== Undo helpers ===== */
-function pushUndo(){ undoStack.push(bookEl.innerHTML); if(undoStack.length>20) undoStack.shift(); }
-function undoChange(){
-  const last = undoStack.pop(); if(!last) { toastShow('Nothing to undo'); return; }
-  bookEl.innerHTML = last;
-  // re-hook draggable + restore refs after DOM replacement
-  document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
-  reinitFlip();
-  toastShow('Undone');
-}
-
-/* ===== Page helpers ===== */
-function innerPages(){ return [...document.querySelectorAll('#book .page:not(.cover)')]; }
-function ensureAtLeastOneInterior(){
-  if(innerPages().length===0){ addBlankPage(); }
-}
-function addBlankPage(afterIndex=null){
-  const p=document.createElement('div'); p.className='page';
-  const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  if(afterIndex==null){ bookEl.appendChild(p); } else {
-    const pages=[...document.querySelectorAll('#book .page')];
-    const anchor=pages[afterIndex] || pages[pages.length-1];
-    anchor.after(p);
-  }
-}
-function pageFromCanvas(canvas){ return canvas?.closest('.page') || null; }
-function removeCurrentPage(){
-  const targetCanvas = activeCanvas || getVisibleCanvases().right || getVisibleCanvases().left;
-  const pageEl = pageFromCanvas(targetCanvas);
-  if(!pageEl){ toastShow('No page selected'); return; }
-  if(pageEl.classList.contains('cover')){ toastShow('Cannot remove the cover'); return; }
-
-  const allPages=[...document.querySelectorAll('#book .page')];
-  const idx = allPages.indexOf(pageEl);
-
-  pushUndo();
-  pageEl.remove();
-
-  ensureAtLeastOneInterior();
-  reinitFlip(Math.max(0, idx-1));
-  toastShow('Page removed');
-}
-function trimEmptyPages(){
-  pushUndo();
-  const pages=innerPages();
-  let removed=0;
-  pages.forEach(p=>{
-    if(!p.querySelector('.scrap-item')){ p.remove(); removed++; }
-  });
-  ensureAtLeastOneInterior();
-  reinitFlip();
-  toastShow(removed?`Trimmed ${removed} empty page(s)`:'No empty pages');
-}
-
-/* ===== Save / Load ===== */
+/* Save */
 async function saveToTables(){
   toastShow('Saving…');
-  // upload any new images first
   const imgs=[...document.querySelectorAll('#book .scrap-img')];
   for(const img of imgs){
     if(img.dataset.imgid) continue;
@@ -814,7 +755,6 @@ async function saveToTables(){
     const {data,error}=await supabase.from(TABLE_IMAGES).insert([{content_type:mime,data_base64:base64}]).select('id').single();
     if(error) throw error; img.dataset.imgid=data.id; delete img._preb64;
   }
-
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
   canvases.forEach(c=>{
@@ -828,29 +768,22 @@ async function saveToTables(){
     });
     pages.push({items});
   });
-
   const {error:upErr}=await supabase.from(TABLE_STATE).upsert({id:STATE_ID,pages}).select('id').single();
   if(upErr) throw upErr;
   toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
 }
 
+/* Load from tables */
 async function loadFromTables(){
   try{
     const {data:state}=await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
     if(!state||!state.pages) return;
-
-    // Make sure at least (state.pages.length - 1) interior pages exist
-    const have=document.querySelectorAll('#book .page').length-1, need=state.pages.length-1;
-    for(let i=have;i<need;i++){ addBlankPage(); }
-
-    // collect image ids
+    const have=document.querySelectorAll('#book .page').length-1, need=state.pages.length;
+    for(let i=have;i<need;i++){ const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p); }
     const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }));
     const uniq=[...new Set(ids)]; const urlMap={};
-    if(uniq.length){
-      const {data:imgs}=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
-      imgs?.forEach(r=>urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`);
-    }
-
+    if(uniq.length){ const {data:imgs}=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
+      imgs?.forEach(r=>urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`); }
     const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
     for(let i=0;i<Math.min(state.pages.length,canvases.length);i++){
       const c=canvases[i]; c.innerHTML='';
@@ -870,7 +803,6 @@ async function loadFromTables(){
           const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
           const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
           box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
-          // mark emoji sticker if applicable
           if(inner.classList.contains('sticker')){
             box.dataset.emoji = looksLikeEmoji(inner.textContent) ? '1' : '0';
           }
@@ -878,9 +810,6 @@ async function loadFromTables(){
         c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
       }
     }
-
-    // If loaded state had only cover, keep at least one interior
-    ensureAtLeastOneInterior();
   }catch(e){ console.warn('No saved state yet / load error',e); }
 }
 
@@ -889,8 +818,6 @@ function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden',
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
-
-function clamp(n,min,max){ return Math.max(min,Math.min(max,n)); }
 
 // preserves transparency for PNG/WebP; uses JPEG for opaque photos
 async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, pageColor = '#f7eddc') {
