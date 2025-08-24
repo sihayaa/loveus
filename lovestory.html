@@ -62,9 +62,7 @@ body{
 }
 
 /* Scrap items */
-.scrap-item{
-  position:absolute; transform-origin:center; touch-action:none; overflow:visible;
-}
+.scrap-item{ position:absolute; transform-origin:center; touch-action:none; overflow:visible; }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
 .rotator{
@@ -94,7 +92,6 @@ body.editing .scrap-item .mover{ display:block; }
   display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
   white-space:pre-wrap; overflow:visible; min-height:1.2em;
 }
-/* Stickers text */
 .scrap-text.sticker{
   display:flex; align-items:center; justify-content:center; line-height:1;
   font-family: var(--font),
@@ -294,7 +291,6 @@ const stickersClose=document.getElementById('stickersClose');
 const fontSizeInput=document.getElementById('fontSizeInput');
 const fitBtn=document.getElementById('fitToggleBtn');
 const lockBtn=document.getElementById('lockToggleBtn');
-
 const fontColorInput=document.getElementById('fontColorInput');
 
 const itemHud   = document.getElementById('itemHud');
@@ -313,14 +309,23 @@ const hudRotR   = document.getElementById('hudRotR');
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
 
-/* ========= PageFlip ========= */
-function initFlip(startIndex=0){
+/* ========= PageFlip (robust init with fallback) ========= */
+function initFlipCore(startIndex=0, withShadow=true){
   try{ pageFlip?.destroy(); }catch(_){}
   if(!window.St || !St.PageFlip){ alert("PageFlip library missing (./flipbook/page-flip.browser.js)."); return; }
+
+  // ensure we always have at least cover + 1 inner page
+  const pgCount = document.querySelectorAll('#book .page').length;
+  if (pgCount < 2) {
+    const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>';
+    bookEl.appendChild(p);
+  }
+
   pageFlip = new St.PageFlip(bookEl,{
-    width:500,height:650,size:"fixed",showCover:true,drawShadow:true,
+    width:500,height:650,size:"fixed",showCover:true,
+    drawShadow:withShadow,                    // <— fallback toggles this off
     flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
-    mobileScrollSupport:false,startPage:startIndex
+    mobileScrollSupport:false,startPage:Math.max(0,startIndex|0)
   });
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
   pageFlip.on('flip', ()=>{
@@ -328,6 +333,16 @@ function initFlip(startIndex=0){
     const {left,right}=getVisibleCanvases();
     highlightCanvas((activeCanvas===left||activeCanvas===right)?activeCanvas:(right||left));
   });
+}
+
+function initFlip(startIndex=0){
+  try{
+    initFlipCore(startIndex, true);
+  }catch(err){
+    console.warn('PageFlip failed with shadow; retrying without shadow', err);
+    // retry once without shadow (avoids rare setDensity crash)
+    initFlipCore(startIndex, false);
+  }
 }
 
 /* ========= Init with smooth boot ========= */
@@ -693,7 +708,7 @@ document.getElementById('addPageBtn').onclick=()=>{
   bookEl.appendChild(p); toastShow('Page added');
 };
 
-/* ===== Remove one page safely (serialize → rebuild → re-init) ===== */
+/* ===== Remove one page safely (serialize → rebuild → re-init with fallback) ===== */
 const removePageBtn=document.getElementById('removePageBtn');
 removePageBtn.onclick = ()=> removeActivePage();
 
@@ -724,7 +739,6 @@ function serializePages(){
 }
 
 function rebuildBookFromPages(pages){
-  // full rebuild (cover + inner)
   bookEl.innerHTML='';
   for(let i=0;i<pages.length;i++){
     const p=document.createElement('div'); p.className='page'+(i===0?' cover':'');
@@ -755,7 +769,7 @@ function rebuildBookFromPages(pages){
   }
 }
 
-function removeActivePage(){
+async function removeActivePage(){
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const canvas = activeCanvas || (getVisibleCanvases().right || getVisibleCanvases().left);
   if(!canvas){ toastShow('Open the page you want to remove.'); return; }
@@ -763,7 +777,6 @@ function removeActivePage(){
   if(idx<=0){ toastShow("Can't remove the cover."); return; }
 
   const pages=serializePages();
-
   const pageHasStuff = (pages[idx]?.items||[]).length>0;
   if(pageHasStuff && !confirm('Delete this page and everything on it?')) return;
 
@@ -771,9 +784,15 @@ function removeActivePage(){
   if(pages.length===1) pages.push({items:[]}); // keep at least cover + 1
 
   try{ pageFlip?.destroy(); }catch(_){}
+  // hide while rebuilding to avoid layout races
+  bookEl.style.visibility='hidden';
   rebuildBookFromPages(pages);
-  const targetIndex=Math.max(0,idx-1);
-  initFlip(targetIndex);
+  // let DOM settle
+  await new Promise(r=>requestAnimationFrame(()=>r()));
+  // force reflow
+  void bookEl.offsetHeight;
+  initFlip(Math.max(0,idx-1));
+  bookEl.style.visibility='visible';
   deselect();
   const vis=getVisibleCanvases(); highlightCanvas(vis.right||vis.left);
   toastShow('Page removed');
