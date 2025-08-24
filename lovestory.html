@@ -19,7 +19,6 @@
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Dancing Script", cursive;
   --cover-y:28%;
-  /* single cover image (we preload the same URL above) */
   --cover-img: url("./lovestory_cover.png?v=8");
 }
 *{box-sizing:border-box}
@@ -30,7 +29,7 @@ body{
   font-family:var(--font);
 }
 
-/* --- boot overlay to hide jank while critical stuff loads --- */
+/* boot overlay to hide jank while critical stuff loads */
 #boot{
   position:fixed; inset:0; display:grid; place-items:center;
   background:#0b0f2f; color:#67e4ca; z-index:9999;
@@ -41,25 +40,23 @@ body{
 
 /* Stage & Book */
 #stage{ width:1000px; height:650px; position:relative; }
-#book { position:absolute; inset:0; visibility:hidden; will-change:transform; } /* <- hidden until ready */
+#book { position:absolute; inset:0; visibility:hidden; will-change:transform; }
 
 /* Pages */
 .page{
   width:100%; height:100%; position:relative; overflow:hidden;
   background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22);
 }
-/* let the browser skip work for off-screen big content */
 .page-canvas{
   position:relative; width:100%; height:100%; padding:28px;
   color:var(--ink); font-size:22px; line-height:1.35;
   content-visibility:auto; contain-intrinsic-size: 650px 500px;
 }
 
-/* COVER (fixed) */
+/* COVER */
 .page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
   padding:0; background:#0c102c;
-  /* IMPORTANT: only ONE background image now */
   background-image: var(--cover-img);
   background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat;
 }
@@ -67,7 +64,7 @@ body{
 /* Scrap items */
 .scrap-item{
   position:absolute; transform-origin:center; touch-action:none;
-  overflow:visible; /* keep knobs clickable even outside the box */
+  overflow:visible;
 }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
@@ -93,7 +90,7 @@ body.editing .scrap-item .mover{ display:block; }
 .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
 
-/* Text (auto grows; no scrollbars) */
+/* Text */
 .scrap-text{
   display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
   white-space:pre-wrap; overflow:visible; min-height:1.2em;
@@ -209,6 +206,8 @@ body.editing .scrap-item { pointer-events:auto; }
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
       <button id="addPageBtn" class="secondary">Add Page</button>
+      <!-- NEW: safe single-page removal -->
+      <button id="removePageBtn" class="warn">Remove Page</button>
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -334,7 +333,7 @@ const hudRotL  = document.getElementById('hudRotL');
 const hudRotR  = document.getElementById('hudRotR');
 
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
-let zCounter = 10; // simple z-index counter for Front/Back
+let zCounter = 10;
 
 /* ========= PageFlip ========= */
 function initFlip(startIndex=0){
@@ -356,22 +355,12 @@ function initFlip(startIndex=0){
 /* ========= Init with smooth boot ========= */
 init().catch(console.error);
 async function init(){
-  // wait for font + cover to avoid FOIT and cover jump
-  const coverReady = new Promise(res=>{
-    const i = new Image(); i.onload=i.onerror=res; i.src = "./lovestory_cover.png?v=8";
-  });
+  const coverReady = new Promise(res=>{ const i = new Image(); i.onload=i.onerror=res; i.src = "./lovestory_cover.png?v=8"; });
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-
   await Promise.allSettled([coverReady, fontsReady]);
-
-  // load saved pages first (network), still hidden behind the boot
   await loadFromTables();
-
-  // now reveal and build the book
   bookEl.style.visibility = 'visible';
   initFlip(0);
-
-  // fade the boot overlay away
   boot.classList.add('hide');
   setTimeout(()=>boot.remove(), 400);
 }
@@ -411,8 +400,6 @@ function setEditing(on){
   toolbar.classList.toggle('open', on);
   if(!on){ document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
-
-/* keep PageFlip; just disable gestures while editing */
 function enterEdit(){
   setEditing(true);
   lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
@@ -615,8 +602,6 @@ document.addEventListener('keydown',e=>{
   if(!selectedItem) return;
   const key=e.key.toLowerCase();
   if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
-
-  /* rotate with keyboard: [ / ]  (Shift = 1°) */
   const step = e.shiftKey ? 1 : 5;
   if (e.key === '[') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) - step); }
   if (e.key === ']') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) + step); }
@@ -643,7 +628,7 @@ hudFont.addEventListener('input',()=>{
 /* ===== Text color (emoji-safe) ===== */
 function selectedAnyTextEl(){
   if(!selectedItem) return null;
-  return selectedItem.querySelector('.scrap-text'); // includes normal text and sticker text
+  return selectedItem.querySelector('.scrap-text');
 }
 function rgbToHex(rgb){
   const m = String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
@@ -765,6 +750,47 @@ document.getElementById('addPageBtn').onclick=()=>{
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
   bookEl.appendChild(p); toastShow('Page added');
 };
+
+/* ===== NEW: Remove one page safely ===== */
+const removePageBtn = document.getElementById('removePageBtn');
+
+function getActiveOrVisibleCanvas(){
+  if (activeCanvas) return activeCanvas;
+  const vis = getVisibleCanvases();
+  return vis.right || vis.left || null;
+}
+function removeActivePage(){
+  const canvas = getActiveOrVisibleCanvas();
+  if (!canvas) { toastShow('Open the page you want to remove.'); return; }
+  const page = canvas.closest('.page');
+  if (!page || page.classList.contains('cover')){
+    toastShow("Can't remove the cover.");
+    return;
+  }
+  const hasStuff = !!page.querySelector('.scrap-item');
+  if (hasStuff && !confirm('Delete this page and everything on it?')) return;
+
+  const pages = Array.from(document.querySelectorAll('#book .page'));
+  const removedIndex = pages.indexOf(page);
+  page.remove();
+
+  // If only the cover would remain, create a fresh blank page.
+  if (document.querySelectorAll('#book .page').length === 1){
+    const p=document.createElement('div'); p.className='page';
+    p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
+  }
+
+  // Re-init PageFlip at the closest valid page
+  const newCount = document.querySelectorAll('#book .page').length;
+  const targetIndex = Math.max(0, Math.min(removedIndex - 1, newCount - 1));
+  initFlip(targetIndex);
+
+  deselect();
+  const vis = getVisibleCanvases();
+  highlightCanvas(vis.right || vis.left);
+  toastShow('Page removed');
+}
+removePageBtn.onclick = removeActivePage;
 
 /* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
