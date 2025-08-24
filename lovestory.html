@@ -20,10 +20,12 @@ body{
   font-family:var(--font);
 }
 
+/* Stage & Book */
 #stage{ width:1000px; height:650px; position:relative; }
 #book { position:absolute; inset:0; }
-body.editing #stage{ touch-action:none; } 
+body.editing #stage{ touch-action:none; } /* no rubber-banding while dragging */
 
+/* Pages */
 .page{
   width:100%; height:100%; position:relative; overflow:hidden;
   background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22);
@@ -33,6 +35,7 @@ body.editing #stage{ touch-action:none; }
   color:var(--ink); font-size:22px; line-height:1.35;
 }
 
+/* COVER (fixed) */
 .page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
 .page.cover .page-canvas{
   padding:0; background:#0c102c;
@@ -43,9 +46,10 @@ body.editing #stage{ touch-action:none; }
   background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat;
 }
 
+/* Scrap items */
 .scrap-item{
   position:absolute; transform-origin:center; touch-action:none;
-  overflow:visible; 
+  overflow:visible; /* keep knobs clickable even outside the box */
 }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
@@ -67,26 +71,30 @@ body.editing .scrap-item .resizer{
 body.editing .scrap-item .rotator{ display:block; }
 body.editing .scrap-item .mover{ display:block; }
 
+/* Images */
 .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
 
+/* Text (auto grows; no scrollbars) */
 .scrap-text{
   display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
   white-space:pre-wrap; overflow:visible; min-height:1.2em;
 }
+/* Stickers text */
 .scrap-text.sticker{
   display:flex; align-items:center; justify-content:center; line-height:1;
+  /* Prefer color emoji fonts BEFORE symbol fonts */
   font-family: var(--font),
                "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
                "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Math", sans-serif;
 }
-
+/* For emoji stickers (we set data-emoji="1" in JS), force color emoji fonts */
 .scrap-item[data-emoji="1"] .scrap-text.sticker{
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
                system-ui, sans-serif;
 }
 
-
+/* Sidebar toolbar (hidden until 123) */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
   z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
@@ -107,11 +115,13 @@ body.editing .scrap-item .mover{ display:block; }
 }
 #fileInput{ display:none; }
 
+/* color input styling */
 #toolbar input[type="color"]{
   width:100%; height:40px; padding:0;
   border:2px solid #e8dcc6; border-radius:8px; background:#fff;
 }
 
+/* allow events to pass while editing */
 body.editing .page .page-canvas,
 body.editing .scrap-item { pointer-events:auto; }
 
@@ -122,6 +132,7 @@ body.editing .scrap-item { pointer-events:auto; }
 }
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 
+/* Modals */
 .modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
 .modal.open{ display:flex; }
 .modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
@@ -132,9 +143,11 @@ body.editing .scrap-item { pointer-events:auto; }
 .btn-mint{ background:var(--mint); color:#05201f; }
 .btn-ghost{ background:#2a315d; color:#fff; }
 
+/* Stickers grid */
 .stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:10px; }
 .stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; font-size:26px; line-height:1; }
 
+/* Per-item HUD */
 #itemHud{
   position:absolute; z-index:120; display:none;
   background:#151a30; color:#fff; border:2px solid var(--mint);
@@ -157,8 +170,10 @@ body.editing .scrap-item { pointer-events:auto; }
 
 <div id="stage">
   <div id="book">
+    <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
+    <!-- Inner pages -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -171,6 +186,7 @@ body.editing .scrap-item { pointer-events:auto; }
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
+  <!-- Right toolbar -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
@@ -181,6 +197,8 @@ body.editing .scrap-item { pointer-events:auto; }
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
       <button id="addPageBtn" class="secondary">Add Page</button>
+      <button id="removePageBtn" class="warn">Remove Page</button>
+      <button id="trimEmptyBtn" class="warn">Trim Empty</button>
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -192,6 +210,7 @@ body.editing .scrap-item { pointer-events:auto; }
         <option value="48"></option><option value="72"></option>
       </datalist>
     </div>
+    <!-- Text Color -->
     <div class="group">
       <label for="fontColorInput" style="font-weight:700;color:#0d2a6b;">Text Color</label>
       <input id="fontColorInput" type="color" value="#0d2a6b" disabled>
@@ -208,6 +227,7 @@ body.editing .scrap-item { pointer-events:auto; }
     <input id="fileInput" type="file" accept="image/*" />
   </div>
 
+  <!-- Text modal -->
   <div id="textModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <h3 id="textModalTitle">Add Text</h3>
@@ -219,6 +239,7 @@ body.editing .scrap-item { pointer-events:auto; }
     </div>
   </div>
 
+  <!-- Stickers modal -->
   <div id="stickerModal" class="modal" aria-hidden="true">
     <div class="modal-card">
       <h3>Pick a sticker</h3>
@@ -229,12 +250,14 @@ body.editing .scrap-item { pointer-events:auto; }
     </div>
   </div>
 
+  <!-- Per-item HUD -->
   <div id="itemHud" aria-hidden="true">
     <button id="hudEdit"  class="mint only-text">Edit</button>
     <input  id="hudFont"  class="only-text" type="number" min="8" max="200" step="1" placeholder="size">
     <button id="hudFit"   class="only-img">Fit: Contain</button>
     <button id="hudLock"  class="only-img">Lock: On</button>
 
+    <!-- rotation controls -->
     <button id="hudRotL" title="Rotate left 5°">↺ 5°</button>
     <input  id="hudRot"  type="number" step="1" style="width:70px" placeholder="deg">
     <button id="hudRotR" title="Rotate right 5°">↻ 5°</button>
@@ -248,15 +271,19 @@ body.editing .scrap-item { pointer-events:auto; }
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
+<!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="./flipbook/page-flip.browser.js"></script>
 <script>
+/* ========= Supabase ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const TABLE_IMAGES="scrapbook_images";
 const TABLE_STATE ="scrapbook_state";
 const STATE_ID="main";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
+/* ========= Refs ========= */
 const bookEl=document.getElementById('book');
 const stageEl=document.getElementById('stage');
 const toolbar=document.getElementById('toolbar');
@@ -277,6 +304,7 @@ const fontSizeInput=document.getElementById('fontSizeInput');
 const fitBtn=document.getElementById('fitToggleBtn');
 const lockBtn=document.getElementById('lockToggleBtn');
 
+/* color input ref */
 const fontColorInput=document.getElementById('fontColorInput');
 
 const itemHud   = document.getElementById('itemHud');
@@ -289,13 +317,19 @@ const hudFront  = document.getElementById('hudFront');
 const hudBack   = document.getElementById('hudBack');
 const hudDelete = document.getElementById('hudDelete');
 
+/* rotation HUD refs */
 const hudRot   = document.getElementById('hudRot');
 const hudRotL  = document.getElementById('hudRotL');
 const hudRotR  = document.getElementById('hudRotR');
 
-let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
-let zCounter = 10; 
+/* page tools refs */
+const removePageBtn = document.getElementById('removePageBtn');
+const trimEmptyBtn  = document.getElementById('trimEmptyBtn');
 
+let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
+let zCounter = 10; // simple z-index counter for Front/Back
+
+/* ========= PageFlip ========= */
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy(); }catch(_){}
   pageFlip = new St.PageFlip(bookEl,{
@@ -311,6 +345,15 @@ function initFlip(startIndex=0){
   });
 }
 
+/* small helper to rebuild after DOM changes */
+function rebuildFlip(nearIndex){
+  try{
+    const curr = nearIndex ?? (pageFlip?.getCurrentPageIndex?.() ?? 0);
+    initFlip(Math.max(0, curr));
+  }catch(_){}
+}
+
+/* ========= Init ========= */
 init().catch(console.error);
 async function init(){
   await loadFromTables();
@@ -318,6 +361,7 @@ async function init(){
   initFlip(0);
 }
 
+/* ========= Target left/right ========= */
 function getVisibleCanvases(){
   const pr=stageEl.getBoundingClientRect();
   const all=[...document.querySelectorAll('#book .page .page-canvas')].map(el=>{
@@ -341,6 +385,7 @@ stageEl.addEventListener('mousedown',e=>{
 document.getElementById('targetLeft').onclick = ()=>{ const {left,right}=getVisibleCanvases(); highlightCanvas(left||right); };
 document.getElementById('targetRight').onclick= ()=>{ const {left,right}=getVisibleCanvases(); highlightCanvas(right||left); };
 
+/* ========= Secret Edit Mode (type 123) ========= */
 const PASSCODE='123'; let keyBuffer='', keyTimer=null;
 document.addEventListener('keydown',(e)=>{
   keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
@@ -352,6 +397,7 @@ function setEditing(on){
   if(!on){ document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side')); activeCanvas=null; }
 }
 
+/* keep PageFlip; just disable gestures while editing */
 function enterEdit(){
   setEditing(true);
   lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
@@ -371,6 +417,7 @@ function exitEdit(){
   }catch(_){}
 }
 
+/* ========= Per-item HUD ========= */
 function positionHud(){
   if(!selectedItem || itemHud.style.display==='none') return;
   const r=selectedItem.getBoundingClientRect(), sr=stageEl.getBoundingClientRect();
@@ -402,13 +449,14 @@ function showItemHud(el){
     const t=el.querySelector('.scrap-text');
     hudFont.value=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
   }
-  hudRot.value = Math.round(getRotation(el)); 
+  hudRot.value = Math.round(getRotation(el));   /* show current deg */
   itemHud.style.display='flex'; requestAnimationFrame(positionHud);
 }
 function hideItemHud(){ itemHud.style.display='none'; }
 window.addEventListener('resize', positionHud);
 itemHud.addEventListener('mousedown', e=>e.stopPropagation());
 
+/* ========= Drag / Resize / Rotate ========= */
 function makeDraggable(el){
   let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0;
   let rotating=false,startAngle=0,startPointerAngle=0;
@@ -515,6 +563,7 @@ function enableAutoGrow(box,textEl){
   textEl.addEventListener('input',grow); new ResizeObserver(grow).observe(textEl); grow();
 }
 
+/* Selection */
 document.addEventListener('click',e=>{
   if(!document.body.classList.contains('editing')) return;
   const onItem=e.target.closest('.scrap-item'), onBar=e.target.closest('#toolbar'), onHud=e.target.closest('#itemHud'), onModal=e.target.closest('.modal');
@@ -522,6 +571,7 @@ document.addEventListener('click',e=>{
 });
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); hideItemHud(); }
 
+/* Text modal */
 let workingBox=null;
 function openTextModalForAdd(){ workingBox=null; textModalTitle.textContent='Add Text'; textAddBtn.textContent='Add Text'; textInput.value=''; openModal(textModal); setTimeout(()=>textInput.focus(),10); }
 function openTextModalForEdit(box){ workingBox=box; const t=box.querySelector('.scrap-text'); textModalTitle.textContent='Edit Text'; textAddBtn.textContent='Save'; textInput.value=t?t.textContent:''; openModal(textModal); setTimeout(()=>textInput.focus(),10); }
@@ -552,11 +602,13 @@ document.addEventListener('keydown',e=>{
   const key=e.key.toLowerCase();
   if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
 
+  /* rotate with keyboard: [ / ]  (Shift = 1°) */
   const step = e.shiftKey ? 1 : 5;
   if (e.key === '[') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) - step); }
   if (e.key === ']') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) + step); }
 });
 
+/* Font size (sidebar + HUD) */
 function selectedTextEl(){ if(!selectedItem) return null; const t=selectedItem.querySelector('.scrap-text'); return (t && !t.classList.contains('sticker'))?t:null; }
 function updateFontInput(){
   const t=selectedTextEl(); if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; fontSizeInput.placeholder='px'; return; }
@@ -574,9 +626,10 @@ hudFont.addEventListener('input',()=>{
   const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; fontSizeInput.value=v;
 });
 
+/* ===== Text color (emoji-safe) ===== */
 function selectedAnyTextEl(){
   if(!selectedItem) return null;
-  return selectedItem.querySelector('.scrap-text'); 
+  return selectedItem.querySelector('.scrap-text'); // includes normal text and sticker text
 }
 function rgbToHex(rgb){
   const m = String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
@@ -586,10 +639,11 @@ function rgbToHex(rgb){
   const b = (+m[3]).toString(16).padStart(2,'0');
   return `#${r}${g}${b}`;
 }
+// treat full-color emoji as emoji (uses Unicode property escapes)
 function looksLikeEmoji(s){
   try{
     return /\p{Extended_Pictographic}/u.test(s || "");
-  }catch{ 
+  }catch{ // fallback (broad guess)
     return /[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(s || "");
   }
 }
@@ -617,11 +671,12 @@ fontColorInput.addEventListener('input', ()=>{
 
   const isSticker = t.classList.contains('sticker');
   const emojiLocked = isSticker && (selectedItem?.dataset?.emoji === '1' || looksLikeEmoji(t.textContent));
-  if (emojiLocked) return; 
+  if (emojiLocked) return; // do nothing for emoji stickers
 
-  t.style.color = fontColorInput.value;
+  t.style.color = fontColorInput.value;  // saved via outerHTML
 });
 
+/* Image fit/lock */
 function updateImageButtons(){
   const onImg=!!selectedItem?.querySelector('.scrap-img');
   fitBtn.disabled=!onImg; lockBtn.disabled=!onImg;
@@ -632,8 +687,10 @@ function updateImageButtons(){
 fitBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); };
 lockBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
 
+/* Update toolbar state (size + color + img buttons) */
 function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
 
+/* HUD buttons */
 hudRot.addEventListener('input', ()=>{
   if(!selectedItem) return;
   const v = parseFloat(hudRot.value);
@@ -648,6 +705,7 @@ hudFront.onclick = ()=>{ if(selectedItem){ selectedItem.style.zIndex=++zCounter;
 hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; } };
 hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
 
+/* Photos & stickers */
 document.getElementById('addPhotoBtn').onclick=()=>fileInput.click();
 fileInput.addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
@@ -678,6 +736,7 @@ document.getElementById('stickersBtn').onclick=()=>{
     b.addEventListener('click',()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
+      // mark emoji so color picker stays disabled
       const isEmoji = looksLikeEmoji(ch);
       box.dataset.emoji = isEmoji ? '1' : '0';
 
@@ -692,12 +751,54 @@ document.getElementById('stickersBtn').onclick=()=>{
 };
 stickersClose.onclick=()=>closeModal(stickerModal);
 
+/* Page tools */
 document.getElementById('addPageBtn').onclick=()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  bookEl.appendChild(p); toastShow('Page added');
+  bookEl.appendChild(p);
+  rebuildFlip();
+  toastShow('Page added');
 };
 
+/* Remove current page (never cover; keep at least one inner page) */
+removePageBtn.onclick = ()=>{
+  const vis = getVisibleCanvases();
+  const target = activeCanvas || vis.right || vis.left;
+  if(!target){ toastShow('Open the page you want to remove.'); return; }
+
+  const page = target.closest('.page');
+  if(page.classList.contains('cover')){ toastShow("Can't remove the cover."); return; }
+
+  const totalInner = document.querySelectorAll('#book .page:not(.cover)').length;
+  if(totalInner <= 1){ toastShow('Need at least one inner page.'); return; }
+
+  const isEmpty = !target.querySelector('.scrap-item');
+  if(!isEmpty && !confirm('This page has content. Delete it?')) return;
+
+  const idx = pageFlip?.getCurrentPageIndex?.() ?? 0;
+  page.remove();
+  rebuildFlip(idx - 1);
+  toastShow('Page removed');
+};
+
+/* Trim all empty inner pages (leave at least one) */
+trimEmptyBtn.onclick = ()=>{
+  const pages = [...document.querySelectorAll('#book .page:not(.cover)')];
+  let removed = 0;
+  for(const p of pages){
+    const c = p.querySelector('.page-canvas');
+    const empty = !c.querySelector('.scrap-item');
+    const remaining = pages.length - removed;
+    if(empty && remaining > 1){
+      p.remove();
+      removed++;
+    }
+  }
+  rebuildFlip();
+  toastShow(removed ? `Removed ${removed} empty page${removed>1?'s':''}` : 'No empty pages to remove');
+};
+
+/* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
 document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
 
@@ -732,6 +833,7 @@ async function saveToTables(){
   toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
 }
 
+/* Load from tables */
 async function loadFromTables(){
   try{
     const {data:state}=await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
@@ -768,15 +870,18 @@ async function loadFromTables(){
   }catch(e){ console.warn('No saved state yet / load error',e); }
 }
 
+/* Utils */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
 function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
 
+// preserves transparency for PNG/WebP; uses JPEG for opaque photos
 async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, pageColor = '#f7eddc') {
   const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
   const inputMime = blob.type || 'image/png';
 
+  // load image from a safe blob URL
   const img = await new Promise((res, rej) => {
     const i = new Image();
     i.onload = () => res(i);
@@ -784,6 +889,7 @@ async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, page
     i.src = URL.createObjectURL(blob);
   });
 
+  // scale to fit maxSide
   let w = img.width, h = img.height;
   if (Math.max(w, h) > maxSide) {
     if (w > h) { h = Math.round(h * (maxSide / w)); w = maxSide; }
@@ -795,9 +901,11 @@ async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, page
   canvas.height = h;
   const ctx = canvas.getContext('2d');
 
+  // keep alpha for PNG/WebP; use JPEG otherwise
   const wantsAlpha = /png|webp|gif/i.test(inputMime);
 
   if (!wantsAlpha) {
+    // when exporting JPEG, paint your page color first to avoid “black” transparency
     ctx.fillStyle = pageColor;
     ctx.fillRect(0, 0, w, h);
   }
@@ -810,7 +918,6 @@ async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, page
   URL.revokeObjectURL(img.src);
   return { mime: outMime, base64: dataUrl.split(',')[1] };
 }
-
 </script>
 </body>
 </html>
