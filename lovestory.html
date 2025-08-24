@@ -94,7 +94,7 @@ body.editing .scrap-item .mover{ display:block; }
                system-ui, sans-serif;
 }
 
-/* Sidebar toolbar (hidden until 123) */
+/* Sidebar toolbar */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
   z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
@@ -113,7 +113,7 @@ body.editing .scrap-item .mover{ display:block; }
 #toolbar input[type="number"]{
   width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff;
 }
-#fileInput{ display:none; }
+#fileInput, #importInput{ display:none; }
 
 /* color input styling */
 #toolbar input[type="color"]{
@@ -173,32 +173,27 @@ body.editing .scrap-item { pointer-events:auto; }
     <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
-    <!-- Inner pages -->
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
+    <!-- Inner pages (initial placeholders; real content loads from DB/backup) -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
   <!-- Right toolbar -->
-  <div id="toolbar">
+  <div id="toolbar" title="Type 123 to open edit mode">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
       <button id="targetRight" class="secondary">Edit Right</button>
     </div>
     <div class="group">
-      <button id="addTextBtn" class="mint">Add Text</button>
+      <button id="addTextBtn"  class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
-      <button id="addPageBtn" class="secondary">Add Page</button>
+      <button id="addPageBtn"  class="secondary">Add Page</button>
+    </div>
+    <div class="group">
       <button id="removePageBtn" class="warn">Remove Page</button>
-      <button id="trimEmptyBtn" class="warn">Trim Empty</button>
+      <button id="trimEmptyBtn"  class="warn">Trim Empty</button>
+      <button id="undoBtn"       class="secondary" disabled>Undo</button>
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -221,9 +216,15 @@ body.editing .scrap-item { pointer-events:auto; }
     </div>
     <div class="group">
       <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
-      <button id="clearPageBtn" class="warn">Clear Page</button>
-      <button id="saveBtn" class="mint">Save</button>
+      <button id="clearPageBtn"     class="warn">Clear Page</button>
+      <button id="saveBtn"          class="mint" title="Hold SHIFT to force overwrite if book is empty">Save</button>
     </div>
+    <div class="group">
+      <button id="exportBtn" class="secondary">Export JSON</button>
+      <button id="importBtn" class="secondary">Import JSON</button>
+      <input id="importInput" type="file" accept="application/json">
+    </div>
+
     <input id="fileInput" type="file" accept="image/*" />
   </div>
 
@@ -234,7 +235,7 @@ body.editing .scrap-item { pointer-events:auto; }
       <textarea id="textInput" rows="5" placeholder="Write something sweet…"></textarea>
       <div class="modal-actions">
         <button class="btn-ghost" id="textCancel">Cancel</button>
-        <button class="btn-mint" id="textAdd">Add Text</button>
+        <button class="btn-mint"  id="textAdd">Add Text</button>
       </div>
     </div>
   </div>
@@ -256,12 +257,10 @@ body.editing .scrap-item { pointer-events:auto; }
     <input  id="hudFont"  class="only-text" type="number" min="8" max="200" step="1" placeholder="size">
     <button id="hudFit"   class="only-img">Fit: Contain</button>
     <button id="hudLock"  class="only-img">Lock: On</button>
-
-    <!-- rotation controls -->
+    <!-- rotation -->
     <button id="hudRotL" title="Rotate left 5°">↺ 5°</button>
     <input  id="hudRot"  type="number" step="1" style="width:70px" placeholder="deg">
     <button id="hudRotR" title="Rotate right 5°">↻ 5°</button>
-
     <button id="hudDup">Duplicate</button>
     <button id="hudFront">Front</button>
     <button id="hudBack">Back</button>
@@ -307,6 +306,14 @@ const lockBtn=document.getElementById('lockToggleBtn');
 /* color input ref */
 const fontColorInput=document.getElementById('fontColorInput');
 
+const removePageBtn=document.getElementById('removePageBtn');
+const trimEmptyBtn=document.getElementById('trimEmptyBtn');
+const undoBtn=document.getElementById('undoBtn');
+
+const exportBtn=document.getElementById('exportBtn');
+const importBtn=document.getElementById('importBtn');
+const importInput=document.getElementById('importInput');
+
 const itemHud   = document.getElementById('itemHud');
 const hudEdit   = document.getElementById('hudEdit');
 const hudFont   = document.getElementById('hudFont');
@@ -322,16 +329,25 @@ const hudRot   = document.getElementById('hudRot');
 const hudRotL  = document.getElementById('hudRotL');
 const hudRotR  = document.getElementById('hudRotR');
 
-/* page tools refs */
-const removePageBtn = document.getElementById('removePageBtn');
-const trimEmptyBtn  = document.getElementById('trimEmptyBtn');
-
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10; // simple z-index counter for Front/Back
+const historyStack = []; // local undo stack
 
-/* ========= PageFlip ========= */
+/* ========= PageFlip helpers ========= */
+async function ensurePageFlip(){
+  // already present?
+  if (window.St && window.St.PageFlip) return;
+  // try CDN fallback
+  await new Promise(res=>{
+    const s=document.createElement('script');
+    s.src="https://cdn.jsdelivr.net/npm/page-flip@2.0.7/dist/js/page-flip.browser.min.js";
+    s.onload=res; s.onerror=res;
+    document.head.appendChild(s);
+  });
+}
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy(); }catch(_){}
+  if (!window.St || !St.PageFlip) return; // content still usable without flip
   pageFlip = new St.PageFlip(bookEl,{
     width:500,height:650,size:"fixed",showCover:true,drawShadow:true,
     flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
@@ -345,19 +361,14 @@ function initFlip(startIndex=0){
   });
 }
 
-/* small helper to rebuild after DOM changes */
-function rebuildFlip(nearIndex){
-  try{
-    const curr = nearIndex ?? (pageFlip?.getCurrentPageIndex?.() ?? 0);
-    initFlip(Math.max(0, curr));
-  }catch(_){}
-}
-
 /* ========= Init ========= */
 init().catch(console.error);
 async function init(){
+  // 1) rebuild DOM from Supabase if available
   await loadFromTables();
-  if (!window.St || !St.PageFlip) alert("PageFlip library missing (./flipbook/page-flip.browser.js).");
+  // 2) make sure PageFlip exists (fallback to CDN)
+  await ensurePageFlip();
+  // 3) start the flipbook
   initFlip(0);
 }
 
@@ -377,6 +388,7 @@ function highlightCanvas(canvas){
   if(!canvas){ toastShow('That side is not visible here.'); return; }
   document.querySelectorAll('.page-canvas').forEach(c=>c.classList.remove('active-side'));
   canvas.classList.add('active-side'); activeCanvas=canvas;
+  updateRemoveButtons();
 }
 stageEl.addEventListener('mousedown',e=>{
   if(!document.body.classList.contains('editing')) return;
@@ -449,7 +461,7 @@ function showItemHud(el){
     const t=el.querySelector('.scrap-text');
     hudFont.value=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
   }
-  hudRot.value = Math.round(getRotation(el));   /* show current deg */
+  hudRot.value = Math.round(getRotation(el));
   itemHud.style.display='flex'; requestAnimationFrame(positionHud);
 }
 function hideItemHud(){ itemHud.style.display='none'; }
@@ -601,8 +613,6 @@ document.addEventListener('keydown',e=>{
   if(!selectedItem) return;
   const key=e.key.toLowerCase();
   if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
-
-  /* rotate with keyboard: [ / ]  (Shift = 1°) */
   const step = e.shiftKey ? 1 : 5;
   if (e.key === '[') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) - step); }
   if (e.key === ']') { e.preventDefault(); setRotation(selectedItem, getRotation(selectedItem) + step); }
@@ -639,13 +649,9 @@ function rgbToHex(rgb){
   const b = (+m[3]).toString(16).padStart(2,'0');
   return `#${r}${g}${b}`;
 }
-// treat full-color emoji as emoji (uses Unicode property escapes)
 function looksLikeEmoji(s){
-  try{
-    return /\p{Extended_Pictographic}/u.test(s || "");
-  }catch{ // fallback (broad guess)
-    return /[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(s || "");
-  }
+  try{ return /\p{Extended_Pictographic}/u.test(s || ""); }
+  catch{ return /[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(s || ""); }
 }
 function updateColorInput(){
   const t = selectedAnyTextEl();
@@ -671,7 +677,7 @@ fontColorInput.addEventListener('input', ()=>{
 
   const isSticker = t.classList.contains('sticker');
   const emojiLocked = isSticker && (selectedItem?.dataset?.emoji === '1' || looksLikeEmoji(t.textContent));
-  if (emojiLocked) return; // do nothing for emoji stickers
+  if (emojiLocked) return;
 
   t.style.color = fontColorInput.value;  // saved via outerHTML
 });
@@ -688,7 +694,21 @@ fitBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; cons
 lockBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
 
 /* Update toolbar state (size + color + img buttons) */
-function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
+function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); updateRemoveButtons(); }
+
+/* Remove/Trim/Undo helpers */
+function pushHistory(){ historyStack.push(capturePages({forBackup:true})); undoBtn.disabled=false; }
+function doUndo(){ if(!historyStack.length) return; const pages=historyStack.pop(); renderPages(pages); initFlip(0); if(!historyStack.length) undoBtn.disabled=true; }
+undoBtn.onclick = doUndo;
+
+function updateRemoveButtons(){
+  const inner=[...bookEl.querySelectorAll('.page:not(.cover)')];
+  const canRemoveMore = inner.length>1;
+  const page = activeCanvas?.closest?.('.page');
+  const canRemoveThis = !!(page && !page.classList.contains('cover') && canRemoveMore);
+  removePageBtn.disabled = !canRemoveThis;
+  trimEmptyBtn.disabled  = !canRemoveMore;
+}
 
 /* HUD buttons */
 hudRot.addEventListener('input', ()=>{
@@ -727,7 +747,7 @@ const STICKERS_EMOJI=[
 "💢","🏜️","🏝️","✈️","♾️","🍎","🍏","🍞","🥐","🥖","🫓","🥨","🥯","🥞","🧇","🧀","🍖","🍗","🥩","🥓","🍔","🍟",
 "🍕","🌭","🥪","🌮","🌯","🫔","🥙","🧆","🥚","🍳","🥘","🫕","🥣","🥗","🍿","🧈","🧂","🥫","🍝","🍐","🍑","🍒",
 "🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","💌","💘","👅","♕","🫶🏻","💫","🌺","🥀","🌹","🍀","♚",
-"𝑏𝑜𝑦𝑓𝑖𝑒","ℓo͟v͟ꫀ ყoυ .ᐟ","ℳ𝑦 ℒ𖹭𝑣𝑒","🌸","🎀","💕","🌷","🎧","🎬","🎁","༝༚༝༚","𓍯𓂃𓏧♡","愛してる","☘","♫","𝄞𝄢","♫⋆｡♪ ₊˚♬ﾟ.","𝄞"
+"𝑏𝑜𝑦𝑓𝑖𝑒","ℓo͟v͟ꫀ ყoυ .ᐟ","ℳ𝑦 ℒ𖹭𝑣𝑒","🌸","🎀","💕","🌷","🎧","🎬","🎁","༝༚༝༚","𓍯𓂃𓏧♡","愛してる","☘","♫","𝄞𝄢","♫⋆｡♪ ₊˚♬ﾟ.","( ˘ ³˘)♥","𝄞"
 ];
 document.getElementById('stickersBtn').onclick=()=>{
   stickersGrid.innerHTML='';
@@ -736,10 +756,8 @@ document.getElementById('stickersBtn').onclick=()=>{
     b.addEventListener('click',()=>{
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
-      // mark emoji so color picker stays disabled
-      const isEmoji = looksLikeEmoji(ch);
+      const isEmoji = looksLikeEmoji(ch); // locks color picker
       box.dataset.emoji = isEmoji ? '1' : '0';
-
       box.innerHTML=`<div class="scrap-text sticker" style="font-size:64px;">${ch}</div>
                      <div class="mover" title="Drag"></div>
                      <div class="resizer"></div><div class="rotator"></div>`;
@@ -755,66 +773,94 @@ stickersClose.onclick=()=>closeModal(stickerModal);
 document.getElementById('addPageBtn').onclick=()=>{
   const p=document.createElement('div'); p.className='page';
   const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  bookEl.appendChild(p);
-  rebuildFlip();
-  toastShow('Page added');
+  bookEl.appendChild(p); toastShow('Page added'); updateRemoveButtons(); initFlip(pageFlip?.getCurrentPageIndex?.() ?? 0);
 };
-
-/* Remove current page (never cover; keep at least one inner page) */
 removePageBtn.onclick = ()=>{
-  const vis = getVisibleCanvases();
-  const target = activeCanvas || vis.right || vis.left;
-  if(!target){ toastShow('Open the page you want to remove.'); return; }
-
-  const page = target.closest('.page');
-  if(page.classList.contains('cover')){ toastShow("Can't remove the cover."); return; }
-
-  const totalInner = document.querySelectorAll('#book .page:not(.cover)').length;
-  if(totalInner <= 1){ toastShow('Need at least one inner page.'); return; }
-
-  const isEmpty = !target.querySelector('.scrap-item');
-  if(!isEmpty && !confirm('This page has content. Delete it?')) return;
-
-  const idx = pageFlip?.getCurrentPageIndex?.() ?? 0;
+  if(!activeCanvas){ toastShow('Pick a page side first'); return; }
+  const page = activeCanvas.closest('.page');
+  if(page.classList.contains('cover')) return toastShow('Cannot remove the cover');
+  const inner=[...bookEl.querySelectorAll('.page:not(.cover)')];
+  if(inner.length<=1) return toastShow('At least one inner page is required');
+  pushHistory();
   page.remove();
-  rebuildFlip(idx - 1);
+  initFlip(Math.max(0, (pageFlip?.getCurrentPageIndex?.() ?? 0)-1));
+  updateRemoveButtons();
   toastShow('Page removed');
 };
-
-/* Trim all empty inner pages (leave at least one) */
 trimEmptyBtn.onclick = ()=>{
-  const pages = [...document.querySelectorAll('#book .page:not(.cover)')];
-  let removed = 0;
-  for(const p of pages){
-    const c = p.querySelector('.page-canvas');
-    const empty = !c.querySelector('.scrap-item');
-    const remaining = pages.length - removed;
-    if(empty && remaining > 1){
-      p.remove();
-      removed++;
+  const inner=[...bookEl.querySelectorAll('.page:not(.cover)')];
+  if(inner.length<=1) return toastShow('Nothing to trim');
+  const before = inner.length;
+  let removed=0;
+  pushHistory();
+  for(const p of inner){
+    if((p.querySelectorAll('.scrap-item').length===0) && (inner.length-removed>1)){
+      p.remove(); removed++;
     }
   }
-  rebuildFlip();
-  toastShow(removed ? `Removed ${removed} empty page${removed>1?'s':''}` : 'No empty pages to remove');
+  if(removed===0){ historyStack.pop(); if(!historyStack.length) undoBtn.disabled=true; toastShow('No empty pages'); return; }
+  initFlip(pageFlip?.getCurrentPageIndex?.() ?? 0);
+  updateRemoveButtons();
+  toastShow(`Removed ${removed} empty`);
 };
 
 /* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
-document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
+document.getElementById('clearPageBtn').onclick=()=>{ if(!activeCanvas) return; pushHistory(); activeCanvas.innerHTML=''; deselect(); toastShow('Page cleared'); };
 
-document.getElementById('saveBtn').onclick=()=>saveToTables().catch(e=>alert('Save failed: '+e));
+document.getElementById('saveBtn').addEventListener('click',(e)=>saveToTables(e.shiftKey));
 
-async function saveToTables(){
+/* ========= SAVE with guard ========= */
+async function saveToTables(forceOverwrite=false){
   toastShow('Saving…');
+  // upload any new images
   const imgs=[...document.querySelectorAll('#book .scrap-img')];
   for(const img of imgs){
     if(img.dataset.imgid) continue;
     let mime,base64;
     if(img._preb64){({mime,base64}=img._preb64);}
-    else{ const r=await fetch(img.src); const b=await r.blob(); const enc=await compressToBase64(b,1600,0.85); mime=enc.mime; base64=enc.base64; }
-    const {data,error}=await supabase.from(TABLE_IMAGES).insert([{content_type:mime,data_base64:base64}]).select('id').single();
-    if(error) throw error; img.dataset.imgid=data.id; delete img._preb64;
+    else{
+      const r=await fetch(img.src); const b=await r.blob();
+      const enc=await compressToBase64(b,1600,0.85);
+      mime=enc.mime; base64=enc.base64;
+    }
+    const {data,error}=await supabase.from(TABLE_IMAGES)
+      .insert([{content_type:mime,data_base64:base64}])
+      .select('id').single();
+    if(error) throw error;
+    img.dataset.imgid=data.id; delete img._preb64;
   }
+
+  // build DB pages payload
+  const pages = capturePages({forBackup:false});
+
+  // guard: block empty local overwriting non-empty cloud (unless forced)
+  const isEmptyLocal = pages.every(p => !p.items || p.items.length===0);
+  let hadCloudContent = false;
+  try{
+    const {data:existing} = await supabase.from(TABLE_STATE)
+      .select('pages').eq('id',STATE_ID).maybeSingle();
+    hadCloudContent = Array.isArray(existing?.pages) &&
+                      existing.pages.some(p => p.items && p.items.length>0);
+  }catch{}
+
+  if (isEmptyLocal && hadCloudContent && !forceOverwrite){
+    alert('Save blocked: your cloud book already has content. Hold SHIFT while clicking Save to intentionally overwrite with an empty book.');
+    toastShow('Save blocked');
+    return;
+  }
+
+  const {error:upErr}=await supabase.from(TABLE_STATE)
+    .upsert({id:STATE_ID,pages})
+    .select('id').single();
+  if(upErr) throw upErr;
+  toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
+}
+
+/* Capture current DOM into pages JSON
+   - forBackup=true  → images carry .src (base64/data urls kept)
+   - forBackup=false → images carry imageId for DB (uploaded above) */
+function capturePages({forBackup=false}={}){
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
   canvases.forEach(c=>{
@@ -823,52 +869,110 @@ async function saveToTables(){
       const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height};
       const rot=parseFloat(el.dataset.rot||'0')||0;
       const img=el.querySelector('.scrap-img');
-      if(img){ items.push({type:'image',style,rot,imageId:img.dataset.imgid||null,fit:el.dataset.fit||'contain',lock:el.dataset.lock==='1'}); }
-      else{ const txt=el.querySelector('.scrap-text'); items.push({type:'text',style,rot,html:txt?txt.outerHTML:''}); }
+      if(img){
+        const base = {type:'image',style,rot,fit:el.dataset.fit||'contain',lock:el.dataset.lock==='1'};
+        if(forBackup){ base.src = img.src; }
+        else { base.imageId = img.dataset.imgid || null; }
+        items.push(base);
+      }else{
+        const txt=el.querySelector('.scrap-text');
+        items.push({type:'text',style,rot,html:txt?txt.outerHTML:''});
+      }
     });
     pages.push({items});
   });
-  const {error:upErr}=await supabase.from(TABLE_STATE).upsert({id:STATE_ID,pages}).select('id').single();
-  if(upErr) throw upErr;
-  toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
+  return pages;
 }
 
-/* Load from tables */
+/* Load from tables, then render */
 async function loadFromTables(){
   try{
     const {data:state}=await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
     if(!state||!state.pages) return;
-    const have=document.querySelectorAll('#book .page').length-1, need=state.pages.length;
-    for(let i=have;i<need;i++){ const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p); }
     const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }));
     const uniq=[...new Set(ids)]; const urlMap={};
-    if(uniq.length){ const {data:imgs}=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
-      imgs?.forEach(r=>urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`); }
-    const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-    for(let i=0;i<Math.min(state.pages.length,canvases.length);i++){
-      const c=canvases[i]; c.innerHTML='';
-      for(const it of state.pages[i].items||[]){
-        const box=document.createElement('div'); box.className='scrap-item';
-        box.style.left=it.style?.left||'40px'; box.style.top=it.style?.top||'40px';
-        if(it.style?.width) box.style.width=it.style.width;
-        if(it.style?.height) box.style.height=it.style.height;
-        if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
-        if(it.type==='image'&&it.imageId){
-          const url=urlMap[it.imageId]||''; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
-          box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="">
-                         <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
-          const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-          if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
-        }else if(it.type==='text'&&it.html){
-          const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
-          const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
-          box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
-        }
-        c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
-      }
+    if(uniq.length){
+      const {data:imgs}=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
+      imgs?.forEach(r=>urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`);
     }
+    renderPages(state.pages, urlMap);
   }catch(e){ console.warn('No saved state yet / load error',e); }
 }
+
+/* Render a pages array into the DOM */
+function renderPages(pages, urlMap={}){
+  // Remove all inner pages, keep cover shell
+  const cover = bookEl.querySelector('.page.cover');
+  const canvCover = cover.querySelector('.page-canvas');
+  // rebuild page list size = pages.length
+  [...bookEl.querySelectorAll('.page:not(.cover)')].forEach(p=>p.remove());
+  // ensure there are pages.length-1 inner pages
+  for(let i=1; i<pages.length; i++){
+    const p=document.createElement('div'); p.className='page';
+    p.innerHTML='<div class="page-canvas"></div>';
+    bookEl.appendChild(p);
+  }
+  const canvases=[...bookEl.querySelectorAll('#book .page .page-canvas')];
+  canvases.forEach(c=>c.innerHTML='');
+
+  for(let i=0;i<Math.min(pages.length,canvases.length);i++){
+    const c=canvases[i];
+    for(const it of pages[i].items||[]){
+      const box=document.createElement('div'); box.className='scrap-item';
+      box.style.left=it.style?.left||'40px'; box.style.top=it.style?.top||'40px';
+      if(it.style?.width) box.style.width=it.style.width;
+      if(it.style?.height) box.style.height=it.style.height;
+      if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
+      if(it.type==='image'){
+        const url = it.src || (it.imageId ? (urlMap[it.imageId]||'') : '');
+        box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
+        box.innerHTML=`<img class="scrap-img" ${it.imageId?`data-imgid="${it.imageId}"`:''} src="${url}" alt="">
+                       <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
+        const imgEl=box.querySelector('.scrap-img');
+        const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+        if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
+      }else if(it.type==='text'&&it.html){
+        const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
+        const inner=holder.firstElementChild||document.createElement('div');
+        inner.setAttribute('contenteditable','false'); box.appendChild(inner);
+        box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
+      }
+      c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
+    }
+  }
+  deselect(); updateRemoveButtons();
+}
+
+/* Export/Import backups */
+exportBtn.onclick = ()=>{
+  const pages = capturePages({forBackup:true});
+  const payload = { version:1, pages };
+  const blob = new Blob([JSON.stringify(payload,null,2)], {type:'application/json'});
+  const a=document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  const ts=new Date().toISOString().replace(/[:.]/g,'-');
+  a.download = `scrapbook-backup-${ts}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+};
+importBtn.onclick = ()=>importInput.click();
+importInput.addEventListener('change', async (e)=>{
+  const f=e.target.files[0]; if(!f) return;
+  try{
+    const text = await f.text();
+    const data = JSON.parse(text);
+    const pages = Array.isArray(data) ? data : (data.pages || []);
+    if(!Array.isArray(pages) || !pages.length) throw new Error('No pages');
+    pushHistory();
+    renderPages(pages);
+    initFlip(0);
+    toastShow('Backup imported (remember to Save)');
+  }catch(err){
+    alert('Import failed: '+err.message);
+  }finally{
+    importInput.value='';
+  }
+});
 
 /* Utils */
 function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
@@ -880,41 +984,27 @@ document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); 
 async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, pageColor = '#f7eddc') {
   const blob = fileOrBlob instanceof Blob ? fileOrBlob : new Blob([fileOrBlob]);
   const inputMime = blob.type || 'image/png';
-
-  // load image from a safe blob URL
   const img = await new Promise((res, rej) => {
     const i = new Image();
     i.onload = () => res(i);
     i.onerror = rej;
     i.src = URL.createObjectURL(blob);
   });
-
-  // scale to fit maxSide
   let w = img.width, h = img.height;
   if (Math.max(w, h) > maxSide) {
     if (w > h) { h = Math.round(h * (maxSide / w)); w = maxSide; }
     else       { w = Math.round(w * (maxSide / h)); h = maxSide; }
   }
-
   const canvas = document.createElement('canvas');
-  canvas.width = w;
-  canvas.height = h;
+  canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
-
-  // keep alpha for PNG/WebP; use JPEG otherwise
   const wantsAlpha = /png|webp|gif/i.test(inputMime);
-
   if (!wantsAlpha) {
-    // when exporting JPEG, paint your page color first to avoid “black” transparency
-    ctx.fillStyle = pageColor;
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = pageColor; ctx.fillRect(0, 0, w, h);
   }
-
   ctx.drawImage(img, 0, 0, w, h);
-
   const outMime = wantsAlpha ? 'image/png' : 'image/jpeg';
   const dataUrl = canvas.toDataURL(outMime, wantsAlpha ? 1.0 : quality);
-
   URL.revokeObjectURL(img.src);
   return { mime: outMime, base64: dataUrl.split(',')[1] };
 }
