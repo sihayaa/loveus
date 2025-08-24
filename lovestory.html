@@ -80,7 +80,11 @@ body.editing .scrap-item .mover{ display:block; }
   display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
   white-space:pre-wrap; overflow:visible; min-height:1.2em;
 }
-.scrap-text.sticker{ display:flex; align-items:center; justify-content:center; line-height:1; }
+.scrap-text.sticker{
+  display:flex; align-items:center; justify-content:center; line-height:1;
+  /* font fallbacks for fancy glyphs & emoji */
+  font-family: var(--font), "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Math", "Apple Color Emoji", "Segoe UI Emoji", sans-serif;
+}
 
 /* Sidebar toolbar (hidden until 123) */
 #toolbar{
@@ -102,6 +106,12 @@ body.editing .scrap-item .mover{ display:block; }
   width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff;
 }
 #fileInput{ display:none; }
+
+/* NEW: color input styling */
+#toolbar input[type="color"]{
+  width:100%; height:40px; padding:0;
+  border:2px solid #e8dcc6; border-radius:8px; background:#fff;
+}
 
 /* allow events to pass while editing */
 body.editing .page .page-canvas,
@@ -189,6 +199,11 @@ body.editing .scrap-item { pointer-events:auto; }
         <option value="24"></option><option value="28"></option><option value="36"></option>
         <option value="48"></option><option value="72"></option>
       </datalist>
+    </div>
+    <!-- NEW: Text Color -->
+    <div class="group">
+      <label for="fontColorInput" style="font-weight:700;color:#0d2a6b;">Text Color</label>
+      <input id="fontColorInput" type="color" value="#0d2a6b" disabled>
     </div>
     <div class="group">
       <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
@@ -278,6 +293,9 @@ const stickersClose=document.getElementById('stickersClose');
 const fontSizeInput=document.getElementById('fontSizeInput');
 const fitBtn=document.getElementById('fitToggleBtn');
 const lockBtn=document.getElementById('lockToggleBtn');
+
+/* NEW: color input ref */
+const fontColorInput=document.getElementById('fontColorInput');
 
 const itemHud   = document.getElementById('itemHud');
 const hudEdit   = document.getElementById('hudEdit');
@@ -586,6 +604,35 @@ hudFont.addEventListener('input',()=>{
   const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; fontSizeInput.value=v;
 });
 
+/* NEW: Text color (sidebar) */
+function selectedAnyTextEl(){
+  if(!selectedItem) return null;
+  return selectedItem.querySelector('.scrap-text'); // includes normal text and sticker text
+}
+function rgbToHex(rgb){
+  const m = String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+  if(!m) return '#000000';
+  const r = (+m[1]).toString(16).padStart(2,'0');
+  const g = (+m[2]).toString(16).padStart(2,'0');
+  const b = (+m[3]).toString(16).padStart(2,'0');
+  return `#${r}${g}${b}`;
+}
+function updateColorInput(){
+  const t = selectedAnyTextEl();
+  if(!t){
+    fontColorInput.disabled = true;
+    return;
+  }
+  fontColorInput.disabled = false;
+  const comp = getComputedStyle(t).color;
+  fontColorInput.value = comp.startsWith('#') ? comp : rgbToHex(comp);
+}
+fontColorInput.addEventListener('input', ()=>{
+  const t = selectedAnyTextEl();
+  if(!t) return;
+  t.style.color = fontColorInput.value;  // saved via outerHTML
+});
+
 /* Image fit/lock */
 function updateImageButtons(){
   const onImg=!!selectedItem?.querySelector('.scrap-img');
@@ -596,7 +643,9 @@ function updateImageButtons(){
 }
 fitBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); };
 lockBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
-function updateToolbarState(){ updateImageButtons(); updateFontInput(); }
+
+/* Update toolbar state (size + color + img buttons) */
+function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
 
 /* HUD buttons */
 hudRot.addEventListener('input', ()=>{
@@ -630,10 +679,12 @@ fileInput.addEventListener('change',async e=>{
   if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
   imgEl._preb64={mime,base64}; fileInput.value='';
 });
-const STICKERS_EMOJI=["🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","💜","🖤","🩶","🤍","💋","💯",
+const STICKERS_EMOJI=[
+"🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","💜","🖤","🩶","🤍","💋","💯",
 "💢","🏜️","🏝️","✈️","♾️","🍎","🍏","🍞","🥐","🥖","🫓","🥨","🥯","🥞","🧇","🧀","🍖","🍗","🥩","🥓","🍔","🍟",
 "🍕","🌭","🥪","🌮","🌯","🫔","🥙","🧆","🥚","🍳","🥘","🫕","🥣","🥗","🍿","🧈","🧂","🥫","🍝","🍐","🍑","🍒",
-"🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","💌"💘","👅","♕","🫶🏻","💫","🌺","🥀","🌹","🍀","♚"
+"🍦","🍧","🍨","🍩","🍪","🎂","🍰","🧁","🥧","🍫","🍬","🍭","🍮","🍯","💌","💘","👅","♕","🫶🏻","💫","🌺","🥀","🌹","🍀","♚",
+"𝑏𝑜𝑦𝑓𝑖𝑒","ℓo͟v͟ꫀ ყoυ .ᐟ","ℳ𝑦 ℒ𖹭𝑣𝑒"
 ];
 document.getElementById('stickersBtn').onclick=()=>{
   stickersGrid.innerHTML='';
