@@ -83,11 +83,12 @@ body.editing .scrap-item .mover{ display:block; }
 /* Stickers text */
 .scrap-text.sticker{
   display:flex; align-items:center; justify-content:center; line-height:1;
+  /* Prefer color emoji fonts BEFORE symbol fonts */
   font-family: var(--font),
                "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
                "Segoe UI Symbol", "Noto Sans Symbols 2", "Noto Sans Math", sans-serif;
 }
-/* Force color emoji for emoji stickers */
+/* For emoji stickers, force color emoji fonts */
 .scrap-item[data-emoji="1"] .scrap-text.sticker{
   font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", "Twemoji Mozilla",
                system-ui, sans-serif;
@@ -334,18 +335,11 @@ function initFlip(startIndex=0){
 }
 
 /* ========= Init ========= */
-init();
+/* Reverted to stable: load saved pages first, then init PageFlip ONCE */
+init().catch(console.error);
 async function init(){
-  // 1) show the flipbook immediately
+  await loadFromTables();
   initFlip(0);
-
-  // 2) then load saved content and refresh flipbook when done
-  try{
-    await loadFromTables();
-    initFlip(pageFlip?.getCurrentPageIndex?.() ?? 0);
-  }catch(e){
-    console.warn(e);
-  }
 }
 
 /* ========= Target left/right ========= */
@@ -626,6 +620,7 @@ function rgbToHex(rgb){
   const b = (+m[3]).toString(16).padStart(2,'0');
   return `#${r}${g}${b}`;
 }
+// treat full-color emoji as emoji (uses Unicode property escapes)
 function looksLikeEmoji(s){
   try{ return /\p{Extended_Pictographic}/u.test(s || ""); }
   catch{ return /[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(s || ""); }
@@ -651,10 +646,12 @@ function updateColorInput(){
 fontColorInput.addEventListener('input', ()=>{
   const t = selectedAnyTextEl();
   if(!t) return;
+
   const isSticker = t.classList.contains('sticker');
   const emojiLocked = isSticker && (selectedItem?.dataset?.emoji === '1' || looksLikeEmoji(t.textContent));
-  if (emojiLocked) return;
-  t.style.color = fontColorInput.value;
+  if (emojiLocked) return; // do nothing for emoji stickers
+
+  t.style.color = fontColorInput.value;  // saved via outerHTML
 });
 
 /* Image fit/lock */
@@ -834,7 +831,7 @@ async function compressToBase64(fileOrBlob, maxSide = 1600, quality = 0.85, page
   let w = img.width, h = img.height;
   if (Math.max(w, h) > maxSide) {
     if (w > h) { h = Math.round(h * (maxSide / w)); w = maxSide; }
-    else       { w = Math.round(w * (maxSide / h)); h = maxSide; }
+    else       { w = Math.round(h * (maxSide / h)); h = maxSide; }
   }
 
   const canvas = document.createElement('canvas');
