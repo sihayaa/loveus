@@ -137,7 +137,11 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 
 /* Modals, stickers, HUD */
-.modal{ position:absolute; inset:0; display:none; align-items:center; justify-content:center; z-index:70; background:rgba(0,0,0,.55); }
+.modal{
+  position:absolute; inset:0; display:none; align-items:center; justify-content:center;
+  z-index:1000; /* above HUD/toolbar */
+  background:rgba(0,0,0,.55);
+}
 .modal.open{ display:flex; }
 .modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
 .modal-card h3{ margin:0 0 10px; font-size:20px; }
@@ -148,6 +152,10 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 .btn-ghost{ background:#2a315d; color:#fff; }
 .stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:10px; }
 .stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; font-size:26px; line-height:1; }
+
+/* When modal is open, pause background interactions */
+body.modal-open #itemHud{ display:none !important; }
+body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
 
 #itemHud{
   position:absolute; z-index:120; display:none; background:#151a30; color:#fff;
@@ -171,14 +179,14 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
     <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
-    <!-- Inner pages (placeholders; extras will be adjusted at load) -->
+    <!-- A few inner placeholders; real pages come from storage + ensured blanks -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Right toolbar -->
+  <!-- Right toolbar (NO add/remove page buttons) -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
@@ -188,8 +196,6 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
       <button id="stickersBtn" class="secondary">Stickers</button>
-      <button id="addPageBtn" class="secondary">Add Page</button>
-      <!-- Removed: Remove Page -->
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -309,49 +315,12 @@ const hudRotR   = document.getElementById('hudRotR');
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
 
-/* ========= TRAILING BLANK SHEETS (auto-restore 3 at end) ========= */
-const MIN_TRAILING_SHEETS = 3; // 3 sheets = 6 pages
-
-function isPageEmpty(pageEl){
-  return (pageEl?.querySelectorAll('.scrap-item').length||0) === 0;
-}
-function countTrailingBlankSheets(){
-  const pages=[...document.querySelectorAll('#book .page')];
-  let i=pages.length-1, sheets=0;
-  while(i>0){ // stop before cover
-    const right=pages[i], left=pages[i-1];
-    if(!left || left.classList.contains('cover')) break;
-    if(isPageEmpty(right) && isPageEmpty(left)){ sheets++; i-=2; }
-    else break;
-  }
-  return sheets;
-}
-function addBlankPages(n){
-  for(let k=0;k<n;k++){
-    const p=document.createElement('div');
-    p.className='page';
-    p.innerHTML='<div class="page-canvas"></div>';
-    bookEl.appendChild(p);
-  }
-}
-function ensureTrailingBlankSheets(minSheets=MIN_TRAILING_SHEETS){
-  const have=countTrailingBlankSheets();
-  if(have < minSheets){
-    addBlankPages((minSheets - have) * 2); // add in pairs
-  }
-}
-function refreshFlipKeepPage(){
-  const idx = pageFlip?.getCurrentPageIndex?.() ?? 0;
-  try{ pageFlip?.destroy(); }catch(_){}
-  initFlip(idx);
-}
-
-/* ========= PageFlip (robust init with fallback) ========= */
-function initFlipCore(startIndex=0, withShadow=true){
+/* ========= PageFlip ========= */
+function initFlip(startIndex=0){
   try{ pageFlip?.destroy(); }catch(_){}
   if(!window.St || !St.PageFlip){ alert("PageFlip library missing (./flipbook/page-flip.browser.js)."); return; }
 
-  // ensure cover + one inner page minimum
+  // ensure cover + one inner minimum
   const pgCount = document.querySelectorAll('#book .page').length;
   if (pgCount < 2) {
     const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>';
@@ -360,8 +329,7 @@ function initFlipCore(startIndex=0, withShadow=true){
 
   pageFlip = new St.PageFlip(bookEl,{
     width:500,height:650,size:"fixed",showCover:true,
-    drawShadow:withShadow,
-    flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
+    drawShadow:true, flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
     mobileScrollSupport:false,startPage:Math.max(0,startIndex|0)
   });
   pageFlip.loadFromHTML(document.querySelectorAll('#book .page'));
@@ -371,9 +339,24 @@ function initFlipCore(startIndex=0, withShadow=true){
     highlightCanvas((activeCanvas===left||activeCanvas===right)?activeCanvas:(right||left));
   });
 }
-function initFlip(startIndex=0){
-  try{ initFlipCore(startIndex,true); }
-  catch(err){ console.warn('PageFlip retry without shadow',err); initFlipCore(startIndex,false); }
+
+/* ========= Ensure N blank sheets at the end ========= */
+function isPageEmpty(p){ return (p?.querySelectorAll('.scrap-item').length||0)===0; }
+function ensureTrailingBlankSheets(nSheets=3){
+  // exclude cover
+  const all=[...document.querySelectorAll('#book .page')];
+  const inner = all.slice(1); // after cover
+  // count trailing empty pages
+  let trailing=0;
+  for(let i=inner.length-1; i>=0; i--){
+    if(isPageEmpty(inner[i])) trailing++; else break;
+  }
+  const needPages = Math.max(0, nSheets*2 - trailing); // 2 pages per sheet
+  for(let k=0;k<needPages;k++){
+    const p=document.createElement('div'); p.className='page';
+    p.innerHTML='<div class="page-canvas"></div>';
+    bookEl.appendChild(p);
+  }
 }
 
 /* ========= Init ========= */
@@ -383,13 +366,13 @@ async function init(){
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
   await Promise.allSettled([coverReady, fontsReady]);
 
-  // 1) load any saved content
+  // load any saved content
   await loadFromTables();
 
-  // 2) make sure we end with 3 BLANK sheets (6 pages)
-  ensureTrailingBlankSheets(MIN_TRAILING_SHEETS);
+  // then ensure 3 blank sheets (6 pages) at the very end
+  ensureTrailingBlankSheets(3);
 
-  // 3) show + init
+  // reveal + init flip
   bookEl.style.visibility='visible';
   initFlip(0);
   boot.classList.add('hide');
@@ -638,7 +621,11 @@ fontSizeInput.addEventListener('input',()=>{
   v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
   const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; hudFont.value=v;
 });
-hudEdit.onclick=()=>{ if(selectedItem?.querySelector('.scrap-text:not(.sticker))')) openTextModalForEdit(selectedItem); };
+hudEdit.onclick = ()=>{
+  if (selectedItem?.querySelector('.scrap-text:not(.sticker)')) {
+    openTextModalForEdit(selectedItem);
+  }
+};
 hudFont.addEventListener('input',()=>{
   const t=selectedTextEl(); if(!t) return; let v=parseInt(hudFont.value,10); if(isNaN(v)) return;
   v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
@@ -725,13 +712,7 @@ document.getElementById('stickersBtn').onclick=()=>{
   });
   openModal(stickerModal);
 };
-
-/* Page tools */
-document.getElementById('addPageBtn').onclick=()=>{
-  const p=document.createElement('div'); p.className='page';
-  const c=document.createElement('div'); c.className='page-canvas'; p.appendChild(c);
-  bookEl.appendChild(p); toastShow('Page added'); refreshFlipKeepPage();
-};
+stickersClose.onclick=()=>closeModal(stickerModal);
 
 /* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
@@ -808,9 +789,29 @@ async function loadFromTables(){
   }catch(e){ console.warn('No saved state yet / load error',e); }
 }
 
+/* Modal helpers (robust close) */
+function openModal(el){
+  hideItemHud();
+  el.classList.add('open');
+  el.setAttribute('aria-hidden','false');
+  document.body.classList.add('modal-open');
+}
+function closeModal(el){
+  el.classList.remove('open');
+  el.setAttribute('aria-hidden','true');
+  document.body.classList.remove('modal-open');
+}
+stickerModal.addEventListener('click', (e)=>{ if(e.target===stickerModal) closeModal(stickerModal); });
+textModal.addEventListener('click', (e)=>{ if(e.target===textModal) closeModal(textModal); });
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='Escape'){
+    if(stickerModal.classList.contains('open')) closeModal(stickerModal);
+    if(textModal.classList.contains('open'))    closeModal(textModal);
+  }
+});
+
 /* Utils */
-function openModal(el){ el.classList.add('open'); el.setAttribute('aria-hidden','false'); }
-function closeModal(el){ el.classList.remove('open'); el.setAttribute('aria-hidden','true'); }
+function openModalLegacy(el){ openModal(el); } // (no-op alias if any old calls exist)
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
 document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
 
