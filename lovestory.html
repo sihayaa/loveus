@@ -109,7 +109,7 @@ body.editing .scrap-item .mover{ display:block; }
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%);
   z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
-  width:240px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25);
+  width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25);
   display:none; flex-direction:column; align-items:stretch;
 }
 #toolbar.open{ display:flex; }
@@ -188,11 +188,18 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
-  <!-- Right toolbar (NO add/remove page buttons) -->
+  <!-- Right toolbar -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
       <button id="targetRight" class="secondary">Edit Right</button>
+    </div>
+
+    <!-- Book actions -->
+    <div class="group">
+      <button id="exitEditBtn" class="secondary">Done Editing</button>
+      <button id="closeBookBtn" class="secondary">Close Book</button>
+      <button id="removeSheetBtn" class="warn">Remove Last Sheet</button>
     </div>
 
     <!-- Global font picker -->
@@ -387,11 +394,9 @@ function initFlip(startIndex=0){
 
 /* ========= Ensure N blank sheets at the end ========= */
 function isPageEmpty(p){ return (p?.querySelectorAll('.scrap-item').length||0)===0; }
-function ensureTrailingBlankSheets(nSheets=3){
-  // exclude cover
+function ensureTrailingBlankSheets(nSheets=2){ // reduced from 3 → 2
   const all=[...document.querySelectorAll('#book .page')];
   const inner = all.slice(1); // after cover
-  // count trailing empty pages
   let trailing=0;
   for(let i=inner.length-1; i>=0; i--){
     if(isPageEmpty(inner[i])) trailing++; else break;
@@ -432,8 +437,7 @@ async function init(){
     toastShow('⚠️ Couldn’t reach cloud. Showing local.');
   }
 
-  // continue regardless
-  ensureTrailingBlankSheets(3);
+  ensureTrailingBlankSheets(2); // fewer blanks at the back
   afterBootShow();
 }
 
@@ -489,6 +493,46 @@ function exitEdit(){
     pageFlip.turnToPage(lastPageIndex);
     pageFlip.update({ useMouseEvents:true, swipeDistance:30 });
   }catch(_){}
+}
+
+/* Extra: quick exit via ESC when not in a modal */
+document.addEventListener('keydown', (e)=>{
+  const modalOpen = textModal.classList.contains('open') || stickerModal.classList.contains('open');
+  if(e.key==='Escape' && document.body.classList.contains('editing') && !modalOpen){
+    exitEdit();
+    toastShow('Exited editing');
+  }
+});
+
+/* ========= New book helpers ========= */
+function closeBook(){
+  exitEdit(); // ensure flipping is enabled
+  try{
+    const total = pageFlip.getPageCount?.() ?? 1;
+    const curr  = pageFlip.getCurrentPageIndex?.() ?? 0;
+    const mid   = Math.floor(total/2);
+    // go to nearest cover: if we're in the first half, go to front (0) else to back (last)
+    pageFlip.turnToPage(curr <= mid ? 0 : total - 1);
+  }catch(_){}
+}
+function removeLastSheet(){
+  // last "sheet" = last 2 inner pages (exclude cover)
+  const pages = [...document.querySelectorAll('#book .page')];
+  if (pages.length <= 2){ toastShow('No sheet to remove.'); return; }
+  const inner = pages.slice(1); // after cover
+  const last = inner[inner.length-1];
+  const prev = inner[inner.length-2];
+  const empty = (p)=> (p?.querySelectorAll('.scrap-item').length||0)===0;
+  if (!last || !prev){ toastShow('No sheet to remove.'); return; }
+  if (!empty(last) || !empty(prev)){ toastShow('Last sheet has content. Clear it first.'); return; }
+
+  const curr = pageFlip?.getCurrentPageIndex?.() ?? 0;
+  last.remove(); prev.remove();
+
+  // re-init flipbook to reflect new page count
+  const newIndex = Math.max(0, Math.min(curr, document.querySelectorAll('#book .page').length - 1));
+  initFlip(newIndex);
+  toastShow('Removed last sheet ✓');
 }
 
 /* ========= HUD, drag/resize/rotate, text tools, colors, images ========= */
@@ -772,6 +816,11 @@ document.getElementById('stickersBtn').onclick=()=>{
 };
 stickersClose.onclick=()=>closeModal(stickerModal);
 
+/* Book buttons */
+document.getElementById('exitEditBtn').onclick = ()=> exitEdit();
+document.getElementById('closeBookBtn').onclick = ()=> closeBook();
+document.getElementById('removeSheetBtn').onclick = ()=> removeLastSheet();
+
 /* Delete/Clear/Save */
 document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){selectedItem.remove(); deselect();} };
 document.getElementById('clearPageBtn').onclick=()=>{ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
@@ -889,6 +938,11 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColo
   URL.revokeObjectURL(img.src);
   return { mime:outMime, base64:dataUrl.split(',')[1] };
 }
+
+/* wire buttons after definitions */
+document.getElementById('exitEditBtn').onclick = ()=> exitEdit();
+document.getElementById('closeBookBtn').onclick = ()=> closeBook();
+document.getElementById('removeSheetBtn').onclick = ()=> removeLastSheet();
 </script>
 </body>
 </html>
