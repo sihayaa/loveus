@@ -181,7 +181,7 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
     <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
-    <!-- A few inner placeholders; real pages come from storage + ensured blanks -->
+    <!-- A few inner placeholders; real pages come from storage -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -350,13 +350,12 @@ function setGlobalFont(which){
   const family = FONT_MAP[which] || FONT_MAP.lobster;
   document.documentElement.style.setProperty('--font', family);
   localStorage.setItem('scrap_font', which);
-  // clear any per-item overrides so everything inherits
   document.querySelectorAll('#book .scrap-text:not(.sticker)').forEach(t=>{ t.style.fontFamily=''; });
   const picker = document.getElementById('fontPicker'); if (picker) picker.value = which;
 }
 function initFontPicker(){
   const picker = document.getElementById('fontPicker');
-  const saved = localStorage.getItem('scrap_font') || 'lobster'; // default to Lobster
+  const saved = localStorage.getItem('scrap_font') || 'lobster';
   setGlobalFont(saved);
   if (picker){
     picker.value = saved;
@@ -392,9 +391,10 @@ function initFlip(startIndex=0){
   });
 }
 
-/* ========= Ensure N blank sheets at the end ========= */
+/* ========= Ensure N blank sheets at the end (disabled by default) ========= */
 function isPageEmpty(p){ return (p?.querySelectorAll('.scrap-item').length||0)===0; }
-function ensureTrailingBlankSheets(nSheets=2){ // reduced from 3 → 2
+function ensureTrailingBlankSheets(nSheets=0){
+  if(nSheets<=0) return; // disabled
   const all=[...document.querySelectorAll('#book .page')];
   const inner = all.slice(1); // after cover
   let trailing=0;
@@ -424,9 +424,7 @@ async function init(){
   const coverReady = new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
 
-  // apply default/saved font (Lobster by default)
   initFontPicker();
-
   await Promise.allSettled([coverReady, fontsReady]);
 
   // TRY to load saved content, but don't block the UI forever
@@ -437,7 +435,7 @@ async function init(){
     toastShow('⚠️ Couldn’t reach cloud. Showing local.');
   }
 
-  ensureTrailingBlankSheets(2); // fewer blanks at the back
+  ensureTrailingBlankSheets(0); // <-- no auto-pages added
   afterBootShow();
 }
 
@@ -511,7 +509,6 @@ function closeBook(){
     const total = pageFlip.getPageCount?.() ?? 1;
     const curr  = pageFlip.getCurrentPageIndex?.() ?? 0;
     const mid   = Math.floor(total/2);
-    // go to nearest cover: if we're in the first half, go to front (0) else to back (last)
     pageFlip.turnToPage(curr <= mid ? 0 : total - 1);
   }catch(_){}
 }
@@ -528,8 +525,6 @@ function removeLastSheet(){
 
   const curr = pageFlip?.getCurrentPageIndex?.() ?? 0;
   last.remove(); prev.remove();
-
-  // re-init flipbook to reflect new page count
   const newIndex = Math.max(0, Math.min(curr, document.querySelectorAll('#book .page').length - 1));
   initFlip(newIndex);
   toastShow('Removed last sheet ✓');
@@ -918,7 +913,6 @@ document.addEventListener('keydown', (e)=>{
 });
 
 /* Utils */
-function openModalLegacy(el){ openModal(el); } // (no-op alias if any old calls exist)
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1600); }
 document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
 
@@ -927,7 +921,7 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColo
   const inputMime=blob.type||'image/png';
   const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
   let w=img.width,h=img.height;
-  if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*(maxSide/w)); w=maxSide; } else { w=Math.round(h*(maxSide/h)); h=maxSide; } }
+  if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*(maxSide/w)); w=maxSide; } else { w=Math.round(w*(maxSide/h)); h=maxSide; } }
   const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
   const ctx=canvas.getContext('2d');
   const wantsAlpha=/png|webp|gif/i.test(inputMime);
@@ -938,11 +932,6 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColo
   URL.revokeObjectURL(img.src);
   return { mime:outMime, base64:dataUrl.split(',')[1] };
 }
-
-/* wire buttons after definitions */
-document.getElementById('exitEditBtn').onclick = ()=> exitEdit();
-document.getElementById('closeBookBtn').onclick = ()=> closeBook();
-document.getElementById('removeSheetBtn').onclick = ()=> removeLastSheet();
 </script>
 </body>
 </html>
