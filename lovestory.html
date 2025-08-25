@@ -128,11 +128,9 @@ body.editing .scrap-item .mover{ display:block; }
 
 <div id="stage">
   <div id="book">
+    <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
+    <!-- (no fixed placeholders; inner pages will match your saved state exactly) -->
   </div>
 
   <!-- Right toolbar -->
@@ -274,26 +272,25 @@ const missBadge = document.getElementById('missBadge');
 
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
-let ALL_IMAGE_ROWS = null; // filled lazily for relinker
+let ALL_IMAGE_ROWS = null; // for relinker
 
-/* ========= Utils ========= */
-function isPageEmpty(p){ return (p?.querySelectorAll('.scrap-item').length||0)===0; }
-function ensureTrailingBlankSheets(nSheets=2){
-  const all=[...document.querySelectorAll('#book .page')];
-  const inner = all.slice(1);
-  let trailing=0;
-  for(let i=inner.length-1; i>=0; i--){
-    if(isPageEmpty(inner[i])) trailing++; else break;
-  }
-  const needPages = Math.max(0, nSheets*2 - trailing);
-  for(let k=0;k<needPages;k++){
-    const p=document.createElement('div'); p.className='page';
-    p.innerHTML='<div class="page-canvas"></div>';
-    bookEl.appendChild(p);
-  }
-}
-function afterBootShow(){ bookEl.style.visibility='visible'; }
+/* ========= Helpers ========= */
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000); }
+function afterBootShow(){ bookEl.style.visibility='visible'; }
+
+/* Page DOM: keep number of inner pages (non-cover) exactly equal to your state */
+function reconcilePageNodes(targetCount){
+  const pages=[...document.querySelectorAll('#book .page')];
+  const inner=pages.slice(1);
+  // add if needed
+  for(let i=inner.length;i<Math.max(1,targetCount);i++){
+    const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
+  }
+  // remove extras
+  const all=[...document.querySelectorAll('#book .page')];
+  const innerAfter=all.slice(1);
+  for(let i=innerAfter.length-1; i>=Math.max(1,targetCount); i--){ innerAfter[i].remove(); }
+}
 
 /* ========= Flip init ========= */
 function initFlip(startIndex=0){
@@ -363,14 +360,13 @@ async function fetchAllImageRows(){
 /* ========= Init / Cloud load ========= */
 init().catch(err=>console.error(err));
 async function init(){
-  // cover preload
   await new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
 
   bootMsg.textContent = 'Loading pages…';
   retryBtn.style.display='none';
 
   try{
-    // 1) Load state row
+    // load state
     const stateUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?select=pages&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
     const stateRes = await fetch(stateUrl, { headers: sbHeaders });
     if(!stateRes.ok) throw new Error('state load '+stateRes.status);
@@ -378,14 +374,10 @@ async function init(){
     const state = stateArr && stateArr[0];
     const pages = state?.pages || [];
 
-    // 2) Ensure enough page nodes
-    const have=document.querySelectorAll('#book .page').length-1;
-    const need=pages.length;
-    for(let i=have;i<need;i++){
-      const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
-    }
+    // make inner page nodes match state length exactly (at least 1 page so PageFlip works)
+    reconcilePageNodes(pages.length);
 
-    // 3) Collect IDs (UUIDs + resolve legacy numeric)
+    // collect image ids
     const uuidIds=[], legacyNumeric=[], badIds=[];
     pages.forEach(pg=>pg.items?.forEach(it=>{
       if(it.type==='image'){
@@ -404,19 +396,17 @@ async function init(){
     }
     if(badIds.length){ console.warn('Skipping invalid imageId(s):', badIds); }
 
-    // 3b) fetch in chunks
+    // fetch images (UUIDs only)
     const urlMap={};
-    let fetchedRows = [];
     for(let i=0;i<uuidIds.length;i+=IMG_CHUNK){
       const rows = await fetchImageRowsUUID(uuidIds.slice(i,i+IMG_CHUNK));
-      fetchedRows = fetchedRows.concat(rows);
       rows.forEach(r=>{ urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`; });
-      bootMsg.textContent = `Loading photos ${Math.min(i+1,uuidIds.length)}–${Math.min(i+IMG_CHUNK,uuidIds.length)} of ${uuidIds.length}…`;
+      bootMsg.textContent = `Loading photos ${Math.min(i+IMG_CHUNK,uuidIds.length)} of ${uuidIds.length}…`;
     }
 
-    // 4) Render
+    // render (skip cover canvas when mapping pages)
     let missingCount=0;
-    const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+    const canvases=[...document.querySelectorAll('#book .page .page-canvas')].slice(1);
     for(let j=0;j<Math.min(pages.length,canvases.length);j++){
       const c=canvases[j]; c.innerHTML='';
       const items=pages[j].items||[];
@@ -433,7 +423,6 @@ async function init(){
           const url = imgId ? urlMap[imgId] : null;
 
           if(!imgId || !url){
-            // keep layout, allow relink
             missingCount++;
             box.dataset.missing='1';
             box.innerHTML = `<div class="scrap-missing" style="width:100%;height:100%;text-align:center;padding:8px;border-radius:8px;">
@@ -459,7 +448,6 @@ async function init(){
       }
     }
 
-    ensureTrailingBlankSheets(2);
     afterBootShow();
     initFlip(0);
 
@@ -497,7 +485,6 @@ async function openRelinker(targetBox){
 
   try{
     const rows = await fetchAllImageRows();
-    // render thumbnails
     relinkUI.grid.innerHTML = '';
     rows.forEach(r=>{
       const cell = document.createElement('div');
@@ -896,12 +883,12 @@ async function saveToCloud(){
     });
     if(!insRes.ok) throw new Error('image insert '+insRes.status);
     const row = (await insRes.json())[0];
-    img.dataset.imgid=String(row.id); // keep UUID string
+    img.dataset.imgid=String(row.id);
     delete img._preb64;
   }
 
-  // 2) Gather pages back from DOM
-  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+  // 2) Gather pages back from DOM (skip cover canvas)
+  const canvases=[...document.querySelectorAll('#book .page .page-canvas')].slice(1);
   const pages=[];
   canvases.forEach(c=>{
     const items=[];
@@ -924,6 +911,11 @@ async function saveToCloud(){
     pages.push({items});
   });
 
+  // 2b) drop trailing empty pages before writing
+  while (pages.length && ((pages[pages.length-1].items||[]).length===0)) {
+    pages.pop();
+  }
+
   // 3) Upsert state
   const upUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}`;
   const upRes = await fetch(upUrl,{
@@ -932,6 +924,10 @@ async function saveToCloud(){
     body: JSON.stringify({ id: STATE_ID, pages })
   });
   if(!upRes.ok) throw new Error('state upsert '+upRes.status);
+
+  // 4) ensure DOM matches cleaned state count
+  reconcilePageNodes(pages.length);
+  initFlip(pageFlip?.getCurrentPageIndex?.() ?? 0);
   toastShow('Saved ✓'); exitEdit();
 }
 
