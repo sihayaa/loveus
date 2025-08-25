@@ -37,7 +37,7 @@ body{
 
 /* Pages */
 .page{ width:100%; height:100%; position:relative; overflow:hidden; background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22); }
-.page-canvas{ position:relative; width:100%; height:100%; padding:28px; color:var(--ink); font-size:22px; line-height:1.35;
+.page-canvas{ position:relative; z-index:2; width:100%; height:100%; padding:28px; color:var(--ink); font-size:22px; line-height:1.35;
   content-visibility:auto; contain-intrinsic-size:650px 500px; }
 
 /* COVER */
@@ -51,13 +51,8 @@ body{
 .resizer{ display:none; }
 .rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%;
   background:#fff; border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; pointer-events:auto; }
-.mover{ display:none; position:absolute; left:-10px; top:-10px; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
+.mover{ display:none; position:absolute; left:-10px; top:-10px; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid {--accent};
   box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; }
-body.editing .scrap-item{ cursor:move; }
-body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px;
-  background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
-body.editing .scrap-item .rotator{ display:block; }
-body.editing .scrap-item .mover{ display:block; }
 
 /* Images & text */
 .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
@@ -77,8 +72,14 @@ body.editing .scrap-item .mover{ display:block; }
 #fileInput{ display:none; }
 #toolbar input[type="color"]{ width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff; }
 
-/* allow events while editing */
+/* pointer gating: off by default so PageFlip can capture; on in edit mode */
+.page .page-canvas, .scrap-item { pointer-events:none; }
 body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto; }
+body.editing .scrap-item{ cursor:move; }
+body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px;
+  background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
+body.editing .scrap-item .rotator{ display:block; }
+body.editing .scrap-item .mover{ display:block; }
 
 #toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
@@ -91,7 +92,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 #itemHud button.mint{ background:var(--mint); color:#022d2c; }
 #itemHud input[type="number"]{ width:70px; padding:6px 8px; border-radius:8px; border:2px solid #2b3258; background:#0f1430; color:#fff; font-weight:700; font-size:12px; }
 
-/* --- Big Text Editor Modal --- */
+/* Big Text Editor Modal */
 #textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
 #textEditor.open{display:flex}
 #textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
@@ -294,10 +295,23 @@ function initFlip(startIndex=0){
 const isUUID = s => typeof s === 'string' &&
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 
+/* resolve legacy numeric ids → real UUIDs (by scanning ids only) */
+async function resolveLegacyNumericToUUID(legacyList){
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id`, { headers: sbHeaders });
+  if(!res.ok) throw new Error('id scan ' + res.status);
+  const rows = await res.json();
+  const all = rows.map(r => String(r.id));
+  const map = {};
+  legacyList.map(String).forEach(num => {
+    const hit = all.find(uid => uid.startsWith(num + '-'));
+    if (hit) map[num] = hit;
+  });
+  return map;
+}
+
 /* robust UUID fetch with auto-bisect on 400 */
 async function fetchImageRowsUUID(list){
   if (list.length === 0) return [];
-  // quote UUIDs and URL-encode the whole clause
   const quoted = list.map(v => `"${v}"`).join(',');
   const url = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=in.(${quoted})`;
   const res = await fetch(url, { headers: sbHeaders });
@@ -334,7 +348,7 @@ async function init(){
       const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
     }
 
-    // 3) Collect IDs (UUIDs only); note legacy numeric IDs are skipped
+    // 3) Collect IDs (UUIDs + resolve legacy numeric)
     const uuidIds=[], legacyNumeric=[], badIds=[];
     pages.forEach(pg=>pg.items?.forEach(it=>{
       if(it.type==='image'){
@@ -343,8 +357,15 @@ async function init(){
         else if (it.imageId!=null) badIds.push(it.imageId);
       }
     }));
-    if(legacyNumeric.length){ console.warn('Legacy numeric imageId(s) in state:', legacyNumeric); }
-    if(badIds.length){ console.warn('Skipping invalid imageId(s) in state:', badIds); }
+
+    let legacyMap = {};
+    if (legacyNumeric.length){
+      try{
+        legacyMap = await resolveLegacyNumericToUUID(legacyNumeric);
+        uuidIds.push(...Object.values(legacyMap));
+      }catch(e){ console.warn('Legacy id resolution failed:', e); }
+    }
+    if(badIds.length){ console.warn('Skipping invalid imageId(s):', badIds); }
 
     // 3b) fetch in chunks
     const urlMap={};
@@ -369,11 +390,12 @@ async function init(){
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
 
         if(it.type==='image'){
-          if(!isUUID(it.imageId)) { missingCount++; continue; }
-          const url=urlMap[it.imageId];
+          let imgId = isUUID(it.imageId) ? it.imageId : (legacyMap[String(it.imageId)] || null);
+          if(!imgId){ missingCount++; continue; }
+          const url=urlMap[imgId];
           if(!url){ missingCount++; continue; }
           box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
-          box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="" decoding="async">
+          box.innerHTML=`<img class="scrap-img" data-imgid="${imgId}" src="${url}" alt="" decoding="async">
                          <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
           const imgEl=box.querySelector('.scrap-img');
           const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
@@ -391,8 +413,8 @@ async function init(){
     afterBootShow();
     initFlip(0);
 
-    if(missingCount){ toastShow(`${missingCount} photo${missingCount>1?'s':''} couldn’t load (legacy refs skipped)`); }
-    if(legacyNumeric.length){ toastShow(`Legacy images detected — press Save to clean`); }
+    if(missingCount){ toastShow(`${missingCount} photo${missingCount>1?'s':''} couldn’t load (old refs)`); }
+    if(Object.keys(legacyMap).length){ toastShow(`Legacy images restored — press Save to clean`); }
 
     boot.classList.add('hide'); setTimeout(()=>{ try{boot.remove();}catch(_){} },400);
   }catch(err){
@@ -447,6 +469,7 @@ function enterEdit(){
   setEditing(true);
   lastPageIndex = pageFlip?.getCurrentPageIndex?.() ?? 0;
   try{ pageFlip?.update?.({ useMouseEvents:false, swipeDistance:10000 }); }catch(_){}
+  // make all existing items draggable
   document.querySelectorAll('#book .scrap-item').forEach(el=>{
     if(!el.dataset._hooked){ makeDraggable(el); el.dataset._hooked='1'; }
   });
@@ -587,6 +610,31 @@ function makeDraggable(el){
     startDrag(e);
   });
 
+  function startDrag(e){
+    dragging=true; dragPointerId=e.pointerId ?? 'mouse';
+    try{ if(e.pointerId!=null && el.setPointerCapture) el.setPointerCapture(e.pointerId);}catch(_){}
+    startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
+    window.addEventListener('pointermove',onPointerMove);
+    window.addEventListener('pointerup',onPointerUp);
+    window.addEventListener('pointercancel',onPointerUp);
+    el.addEventListener('lostpointercapture',onPointerUp);
+  }
+  function onPointerMove(e){
+    if(!dragging) return;
+    const dx=e.clientX-startX, dy=e.clientY-startY;
+    el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
+    positionHud();
+  }
+  function onPointerUp(){
+    if(!dragging) return;
+    try{ if(dragPointerId!=null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId);}catch(_){}
+    dragging=false; dragPointerId=null;
+    window.removeEventListener('pointermove',onPointerMove);
+    window.removeEventListener('pointerup',onPointerUp);
+    window.removeEventListener('pointercancel',onPointerUp);
+    el.removeEventListener('lostpointercapture',onPointerUp);
+  }
+
   const tnode=el.querySelector('.scrap-text'); if(tnode) enableAutoGrow(el,tnode);
 }
 function enableAutoGrow(box,textEl){
@@ -654,7 +702,7 @@ editor.save.onclick = () => {
   closeTextEditor();
 };
 
-/* Image controls + toolbar small inputs */
+/* Image controls + small inputs */
 function updateImageButtons(){
   const onImg=!!selectedItem?.querySelector('.scrap-img');
   fitBtn.disabled=!onImg; lockBtn.disabled=!onImg;
@@ -764,7 +812,7 @@ async function saveToCloud(){
       if(img){
         items.push({
           type:'image',style,rot,
-          imageId:(img.dataset.imgid??null), // <-- store string UUID, not number
+          imageId:(img.dataset.imgid??null),
           fit:el.dataset.fit||'contain',
           lock:el.dataset.lock==='1'
         });
