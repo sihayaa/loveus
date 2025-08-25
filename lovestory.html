@@ -326,7 +326,7 @@ function ensureTrailingBlankSheets(nSheets=2){
   }
 }
 function afterBootShow(){ bookEl.style.visibility='visible'; }
-function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1600); }
+function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1800); }
 
 /* ========= Flip init ========= */
 function initFlip(startIndex=0){
@@ -349,6 +349,26 @@ function initFlip(startIndex=0){
     const {left,right}=getVisibleCanvases();
     highlightCanvas((activeCanvas===left||activeCanvas===right)?activeCanvas:(right||left));
   });
+}
+
+/* ========= Robust image fetch helpers ========= */
+const isValidId = x => Number.isInteger(Number(x)) && Number(x) >= 0;
+
+async function fetchImageRowsSafe(idList){
+  if (idList.length === 0) return [];
+  // normal in() request (most compatible)
+  let url = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=in.(${idList.join(',')})`;
+  let res = await fetch(url, { headers: sbHeaders });
+  if (res.ok) return res.json();
+
+  // if a 400 occurs, bisect to isolate the bad id and still load others
+  if (res.status !== 400 || idList.length === 1) {
+    throw new Error('images load ' + res.status);
+  }
+  const mid = Math.floor(idList.length / 2);
+  const left  = await fetchImageRowsSafe(idList.slice(0, mid));
+  const right = await fetchImageRowsSafe(idList.slice(mid));
+  return left.concat(right);
 }
 
 /* ========= Init / Cloud load ========= */
@@ -376,32 +396,27 @@ async function init(){
       const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
     }
 
-    // 3) Collect image IDs, fetch in chunks, make URL map (robust against 400)
-    const ids=[]; pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId!=null) ids.push(it.imageId); }));
-    const uniq=[...new Set(ids)];
+    // 3) Collect image IDs safely, fetch in chunks, make URL map
+    const allIds=[], badIds=[];
+    pages.forEach(pg=>pg.items?.forEach(it=>{
+      if(it.type==='image'){
+        if(isValidId(it.imageId)) allIds.push(Number(it.imageId));
+        else if(it.imageId!==null && it.imageId!==undefined) badIds.push(it.imageId);
+      }
+    }));
+    if(badIds.length){ console.warn('Skipping invalid imageId(s) in saved state:', badIds); }
+
+    const uniq=[...new Set(allIds)];
     const urlMap={};
     for(let i=0;i<uniq.length;i+=IMG_CHUNK){
       const chunk = uniq.slice(i,i+IMG_CHUNK);
-
-      // Primary: encoded in() filter
-      const inFilter = encodeURIComponent(`in.(${chunk.join(',')})`);
-      let imgsUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=${inFilter}`;
-      let imgsRes = await fetch(imgsUrl, { headers: sbHeaders });
-
-      // Fallback: OR=() if a 400 occurs
-      if(!imgsRes.ok && imgsRes.status===400){
-        const orFilter = encodeURIComponent(chunk.map(id=>`id.eq.${id}`).join(','));
-        const fbUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&or=(${orFilter})`;
-        imgsRes = await fetch(fbUrl, { headers: sbHeaders });
-      }
-
-      if(!imgsRes.ok) throw new Error('images load '+imgsRes.status);
-      const rows = await imgsRes.json();
+      const rows = await fetchImageRowsSafe(chunk); // auto-splits on 400
       rows.forEach(r=>{ urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`; });
       bootMsg.textContent = `Loading photos ${Math.min(i+1,uniq.length)}–${Math.min(i+IMG_CHUNK,uniq.length)} of ${uniq.length}…`;
     }
 
-    // 4) Render pages
+    // 4) Render pages (skip missing/bad image refs instead of crashing)
+    let missingCount=0;
     const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
     for(let j=0;j<Math.min(pages.length,canvases.length);j++){
       const c=canvases[j]; c.innerHTML='';
@@ -413,8 +428,12 @@ async function init(){
         if(it.style?.width) box.style.width=it.style.width;
         if(it.style?.height)box.style.height=it.style.height;
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
-        if(it.type==='image'&&it.imageId!=null){
-          const url=urlMap[it.imageId]||''; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
+
+        if(it.type==='image'){
+          if(!isValidId(it.imageId)){ missingCount++; continue; }
+          const url=urlMap[it.imageId];
+          if(!url){ missingCount++; continue; }
+          box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="" decoding="async">
                          <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
           const imgEl=box.querySelector('.scrap-img');
@@ -432,6 +451,9 @@ async function init(){
     ensureTrailingBlankSheets(2);
     afterBootShow();
     initFlip(0);
+
+    if(missingCount){ toastShow(`${missingCount} photo${missingCount>1?'s':''} couldn’t load (skipped)`); }
+    if(badIds.length){ toastShow(`Skipped ${badIds.length} invalid image ref${badIds.length>1?'s':''}`); }
 
     boot.classList.add('hide'); setTimeout(()=>{ try{boot.remove();}catch(_){} },400);
   }catch(err){
