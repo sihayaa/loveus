@@ -5,7 +5,11 @@
 <title>Our Scrapbook Story</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
+
+<!-- Lobster only (safe fallback to cursive if fonts are blocked) -->
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+
+<!-- Preload cover -->
 <link rel="preload" as="image" href="./lovestory_cover.png?v=8" fetchpriority="high">
 
 <style>
@@ -25,96 +29,117 @@ body{
 }
 
 /* Boot / status */
-#boot{ position:fixed; inset:0; display:grid; place-items:center; background:#0b0f2f; color:#67e4ca; z-index:9999;
-  font:600 18px/1.2 system-ui, Segoe UI, sans-serif; letter-spacing:.4px; transition:opacity .35s ease; }
-#boot .card{ text-align:center; padding:18px 22px; border:2px solid #67e4ca55; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.35); max-width:520px; }
+#boot{
+  position:fixed; inset:0; display:grid; place-items:center;
+  background:#0b0f2f; color:#67e4ca; z-index:9999;
+  font:600 18px/1.2 system-ui, Segoe UI, sans-serif; letter-spacing:.4px;
+  transition:opacity .35s ease;
+}
+#boot .card{
+  text-align:center; padding:18px 22px; border:2px solid #67e4ca55; border-radius:12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.35); max-width:520px;
+}
 #boot.hide{ opacity:0; pointer-events:none; }
-#retryBtn{ margin-top:10px; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:800; color:#022d2c; background:var(--mint); display:none; }
+#retryBtn{
+  margin-top:10px; border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
+  font-weight:800; color:#022d2c; background:var(--mint); display:none;
+}
 
 /* Stage & Book */
 #stage{ width:1000px; height:650px; position:relative; }
 #book { position:absolute; inset:0; visibility:hidden; will-change:transform; }
 
 /* Pages */
-.page{ width:100%; height:100%; position:relative; overflow:hidden; background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22); }
-.page-canvas{ position:relative; z-index:2; width:100%; height:100%; padding:28px; color:var(--ink); font-size:22px; line-height:1.35;
-  content-visibility:auto; contain-intrinsic-size:650px 500px; }
+.page{
+  width:100%; height:100%; position:relative; overflow:hidden;
+  background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22);
+}
+.page-canvas{
+  position:relative; width:100%; height:100%; padding:28px;
+  color:var(--ink); font-size:22px; line-height:1.35;
+  content-visibility:auto; contain-intrinsic-size:650px 500px;
+}
 
 /* COVER */
 .page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
-.page.cover .page-canvas{ padding:0; background:#0c102c; background-image:var(--cover-img);
-  background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat; }
+.page.cover .page-canvas{
+  padding:0; background:#0c102c;
+  background-image:var(--cover-img);
+  background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat;
+}
 
 /* Scrap items */
 .scrap-item{ position:absolute; transform-origin:center; touch-action:none; overflow:visible; }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
-.rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%;
-  background:#fff; border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; pointer-events:auto; }
-.mover{ display:none; position:absolute; left:-10px; top:-10px; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; }
+.rotator{
+  display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%);
+  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
+  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; pointer-events:auto;
+}
+.mover{
+  display:none; position:absolute; left:-10px; top:-10px;
+  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
+  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
+}
+body.editing .scrap-item{ cursor:move; }
+body.editing .scrap-item .resizer{
+  display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px;
+  border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize;
+}
+body.editing .scrap-item .rotator{ display:block; }
+body.editing .scrap-item .mover{ display:block; }
 
 /* Images & text */
 .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
-.scrap-text{ display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em; }
+.scrap-text{
+  display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
+  white-space:pre-wrap; overflow:visible; min-height:1.2em;
+}
 
 /* Toolbar */
-#toolbar{ position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
-  width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column; align-items:stretch; }
+#toolbar{
+  position:fixed; right:16px; top:50%; transform:translateY(-50%);
+  z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
+  width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25);
+  display:none; flex-direction:column; align-items:stretch;
+}
 #toolbar.open{ display:flex; }
 #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
-#toolbar button{ border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent); width:100%; }
+#toolbar button{
+  border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
+  font-weight:700; color:#fff; background:var(--accent); width:100%;
+}
 #toolbar button.secondary{ background:#5d47d4; }
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
-#toolbar input[type="number"]{ width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff; }
+#toolbar input[type="number"]{
+  width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff;
+}
 #fileInput{ display:none; }
-#toolbar input[type="color"]{ width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff; }
+#toolbar input[type="color"]{
+  width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff;
+}
 
-/* pointer gating: off by default; on in edit mode */
-.page .page-canvas, .scrap-item { pointer-events:none; }
+/* allow events while editing */
 body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto; }
-body.editing .scrap-item{ cursor:move; }
-body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px;
-  background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
-body.editing .scrap-item .rotator{ display:block; }
-body.editing .scrap-item .mover{ display:block; }
 
 #toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 
 /* HUD */
-#itemHud{ position:absolute; z-index:120; display:none; background:#151a30; color:#fff; border:2px solid #fff2; border-radius:10px; padding:6px; gap:6px;
-  box-shadow:0 12px 24px rgba(0,0,0,.35); align-items:center; flex-wrap:wrap; }
+#itemHud{
+  position:absolute; z-index:120; display:none; background:#151a30; color:#fff;
+  border:2px solid #fff2; border-radius:10px; padding:6px; gap:6px; box-shadow:0 12px 24px rgba(0,0,0,.35);
+  align-items:center; flex-wrap:wrap;
+}
 #itemHud button{ border:0; padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:700; font-size:12px; color:#fff; background:#5d47d4; }
 #itemHud button.warn{ background:#ff9aa2; color:#4c0a17; }
 #itemHud button.mint{ background:var(--mint); color:#022d2c; }
-#itemHud input[type="number"]{ width:70px; padding:6px 8px; border-radius:8px; border:2px solid #2b3258; background:#0f1430; color:#fff; font-weight:700; font-size:12px; }
-
-/* Big Text Editor Modal */
-#textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
-#textEditor.open{display:flex}
-#textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
-#textEditor textarea{width:100%;height:320px;font:28px/1.35 var(--font);color:var(--ink);padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical}
-#textEditor .row{display:flex;gap:12px;margin-top:10px}
-#textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
-#textEditor input[type="color"]{width:80px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
-#textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
-#textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
-#editorCancel{background:#ff9aa2;color:#4c0a17}
-#editorSave{background:var(--mint);color:#022d2c}
-
-/* Relinker modal */
-#relinker{position:fixed;inset:0;background:rgba(0,0,0,.65);display:none;z-index:10001;align-items:center;justify-content:center}
-#relinker.open{display:flex}
-#relinker .panel{width:min(960px,95vw);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:16px 16px 12px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.6)}
-#relinker h3{margin:0 0 10px;color:#0d2a6b}
-#relinkGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
-#relinkGrid .cell{border:2px solid #e8dcc6;border-radius:10px;padding:6px;cursor:pointer;display:flex;align-items:center;justify-content:center}
-#relinkGrid img{max-width:100%;max-height:100px;display:block}
-.miss-badge{position:absolute;left:6px;top:6px;background:#ff9aa2;color:#4c0a17;padding:3px 6px;border-radius:8px;font:700 12px/1 system-ui}
-.scrap-missing{display:flex;align-items:center;justify-content:center;background:#fff9f9;border:2px dashed #ff9aa2;color:#4c0a17;font-weight:800}
+#itemHud input[type="number"]{
+  width:70px; padding:6px 8px; border-radius:8px; border:2px solid #2b3258; background:#0f1430; color:#fff; font-weight:700; font-size:12px;
+}
 </style>
 </head>
 <body>
@@ -130,7 +155,12 @@ body.editing .scrap-item .mover{ display:block; }
   <div id="book">
     <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
-    <!-- (no fixed placeholders; inner pages will match your saved state exactly) -->
+
+    <!-- A few placeholders; real pages come from cloud -->
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
+    <div class="page"><div class="page-canvas"></div></div>
   </div>
 
   <!-- Right toolbar -->
@@ -139,11 +169,13 @@ body.editing .scrap-item .mover{ display:block; }
       <button id="targetLeft" class="secondary">Edit Left</button>
       <button id="targetRight" class="secondary">Edit Right</button>
     </div>
+
     <div class="group">
       <button id="exitEditBtn" class="secondary">Done Editing</button>
       <button id="closeBookBtn" class="secondary">Close Book</button>
       <button id="removeSheetBtn" class="warn">Remove Last Sheet</button>
     </div>
+
     <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
@@ -170,12 +202,10 @@ body.editing .scrap-item .mover{ display:block; }
 
   <!-- HUD -->
   <div id="itemHud" aria-hidden="true">
-    <span class="miss-badge" id="missBadge" style="display:none;">relink me</span>
     <button id="hudEdit"  class="mint only-text">Edit</button>
     <input  id="hudFont"  class="only-text" type="number" min="8" max="200" step="1" placeholder="size">
     <button id="hudFit"   class="only-img">Fit: Contain</button>
     <button id="hudLock"  class="only-img">Lock: On</button>
-    <button id="hudRelink" class="only-img">Relink</button>
     <button id="hudRotL" title="Rotate left 5°">↺ 5°</button>
     <input  id="hudRot"  type="number" step="1" style="width:70px" placeholder="deg">
     <button id="hudRotR" title="Rotate right 5°">↻ 5°</button>
@@ -185,46 +215,14 @@ body.editing .scrap-item .mover{ display:block; }
     <button id="hudDelete" class="warn">Delete</button>
   </div>
 
-  <!-- Big Text Editor -->
-  <div id="textEditor" aria-hidden="true">
-    <div class="panel">
-      <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
-      <textarea id="editorInput" placeholder="type here…"></textarea>
-      <div class="row">
-        <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
-          Size (px)
-          <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
-        </label>
-        <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
-          Color
-          <input id="editorColor" type="color" value="#0d2a6b">
-        </label>
-      </div>
-      <div class="actions">
-        <button id="editorCancel">Cancel</button>
-        <button id="editorSave">Save</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Relinker -->
-  <div id="relinker" aria-hidden="true">
-    <div class="panel">
-      <h3>Relink photo</h3>
-      <div id="relinkGrid"></div>
-      <div class="actions" style="display:flex;justify-content:flex-end;margin-top:10px;gap:8px">
-        <button id="relinkCancel" style="background:#ff9aa2;color:#4c0a17;border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer">Cancel</button>
-      </div>
-    </div>
-  </div>
-
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
+<!-- Local PageFlip (no CDN) -->
 <script src="./flipbook/page-flip.browser.js"></script>
 
 <script>
-/* ========= Supabase (REST) ========= */
+/* ========= Supabase (REST, no CDN lib) ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const TABLE_IMAGES="scrapbook_images";
@@ -237,7 +235,6 @@ const sbHeaders = {
   "apikey": SUPABASE_ANON,
   "Authorization": "Bearer " + SUPABASE_ANON,
   "Content-Type": "application/json",
-  "Accept": "application/json"
 };
 
 /* ========= Refs ========= */
@@ -260,7 +257,6 @@ const hudEdit   = document.getElementById('hudEdit');
 const hudFont   = document.getElementById('hudFont');
 const hudFit    = document.getElementById('hudFit');
 const hudLock   = document.getElementById('hudLock');
-const hudRelink = document.getElementById('hudRelink');
 const hudDup    = document.getElementById('hudDup');
 const hudFront  = document.getElementById('hudFront');
 const hudBack   = document.getElementById('hudBack');
@@ -268,34 +264,35 @@ const hudDelete = document.getElementById('hudDelete');
 const hudRot    = document.getElementById('hudRot');
 const hudRotL   = document.getElementById('hudRotL');
 const hudRotR   = document.getElementById('hudRotR');
-const missBadge = document.getElementById('missBadge');
 
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
-let ALL_IMAGE_ROWS = null; // for relinker
 
 /* ========= Helpers ========= */
-function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000); }
-function afterBootShow(){ bookEl.style.visibility='visible'; }
-
-/* Page DOM: keep number of inner pages (non-cover) exactly equal to your state */
-function reconcilePageNodes(targetCount){
-  const pages=[...document.querySelectorAll('#book .page')];
-  const inner=pages.slice(1);
-  // add if needed
-  for(let i=inner.length;i<Math.max(1,targetCount);i++){
-    const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
-  }
-  // remove extras
+const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+function isPageEmpty(p){ return (p?.querySelectorAll('.scrap-item').length||0)===0; }
+function ensureTrailingBlankSheets(nSheets=2){
   const all=[...document.querySelectorAll('#book .page')];
-  const innerAfter=all.slice(1);
-  for(let i=innerAfter.length-1; i>=Math.max(1,targetCount); i--){ innerAfter[i].remove(); }
+  const inner = all.slice(1);
+  let trailing=0;
+  for(let i=inner.length-1; i>=0; i--){
+    if(isPageEmpty(inner[i])) trailing++; else break;
+  }
+  const needPages = Math.max(0, nSheets*2 - trailing);
+  for(let k=0;k<needPages;k++){
+    const p=document.createElement('div'); p.className='page';
+    p.innerHTML='<div class="page-canvas"></div>';
+    bookEl.appendChild(p);
+  }
 }
+function afterBootShow(){ bookEl.style.visibility='visible'; }
+function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1600); }
 
 /* ========= Flip init ========= */
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy?.(); }catch(_){}
   if(!window.St || !St.PageFlip){ alert("PageFlip library missing."); afterBootShow(); return; }
+  // ensure at least 2 pages
   const pgCount = document.querySelectorAll('#book .page').length;
   if (pgCount < 2) {
     const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>';
@@ -314,59 +311,17 @@ function initFlip(startIndex=0){
   });
 }
 
-/* ========= ID helpers ========= */
-const isUUID = s => typeof s === 'string' &&
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
-
-/* resolve legacy numeric ids → real UUIDs (by scanning ids only) */
-async function resolveLegacyNumericToUUID(legacyList){
-  if (!legacyList.length) return {};
-  const res = await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id`, { headers: sbHeaders });
-  if(!res.ok) throw new Error('id scan ' + res.status);
-  const rows = await res.json();
-  const all = rows.map(r => String(r.id));
-  const map = {};
-  legacyList.map(String).forEach(num => {
-    const hit = all.find(uid => uid.startsWith(num + '-'));
-    if (hit) map[num] = hit;
-  });
-  return map;
-}
-
-/* robust UUID fetch with auto-bisect on 400 */
-async function fetchImageRowsUUID(list){
-  if (list.length === 0) return [];
-  const quoted = list.map(v => `"${v}"`).join(',');
-  const url = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=in.(${quoted})`;
-  const res = await fetch(url, { headers: sbHeaders });
-  if (res.ok) return res.json();
-  if (res.status !== 400 || list.length === 1) throw new Error('images load ' + res.status);
-  const mid = Math.floor(list.length/2);
-  const left  = await fetchImageRowsUUID(list.slice(0, mid));
-  const right = await fetchImageRowsUUID(list.slice(mid));
-  return left.concat(right);
-}
-
-/* fetch all rows (for relinker grid) */
-async function fetchAllImageRows(){
-  if (ALL_IMAGE_ROWS) return ALL_IMAGE_ROWS;
-  const url = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64`;
-  const res = await fetch(url, { headers: sbHeaders });
-  if(!res.ok) throw new Error('fetch all images '+res.status);
-  ALL_IMAGE_ROWS = await res.json();
-  return ALL_IMAGE_ROWS;
-}
-
 /* ========= Init / Cloud load ========= */
 init().catch(err=>console.error(err));
 async function init(){
-  await new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
+  const coverReady = new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
+  await Promise.allSettled([coverReady]);
 
   bootMsg.textContent = 'Loading pages…';
   retryBtn.style.display='none';
 
   try{
-    // load state
+    // 1) Load state row
     const stateUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?select=pages&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
     const stateRes = await fetch(stateUrl, { headers: sbHeaders });
     if(!stateRes.ok) throw new Error('state load '+stateRes.status);
@@ -374,39 +329,30 @@ async function init(){
     const state = stateArr && stateArr[0];
     const pages = state?.pages || [];
 
-    // make inner page nodes match state length exactly (at least 1 page so PageFlip works)
-    reconcilePageNodes(pages.length);
-
-    // collect image ids
-    const uuidIds=[], legacyNumeric=[], badIds=[];
-    pages.forEach(pg=>pg.items?.forEach(it=>{
-      if(it.type==='image'){
-        if(isUUID(it.imageId)) uuidIds.push(it.imageId);
-        else if (typeof it.imageId==='number' || /^[0-9]+$/.test(String(it.imageId||''))) legacyNumeric.push(it.imageId);
-        else if (it.imageId!=null) badIds.push(it.imageId);
-      }
-    }));
-
-    let legacyMap = {};
-    if (legacyNumeric.length){
-      try{
-        legacyMap = await resolveLegacyNumericToUUID(legacyNumeric);
-        uuidIds.push(...Object.values(legacyMap));
-      }catch(e){ console.warn('Legacy id resolution failed:', e); }
+    // 2) Ensure enough page nodes
+    const have=document.querySelectorAll('#book .page').length-1;
+    const need=pages.length;
+    for(let i=have;i<need;i++){
+      const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
     }
-    if(badIds.length){ console.warn('Skipping invalid imageId(s):', badIds); }
 
-    // fetch images (UUIDs only)
+    // 3) Collect image IDs, fetch in chunks, make URL map
+    const ids=[]; pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId!=null) ids.push(it.imageId); }));
+    const uniq=[...new Set(ids)];
     const urlMap={};
-    for(let i=0;i<uuidIds.length;i+=IMG_CHUNK){
-      const rows = await fetchImageRowsUUID(uuidIds.slice(i,i+IMG_CHUNK));
+    for(let i=0;i<uniq.length;i+=IMG_CHUNK){
+      const chunk = uniq.slice(i,i+IMG_CHUNK);
+      const list  = chunk.join(',');
+      const imgsUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=in.(${list})`;
+      const imgsRes = await fetch(imgsUrl, { headers: sbHeaders });
+      if(!imgsRes.ok) throw new Error('images load '+imgsRes.status);
+      const rows = await imgsRes.json();
       rows.forEach(r=>{ urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`; });
-      bootMsg.textContent = `Loading photos ${Math.min(i+IMG_CHUNK,uuidIds.length)} of ${uuidIds.length}…`;
+      bootMsg.textContent = `Loading photos ${Math.min(i+1,uniq.length)}–${Math.min(i+IMG_CHUNK,uniq.length)} of ${uniq.length}…`;
     }
 
-    // render (skip cover canvas when mapping pages)
-    let missingCount=0;
-    const canvases=[...document.querySelectorAll('#book .page .page-canvas')].slice(1);
+    // 4) Render pages
+    const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
     for(let j=0;j<Math.min(pages.length,canvases.length);j++){
       const c=canvases[j]; c.innerHTML='';
       const items=pages[j].items||[];
@@ -417,28 +363,13 @@ async function init(){
         if(it.style?.width) box.style.width=it.style.width;
         if(it.style?.height)box.style.height=it.style.height;
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
-
-        if(it.type==='image'){
-          let imgId = isUUID(it.imageId) ? it.imageId : (legacyMap[String(it.imageId)] || null);
-          const url = imgId ? urlMap[imgId] : null;
-
-          if(!imgId || !url){
-            missingCount++;
-            box.dataset.missing='1';
-            box.innerHTML = `<div class="scrap-missing" style="width:100%;height:100%;text-align:center;padding:8px;border-radius:8px;">
-                                Missing photo — click to relink
-                             </div>
-                             <div class="mover" title="Drag"></div>
-                             <div class="resizer"></div><div class="rotator"></div>`;
-            box.addEventListener('click', () => { if (document.body.classList.contains('editing')) openRelinker(box); }, { once:false });
-          } else {
-            box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
-            box.innerHTML=`<img class="scrap-img" data-imgid="${imgId}" src="${url}" alt="" decoding="async">
-                           <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
-            const imgEl=box.querySelector('.scrap-img');
-            const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-            if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
-          }
+        if(it.type==='image'&&it.imageId!=null){
+          const url=urlMap[it.imageId]||''; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
+          box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="" decoding="async">
+                         <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
+          const imgEl=box.querySelector('.scrap-img');
+          const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+          if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
         }else if(it.type==='text'&&it.html){
           const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
           const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
@@ -448,11 +379,9 @@ async function init(){
       }
     }
 
+    ensureTrailingBlankSheets(2);
     afterBootShow();
     initFlip(0);
-
-    if(Object.keys(legacyMap).length){ toastShow(`Recovered some legacy photos — Save to clean`); }
-    if(missingCount){ toastShow(`${missingCount} item${missingCount>1?'s':''} need relinking (click placeholder)`); }
 
     boot.classList.add('hide'); setTimeout(()=>{ try{boot.remove();}catch(_){} },400);
   }catch(err){
@@ -466,55 +395,6 @@ async function init(){
       afterBootShow(); initFlip(0);
     }
   }
-}
-
-/* ========= Relinker ========= */
-const relinkUI = {
-  el: document.getElementById('relinker'),
-  grid: document.getElementById('relinkGrid'),
-  cancel: document.getElementById('relinkCancel'),
-  targetBox: null
-};
-relinkUI.cancel.onclick = ()=>{ relinkUI.el.classList.remove('open'); relinkUI.targetBox=null; };
-relinkUI.el.addEventListener('click', e=>{ if(e.target===relinkUI.el) relinkUI.cancel.onclick(); });
-
-async function openRelinker(targetBox){
-  relinkUI.targetBox = targetBox;
-  relinkUI.grid.innerHTML = '<div style="padding:10px;color:#0d2a6b;font-weight:700">Loading photos…</div>';
-  relinkUI.el.classList.add('open');
-
-  try{
-    const rows = await fetchAllImageRows();
-    relinkUI.grid.innerHTML = '';
-    rows.forEach(r=>{
-      const cell = document.createElement('div');
-      cell.className='cell';
-      const img = new Image();
-      img.src = `data:${r.content_type};base64,${r.data_base64}`;
-      img.alt = '';
-      cell.appendChild(img);
-      cell.onclick = ()=>{
-        assignImageToBox(targetBox, r);
-        relinkUI.cancel.onclick();
-      };
-      relinkUI.grid.appendChild(cell);
-    });
-  }catch(e){
-    relinkUI.grid.innerHTML = `<div style="padding:10px;color:#b00020;font-weight:800">Failed to load gallery: ${e}</div>`;
-  }
-}
-
-function assignImageToBox(box, row){
-  box.dataset.missing='0';
-  box.dataset.fit = box.dataset.fit || 'contain';
-  box.dataset.lock = box.dataset.lock || '1';
-  box.innerHTML = `<img class="scrap-img" data-imgid="${String(row.id)}" src="data:${row.content_type};base64,${row.data_base64}" alt="" decoding="async">
-                   <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
-  const imgEl=box.querySelector('.scrap-img');
-  const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-  if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
-  makeDraggable(box); box.dataset._hooked='1';
-  if (selectedItem===box) showItemHud(box);
 }
 
 /* ========= Target left/right ========= */
@@ -610,18 +490,18 @@ function setRotation(el,deg){
 }
 function showItemHud(el){
   if(!el){ hideItemHud(); return; }
-  const onImg  = !!el.querySelector('.scrap-img');
-  const isMissing = el.dataset.missing==='1';
-  const onText = !!el.querySelector('.scrap-text');
-
-  itemHud.querySelectorAll('.only-img').forEach(n=>n.style.display=(onImg||isMissing)?'':'none');
+  const onImg=!!el.querySelector('.scrap-img');
+  const onText=!!el.querySelector('.scrap-text');
+  itemHud.querySelectorAll('.only-img').forEach(n=>n.style.display=onImg?'':'none');
   itemHud.querySelectorAll('.only-text').forEach(n=>n.style.display=onText?'':'none');
-  missBadge.style.display = isMissing ? '' : 'none';
-
   if(onImg){
     const fit=el.dataset.fit||'contain', lock=el.dataset.lock==='1';
-    document.getElementById('hudFit').textContent='Fit: '+(fit==='cover'?'Fill':'Contain');
-    document.getElementById('hudLock').textContent='Lock: '+(lock?'On':'Off');
+    hudFit.textContent='Fit: '+(fit==='cover'?'Fill':'Contain');
+    hudLock.textContent='Lock: '+(lock?'On':'Off');
+  }
+  if(onText){
+    const t=el.querySelector('.scrap-text');
+    hudFont.value=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
   }
   hudRot.value=Math.round(getRotation(el));
   itemHud.style.display='flex'; requestAnimationFrame(positionHud);
@@ -735,73 +615,43 @@ document.addEventListener('click',e=>{
 });
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); hideItemHud(); }
 
-/* ========= Big Text Editor ========= */
-const editor = {
-  el: document.getElementById('textEditor'),
-  input: document.getElementById('editorInput'),
-  size: document.getElementById('editorSize'),
-  color: document.getElementById('editorColor'),
-  save: document.getElementById('editorSave'),
-  cancel: document.getElementById('editorCancel'),
-  targetBox: null
+/* Text add/edit (simple prompts) */
+document.getElementById('addTextBtn').onclick=()=>{
+  const val = prompt('Add text:','');
+  if(val==null) return;
+  const box=document.createElement('div');
+  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
+  box.innerHTML='<div class="scrap-text" contenteditable="false">'+String(val).replace(/</g,"&lt;")+'</div>'
+               +'<div class="mover" title="Drag"></div>'
+               +'<div class="resizer"></div><div class="rotator"></div>';
+  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
 };
-document.getElementById('addTextBtn').onclick = ()=> openTextEditor();
-function openTextEditor({ text = '', size = 28, color = '#0d2a6b', targetBox = null } = {}) {
-  editor.targetBox = targetBox;
-  editor.input.value = text;
-  editor.size.value = size;
-  editor.color.value = color;
-  editor.el.classList.add('open');
-  setTimeout(() => editor.input.focus(), 0);
-}
-function closeTextEditor() { editor.el.classList.remove('open'); editor.targetBox = null; }
-editor.cancel.onclick = closeTextEditor;
-editor.el.addEventListener('click', e => { if (e.target === editor.el) closeTextEditor(); });
-document.addEventListener('keydown', e => { if (e.key === 'Escape' && editor.el.classList.contains('open')) closeTextEditor(); });
-editor.save.onclick = () => {
-  const text = editor.input.value;
-  const size = Math.max(8, Math.min(200, parseInt(editor.size.value || '22', 10)));
-  const color = editor.color.value || '#0d2a6b';
-
-  if (editor.targetBox) {
-    const t = editor.targetBox.querySelector('.scrap-text');
-    if (!t) return;
-    t.textContent = text;
-    t.style.fontSize = size + 'px';
-    t.style.color = color;
-    t.style.height = 'auto';
-    editor.targetBox.style.height = Math.max(40, t.scrollHeight) + 'px';
-    showItemHud(editor.targetBox);
-  } else {
-    const box = document.createElement('div');
-    box.className = 'scrap-item';
-    box.style.left = '40px';
-    box.style.top = '40px';
-    box.style.width = '320px';
-    box.innerHTML = `
-      <div class="scrap-text" contenteditable="false" style="font-size:${size}px;color:${color}"></div>
-      <div class="mover" title="Drag"></div>
-      <div class="resizer"></div><div class="rotator"></div>`;
-    box.querySelector('.scrap-text').textContent = text;
-    (activeCanvas || getVisibleCanvases().right).appendChild(box);
-    makeDraggable(box); box.dataset._hooked='1';
+hudEdit.onclick = ()=>{
+  if (selectedItem){
+    const t=selectedItem.querySelector('.scrap-text');
+    if(!t) return;
+    const val=prompt('Edit text:', t.textContent||'');
+    if(val==null) return;
+    t.textContent=val; t.style.height='auto';
+    selectedItem.style.height=Math.max(40,t.scrollHeight)+'px';
+    showItemHud(selectedItem);
   }
-  closeTextEditor();
 };
 
-/* Image controls + small inputs */
+/* Image controls */
 function updateImageButtons(){
-  const onImg=!!selectedItem?.querySelector('.scrap-img') || selectedItem?.dataset.missing==='1';
+  const onImg=!!selectedItem?.querySelector('.scrap-img');
   fitBtn.disabled=!onImg; lockBtn.disabled=!onImg;
-  const fit=selectedItem?.dataset.fit||'contain', lock=selectedItem?.dataset.lock==='1';
-  document.getElementById('fitToggleBtn').textContent='Fit: '+(fit==='cover'?'Fill':'Contain');
-  document.getElementById('lockToggleBtn').textContent='Lock: '+(lock?'On':'Off');
+  if(onImg){ const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1';
+    fitBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain');
+    lockBtn.textContent='Lock: '+(lock?'On':'Off'); }
+  else{ fitBtn.textContent='Fit: Contain'; lockBtn.textContent='Lock: On'; }
 }
-document.getElementById('fitToggleBtn').onclick=()=>{ if(!selectedItem) return; selectedItem.dataset.fit=(selectedItem.dataset.fit==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); };
-document.getElementById('lockToggleBtn').onclick=()=>{ if(!selectedItem) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
-hudRelink.onclick=()=>{ if(selectedItem) openRelinker(selectedItem); };
+fitBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); };
+lockBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
 function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
 
+/* Font size & color */
 function selectedTextEl(){ if(!selectedItem) return null; const t=selectedItem.querySelector('.scrap-text'); return t||null; }
 function updateFontInput(){
   const t=selectedTextEl(); if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; return; }
@@ -883,12 +733,11 @@ async function saveToCloud(){
     });
     if(!insRes.ok) throw new Error('image insert '+insRes.status);
     const row = (await insRes.json())[0];
-    img.dataset.imgid=String(row.id);
-    delete img._preb64;
+    img.dataset.imgid=row.id; delete img._preb64;
   }
 
-  // 2) Gather pages back from DOM (skip cover canvas)
-  const canvases=[...document.querySelectorAll('#book .page .page-canvas')].slice(1);
+  // 2) Gather pages back from DOM
+  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
   canvases.forEach(c=>{
     const items=[];
@@ -896,25 +745,11 @@ async function saveToCloud(){
       const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height};
       const rot=parseFloat(el.dataset.rot||'0')||0;
       const img=el.querySelector('.scrap-img');
-      if(img){
-        items.push({
-          type:'image',style,rot,
-          imageId:(img.dataset.imgid??null),
-          fit:el.dataset.fit||'contain',
-          lock:el.dataset.lock==='1'
-        });
-      }else{
-        const txt=el.querySelector('.scrap-text');
-        items.push({type:'text',style,rot,html:txt?txt.outerHTML:''});
-      }
+      if(img){ items.push({type:'image',style,rot,imageId:parseInt(img.dataset.imgid,10)||null,fit:el.dataset.fit||'contain',lock:el.dataset.lock==='1'}); }
+      else{ const txt=el.querySelector('.scrap-text'); items.push({type:'text',style,rot,html:txt?txt.outerHTML:''}); }
     });
     pages.push({items});
   });
-
-  // 2b) drop trailing empty pages before writing
-  while (pages.length && ((pages[pages.length-1].items||[]).length===0)) {
-    pages.pop();
-  }
 
   // 3) Upsert state
   const upUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}`;
@@ -924,14 +759,11 @@ async function saveToCloud(){
     body: JSON.stringify({ id: STATE_ID, pages })
   });
   if(!upRes.ok) throw new Error('state upsert '+upRes.status);
-
-  // 4) ensure DOM matches cleaned state count
-  reconcilePageNodes(pages.length);
-  initFlip(pageFlip?.getCurrentPageIndex?.() ?? 0);
   toastShow('Saved ✓'); exitEdit();
 }
 
-/* ========= Misc utils ========= */
+/* ========= Utils ========= */
+function openModalLegacy(){} // no-op, kept for compatibility if needed
 async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColor='#f7eddc'){
   const blob=fileOrBlob instanceof Blob?fileOrBlob:new Blob([fileOrBlob]);
   const inputMime=blob.type||'image/png';
