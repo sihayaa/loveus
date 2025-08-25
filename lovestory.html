@@ -6,21 +6,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 
-<!-- speed: fonts -->
+<!-- fonts (we won't block on them) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- Readable script set (includes Lobster as default) -->
 <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Courgette&family=Dancing+Script:wght@600&family=Great+Vibes&family=Kaushan+Script&family=Lobster&family=Pacifico&display=swap" rel="stylesheet">
 
-<!-- preload single cover image -->
+<!-- preload cover (optional if hosted together with this html) -->
 <link rel="preload" as="image" href="./lovestory_cover.png?v=8" fetchpriority="high">
 
 <style>
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca;
-  /* JS sets this to your pick; default becomes Lobster at runtime */
-  --font:"Dancing Script", cursive;
+  --font:"Dancing Script", cursive; /* set via picker; default becomes Lobster at runtime */
   --cover-y:28%;
   --cover-img:url("./lovestory_cover.png?v=8");
 }
@@ -39,7 +37,15 @@ body{
   font:600 18px/1.2 system-ui, Segoe UI, sans-serif; letter-spacing:.4px;
   transition:opacity .35s ease;
 }
+#boot .card{
+  text-align:center; padding:18px 22px; border:2px solid #67e4ca55; border-radius:12px;
+  box-shadow:0 12px 30px rgba(0,0,0,.35);
+}
 #boot.hide{ opacity:0; pointer-events:none; }
+#retryBtn{
+  margin-top:10px; border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
+  font-weight:800; color:#022d2c; background:var(--mint); display:none;
+}
 
 /* Stage & Book */
 #stage{ width:1000px; height:650px; position:relative; }
@@ -155,7 +161,6 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 .stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:10px; }
 .stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; font-size:26px; line-height:1; }
 
-/* When modal is open, pause background interactions */
 body.modal-open #itemHud{ display:none !important; }
 body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
 
@@ -174,14 +179,19 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
 </head>
 <body>
 
-<div id="boot">loading scrapbook…</div>
+<div id="boot">
+  <div class="card">
+    <div id="bootMsg">loading scrapbook…</div>
+    <button id="retryBtn">Try again</button>
+  </div>
+</div>
 
 <div id="stage">
   <div id="book">
     <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
 
-    <!-- A few inner placeholders; real pages come from storage + ensured blanks -->
+    <!-- a few inner placeholders; real pages come from cloud + ensured blanks -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -290,15 +300,23 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
 
 <!-- libs -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="./flipbook/page-flip.browser.js"></script>
+<!-- use CDN for PageFlip (no local file needed) -->
+<script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.min.js"></script>
+
 <script>
 /* ========= Supabase ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
-const TABLE_IMAGES="scrapbook_images";
+const TABLE_IMAGES="scrapbook_images";  // base64 table (kept for compatibility)
 const TABLE_STATE ="scrapbook_state";
 const STATE_ID="main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+/* ========= Cloud-only boot policy ========= */
+const CLOUD_ONLY       = true;   // never show local/blank if cloud fails
+const CLOUD_TIMEOUT_MS = 12000;  // wait up to 12s per attempt
+const CLOUD_RETRIES    = 2;      // plus these retries
+const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
 
 /* ========= Refs ========= */
 const bookEl=document.getElementById('book');
@@ -307,6 +325,8 @@ const toolbar=document.getElementById('toolbar');
 const toast=document.getElementById('toast');
 const fileInput=document.getElementById('fileInput');
 const boot=document.getElementById('boot');
+const bootMsg=document.getElementById('bootMsg');
+const retryBtn=document.getElementById('retryBtn');
 
 const textModal=document.getElementById('textModal');
 const textModalTitle=document.getElementById('textModalTitle');
@@ -350,13 +370,12 @@ function setGlobalFont(which){
   const family = FONT_MAP[which] || FONT_MAP.lobster;
   document.documentElement.style.setProperty('--font', family);
   localStorage.setItem('scrap_font', which);
-  // clear any per-item overrides so everything inherits
   document.querySelectorAll('#book .scrap-text:not(.sticker)').forEach(t=>{ t.style.fontFamily=''; });
   const picker = document.getElementById('fontPicker'); if (picker) picker.value = which;
 }
 function initFontPicker(){
   const picker = document.getElementById('fontPicker');
-  const saved = localStorage.getItem('scrap_font') || 'lobster'; // default to Lobster
+  const saved = localStorage.getItem('scrap_font') || 'lobster';
   setGlobalFont(saved);
   if (picker){
     picker.value = saved;
@@ -370,7 +389,7 @@ let zCounter = 10;
 /* ========= PageFlip ========= */
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy(); }catch(_){}
-  if(!window.St || !St.PageFlip){ alert("PageFlip library missing (./flipbook/page-flip.browser.js)."); return; }
+  if(!window.St || !St.PageFlip){ alert("PageFlip library missing."); return; }
 
   // ensure cover + one inner minimum
   const pgCount = document.querySelectorAll('#book .page').length;
@@ -394,7 +413,7 @@ function initFlip(startIndex=0){
 
 /* ========= Ensure N blank sheets at the end ========= */
 function isPageEmpty(p){ return (p?.querySelectorAll('.scrap-item').length||0)===0; }
-function ensureTrailingBlankSheets(nSheets=2){ // reduced from 3 → 2
+function ensureTrailingBlankSheets(nSheets=2){
   const all=[...document.querySelectorAll('#book .page')];
   const inner = all.slice(1); // after cover
   let trailing=0;
@@ -409,7 +428,7 @@ function ensureTrailingBlankSheets(nSheets=2){ // reduced from 3 → 2
   }
 }
 
-/* ========= Helper: non-blocking cloud load ========= */
+/* ========= Boot helpers ========= */
 function afterBootShow(){
   bookEl.style.visibility='visible';
   initFlip(0);
@@ -418,26 +437,50 @@ function afterBootShow(){
 }
 function timeout(ms){ return new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), ms)); }
 
-/* ========= Init ========= */
-init().catch(e=>{ console.error(e); afterBootShow(); });
+/* ========= Init (cloud-only, retries, no local fallback) ========= */
+init().catch(err=>console.error(err));
 async function init(){
-  const coverReady = new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
-  const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
-
-  // apply default/saved font (Lobster by default)
+  // don't block on fonts; just kick it off
+  document.fonts?.ready?.catch(()=>{});
   initFontPicker();
 
-  await Promise.allSettled([coverReady, fontsReady]);
+  // allow cover to load (nice visual), but do not block on fonts
+  const coverReady = new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
+  await Promise.allSettled([coverReady]);
 
-  // TRY to load saved content, but don't block the UI forever
-  try{
-    await Promise.race([loadFromTables(), timeout(2500)]);
-  }catch(e){
-    console.warn('Cloud load skipped:', e);
-    toastShow('⚠️ Couldn’t reach cloud. Showing local.');
+  // cloud load with retries
+  bootMsg.textContent = 'loading scrapbook…';
+  retryBtn.style.display='none';
+  let loaded = false, lastErr = null;
+
+  for (let attempt = 0; attempt <= CLOUD_RETRIES && !loaded; attempt++){
+    try{
+      if (CLOUD_TIMEOUT_MS) {
+        await Promise.race([loadFromTables(), timeout(CLOUD_TIMEOUT_MS)]);
+      } else {
+        await loadFromTables();
+      }
+      loaded = true;
+    }catch(err){
+      lastErr = err;
+      console.warn(`Cloud load attempt ${attempt+1} failed:`, err);
+      if (attempt < CLOUD_RETRIES) await sleep(800 * (attempt + 1));
+    }
   }
 
-  ensureTrailingBlankSheets(2); // fewer blanks at the back
+  if (!loaded){
+    if (CLOUD_ONLY){
+      bootMsg.textContent = "couldn’t reach the cloud. please check your internet and try again.";
+      retryBtn.style.display='inline-block';
+      retryBtn.onclick = ()=> init();
+      throw lastErr || new Error('cloud-load-failed');
+    }else{
+      // (not used here, but kept for completeness)
+      toastShow('⚠️ Couldn’t reach cloud. Showing local.');
+    }
+  }
+
+  ensureTrailingBlankSheets(2);
   afterBootShow();
 }
 
@@ -495,7 +538,7 @@ function exitEdit(){
   }catch(_){}
 }
 
-/* Extra: quick exit via ESC when not in a modal */
+/* quick exit via ESC when not in a modal */
 document.addEventListener('keydown', (e)=>{
   const modalOpen = textModal.classList.contains('open') || stickerModal.classList.contains('open');
   if(e.key==='Escape' && document.body.classList.contains('editing') && !modalOpen){
@@ -504,22 +547,20 @@ document.addEventListener('keydown', (e)=>{
   }
 });
 
-/* ========= New book helpers ========= */
+/* ========= Book helpers ========= */
 function closeBook(){
-  exitEdit(); // ensure flipping is enabled
+  exitEdit();
   try{
     const total = pageFlip.getPageCount?.() ?? 1;
     const curr  = pageFlip.getCurrentPageIndex?.() ?? 0;
     const mid   = Math.floor(total/2);
-    // go to nearest cover: if we're in the first half, go to front (0) else to back (last)
     pageFlip.turnToPage(curr <= mid ? 0 : total - 1);
   }catch(_){}
 }
 function removeLastSheet(){
-  // last "sheet" = last 2 inner pages (exclude cover)
   const pages = [...document.querySelectorAll('#book .page')];
   if (pages.length <= 2){ toastShow('No sheet to remove.'); return; }
-  const inner = pages.slice(1); // after cover
+  const inner = pages.slice(1);
   const last = inner[inner.length-1];
   const prev = inner[inner.length-2];
   const empty = (p)=> (p?.querySelectorAll('.scrap-item').length||0)===0;
@@ -529,7 +570,6 @@ function removeLastSheet(){
   const curr = pageFlip?.getCurrentPageIndex?.() ?? 0;
   last.remove(); prev.remove();
 
-  // re-init flipbook to reflect new page count
   const newIndex = Math.max(0, Math.min(curr, document.querySelectorAll('#book .page').length - 1));
   initFlip(newIndex);
   toastShow('Removed last sheet ✓');
@@ -813,7 +853,7 @@ document.getElementById('stickersBtn').onclick=()=>{
     stickersGrid.appendChild(b);
   });
   openModal(stickerModal);
-};
+});
 stickersClose.onclick=()=>closeModal(stickerModal);
 
 /* Book buttons */
@@ -856,47 +896,54 @@ async function saveToTables(){
   toastShow('Saved ✓'); setTimeout(()=>exitEdit(),300);
 }
 
-/* Load from tables */
+/* Load from tables (kept base64 flow; now guarded by cloud-only boot) */
 async function loadFromTables(){
-  try{
-    const {data:state}=await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
-    if(!state||!state.pages) return;
-    const have=document.querySelectorAll('#book .page').length-1, need=state.pages.length;
-    for(let i=have;i<need;i++){ const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p); }
-    const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }));
-    const uniq=[...new Set(ids)]; const urlMap={};
-    if(uniq.length){ const {data:imgs}=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
-      imgs?.forEach(r=>urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`); }
-    const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-    for(let i=0;i<Math.min(state.pages.length,canvases.length);i++){
-      const c=canvases[i]; c.innerHTML='';
-      for(const it of state.pages[i].items||[]){
-        const box=document.createElement('div'); box.className='scrap-item';
-        box.style.left=it.style?.left||'40px'; box.style.top=it.style?.top||'40px';
-        if(it.style?.width) box.style.width=it.style.width;
-        if(it.style?.height) box.style.height=it.style.height;
-        if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
-        if(it.type==='image'&&it.imageId){
-          const url=urlMap[it.imageId]||''; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
-          box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="" decoding="async">
-                         <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
-          const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-          if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
-        }else if(it.type==='text'&&it.html){
-          const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
-          const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
-          box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
-          if(inner.classList.contains('sticker')){
-            box.dataset.emoji = looksLikeEmoji(inner.textContent) ? '1' : '0';
-          }
+  const {data:state,error} = await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
+  if(error) throw error;
+  if(!state || !state.pages){ return; } // empty is still a "success"
+
+  const have=document.querySelectorAll('#book .page').length-1, need=state.pages.length;
+  for(let i=have;i<need;i++){
+    const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
+  }
+
+  const ids=[]; state.pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }));
+  const uniq=[...new Set(ids)]; const urlMap={};
+  if(uniq.length){
+    const {data:imgs, error:imgErr}=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
+    if(imgErr) throw imgErr;
+    imgs?.forEach(r=>urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`);
+  }
+
+  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+  for(let i=0;i<Math.min(state.pages.length,canvases.length);i++){
+    const c=canvases[i]; c.innerHTML='';
+    for(const it of state.pages[i].items||[]){
+      const box=document.createElement('div'); box.className='scrap-item';
+      box.style.left=it.style?.left||'40px'; box.style.top=it.style?.top||'40px';
+      if(it.style?.width) box.style.width=it.style.width;
+      if(it.style?.height) box.style.height=it.style.height;
+      if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
+      if(it.type==='image'&&it.imageId){
+        const url=urlMap[it.imageId]||''; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
+        box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="" decoding="async">
+                       <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
+        const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+        if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
+      }else if(it.type==='text'&&it.html){
+        const holder=document.createElement('div'); holder.innerHTML=it.html.trim();
+        const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
+        box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
+        if(inner.classList.contains('sticker')){
+          box.dataset.emoji = looksLikeEmoji(inner.textContent) ? '1' : '0';
         }
-        c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
       }
+      c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
     }
-  }catch(e){ console.warn('No saved state yet / load error',e); }
+  }
 }
 
-/* Modal helpers (robust close) */
+/* Modals */
 function openModal(el){
   hideItemHud();
   el.classList.add('open');
@@ -918,9 +965,7 @@ document.addEventListener('keydown', (e)=>{
 });
 
 /* Utils */
-function openModalLegacy(el){ openModal(el); } // (no-op alias if any old calls exist)
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1600); }
-document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
 
 async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColor='#f7eddc'){
   const blob=fileOrBlob instanceof Blob?fileOrBlob:new Blob([fileOrBlob]);
@@ -938,11 +983,6 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColo
   URL.revokeObjectURL(img.src);
   return { mime:outMime, base64:dataUrl.split(',')[1] };
 }
-
-/* wire buttons after definitions */
-document.getElementById('exitEditBtn').onclick = ()=> exitEdit();
-document.getElementById('closeBookBtn').onclick = ()=> closeBook();
-document.getElementById('removeSheetBtn').onclick = ()=> removeLastSheet();
 </script>
 </body>
 </html>
