@@ -140,6 +140,23 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 #itemHud input[type="number"]{
   width:70px; padding:6px 8px; border-radius:8px; border:2px solid #2b3258; background:#0f1430; color:#fff; font-weight:700; font-size:12px;
 }
+
+/* --- Big Text Editor Modal --- */
+#textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;
+  align-items:center;justify-content:center}
+#textEditor.open{display:flex}
+#textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;
+  border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#textEditor textarea{width:100%;height:320px;font:28px/1.35 var(--font);color:var(--ink);
+  padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical}
+#textEditor .row{display:flex;gap:12px;margin-top:10px}
+#textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;
+  font-weight:700;color:#0d2a6b}
+#textEditor input[type="color"]{width:80px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
+#textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+#textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+#editorCancel{background:#ff9aa2;color:#4c0a17}
+#editorSave{background:var(--mint);color:#022d2c}
 </style>
 </head>
 <body>
@@ -215,6 +232,28 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
     <button id="hudDelete" class="warn">Delete</button>
   </div>
 
+  <!-- Big Text Editor -->
+  <div id="textEditor" aria-hidden="true">
+    <div class="panel">
+      <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
+      <textarea id="editorInput" placeholder="type here…"></textarea>
+      <div class="row">
+        <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+          Size (px)
+          <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
+        </label>
+        <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+          Color
+          <input id="editorColor" type="color" value="#0d2a6b">
+        </label>
+      </div>
+      <div class="actions">
+        <button id="editorCancel">Cancel</button>
+        <button id="editorSave">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
@@ -235,6 +274,7 @@ const sbHeaders = {
   "apikey": SUPABASE_ANON,
   "Authorization": "Bearer " + SUPABASE_ANON,
   "Content-Type": "application/json",
+  "Accept": "application/json"
 };
 
 /* ========= Refs ========= */
@@ -336,15 +376,25 @@ async function init(){
       const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
     }
 
-    // 3) Collect image IDs, fetch in chunks, make URL map
+    // 3) Collect image IDs, fetch in chunks, make URL map (robust against 400)
     const ids=[]; pages.forEach(pg=>pg.items?.forEach(it=>{ if(it.type==='image'&&it.imageId!=null) ids.push(it.imageId); }));
     const uniq=[...new Set(ids)];
     const urlMap={};
     for(let i=0;i<uniq.length;i+=IMG_CHUNK){
       const chunk = uniq.slice(i,i+IMG_CHUNK);
-      const list  = chunk.join(',');
-      const imgsUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=in.(${list})`;
-      const imgsRes = await fetch(imgsUrl, { headers: sbHeaders });
+
+      // Primary: encoded in() filter
+      const inFilter = encodeURIComponent(`in.(${chunk.join(',')})`);
+      let imgsUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=${inFilter}`;
+      let imgsRes = await fetch(imgsUrl, { headers: sbHeaders });
+
+      // Fallback: OR=() if a 400 occurs
+      if(!imgsRes.ok && imgsRes.status===400){
+        const orFilter = encodeURIComponent(chunk.map(id=>`id.eq.${id}`).join(','));
+        const fbUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&or=(${orFilter})`;
+        imgsRes = await fetch(fbUrl, { headers: sbHeaders });
+      }
+
       if(!imgsRes.ok) throw new Error('images load '+imgsRes.status);
       const rows = await imgsRes.json();
       rows.forEach(r=>{ urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`; });
@@ -615,27 +665,77 @@ document.addEventListener('click',e=>{
 });
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); hideItemHud(); }
 
-/* Text add/edit (simple prompts) */
-document.getElementById('addTextBtn').onclick=()=>{
-  const val = prompt('Add text:','');
-  if(val==null) return;
-  const box=document.createElement('div');
-  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
-  box.innerHTML='<div class="scrap-text" contenteditable="false">'+String(val).replace(/</g,"&lt;")+'</div>'
-               +'<div class="mover" title="Drag"></div>'
-               +'<div class="resizer"></div><div class="rotator"></div>';
-  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
+/* ========= Big Text Editor ========= */
+const editor = {
+  el: document.getElementById('textEditor'),
+  input: document.getElementById('editorInput'),
+  size: document.getElementById('editorSize'),
+  color: document.getElementById('editorColor'),
+  save: document.getElementById('editorSave'),
+  cancel: document.getElementById('editorCancel'),
+  targetBox: null
 };
-hudEdit.onclick = ()=>{
-  if (selectedItem){
-    const t=selectedItem.querySelector('.scrap-text');
-    if(!t) return;
-    const val=prompt('Edit text:', t.textContent||'');
-    if(val==null) return;
-    t.textContent=val; t.style.height='auto';
-    selectedItem.style.height=Math.max(40,t.scrollHeight)+'px';
-    showItemHud(selectedItem);
+function openTextEditor({ text = '', size = 28, color = '#0d2a6b', targetBox = null } = {}) {
+  editor.targetBox = targetBox;
+  editor.input.value = text;
+  editor.size.value = size;
+  editor.color.value = color;
+  editor.el.classList.add('open');
+  setTimeout(() => editor.input.focus(), 0);
+}
+function closeTextEditor() {
+  editor.el.classList.remove('open');
+  editor.targetBox = null;
+}
+editor.cancel.onclick = closeTextEditor;
+editor.el.addEventListener('click', e => { if (e.target === editor.el) closeTextEditor(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && editor.el.classList.contains('open')) closeTextEditor(); });
+editor.save.onclick = () => {
+  const text = editor.input.value;
+  const size = Math.max(8, Math.min(200, parseInt(editor.size.value || '22', 10)));
+  const color = editor.color.value || '#0d2a6b';
+
+  if (editor.targetBox) {
+    const t = editor.targetBox.querySelector('.scrap-text');
+    if (!t) return;
+    t.textContent = text;
+    t.style.fontSize = size + 'px';
+    t.style.color = color;
+    t.style.height = 'auto';
+    editor.targetBox.style.height = Math.max(40, t.scrollHeight) + 'px';
+    showItemHud(editor.targetBox);
+  } else {
+    const box = document.createElement('div');
+    box.className = 'scrap-item';
+    box.style.left = '40px';
+    box.style.top = '40px';
+    box.style.width = '320px';
+    box.innerHTML = `
+      <div class="scrap-text" contenteditable="false" style="font-size:${size}px;color:${color}"></div>
+      <div class="mover" title="Drag"></div>
+      <div class="resizer"></div><div class="rotator"></div>`;
+    box.querySelector('.scrap-text').textContent = text;
+    (activeCanvas || getVisibleCanvases().right).appendChild(box);
+    makeDraggable(box); box.dataset._hooked='1';
   }
+  closeTextEditor();
+};
+
+/* Text add/edit buttons -> open modal */
+document.getElementById('addTextBtn').onclick = () => {
+  openTextEditor({ text: '', size: 28, color: '#0d2a6b', targetBox: null });
+};
+hudEdit.onclick = () => {
+  if (!selectedItem) return;
+  const t = selectedItem.querySelector('.scrap-text');
+  if (!t) return;
+  const comp = getComputedStyle(t);
+  openTextEditor({
+    text: t.textContent || '',
+    size: parseInt(comp.fontSize) || 22,
+    color: rgbToHex(comp.color),
+    targetBox: selectedItem
+  });
 };
 
 /* Image controls */
@@ -651,7 +751,7 @@ fitBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; cons
 lockBtn.onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
 function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
 
-/* Font size & color */
+/* Font size & color (toolbar mini controls) */
 function selectedTextEl(){ if(!selectedItem) return null; const t=selectedItem.querySelector('.scrap-text'); return t||null; }
 function updateFontInput(){
   const t=selectedTextEl(); if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; return; }
