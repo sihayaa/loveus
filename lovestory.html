@@ -6,12 +6,15 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="./lovestory_cover.png?v=8" fetchpriority="high">
 
 <style>
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca;
   --font:"Lobster", cursive;
+  --cover-y:28%;
+  --cover-img:url("./lovestory_cover.png?v=8");
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -36,6 +39,14 @@ body{
 .page{ width:100%; height:100%; position:relative; overflow:hidden; background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22); }
 .page-canvas{ position:relative; width:100%; height:100%; padding:28px; color:var(--ink); font-size:22px; line-height:1.35;
   content-visibility:auto; contain-intrinsic-size:650px 500px; }
+
+/* COVER */
+.page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
+.page.cover .page-canvas{
+  padding:0; background:#0c102c;
+  background-image:var(--cover-img);
+  background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat;
+}
 
 /* Scrap items */
 .scrap-item{ position:absolute; transform-origin:center; touch-action:none; overflow:visible; }
@@ -64,7 +75,7 @@ body{
 #fileInput{ display:none; }
 #toolbar input[type="color"]{ width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff; }
 
-/* pointer gating */
+/* pointer gating (on only while editing) */
 .page .page-canvas, .scrap-item { pointer-events:none; }
 body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto; }
 body.editing .scrap-item{ cursor:move; }
@@ -109,9 +120,9 @@ body.editing .scrap-item .mover{ display:block; }
 
 <div id="stage">
   <div id="book">
-    <!-- no special cover; first spread is your first two pages -->
-    <div class="page"><div class="page-canvas"></div></div>
-    <div class="page"><div class="page-canvas"></div></div>
+    <!-- COVER (keeps storybook feel) -->
+    <div class="page cover"><div class="page-canvas"></div></div>
+    <!-- inner pages will match your saved state count (no auto extra sheets) -->
   </div>
 
   <!-- Right toolbar -->
@@ -190,7 +201,6 @@ body.editing .scrap-item .mover{ display:block; }
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
-<!-- Local PageFlip -->
 <script src="./flipbook/page-flip.browser.js"></script>
 
 <script>
@@ -241,19 +251,25 @@ let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
 
 /* ========= Helpers ========= */
-function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1800); }
+function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',2000); }
 function afterBootShow(){ bookEl.style.visibility='visible'; }
 
-/* Create/remove page nodes so count equals n (min 2) */
-function reconcilePages(n){
-  const want = Math.max(2, n|0);
-  const pages=[...document.querySelectorAll('#book .page')];
-  if(pages.length<want){
-    for(let i=pages.length;i<want;i++){
+/* Reconcile inner pages (non-cover) to exactly n; min 2 total pages for PageFlip */
+function reconcileInnerPageNodes(nInner){
+  // existing pages:
+  const pages=[...document.querySelectorAll('#book .page')]; // includes cover if present
+  const haveInner = Math.max(0, pages.length - 1);
+  const wantInner = Math.max(1, nInner|0);
+
+  if(haveInner < wantInner){
+    for(let i=haveInner; i<wantInner; i++){
       const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
     }
-  }else if(pages.length>want){
-    for(let i=pages.length-1;i>=want;i--) pages[i].remove();
+  } else if(haveInner > wantInner){
+    const all=[...document.querySelectorAll('#book .page')];
+    for(let i=all.length-1; i>0 && (all.length-1)>wantInner; i--){
+      all[i].remove();
+    }
   }
 }
 
@@ -261,9 +277,11 @@ function reconcilePages(n){
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy?.(); }catch(_){}
   if(!window.St || !St.PageFlip){ alert("PageFlip library missing."); afterBootShow(); return; }
+  // make sure at least cover + 1 page exist
+  reconcileInnerPageNodes(Math.max(1, document.querySelectorAll('#book .page').length - 1));
   pageFlip = new St.PageFlip(bookEl,{
     width:500,height:650,size:"fixed",
-    showCover:false, // no blank inside page
+    showCover:true,           // keep storybook vibe
     drawShadow:true, flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
     mobileScrollSupport:false,startPage:Math.max(0,startIndex|0)
   });
@@ -275,13 +293,16 @@ function initFlip(startIndex=0){
   });
 }
 
-/* ========= Init (load state; ignore broken old photos) ========= */
+/* ========= Init / Cloud load ========= */
 init().catch(err=>console.error(err));
 async function init(){
+  await new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
+
   bootMsg.textContent = 'Loading pages…';
   retryBtn.style.display='none';
 
   try{
+    // load state row
     const stateUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?select=pages&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
     const stateRes = await fetch(stateUrl, { headers: sbHeaders });
     if(!stateRes.ok) throw new Error('state load '+stateRes.status);
@@ -289,26 +310,28 @@ async function init(){
     const state = stateArr && stateArr[0];
     const pages = state?.pages || [];
 
-    reconcilePages(pages.length || 2);
+    // inner pages = pages.length (no auto extras)
+    reconcileInnerPageNodes(pages.length || 2);
 
-    const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
-    for(let i=0;i<Math.min(pages.length,canvases.length);i++){
-      const c=canvases[i]; c.innerHTML='';
-      for(const it of (pages[i].items||[])){
-        const box=document.createElement('div'); box.className='scrap-item';
-        if(it.style?.left)  box.style.left=it.style.left;
-        if(it.style?.top)   box.style.top=it.style.top;
-        if(it.style?.width) box.style.width=it.style.width;
-        if(it.style?.height)box.style.height=it.style.height;
-        if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
+    // render text items only; skip old images entirely (fresh add later)
+    const canvases=[...document.querySelectorAll('#book .page .page-canvas')].slice(1);
+    for(let j=0;j<Math.min(pages.length,canvases.length);j++){
+      const c=canvases[j]; c.innerHTML='';
+      const items=pages[j].items||[];
+      for(const it of items){
+        if(it.type==='text' && it.html){
+          const box=document.createElement('div'); box.className='scrap-item';
+          if(it.style?.left)  box.style.left=it.style.left;
+          if(it.style?.top)   box.style.top=it.style.top;
+          if(it.style?.width) box.style.width=it.style.width;
+          if(it.style?.height)box.style.height=it.style.height;
+          if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
 
-        if(it.type==='text'&&it.html){
           const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
           const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
           box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
+          c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
         }
-        // old images are skipped on purpose (fresh re-adds only)
-        c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
       }
     }
 
@@ -352,7 +375,7 @@ stageEl.addEventListener('mousedown',e=>{
 document.getElementById('targetLeft').onclick = ()=>{ const v=getVisibleCanvases(); highlightCanvas(v.left||v.right); };
 document.getElementById('targetRight').onclick= ()=>{ const v=getVisibleCanvases(); highlightCanvas(v.right||v.left); };
 
-/* ========= Edit Mode (type 123) ========= */
+/* ========= Secret Edit Mode (type 123) ========= */
 const PASSCODE='123'; let keyBuffer='', keyTimer=null;
 document.addEventListener('keydown',(e)=>{
   keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
@@ -603,8 +626,7 @@ editor.save.onclick = () => {
   }
   closeTextEditor();
 };
-
-/* HUD “Edit” now opens big editor with existing text/size/color */
+/* HUD Edit → big editor */
 hudEdit.onclick = ()=>{
   if(!selectedItem) return;
   const t = selectedItem.querySelector('.scrap-text');
@@ -628,11 +650,11 @@ function updateImageButtons(){
     lockBtn.textContent='Lock: '+(lock?'On':'Off'); }
   else{ fitBtn.textContent='Fit: Contain'; lockBtn.textContent='Lock: On'; }
 }
-document.getElementById('fitToggleBtn').onclick=()=>{ if(!selectedItem?.querySelector) return; if(!selectedItem.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); };
-document.getElementById('lockToggleBtn').onclick=()=>{ if(!selectedItem?.querySelector) return; if(!selectedItem.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
+document.getElementById('fitToggleBtn').onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); };
+document.getElementById('lockToggleBtn').onclick=()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); };
 function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
 
-/* Font size & color quick inputs */
+/* Font quick inputs */
 function selectedTextEl(){ if(!selectedItem) return null; const t=selectedItem.querySelector('.scrap-text'); return t||null; }
 function updateFontInput(){
   const t=selectedTextEl(); if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; return; }
@@ -675,7 +697,7 @@ hudFront.onclick = ()=>{ if(selectedItem){ selectedItem.style.zIndex=++zCounter;
 hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; } };
 hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
 
-/* Photos (local add; uploaded on Save) */
+/* Photos (fresh add; uploaded on Save) */
 document.getElementById('addPhotoBtn').onclick=()=>fileInput.click();
 fileInput.addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
@@ -693,7 +715,7 @@ fileInput.addEventListener('change',async e=>{
   imgEl._preb64={mime,base64}; fileInput.value='';
 });
 
-/* ========= Save ========= */
+/* ========= Save (uploads new photos; saves pages) ========= */
 document.getElementById('saveBtn').onclick=()=>saveToCloud().catch(e=>alert('Save failed: '+e));
 async function saveToCloud(){
   toastShow('Saving…');
@@ -718,8 +740,8 @@ async function saveToCloud(){
     delete img._preb64;
   }
 
-  // gather pages
-  const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
+  // gather pages (skip cover)
+  const canvases=[...document.querySelectorAll('#book .page .page-canvas')].slice(1);
   const pages=[];
   canvases.forEach(c=>{
     const items=[];
