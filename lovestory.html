@@ -9,7 +9,8 @@
 <!-- speed: fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
+<!-- Readable script set (includes Lobster as default) -->
+<link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Courgette&family=Dancing+Script:wght@600&family=Great+Vibes&family=Kaushan+Script&family=Lobster&family=Pacifico&display=swap" rel="stylesheet">
 
 <!-- preload single cover image -->
 <link rel="preload" as="image" href="./lovestory_cover.png?v=8" fetchpriority="high">
@@ -17,10 +18,14 @@
 <style>
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
-  --accent:#7a5af8; --mint:#67e4ca; --font:"Dancing Script", cursive;
+  --accent:#7a5af8; --mint:#67e4ca;
+  /* JS sets this to your pick; default becomes Lobster at runtime */
+  --font:"Dancing Script", cursive;
   --cover-y:28%;
   --cover-img:url("./lovestory_cover.png?v=8");
 }
+/* If you later self-host licensed webfonts, drop @font-face here */
+
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -139,11 +144,10 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 /* Modals, stickers, HUD */
 .modal{
   position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-  z-index:1000; /* above HUD/toolbar */
-  background:rgba(0,0,0,.55);
+  z-index:1000; background:rgba(0,0,0,.55);
 }
 .modal.open{ display:flex; }
-.modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid var(--mint); border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
+.modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid #fff2; border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
 .modal-card h3{ margin:0 0 10px; font-size:20px; }
 #textModal textarea{ width:100%; background:#0f1430; color:#fff; border:1px solid #2b3258; border-radius:10px; padding:10px 12px; font-family:var(--font); font-size:20px; resize:vertical; }
 .modal-actions{ margin-top:12px; display:flex; justify-content:flex-end; gap:8px; }
@@ -159,7 +163,7 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
 
 #itemHud{
   position:absolute; z-index:120; display:none; background:#151a30; color:#fff;
-  border:2px solid var(--mint); border-radius:10px; padding:6px; gap:6px; box-shadow:0 12px 24px rgba(0,0,0,.35);
+  border:2px solid #fff2; border-radius:10px; padding:6px; gap:6px; box-shadow:0 12px 24px rgba(0,0,0,.35);
   align-items:center; flex-wrap:wrap;
 }
 #itemHud button{ border:0; padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:700; font-size:12px; color:#fff; background:#5d47d4; }
@@ -192,6 +196,21 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
       <button id="targetLeft" class="secondary">Edit Left</button>
       <button id="targetRight" class="secondary">Edit Right</button>
     </div>
+
+    <!-- Global font picker -->
+    <div class="group">
+      <label style="font-weight:700;color:#0d2a6b;width:100%;">Font</label>
+      <select id="fontPicker" style="width:100%;padding:8px;border-radius:8px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b;background:#fff">
+        <option value="lobster">Lobster (default)</option>
+        <option value="pacifico">Pacifico</option>
+        <option value="kaushan">Kaushan Script</option>
+        <option value="courgette">Courgette</option>
+        <option value="alex">Alex Brush</option>
+        <option value="greatvibes">Great Vibes</option>
+        <option value="dancing">Dancing Script</option>
+      </select>
+    </div>
+
     <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
@@ -312,6 +331,34 @@ const hudRot    = document.getElementById('hudRot');
 const hudRotL   = document.getElementById('hudRotL');
 const hudRotR   = document.getElementById('hudRotR');
 
+/* ========= Global font switcher ========= */
+const FONT_MAP = {
+  lobster: `"Lobster","Dancing Script",cursive`,
+  pacifico: `"Pacifico","Dancing Script",cursive`,
+  kaushan: `"Kaushan Script","Dancing Script",cursive`,
+  courgette: `"Courgette","Dancing Script",cursive`,
+  alex: `"Alex Brush","Dancing Script",cursive`,
+  greatvibes: `"Great Vibes","Dancing Script",cursive`,
+  dancing: `"Dancing Script",cursive`
+};
+function setGlobalFont(which){
+  const family = FONT_MAP[which] || FONT_MAP.lobster;
+  document.documentElement.style.setProperty('--font', family);
+  localStorage.setItem('scrap_font', which);
+  // clear any per-item overrides so everything inherits
+  document.querySelectorAll('#book .scrap-text:not(.sticker)').forEach(t=>{ t.style.fontFamily=''; });
+  const picker = document.getElementById('fontPicker'); if (picker) picker.value = which;
+}
+function initFontPicker(){
+  const picker = document.getElementById('fontPicker');
+  const saved = localStorage.getItem('scrap_font') || 'lobster'; // default to Lobster
+  setGlobalFont(saved);
+  if (picker){
+    picker.value = saved;
+    picker.addEventListener('change', ()=> setGlobalFont(picker.value));
+  }
+}
+
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
 
@@ -364,6 +411,10 @@ init().catch(console.error);
 async function init(){
   const coverReady = new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
+
+  // apply default/saved font (Lobster by default)
+  initFontPicker();
+
   await Promise.allSettled([coverReady, fontsReady]);
 
   // load any saved content
@@ -820,7 +871,7 @@ async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColo
   const inputMime=blob.type||'image/png';
   const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=URL.createObjectURL(blob); });
   let w=img.width,h=img.height;
-  if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*(maxSide/w)); w=maxSide; } else { w=Math.round(w*(maxSide/h)); h=maxSide; } }
+  if(Math.max(w,h)>maxSide){ if(w>h){ h=Math.round(h*(maxSide/w)); w=maxSide; } else { w=Math.round(h*(maxSide/h)); h=maxSide; } }
   const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
   const ctx=canvas.getContext('2d');
   const wantsAlpha=/png|webp|gif/i.test(inputMime);
