@@ -6,7 +6,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 
-<!-- fonts (don't block boot) -->
+<!-- fonts (don’t block boot) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Courgette&family=Dancing+Script:wght@600&family=Great+Vibes&family=Kaushan+Script&family=Lobster&family=Pacifico&display=swap" rel="stylesheet">
@@ -18,7 +18,7 @@
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca;
-  --font:"Dancing Script", cursive; /* set via picker; default becomes Lobster at runtime */
+  --font:"Dancing Script", cursive;
   --cover-y:28%;
   --cover-img:url("./lovestory_cover.png?v=8");
 }
@@ -101,15 +101,6 @@ body.editing .scrap-item .mover{ display:block; }
   display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
   white-space:pre-wrap; overflow:visible; min-height:1.2em;
 }
-.scrap-text.sticker{
-  display:flex; align-items:center; justify-content:center; line-height:1;
-  font-family: var(--font),
-               "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",
-               "Segoe UI Symbol","Noto Sans Symbols 2","Noto Sans Math",sans-serif;
-}
-.scrap-item[data-emoji="1"] .scrap-text.sticker{
-  font-family:"Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji","Twemoji Mozilla",system-ui,sans-serif;
-}
 
 /* Sidebar toolbar */
 #toolbar{
@@ -145,25 +136,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 }
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 
-/* Modals, stickers, HUD */
-.modal{
-  position:absolute; inset:0; display:none; align-items:center; justify-content:center;
-  z-index:1000; background:rgba(0,0,0,.55);
-}
-.modal.open{ display:flex; }
-.modal-card{ width:min(96%,560px); background:#151a30; color:#fff; border:2px solid #fff2; border-radius:14px; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,.45); }
-.modal-card h3{ margin:0 0 10px; font-size:20px; }
-#textModal textarea{ width:100%; background:#0f1430; color:#fff; border:1px solid #2b3258; border-radius:10px; padding:10px 12px; font-family:var(--font); font-size:20px; resize:vertical; }
-.modal-actions{ margin-top:12px; display:flex; justify-content:flex-end; gap:8px; }
-.modal-actions button{ border:0; padding:8px 12px; border-radius:10px; cursor:pointer; font-weight:700; }
-.btn-mint{ background:var(--mint); color:#05201f; }
-.btn-ghost{ background:#2a315d; color:#fff; }
-.stickers{ display:grid; grid-template-columns:repeat(8,1fr); gap:10px; }
-.stickers button{ background:#0f1430; border:1px solid #2b3258; border-radius:10px; padding:8px; cursor:pointer; font-size:26px; line-height:1; }
-
-body.modal-open #itemHud{ display:none !important; }
-body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
-
+/* HUD */
 #itemHud{
   position:absolute; z-index:120; display:none; background:#151a30; color:#fff;
   border:2px solid #fff2; border-radius:10px; padding:6px; gap:6px; box-shadow:0 12px 24px rgba(0,0,0,.35);
@@ -188,9 +161,7 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
 
 <div id="stage">
   <div id="book">
-    <!-- COVER -->
     <div class="page cover"><div class="page-canvas"></div></div>
-
     <!-- placeholders; real pages come from cloud -->
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
@@ -205,14 +176,12 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
       <button id="targetRight" class="secondary">Edit Right</button>
     </div>
 
-    <!-- Book actions -->
     <div class="group">
       <button id="exitEditBtn" class="secondary">Done Editing</button>
       <button id="closeBookBtn" class="secondary">Close Book</button>
       <button id="removeSheetBtn" class="warn">Remove Last Sheet</button>
     </div>
 
-    <!-- Global font picker -->
     <div class="group">
       <label style="font-weight:700;color:#0d2a6b;width:100%;">Font</label>
       <select id="fontPicker" style="width:100%;padding:8px;border-radius:8px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b;background:#fff">
@@ -229,7 +198,6 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
     <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
-      <button id="stickersBtn" class="secondary">Stickers</button>
     </div>
     <div class="group">
       <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
@@ -258,27 +226,7 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
   </div>
 
   <!-- Text modal -->
-  <div id="textModal" class="modal" aria-hidden="true">
-    <div class="modal-card">
-      <h3 id="textModalTitle">Add Text</h3>
-      <textarea id="textInput" rows="5" placeholder="Write something sweet…"></textarea>
-      <div class="modal-actions">
-        <button class="btn-ghost" id="textCancel">Cancel</button>
-        <button class="btn-mint" id="textAdd">Add Text</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Stickers modal -->
-  <div id="stickerModal" class="modal" aria-hidden="true">
-    <div class="modal-card">
-      <h3>Pick a sticker</h3>
-      <div class="stickers" id="stickersGrid"></div>
-      <div class="modal-actions">
-        <button class="btn-ghost" id="stickersClose">Close</button>
-      </div>
-    </div>
-  </div>
+  <div id="textModal" class="modal" aria-hidden="true" style="display:none;"></div>
 
   <!-- Per-item HUD -->
   <div id="itemHud" aria-hidden="true">
@@ -306,36 +254,25 @@ body.modal-open #book, body.modal-open #toolbar{ pointer-events:none; }
 /* ========= Supabase ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
-const TABLE_IMAGES="scrapbook_images";
-const TABLE_STATE ="scrapbook_state";
+const TABLE_IMAGES="scrapbook_images";   // base64 blobs
+const TABLE_STATE ="scrapbook_state";    // pages json
 const STATE_ID="main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ========= Cloud-only boot policy ========= */
-const CLOUD_ONLY       = true;
-const CLOUD_TIMEOUT_MS = 12000;
-const CLOUD_RETRIES    = 2;
+/* ========= Boot policy ========= */
+const CLOUD_ONLY = true;      // never show local
+const IMG_CHUNK  = 20;        // fetch images in chunks
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 /* ========= Refs ========= */
-const bookEl=document.getElementById('book');
-const stageEl=document.getElementById('stage');
-const toolbar=document.getElementById('toolbar');
-const toast=document.getElementById('toast');
-const fileInput=document.getElementById('fileInput');
-const boot=document.getElementById('boot');
-const bootMsg=document.getElementById('bootMsg');
-const retryBtn=document.getElementById('retryBtn');
-
-const textModal=document.getElementById('textModal');
-const textModalTitle=document.getElementById('textModalTitle');
-const textInput=document.getElementById('textInput');
-const textAddBtn=document.getElementById('textAdd');
-const textCancel=document.getElementById('textCancel');
-
-const stickersGrid=document.getElementById('stickersGrid');
-const stickerModal=document.getElementById('stickerModal');
-const stickersClose=document.getElementById('stickersClose');
+const bookEl   = document.getElementById('book');
+const stageEl  = document.getElementById('stage');
+const toolbar  = document.getElementById('toolbar');
+const toast    = document.getElementById('toast');
+const fileInput= document.getElementById('fileInput');
+const boot     = document.getElementById('boot');
+const bootMsg  = document.getElementById('bootMsg');
+const retryBtn = document.getElementById('retryBtn');
 
 const fontSizeInput=document.getElementById('fontSizeInput');
 const fitBtn=document.getElementById('fitToggleBtn');
@@ -355,7 +292,7 @@ const hudRot    = document.getElementById('hudRot');
 const hudRotL   = document.getElementById('hudRotL');
 const hudRotR   = document.getElementById('hudRotR');
 
-/* ========= Global font switcher ========= */
+/* ========= Fonts ========= */
 const FONT_MAP = {
   lobster: "Lobster, 'Dancing Script', cursive",
   pacifico: "Pacifico, 'Dancing Script', cursive",
@@ -369,7 +306,7 @@ function setGlobalFont(which){
   var family = FONT_MAP[which] || FONT_MAP.lobster;
   document.documentElement.style.setProperty('--font', family);
   try{ localStorage.setItem('scrap_font', which); }catch(e){}
-  var nodes = document.querySelectorAll('#book .scrap-text:not(.sticker)');
+  var nodes = document.querySelectorAll('#book .scrap-text');
   for(var i=0;i<nodes.length;i++){ nodes[i].style.fontFamily=''; }
   var picker = document.getElementById('fontPicker');
   if (picker) picker.value = which;
@@ -393,14 +330,11 @@ function initFlip(startIndex){
   if (typeof startIndex === 'undefined') startIndex = 0;
   try{ pageFlip && pageFlip.destroy && pageFlip.destroy(); }catch(_){}
   if(!(window.St && St.PageFlip)){ alert("PageFlip library missing."); return; }
-
-  // ensure cover + one inner minimum
   var pgCount = document.querySelectorAll('#book .page').length;
   if (pgCount < 2) {
     var p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>';
     bookEl.appendChild(p);
   }
-
   pageFlip = new St.PageFlip(bookEl,{
     width:500,height:650,size:"fixed",showCover:true,
     drawShadow:true, flippingTime:800,maxShadowOpacity:0.25,useMouseEvents:true,
@@ -415,7 +349,7 @@ function initFlip(startIndex){
   });
 }
 
-/* ========= Ensure N blank sheets at the end ========= */
+/* ========= Ensure blanks ========= */
 function isPageEmpty(p){ return ((p && p.querySelectorAll('.scrap-item').length) || 0)===0; }
 function ensureTrailingBlankSheets(nSheets){
   if (typeof nSheets === 'undefined') nSheets = 2;
@@ -440,47 +374,41 @@ function afterBootShow(){
   boot.classList.add('hide');
   setTimeout(function(){ boot.remove(); },400);
 }
-function timeout(ms){ return new Promise(function(_,rej){ setTimeout(function(){ rej(new Error('timeout')); }, ms); }); }
 
-/* ========= Init (cloud-only, retries) ========= */
+/* ========= Init (cloud-only, no timeout; chunked images) ========= */
 init().catch(function(err){ console.error(err); });
 async function init(){
-  // do not block on fonts
   try{ if (document.fonts && document.fonts.ready) { document.fonts.ready.catch(function(){}); } }catch(e){}
   initFontPicker();
 
+  // optional cover
   var coverReady = new Promise(function(res){
     var i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8";
   });
   await Promise.allSettled([coverReady]);
 
-  bootMsg.textContent = 'loading scrapbook…';
+  bootMsg.textContent = 'Loading pages…';
   retryBtn.style.display='none';
-  var loaded = false, lastErr = null;
 
-  for (var attempt = 0; attempt <= CLOUD_RETRIES && !loaded; attempt++){
+  // retry a couple times if the network fails
+  var loaded=false, lastErr=null;
+  for (var attempt=0; attempt<2 && !loaded; attempt++){
     try{
-      if (CLOUD_TIMEOUT_MS) {
-        await Promise.race([loadFromTables(), timeout(CLOUD_TIMEOUT_MS)]);
-      } else {
-        await loadFromTables();
-      }
-      loaded = true;
+      await loadFromTablesChunked();
+      loaded=true;
     }catch(err){
-      lastErr = err;
-      console.warn("Cloud load attempt "+(attempt+1)+" failed:", err);
-      if (attempt < CLOUD_RETRIES) await sleep(800 * (attempt + 1));
+      lastErr=err;
+      console.warn('Cloud load failed:', err);
+      if (attempt===0) { bootMsg.textContent = 'Retrying…'; await sleep(800); }
     }
   }
 
-  if (!loaded){
+  if(!loaded){
     if (CLOUD_ONLY){
-      bootMsg.textContent = "couldn’t reach the cloud. please check your internet and try again.";
+      bootMsg.textContent = "Couldn’t reach the cloud. Please check your internet and try again.";
       retryBtn.style.display='inline-block';
-      retryBtn.onclick = function(){ init(); };
+      retryBtn.onclick=function(){ init(); };
       throw (lastErr || new Error('cloud-load-failed'));
-    }else{
-      // not used here
     }
   }
 
@@ -512,7 +440,7 @@ stageEl.addEventListener('mousedown',function(e){
 document.getElementById('targetLeft').onclick = function(){ var vr=getVisibleCanvases(); highlightCanvas(vr.left||vr.right); };
 document.getElementById('targetRight').onclick= function(){ var vr=getVisibleCanvases(); highlightCanvas(vr.right||vr.left); };
 
-/* ========= Secret Edit Mode (type 123) ========= */
+/* ========= Edit mode (type 123) ========= */
 var PASSCODE='123', keyBuffer='', keyTimer=null;
 document.addEventListener('keydown',function(e){
   keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(function(){ keyBuffer=''; },1200);
@@ -541,15 +469,6 @@ function exitEdit(){
     pageFlip.update({ useMouseEvents:true, swipeDistance:30 });
   }catch(_){}
 }
-
-/* quick exit via ESC when not in a modal */
-document.addEventListener('keydown', function(e){
-  var modalOpen = textModal.classList.contains('open') || stickerModal.classList.contains('open');
-  if(e.key==='Escape' && document.body.classList.contains('editing') && !modalOpen){
-    exitEdit();
-    toastShow('Exited editing');
-  }
-});
 
 /* ========= Book helpers ========= */
 function closeBook(){
@@ -595,7 +514,7 @@ function setRotation(el,deg){
 function showItemHud(el){
   if(!el){ hideItemHud(); return; }
   var onImg=!!el.querySelector('.scrap-img');
-  var onText=!!el.querySelector('.scrap-text:not(.sticker)');
+  var onText=!!el.querySelector('.scrap-text');
   [].slice.call(itemHud.querySelectorAll('.only-img')).forEach(function(n){ n.style.display=onImg?'':'none'; });
   [].slice.call(itemHud.querySelectorAll('.only-text')).forEach(function(n){ n.style.display=onText?'':'none'; });
   if(onImg){
@@ -623,9 +542,6 @@ function makeDraggable(el){
   var rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
   var mover=el.querySelector('.mover'); if(!mover){ mover=document.createElement('div'); mover.className='mover'; el.appendChild(mover); }
 
-  var getAngle=function(){ return parseFloat(el.dataset.rot||'0')||0; };
-  var setAngle=function(deg){ el.dataset.rot=String(deg); el.style.transform='rotate('+deg+'deg)'; };
-
   el.addEventListener('dragstart', function(e){ e.preventDefault(); });
 
   if(res){
@@ -645,8 +561,7 @@ function makeDraggable(el){
     var w=Math.max(60,startW+dx), h=Math.max(40,startH+dy);
     if(lockOn && ratio>0){ if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio)); else w=Math.max(60,Math.round(h*ratio)); }
     el.style.width=w+'px'; el.style.height=h+'px';
-    var t=el.querySelector('.scrap-text:not(.sticker)'); if(t && !hasImg){ t.style.height='auto'; el.style.height=Math.max(40,t.scrollHeight)+'px'; }
-    var st=el.querySelector('.scrap-text.sticker'); if(st){ st.style.fontSize=Math.round(0.64*Math.min(w,h))+'px'; }
+    var t=el.querySelector('.scrap-text'); if(t && !hasImg){ t.style.height='auto'; el.style.height=Math.max(40,t.scrollHeight)+'px'; }
     positionHud();
   }
   function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
@@ -655,14 +570,14 @@ function makeDraggable(el){
     if(!document.body.classList.contains('editing')) return;
     e.stopPropagation(); e.preventDefault();
     rotating=true; var r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
-    startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx); startAngle=getAngle();
+    startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx); startAngle=getRotation(el);
     document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate);
   });
   function onRotate(e){
     if(!rotating) return;
     var r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2;
     var a=Math.atan2(e.clientY-cy,e.clientX-cx);
-    setAngle(startAngle+(a-startPointerAngle)*180/Math.PI);
+    setRotation(el, startAngle+(a-startPointerAngle)*180/Math.PI);
     positionHud();
   }
   function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
@@ -710,8 +625,7 @@ function makeDraggable(el){
     window.removeEventListener('pointercancel',onPointerUp);
     el.removeEventListener('lostpointercapture',onPointerUp);
   }
-
-  var tnode=el.querySelector('.scrap-text:not(.sticker)'); if(tnode) enableAutoGrow(el,tnode);
+  var tnode=el.querySelector('.scrap-text'); if(tnode) enableAutoGrow(el,tnode);
 }
 function enableAutoGrow(box,textEl){
   function grow(){ textEl.style.height='auto'; box.style.height=Math.max(40,textEl.scrollHeight)+'px'; positionHud(); }
@@ -725,41 +639,40 @@ document.addEventListener('click',function(e){
 });
 function deselect(){ if (selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); hideItemHud(); }
 
-var workingBox=null;
-function openTextModalForAdd(){ workingBox=null; textModalTitle.textContent='Add Text'; textAddBtn.textContent='Add Text'; textInput.value=''; openModal(textModal); setTimeout(function(){ textInput.focus(); },10); }
-function openTextModalForEdit(box){ workingBox=box; var t=box.querySelector('.scrap-text'); textModalTitle.textContent='Edit Text'; textAddBtn.textContent='Save'; textInput.value=t?t.textContent:''; openModal(textModal); setTimeout(function(){ textInput.focus(); },10); }
-
-document.getElementById('addTextBtn').onclick=function(){ openTextModalForAdd(); };
-textCancel.onclick=function(){ closeModal(textModal); };
-textAddBtn.onclick=function(){
-  var val=textInput.value;
-  if(workingBox){
-    var t=workingBox.querySelector('.scrap-text'); if(t){ t.textContent=val; t.style.height='auto'; workingBox.style.height=Math.max(40,t.scrollHeight)+'px'; }
-    closeModal(textModal); showItemHud(workingBox); return;
-  }
+/* text modal (simple prompt) */
+document.getElementById('addTextBtn').onclick=function(){
+  var val = prompt('Add text:','');
+  if(val==null) return;
   var box=document.createElement('div');
   box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
-  box.innerHTML='<div class="scrap-text" contenteditable="false">'+val.replace(/</g,"&lt;")+'</div>'
+  box.innerHTML='<div class="scrap-text" contenteditable="false">'+String(val).replace(/</g,"&lt;")+'</div>'
                +'<div class="mover" title="Drag"></div>'
                +'<div class="resizer"></div><div class="rotator"></div>';
   (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
-  closeModal(textModal);
 };
-document.addEventListener('dblclick',function(e){
-  if(!document.body.classList.contains('editing')) return;
-  var t=e.target.closest('.scrap-text'); if(t && !t.classList.contains('sticker')){ var box=t.closest('.scrap-item'); if(box){ selectedItem=box; box.classList.add('selected'); updateToolbarState(); showItemHud(box); openTextModalForEdit(box); } }
-});
+hudEdit.onclick = function(){
+  if (selectedItem){
+    var t=selectedItem.querySelector('.scrap-text');
+    if(!t) return;
+    var val=prompt('Edit text:', t.textContent||'');
+    if(val==null) return;
+    t.textContent=val; t.style.height='auto';
+    selectedItem.style.height=Math.max(40,t.scrollHeight)+'px';
+    showItemHud(selectedItem);
+  }
+};
+
 document.addEventListener('keydown',function(e){
   if(!document.body.classList.contains('editing')) return;
   if(!selectedItem) return;
   var key=e.key.toLowerCase();
-  if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text:not(.sticker)')){ e.preventDefault(); openTextModalForEdit(selectedItem); }
+  if((key==='e'||key==='enter') && selectedItem.querySelector('.scrap-text')){ e.preventDefault(); hudEdit.onclick(); }
   var step=e.shiftKey?1:5;
   if(e.key==='['){ e.preventDefault(); setRotation(selectedItem,getRotation(selectedItem)-step); }
   if(e.key===']'){ e.preventDefault(); setRotation(selectedItem,getRotation(selectedItem)+step); }
 });
 
-function selectedTextEl(){ if(!selectedItem) return null; var t=selectedItem.querySelector('.scrap-text'); return (t && !t.classList.contains('sticker'))?t:null; }
+function selectedTextEl(){ if(!selectedItem) return null; var t=selectedItem.querySelector('.scrap-text'); return t||null; }
 function updateFontInput(){
   var t=selectedTextEl(); if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; fontSizeInput.placeholder='px'; return; }
   fontSizeInput.disabled=false; var curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr; hudFont.value=curr;
@@ -769,11 +682,6 @@ fontSizeInput.addEventListener('input',function(){
   v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
   var box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; hudFont.value=v;
 });
-hudEdit.onclick = function(){
-  if (selectedItem && selectedItem.querySelector('.scrap-text:not(.sticker)')) {
-    openTextModalForEdit(selectedItem);
-  }
-};
 hudFont.addEventListener('input',function(){
   var t=selectedTextEl(); if(!t) return; var v=parseInt(hudFont.value,10); if(isNaN(v)) return;
   v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
@@ -787,23 +695,14 @@ function rgbToHex(rgb){
   var r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0');
   return '#'+r+g+b;
 }
-function looksLikeEmoji(s){
-  try{ return /\p{Extended_Pictographic}/u.test(s||''); } catch(_){ return /[\uD83C-\uDBFF\uDC00-\uDFFF]/.test(s||''); }
-}
 function updateColorInput(){
   var t=selectedAnyTextEl();
   if(!t){ fontColorInput.disabled=true; fontColorInput.title=''; return; }
-  var isSticker=t.classList.contains('sticker');
-  var emojiLocked=isSticker && (selectedItem && selectedItem.dataset && selectedItem.dataset.emoji==='1' || looksLikeEmoji(t.textContent));
-  if(emojiLocked){ fontColorInput.disabled=true; fontColorInput.title='emoji color is locked'; return; }
   fontColorInput.disabled=false; fontColorInput.title='';
   var comp=getComputedStyle(t).color; fontColorInput.value=comp.indexOf('#')===0?comp:rgbToHex(comp);
 }
 fontColorInput.addEventListener('input',function(){
   var t=selectedAnyTextEl(); if(!t) return;
-  var isSticker=t.classList.contains('sticker');
-  var emojiLocked=isSticker && (selectedItem && selectedItem.dataset && selectedItem.dataset.emoji==='1' || looksLikeEmoji(t.textContent));
-  if(emojiLocked) return;
   t.style.color=fontColorInput.value;
 });
 
@@ -830,7 +729,7 @@ hudFront.onclick = function(){ if(selectedItem){ selectedItem.style.zIndex=++zCo
 hudBack.onclick  = function(){ if(selectedItem){ selectedItem.style.zIndex=0; } };
 hudDelete.onclick= function(){ if(selectedItem){ selectedItem.remove(); deselect(); } };
 
-/* Photos & stickers */
+/* Photos */
 document.getElementById('addPhotoBtn').onclick=function(){ fileInput.click(); };
 fileInput.addEventListener('change',async function(e){
   var f=e.target.files[0]; if(!f) return;
@@ -849,38 +748,8 @@ fileInput.addEventListener('change',async function(e){
   imgEl._preb64={mime:mime,base64:base64}; fileInput.value='';
 });
 
-// safer sticker set (ASCII + emojis)
-var STICKERS_EMOJI=[ "🎮","👾","🕹️","💚","💜","💙","💛","🩷","💌","♕","♚","★","☆","♥","♡","✿","♪","♫","∞","💫" ];
-document.getElementById('stickersBtn').onclick=function(){
-  stickersGrid.innerHTML='';
-  STICKERS_EMOJI.forEach(function(ch){
-    var b=document.createElement('button'); b.textContent=ch; b.title=ch;
-    b.addEventListener('click',function(){
-      var box=document.createElement('div');
-      box.className='scrap-item'; box.style.left='60px'; box.style.top='60px'; box.style.width='100px';
-      var isEmoji=looksLikeEmoji(ch); box.dataset.emoji=isEmoji?'1':'0';
-      box.innerHTML='<div class="scrap-text sticker" style="font-size:64px;">'+ch+'</div>'
-                   +'<div class="mover" title="Drag"></div>'
-                   +'<div class="resizer"></div><div class="rotator"></div>';
-      (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
-    });
-    stickersGrid.appendChild(b);
-  });
-  openModal(stickerModal);
-};
-stickersClose.onclick=function(){ closeModal(stickerModal); };
-
-/* Book buttons */
-document.getElementById('exitEditBtn').onclick = function(){ exitEdit(); };
-document.getElementById('closeBookBtn').onclick = function(){ closeBook(); };
-document.getElementById('removeSheetBtn').onclick = function(){ removeLastSheet(); };
-
-/* Delete/Clear/Save */
-document.getElementById('deleteSelectedBtn').onclick=function(){ if(selectedItem){selectedItem.remove(); deselect();} };
-document.getElementById('clearPageBtn').onclick=function(){ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
-document.getElementById('saveBtn').onclick=function(){ saveToTables().catch(function(e){ alert('Save failed: '+e); }); };
-
 /* Save */
+document.getElementById('saveBtn').onclick=function(){ saveToTables().catch(function(e){ alert('Save failed: '+e); }); };
 async function saveToTables(){
   toastShow('Saving…');
   var imgs=[].slice.call(document.querySelectorAll('#book .scrap-img'));
@@ -915,8 +784,8 @@ async function saveToTables(){
   toastShow('Saved ✓'); setTimeout(function(){ exitEdit(); },300);
 }
 
-/* Load from tables */
-async function loadFromTables(){
+/* Load from tables — chunked image fetch with progress */
+async function loadFromTablesChunked(){
   var stateRow=await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
   if(stateRow.error) throw stateRow.error;
   var state=stateRow.data;
@@ -927,14 +796,24 @@ async function loadFromTables(){
     var p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
   }
 
+  // collect image IDs
   var ids=[]; state.pages.forEach(function(pg){ (pg.items||[]).forEach(function(it){ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }); });
-  var uniq=[].filter.call(ids, function(v, i, a){ return a.indexOf(v)===i; });
+  // unique
+  var uniq=[]; ids.forEach(function(id){ if(uniq.indexOf(id)===-1) uniq.push(id); });
+
   var urlMap={};
   if(uniq.length){
-    var imgs=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',uniq);
-    if(imgs.error) throw imgs.error;
-    (imgs.data||[]).forEach(function(r){ urlMap[r.id]='data:'+r.content_type+';base64,'+r.data_base64; });
+    for(var start=0; start<uniq.length; start+=IMG_CHUNK){
+      var end = Math.min(start+IMG_CHUNK, uniq.length);
+      bootMsg.textContent='Loading photos '+(start+1)+'–'+end+' of '+uniq.length+'…';
+      var chunk = uniq.slice(start,end);
+      var imgs=await supabase.from(TABLE_IMAGES).select('id,content_type,data_base64').in('id',chunk);
+      if(imgs.error) throw imgs.error;
+      (imgs.data||[]).forEach(function(r){ urlMap[r.id]='data:'+r.content_type+';base64,'+r.data_base64; });
+    }
   }
+
+  bootMsg.textContent='Rendering…';
 
   var canvases=[].slice.call(document.querySelectorAll('#book .page .page-canvas'));
   for(var j=0;j<Math.min(state.pages.length,canvases.length);j++){
@@ -960,35 +839,11 @@ async function loadFromTables(){
         var holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
         var inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner);
         box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
-        if(inner.classList.contains('sticker')){
-          box.dataset.emoji = looksLikeEmoji(inner.textContent) ? '1' : '0';
-        }
       }
       c.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
     }
   }
 }
-
-/* Modals */
-function openModal(el){
-  hideItemHud();
-  el.classList.add('open');
-  el.setAttribute('aria-hidden','false');
-  document.body.classList.add('modal-open');
-}
-function closeModal(el){
-  el.classList.remove('open');
-  el.setAttribute('aria-hidden','true');
-  document.body.classList.remove('modal-open');
-}
-stickerModal.addEventListener('click', function(e){ if(e.target===stickerModal) closeModal(stickerModal); });
-textModal.addEventListener('click', function(e){ if(e.target===textModal) closeModal(textModal); });
-document.addEventListener('keydown', function(e){
-  if(e.key==='Escape'){
-    if(stickerModal.classList.contains('open')) closeModal(stickerModal);
-    if(textModal.classList.contains('open'))    closeModal(textModal);
-  }
-});
 
 /* Utils */
 function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(function(){ toast.style.display='none'; },1600); }
