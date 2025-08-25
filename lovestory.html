@@ -24,8 +24,6 @@
   --cover-y:28%;
   --cover-img:url("./lovestory_cover.png?v=8");
 }
-/* If you later self-host licensed webfonts, drop @font-face here */
-
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
@@ -406,8 +404,17 @@ function ensureTrailingBlankSheets(nSheets=3){
   }
 }
 
+/* ========= Helper: non-blocking cloud load ========= */
+function afterBootShow(){
+  bookEl.style.visibility='visible';
+  initFlip(0);
+  boot.classList.add('hide');
+  setTimeout(()=>boot.remove(),400);
+}
+function timeout(ms){ return new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')), ms)); }
+
 /* ========= Init ========= */
-init().catch(console.error);
+init().catch(e=>{ console.error(e); afterBootShow(); });
 async function init(){
   const coverReady = new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
   const fontsReady = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();
@@ -417,17 +424,17 @@ async function init(){
 
   await Promise.allSettled([coverReady, fontsReady]);
 
-  // load any saved content
-  await loadFromTables();
+  // TRY to load saved content, but don't block the UI forever
+  try{
+    await Promise.race([loadFromTables(), timeout(2500)]);
+  }catch(e){
+    console.warn('Cloud load skipped:', e);
+    toastShow('⚠️ Couldn’t reach cloud. Showing local.');
+  }
 
-  // then ensure 3 blank sheets (6 pages) at the very end
+  // continue regardless
   ensureTrailingBlankSheets(3);
-
-  // reveal + init flip
-  bookEl.style.visibility='visible';
-  initFlip(0);
-  boot.classList.add('hide');
-  setTimeout(()=>boot.remove(),400);
+  afterBootShow();
 }
 
 /* ========= Target left/right ========= */
@@ -745,7 +752,7 @@ fileInput.addEventListener('change',async e=>{
   if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
   imgEl._preb64={mime,base64}; fileInput.value='';
 });
-const STICKERS_EMOJI=[ "🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","💜","💋","💯","💢","🏜️","🏝️","✈️","♾️","💌","💘","♕","🫶🏻","💫","🍀","♚","𝑏𝑜𝑦𝑓𝑖𝑒","ℓo͟v͟ꫀ ყoυ .ᐟ","ℳ𝑦 ℒ𖹭𝑣𝑒","🌸","🎀","💕","🌷","🎧","✩°｡","☾⋆⁺₊","✴","(˘ ³˘)♥︎","⛤","⋆°｡⋆♡","🧸","✩°｡𓏲⋆","🍂","˗ˏˋ ♡ ˎˊ˗","🍃","🌿","🍁","☘️","🎁","༝༚༝༚","𓍯𓂃𓏧♡","愛してる","☘","♫","𝄞𝄢","♫⋆｡♪ ₊˚♬ﾟ.","𝄞" ];
+const STICKERS_EMOJI=[ "🎮","👾","🕹️","🖥️","⌨️","💞","🩷","🧡","💛","💚","💙","🩵","💜","💋","💯","💢","🏜️","🏝️","✈️","♾️","💌","💘","♕","🫶🏻","💫","🍀","♚","𝑏𝑜𝑦𝑓𝑖𝑒","ℓo͟v͟ꫀ ყoυ .ᐟ","ℳ𝑦 ℒ𖹭𝑣𝑒","🌸","🎀","💕","🌷","🎧","✩°｡","☾⋆⁺₊","✴","(˘ ³˘)♥︎","⛤","⋆°｡⋆♡","🧸","✩°｡𓏲⋆","🍂","˗ˏˋ ♡ ˎˊ˗","🍃","🌿","🍁","☘️","🎁","༝༚༝༚","𓍯𓂃𓏧♡","愛してる","☘","♫","𝄞","♫⋆｡♪ ₊˚♬ﾟ.","𝄞" ];
 document.getElementById('stickersBtn').onclick=()=>{
   stickersGrid.innerHTML='';
   STICKERS_EMOJI.forEach(ch=>{
@@ -863,7 +870,7 @@ document.addEventListener('keydown', (e)=>{
 
 /* Utils */
 function openModalLegacy(el){ openModal(el); } // (no-op alias if any old calls exist)
-function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1200); }
+function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1600); }
 document.querySelectorAll('#book .scrap-item').forEach(el=>{ makeDraggable(el); el.dataset._hooked='1'; });
 
 async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColor='#f7eddc'){
