@@ -5,9 +5,7 @@
 <title>Our Scrapbook Story</title>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
-
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
-
 <link rel="preload" as="image" href="./lovestory_cover.png?v=8" fetchpriority="high">
 
 <style>
@@ -26,109 +24,85 @@ body{
   font-family:var(--font);
 }
 
-#boot{
-  position:fixed; inset:0; display:grid; place-items:center;
-  background:#0b0f2f; color:#67e4ca; z-index:9999;
-  font:600 18px/1.2 system-ui, Segoe UI, sans-serif; letter-spacing:.4px;
-  transition:opacity .35s ease;
-}
-#boot .card{
-  text-align:center; padding:18px 22px; border:2px solid #67e4ca55; border-radius:12px;
-  box-shadow:0 12px 30px rgba(0,0,0,.35); max-width:520px;
-}
+/* Boot / status */
+#boot{ position:fixed; inset:0; display:grid; place-items:center; background:#0b0f2f; color:#67e4ca; z-index:9999;
+  font:600 18px/1.2 system-ui, Segoe UI, sans-serif; letter-spacing:.4px; transition:opacity .35s ease; }
+#boot .card{ text-align:center; padding:18px 22px; border:2px solid #67e4ca55; border-radius:12px; box-shadow:0 12px 30px rgba(0,0,0,.35); max-width:520px; }
 #boot.hide{ opacity:0; pointer-events:none; }
-#retryBtn{
-  margin-top:10px; border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
-  font-weight:800; color:#022d2c; background:var(--mint); display:none;
-}
+#retryBtn{ margin-top:10px; border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:800; color:#022d2c; background:var(--mint); display:none; }
 
+/* Stage & Book */
 #stage{ width:1000px; height:650px; position:relative; }
 #book { position:absolute; inset:0; visibility:hidden; will-change:transform; }
 
-.page{
-  width:100%; height:100%; position:relative; overflow:hidden;
-  background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22);
-}
-.page-canvas{
-  position:relative; width:100%; height:100%; padding:28px;
-  color:var(--ink); font-size:22px; line-height:1.35;
-  content-visibility:auto; contain-intrinsic-size:650px 500px;
-}
+/* Pages */
+.page{ width:100%; height:100%; position:relative; overflow:hidden; background:var(--paper); box-shadow: inset 0 0 60px rgba(0,0,0,.22); }
+.page-canvas{ position:relative; width:100%; height:100%; padding:28px; color:var(--ink); font-size:22px; line-height:1.35;
+  content-visibility:auto; contain-intrinsic-size:650px 500px; }
 
+/* COVER */
 .page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
-.page.cover .page-canvas{
-  padding:0; background:#0c102c;
-  background-image:var(--cover-img);
-  background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat;
-}
+.page.cover .page-canvas{ padding:0; background:#0c102c; background-image:var(--cover-img);
+  background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat; }
 
+/* Scrap items */
 .scrap-item{ position:absolute; transform-origin:center; touch-action:none; overflow:visible; }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .resizer{ display:none; }
-.rotator{
-  display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%);
-  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; pointer-events:auto;
-}
-.mover{
-  display:none; position:absolute; left:-10px; top:-10px;
-  width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
-  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab;
-}
+.rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%;
+  background:#fff; border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; pointer-events:auto; }
+.mover{ display:none; position:absolute; left:-10px; top:-10px; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent);
+  box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; }
 body.editing .scrap-item{ cursor:move; }
-body.editing .scrap-item .resizer{
-  display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px;
-  border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize;
-}
+body.editing .scrap-item .resizer{ display:block; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px;
+  background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
 body.editing .scrap-item .rotator{ display:block; }
 body.editing .scrap-item .mover{ display:block; }
 
+/* Images & text */
 .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; pointer-events:none; user-select:none; }
 .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
-.scrap-text{
-  display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit;
-  white-space:pre-wrap; overflow:visible; min-height:1.2em;
-}
+.scrap-text{ display:block; width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em; }
 
-#toolbar{
-  position:fixed; right:16px; top:50%; transform:translateY(-50%);
-  z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
-  width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25);
-  display:none; flex-direction:column; align-items:stretch;
-}
+/* Toolbar */
+#toolbar{ position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
+  width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column; align-items:stretch; }
 #toolbar.open{ display:flex; }
 #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
-#toolbar button{
-  border:0; padding:8px 12px; border-radius:8px; cursor:pointer;
-  font-weight:700; color:#fff; background:var(--accent); width:100%;
-}
+#toolbar button{ border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent); width:100%; }
 #toolbar button.secondary{ background:#5d47d4; }
 #toolbar button.mint{ background:var(--mint); color:#022d2c; }
 #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
-#toolbar input[type="number"]{
-  width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff;
-}
+#toolbar input[type="number"]{ width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff; }
 #fileInput{ display:none; }
-#toolbar input[type="color"]{
-  width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff;
-}
+#toolbar input[type="color"]{ width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff; }
 
+/* allow events while editing */
 body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto; }
 
 #toast{ position:absolute; top:12px; right:12px; z-index:95; background:#11172f; color:#fff; border:2px solid var(--mint); padding:8px 12px; border-radius:10px; display:none; }
 .page-canvas.active-side{ outline:3px dashed var(--accent); outline-offset:-12px; }
 
-#itemHud{
-  position:absolute; z-index:120; display:none; background:#151a30; color:#fff;
-  border:2px solid #fff2; border-radius:10px; padding:6px; gap:6px; box-shadow:0 12px 24px rgba(0,0,0,.35);
-  align-items:center; flex-wrap:wrap;
-}
+/* HUD */
+#itemHud{ position:absolute; z-index:120; display:none; background:#151a30; color:#fff; border:2px solid #fff2; border-radius:10px; padding:6px; gap:6px;
+  box-shadow:0 12px 24px rgba(0,0,0,.35); align-items:center; flex-wrap:wrap; }
 #itemHud button{ border:0; padding:6px 8px; border-radius:8px; cursor:pointer; font-weight:700; font-size:12px; color:#fff; background:#5d47d4; }
 #itemHud button.warn{ background:#ff9aa2; color:#4c0a17; }
 #itemHud button.mint{ background:var(--mint); color:#022d2c; }
-#itemHud input[type="number"]{
-  width:70px; padding:6px 8px; border-radius:8px; border:2px solid #2b3258; background:#0f1430; color:#fff; font-weight:700; font-size:12px;
-}
+#itemHud input[type="number"]{ width:70px; padding:6px 8px; border-radius:8px; border:2px solid #2b3258; background:#0f1430; color:#fff; font-weight:700; font-size:12px; }
+
+/* --- Big Text Editor Modal --- */
+#textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
+#textEditor.open{display:flex}
+#textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#textEditor textarea{width:100%;height:320px;font:28px/1.35 var(--font);color:var(--ink);padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical}
+#textEditor .row{display:flex;gap:12px;margin-top:10px}
+#textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
+#textEditor input[type="color"]{width:80px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
+#textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+#textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+#editorCancel{background:#ff9aa2;color:#4c0a17}
+#editorSave{background:var(--mint);color:#022d2c}
 </style>
 </head>
 <body>
@@ -142,27 +116,24 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 
 <div id="stage">
   <div id="book">
-
     <div class="page cover"><div class="page-canvas"></div></div>
-
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
     <div class="page"><div class="page-canvas"></div></div>
   </div>
 
+  <!-- Right toolbar -->
   <div id="toolbar">
     <div class="group">
       <button id="targetLeft" class="secondary">Edit Left</button>
       <button id="targetRight" class="secondary">Edit Right</button>
     </div>
-
     <div class="group">
       <button id="exitEditBtn" class="secondary">Done Editing</button>
       <button id="closeBookBtn" class="secondary">Close Book</button>
       <button id="removeSheetBtn" class="warn">Remove Last Sheet</button>
     </div>
-
     <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
@@ -187,6 +158,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
     <input id="fileInput" type="file" accept="image/*" />
   </div>
 
+  <!-- HUD -->
   <div id="itemHud" aria-hidden="true">
     <button id="hudEdit"  class="mint only-text">Edit</button>
     <input  id="hudFont"  class="only-text" type="number" min="8" max="200" step="1" placeholder="size">
@@ -201,12 +173,35 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
     <button id="hudDelete" class="warn">Delete</button>
   </div>
 
+  <!-- Big Text Editor -->
+  <div id="textEditor" aria-hidden="true">
+    <div class="panel">
+      <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
+      <textarea id="editorInput" placeholder="type here…"></textarea>
+      <div class="row">
+        <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+          Size (px)
+          <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
+        </label>
+        <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+          Color
+          <input id="editorColor" type="color" value="#0d2a6b">
+        </label>
+      </div>
+      <div class="actions">
+        <button id="editorCancel">Cancel</button>
+        <button id="editorSave">Save</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
 <script src="./flipbook/page-flip.browser.js"></script>
 
 <script>
+/* ========= Supabase (REST) ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const TABLE_IMAGES="scrapbook_images";
@@ -215,18 +210,14 @@ const STATE_ID="main";
 const CLOUD_ONLY = true;
 const IMG_CHUNK  = 20;
 
-// headers: separate GET from JSON POST/PATCH
-const sbHeadersGet = {
-  apikey: SUPABASE_ANON,
-  Authorization: "Bearer " + SUPABASE_ANON,
-};
-const sbHeadersJson = {
-  ...sbHeadersGet,
+const sbHeaders = {
+  "apikey": SUPABASE_ANON,
+  "Authorization": "Bearer " + SUPABASE_ANON,
   "Content-Type": "application/json",
+  "Accept": "application/json"
 };
-// also include apikey as query param for robustness
-const APIKEY_QP = `apikey=${encodeURIComponent(SUPABASE_ANON)}`;
 
+/* ========= Refs ========= */
 const bookEl   = document.getElementById('book');
 const stageEl  = document.getElementById('stage');
 const toolbar  = document.getElementById('toolbar');
@@ -257,6 +248,7 @@ const hudRotR   = document.getElementById('hudRotR');
 let pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 let zCounter = 10;
 
+/* ========= Utils ========= */
 const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
 function isPageEmpty(p){ return (p?.querySelectorAll('.scrap-item').length||0)===0; }
 function ensureTrailingBlankSheets(nSheets=2){
@@ -274,12 +266,12 @@ function ensureTrailingBlankSheets(nSheets=2){
   }
 }
 function afterBootShow(){ bookEl.style.visibility='visible'; }
-function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1600); }
+function toastShow(msg){ toast.textContent=msg; toast.style.display='block'; setTimeout(()=>toast.style.display='none',1800); }
 
+/* ========= Flip init ========= */
 function initFlip(startIndex=0){
   try{ pageFlip?.destroy?.(); }catch(_){}
   if(!window.St || !St.PageFlip){ alert("PageFlip library missing."); afterBootShow(); return; }
-
   const pgCount = document.querySelectorAll('#book .page').length;
   if (pgCount < 2) {
     const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>';
@@ -298,6 +290,26 @@ function initFlip(startIndex=0){
   });
 }
 
+/* ========= ID helpers ========= */
+const isUUID = s => typeof s === 'string' &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+
+/* robust UUID fetch with auto-bisect on 400 */
+async function fetchImageRowsUUID(list){
+  if (list.length === 0) return [];
+  // quote UUIDs and URL-encode the whole clause
+  const quoted = list.map(v => `"${v}"`).join(',');
+  const url = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?select=id,content_type,data_base64&id=in.(${quoted})`;
+  const res = await fetch(url, { headers: sbHeaders });
+  if (res.ok) return res.json();
+  if (res.status !== 400 || list.length === 1) throw new Error('images load ' + res.status);
+  const mid = Math.floor(list.length/2);
+  const left  = await fetchImageRowsUUID(list.slice(0, mid));
+  const right = await fetchImageRowsUUID(list.slice(mid));
+  return left.concat(right);
+}
+
+/* ========= Init / Cloud load ========= */
 init().catch(err=>console.error(err));
 async function init(){
   const coverReady = new Promise(res=>{ const i=new Image(); i.onload=i.onerror=res; i.src="./lovestory_cover.png?v=8"; });
@@ -307,47 +319,43 @@ async function init(){
   retryBtn.style.display='none';
 
   try{
-    // Load state (GET) with apikey in query and proper headers
-    const stateUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?${APIKEY_QP}&select=pages&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
-    const stateRes = await fetch(stateUrl, { headers: sbHeadersGet });
-    if(!stateRes.ok){
-      const m = await stateRes.text().catch(()=> "");
-      throw new Error('state load '+stateRes.status+': '+m);
-    }
+    // 1) Load state row
+    const stateUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?select=pages&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
+    const stateRes = await fetch(stateUrl, { headers: sbHeaders });
+    if(!stateRes.ok) throw new Error('state load '+stateRes.status);
     const stateArr = await stateRes.json();
     const state = stateArr && stateArr[0];
     const pages = state?.pages || [];
 
+    // 2) Ensure enough page nodes
     const have=document.querySelectorAll('#book .page').length-1;
     const need=pages.length;
     for(let i=have;i<need;i++){
       const p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
     }
 
-    // collect + sanitize ids
-    const ids=[];
+    // 3) Collect IDs (UUIDs only); note legacy numeric IDs are skipped
+    const uuidIds=[], legacyNumeric=[], badIds=[];
     pages.forEach(pg=>pg.items?.forEach(it=>{
-      if(it.type==='image' && it.imageId!=null) ids.push(it.imageId);
-    }));
-    const uniq=[...new Set(ids)]
-      .map(n=>Number(n))
-      .filter(n=>Number.isFinite(n) && n>0);
-
-    const urlMap={};
-    for(let i=0;i<uniq.length;i+=IMG_CHUNK){
-      const chunk = uniq.slice(i,i+IMG_CHUNK);
-      const list  = chunk.join(',');
-      const imgsUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?${APIKEY_QP}&select=id,content_type,data_base64&id=in.(${list})`;
-      const imgsRes = await fetch(imgsUrl, { headers: sbHeadersGet });
-      if(!imgsRes.ok){
-        const m = await imgsRes.text().catch(()=> "");
-        throw new Error('images load '+imgsRes.status+': '+m);
+      if(it.type==='image'){
+        if(isUUID(it.imageId)) uuidIds.push(it.imageId);
+        else if (typeof it.imageId==='number' || /^[0-9]+$/.test(String(it.imageId||''))) legacyNumeric.push(it.imageId);
+        else if (it.imageId!=null) badIds.push(it.imageId);
       }
-      const rows = await imgsRes.json();
+    }));
+    if(legacyNumeric.length){ console.warn('Legacy numeric imageId(s) in state:', legacyNumeric); }
+    if(badIds.length){ console.warn('Skipping invalid imageId(s) in state:', badIds); }
+
+    // 3b) fetch in chunks
+    const urlMap={};
+    for(let i=0;i<uuidIds.length;i+=IMG_CHUNK){
+      const rows = await fetchImageRowsUUID(uuidIds.slice(i,i+IMG_CHUNK));
       rows.forEach(r=>{ urlMap[r.id]=`data:${r.content_type};base64,${r.data_base64}`; });
-      bootMsg.textContent = `Loading photos ${Math.min(i+1,uniq.length)}–${Math.min(i+IMG_CHUNK,uniq.length)} of ${uniq.length}…`;
+      bootMsg.textContent = `Loading photos ${Math.min(i+1,uuidIds.length)}–${Math.min(i+IMG_CHUNK,uuidIds.length)} of ${uuidIds.length}…`;
     }
 
+    // 4) Render
+    let missingCount=0;
     const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
     for(let j=0;j<Math.min(pages.length,canvases.length);j++){
       const c=canvases[j]; c.innerHTML='';
@@ -359,8 +367,12 @@ async function init(){
         if(it.style?.width) box.style.width=it.style.width;
         if(it.style?.height)box.style.height=it.style.height;
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; }
-        if(it.type==='image'&&it.imageId!=null){
-          const url=urlMap[it.imageId]||''; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
+
+        if(it.type==='image'){
+          if(!isUUID(it.imageId)) { missingCount++; continue; }
+          const url=urlMap[it.imageId];
+          if(!url){ missingCount++; continue; }
+          box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
           box.innerHTML=`<img class="scrap-img" data-imgid="${it.imageId}" src="${url}" alt="" decoding="async">
                          <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
           const imgEl=box.querySelector('.scrap-img');
@@ -379,6 +391,9 @@ async function init(){
     afterBootShow();
     initFlip(0);
 
+    if(missingCount){ toastShow(`${missingCount} photo${missingCount>1?'s':''} couldn’t load (legacy refs skipped)`); }
+    if(legacyNumeric.length){ toastShow(`Legacy images detected — press Save to clean`); }
+
     boot.classList.add('hide'); setTimeout(()=>{ try{boot.remove();}catch(_){} },400);
   }catch(err){
     console.warn('Cloud load failed:', err);
@@ -393,6 +408,7 @@ async function init(){
   }
 }
 
+/* ========= Target left/right ========= */
 function getVisibleCanvases(){
   const pr=stageEl.getBoundingClientRect();
   const all=[...document.querySelectorAll('#book .page .page-canvas')].map(el=>{
@@ -416,6 +432,7 @@ stageEl.addEventListener('mousedown',e=>{
 document.getElementById('targetLeft').onclick = ()=>{ const v=getVisibleCanvases(); highlightCanvas(v.left||v.right); };
 document.getElementById('targetRight').onclick= ()=>{ const v=getVisibleCanvases(); highlightCanvas(v.right||v.left); };
 
+/* ========= Secret Edit Mode (type 123) ========= */
 const PASSCODE='123'; let keyBuffer='', keyTimer=null;
 document.addEventListener('keydown',(e)=>{
   keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
@@ -469,6 +486,7 @@ document.getElementById('removeSheetBtn').onclick = ()=>{
   toastShow('Removed last sheet ✓');
 };
 
+/* ========= HUD / drag / resize / rotate ========= */
 function positionHud(){
   if(!selectedItem || itemHud.style.display==='none') return;
   const r=selectedItem.getBoundingClientRect(), sr=stageEl.getBoundingClientRect();
@@ -569,31 +587,6 @@ function makeDraggable(el){
     startDrag(e);
   });
 
-  function startDrag(e){
-    dragging=true; dragPointerId=e.pointerId ?? 'mouse';
-    try{ if(e.pointerId!=null && el.setPointerCapture) el.setPointerCapture(e.pointerId);}catch(_){}
-    startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop;
-    window.addEventListener('pointermove',onPointerMove);
-    window.addEventListener('pointerup',onPointerUp);
-    window.addEventListener('pointercancel',onPointerUp);
-    el.addEventListener('lostpointercapture',onPointerUp);
-  }
-  function onPointerMove(e){
-    if(!dragging) return;
-    const dx=e.clientX-startX, dy=e.clientY-startY;
-    el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
-    positionHud();
-  }
-  function onPointerUp(){
-    if(!dragging) return;
-    try{ if(dragPointerId!=null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId);}catch(_){}
-    dragging=false; dragPointerId=null;
-    window.removeEventListener('pointermove',onPointerMove);
-    window.removeEventListener('pointerup',onPointerUp);
-    window.removeEventListener('pointercancel',onPointerUp);
-    el.removeEventListener('lostpointercapture',onPointerUp);
-  }
-
   const tnode=el.querySelector('.scrap-text'); if(tnode) enableAutoGrow(el,tnode);
 }
 function enableAutoGrow(box,textEl){
@@ -608,28 +601,60 @@ document.addEventListener('click',e=>{
 });
 function deselect(){ selectedItem?.classList.remove('selected'); selectedItem=null; updateToolbarState(); hideItemHud(); }
 
-document.getElementById('addTextBtn').onclick=()=>{
-  const val = prompt('Add text:','');
-  if(val==null) return;
-  const box=document.createElement('div');
-  box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
-  box.innerHTML='<div class="scrap-text" contenteditable="false">'+String(val).replace(/</g,"&lt;")+'</div>'
-               +'<div class="mover" title="Drag"></div>'
-               +'<div class="resizer"></div><div class="rotator"></div>';
-  (activeCanvas||getVisibleCanvases().right).appendChild(box); makeDraggable(box); box.dataset._hooked='1';
+/* ========= Big Text Editor ========= */
+const editor = {
+  el: document.getElementById('textEditor'),
+  input: document.getElementById('editorInput'),
+  size: document.getElementById('editorSize'),
+  color: document.getElementById('editorColor'),
+  save: document.getElementById('editorSave'),
+  cancel: document.getElementById('editorCancel'),
+  targetBox: null
 };
-hudEdit.onclick = ()=>{
-  if (selectedItem){
-    const t=selectedItem.querySelector('.scrap-text');
-    if(!t) return;
-    const val=prompt('Edit text:', t.textContent||'');
-    if(val==null) return;
-    t.textContent=val; t.style.height='auto';
-    selectedItem.style.height=Math.max(40,t.scrollHeight)+'px';
-    showItemHud(selectedItem);
+function openTextEditor({ text = '', size = 28, color = '#0d2a6b', targetBox = null } = {}) {
+  editor.targetBox = targetBox;
+  editor.input.value = text;
+  editor.size.value = size;
+  editor.color.value = color;
+  editor.el.classList.add('open');
+  setTimeout(() => editor.input.focus(), 0);
+}
+function closeTextEditor() { editor.el.classList.remove('open'); editor.targetBox = null; }
+editor.cancel.onclick = closeTextEditor;
+editor.el.addEventListener('click', e => { if (e.target === editor.el) closeTextEditor(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && editor.el.classList.contains('open')) closeTextEditor(); });
+editor.save.onclick = () => {
+  const text = editor.input.value;
+  const size = Math.max(8, Math.min(200, parseInt(editor.size.value || '22', 10)));
+  const color = editor.color.value || '#0d2a6b';
+
+  if (editor.targetBox) {
+    const t = editor.targetBox.querySelector('.scrap-text');
+    if (!t) return;
+    t.textContent = text;
+    t.style.fontSize = size + 'px';
+    t.style.color = color;
+    t.style.height = 'auto';
+    editor.targetBox.style.height = Math.max(40, t.scrollHeight) + 'px';
+    showItemHud(editor.targetBox);
+  } else {
+    const box = document.createElement('div');
+    box.className = 'scrap-item';
+    box.style.left = '40px';
+    box.style.top = '40px';
+    box.style.width = '320px';
+    box.innerHTML = `
+      <div class="scrap-text" contenteditable="false" style="font-size:${size}px;color:${color}"></div>
+      <div class="mover" title="Drag"></div>
+      <div class="resizer"></div><div class="rotator"></div>`;
+    box.querySelector('.scrap-text').textContent = text;
+    (activeCanvas || getVisibleCanvases().right).appendChild(box);
+    makeDraggable(box); box.dataset._hooked='1';
   }
+  closeTextEditor();
 };
 
+/* Image controls + toolbar small inputs */
 function updateImageButtons(){
   const onImg=!!selectedItem?.querySelector('.scrap-img');
   fitBtn.disabled=!onImg; lockBtn.disabled=!onImg;
@@ -675,6 +700,7 @@ fontColorInput.addEventListener('input',()=>{
   t.style.color=fontColorInput.value;
 });
 
+/* HUD buttons */
 hudRot.addEventListener('input',()=>{ if(!selectedItem) return; const v=parseFloat(hudRot.value); if(isNaN(v)) return; setRotation(selectedItem,v); });
 hudRotL.onclick=()=>{ if(!selectedItem) return; setRotation(selectedItem,getRotation(selectedItem)-5); };
 hudRotR.onclick=()=>{ if(!selectedItem) return; setRotation(selectedItem,getRotation(selectedItem)+5); };
@@ -683,6 +709,7 @@ hudFront.onclick = ()=>{ if(selectedItem){ selectedItem.style.zIndex=++zCounter;
 hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; } };
 hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
 
+/* Photos (local add) */
 document.getElementById('addPhotoBtn').onclick=()=>fileInput.click();
 fileInput.addEventListener('change',async e=>{
   const f=e.target.files[0]; if(!f) return;
@@ -700,10 +727,12 @@ fileInput.addEventListener('change',async e=>{
   imgEl._preb64={mime,base64}; fileInput.value='';
 });
 
+/* ========= Save (REST) ========= */
 document.getElementById('saveBtn').onclick=()=>saveToCloud().catch(e=>alert('Save failed: '+e));
 async function saveToCloud(){
   toastShow('Saving…');
 
+  // 1) Upload any new images
   const imgs=[...document.querySelectorAll('#book .scrap-img')];
   for(const img of imgs){
     if(img.dataset.imgid) continue;
@@ -712,19 +741,18 @@ async function saveToCloud(){
     else{
       const r=await fetch(img.src); const b=await r.blob(); const enc=await compressToBase64(b,1600,0.85); mime=enc.mime; base64=enc.base64;
     }
-    const insUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}?${APIKEY_QP}`;
+    const insUrl = `${SUPABASE_URL}/rest/v1/${TABLE_IMAGES}`;
     const insRes = await fetch(insUrl,{
-      method:'POST', headers: sbHeadersJson,
+      method:'POST', headers:{...sbHeaders, "Prefer":"return=representation"},
       body: JSON.stringify([{content_type:mime,data_base64:base64}])
     });
-    if(!insRes.ok){
-      const m = await insRes.text().catch(()=> "");
-      throw new Error('image insert '+insRes.status+': '+m);
-    }
+    if(!insRes.ok) throw new Error('image insert '+insRes.status);
     const row = (await insRes.json())[0];
-    img.dataset.imgid=row.id; delete img._preb64;
+    img.dataset.imgid=String(row.id); // keep UUID string
+    delete img._preb64;
   }
 
+  // 2) Gather pages back from DOM
   const canvases=[...document.querySelectorAll('#book .page .page-canvas')];
   const pages=[];
   canvases.forEach(c=>{
@@ -733,26 +761,33 @@ async function saveToCloud(){
       const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height};
       const rot=parseFloat(el.dataset.rot||'0')||0;
       const img=el.querySelector('.scrap-img');
-      if(img){ items.push({type:'image',style,rot,imageId:parseInt(img.dataset.imgid,10)||null,fit:el.dataset.fit||'contain',lock:el.dataset.lock==='1'}); }
-      else{ const txt=el.querySelector('.scrap-text'); items.push({type:'text',style,rot,html:txt?txt.outerHTML:''}); }
+      if(img){
+        items.push({
+          type:'image',style,rot,
+          imageId:(img.dataset.imgid??null), // <-- store string UUID, not number
+          fit:el.dataset.fit||'contain',
+          lock:el.dataset.lock==='1'
+        });
+      }else{
+        const txt=el.querySelector('.scrap-text');
+        items.push({type:'text',style,rot,html:txt?txt.outerHTML:''});
+      }
     });
     pages.push({items});
   });
 
-  const upUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?${APIKEY_QP}`;
+  // 3) Upsert state
+  const upUrl = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}`;
   const upRes = await fetch(upUrl,{
     method:'POST',
-    headers: sbHeadersJson,
+    headers:{...sbHeaders, "Prefer":"resolution=merge-duplicates,return=representation"},
     body: JSON.stringify({ id: STATE_ID, pages })
   });
-  if(!upRes.ok){
-    const m = await upRes.text().catch(()=> "");
-    throw new Error('state upsert '+upRes.status+': '+m);
-  }
+  if(!upRes.ok) throw new Error('state upsert '+upRes.status);
   toastShow('Saved ✓'); exitEdit();
 }
 
-function openModalLegacy(){} 
+/* ========= Misc utils ========= */
 async function compressToBase64(fileOrBlob, maxSide=1600, quality=0.85, pageColor='#f7eddc'){
   const blob=fileOrBlob instanceof Blob?fileOrBlob:new Blob([fileOrBlob]);
   const inputMime=blob.type||'image/png';
