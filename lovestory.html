@@ -6,10 +6,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="icon" href="data:,">
 
-<!-- fonts (don’t block boot) -->
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Courgette&family=Dancing+Script:wght@600&family=Great+Vibes&family=Kaushan+Script&family=Lobster&family=Pacifico&display=swap" rel="stylesheet">
+<!-- Only Lobster -->
+<link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 
 <!-- preload cover -->
 <link rel="preload" as="image" href="./lovestory_cover.png?v=8" fetchpriority="high">
@@ -18,7 +16,7 @@
 :root{
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca;
-  --font:"Dancing Script", cursive;
+  --font:"Lobster", cursive;
   --cover-y:28%;
   --cover-img:url("./lovestory_cover.png?v=8");
 }
@@ -183,19 +181,6 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
     </div>
 
     <div class="group">
-      <label style="font-weight:700;color:#0d2a6b;width:100%;">Font</label>
-      <select id="fontPicker" style="width:100%;padding:8px;border-radius:8px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b;background:#fff">
-        <option value="lobster">Lobster (default)</option>
-        <option value="pacifico">Pacifico</option>
-        <option value="kaushan">Kaushan Script</option>
-        <option value="courgette">Courgette</option>
-        <option value="alex">Alex Brush</option>
-        <option value="greatvibes">Great Vibes</option>
-        <option value="dancing">Dancing Script</option>
-      </select>
-    </div>
-
-    <div class="group">
       <button id="addTextBtn" class="mint">Add Text</button>
       <button id="addPhotoBtn" class="secondary">Add Photo</button>
     </div>
@@ -225,10 +210,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
     <input id="fileInput" type="file" accept="image/*" />
   </div>
 
-  <!-- Text modal -->
-  <div id="textModal" class="modal" aria-hidden="true" style="display:none;"></div>
-
-  <!-- Per-item HUD -->
+  <!-- Simple, no-sticker HUD -->
   <div id="itemHud" aria-hidden="true">
     <button id="hudEdit"  class="mint only-text">Edit</button>
     <input  id="hudFont"  class="only-text" type="number" min="8" max="200" step="1" placeholder="size">
@@ -246,11 +228,32 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
   <div id="toast">Edit mode unlocked ✨</div>
 </div>
 
-<!-- libs -->
+<!-- Supabase -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
-<script src="https://unpkg.com/page-flip/dist/js/page-flip.browser.min.js"></script>
 
 <script>
+/* ========= Robust PageFlip loader (CDN with fallback) ========= */
+async function loadPageFlipLib(){
+  if (window.St && window.St.PageFlip) return;
+  const urls = [
+    "https://cdn.jsdelivr.net/npm/page-flip@2.4.1/dist/js/page-flip.browser.min.js",
+    "https://unpkg.com/page-flip@2.4.1/dist/js/page-flip.browser.min.js"
+  ];
+  for (const src of urls){
+    try{
+      await new Promise((res,rej)=>{
+        const s=document.createElement('script');
+        s.src=src; s.async=true;
+        s.onload=()=>res();
+        s.onerror=()=>rej(new Error("load fail "+src));
+        document.head.appendChild(s);
+      });
+      if (window.St && window.St.PageFlip) return;
+    }catch(e){ console.warn("PageFlip CDN failed:", e); }
+  }
+  // If still not available, we'll run in "flat/scroll" mode (no flip) instead of blocking.
+}
+
 /* ========= Supabase ========= */
 const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
 const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
@@ -259,9 +262,9 @@ const TABLE_STATE ="scrapbook_state";    // pages json
 const STATE_ID="main";
 const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-/* ========= Boot policy ========= */
-const CLOUD_ONLY = true;      // never show local
-const IMG_CHUNK  = 20;        // fetch images in chunks
+/* ========= Cloud-only policy ========= */
+const CLOUD_ONLY = true;
+const IMG_CHUNK  = 20;
 function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 /* ========= Refs ========= */
@@ -292,44 +295,19 @@ const hudRot    = document.getElementById('hudRot');
 const hudRotL   = document.getElementById('hudRotL');
 const hudRotR   = document.getElementById('hudRotR');
 
-/* ========= Fonts ========= */
-const FONT_MAP = {
-  lobster: "Lobster, 'Dancing Script', cursive",
-  pacifico: "Pacifico, 'Dancing Script', cursive",
-  kaushan: "Kaushan Script, 'Dancing Script', cursive",
-  courgette: "Courgette, 'Dancing Script', cursive",
-  alex: "Alex Brush, 'Dancing Script', cursive",
-  greatvibes: "Great Vibes, 'Dancing Script', cursive",
-  dancing: "'Dancing Script', cursive"
-};
-function setGlobalFont(which){
-  var family = FONT_MAP[which] || FONT_MAP.lobster;
-  document.documentElement.style.setProperty('--font', family);
-  try{ localStorage.setItem('scrap_font', which); }catch(e){}
-  var nodes = document.querySelectorAll('#book .scrap-text');
-  for(var i=0;i<nodes.length;i++){ nodes[i].style.fontFamily=''; }
-  var picker = document.getElementById('fontPicker');
-  if (picker) picker.value = which;
-}
-function initFontPicker(){
-  var picker = document.getElementById('fontPicker');
-  var saved = 'lobster';
-  try{ saved = localStorage.getItem('scrap_font') || 'lobster'; }catch(e){}
-  setGlobalFont(saved);
-  if (picker){
-    picker.value = saved;
-    picker.addEventListener('change', function(){ setGlobalFont(picker.value); });
-  }
-}
-
 var pageFlip=null, activeCanvas=null, selectedItem=null, lastPageIndex=0;
 var zCounter = 10;
 
-/* ========= PageFlip ========= */
+/* ========= Flip init (will gracefully skip if lib missing) ========= */
 function initFlip(startIndex){
   if (typeof startIndex === 'undefined') startIndex = 0;
   try{ pageFlip && pageFlip.destroy && pageFlip.destroy(); }catch(_){}
-  if(!(window.St && St.PageFlip)){ alert("PageFlip library missing."); return; }
+  if(!(window.St && window.St.PageFlip)){
+    // Fallback: no flip effect, but still show the book
+    bookEl.style.visibility='visible';
+    boot.classList.add('hide'); setTimeout(function(){ try{boot.remove();}catch(_){ } },400);
+    return;
+  }
   var pgCount = document.querySelectorAll('#book .page').length;
   if (pgCount < 2) {
     var p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>';
@@ -349,7 +327,7 @@ function initFlip(startIndex){
   });
 }
 
-/* ========= Ensure blanks ========= */
+/* ========= Helpers ========= */
 function isPageEmpty(p){ return ((p && p.querySelectorAll('.scrap-item').length) || 0)===0; }
 function ensureTrailingBlankSheets(nSheets){
   if (typeof nSheets === 'undefined') nSheets = 2;
@@ -366,20 +344,13 @@ function ensureTrailingBlankSheets(nSheets){
     bookEl.appendChild(p);
   }
 }
+function afterBootShow(){ bookEl.style.visibility='visible'; initFlip(0); }
 
-/* ========= Boot helpers ========= */
-function afterBootShow(){
-  bookEl.style.visibility='visible';
-  initFlip(0);
-  boot.classList.add('hide');
-  setTimeout(function(){ boot.remove(); },400);
-}
-
-/* ========= Init (cloud-only, no timeout; chunked images) ========= */
+/* ========= Init (cloud-only; no artificial timeout) ========= */
 init().catch(function(err){ console.error(err); });
 async function init(){
-  try{ if (document.fonts && document.fonts.ready) { document.fonts.ready.catch(function(){}); } }catch(e){}
-  initFontPicker();
+  // Make sure the PageFlip library is fetched (or fall back)
+  await loadPageFlipLib();
 
   // optional cover
   var coverReady = new Promise(function(res){
@@ -390,7 +361,6 @@ async function init(){
   bootMsg.textContent = 'Loading pages…';
   retryBtn.style.display='none';
 
-  // retry a couple times if the network fails
   var loaded=false, lastErr=null;
   for (var attempt=0; attempt<2 && !loaded; attempt++){
     try{
@@ -414,9 +384,11 @@ async function init(){
 
   ensureTrailingBlankSheets(2);
   afterBootShow();
+  boot.classList.add('hide'); setTimeout(function(){ try{boot.remove();}catch(_){ } },400);
 }
 
 /* ========= Target left/right ========= */
+const stageEl = document.getElementById('stage');
 function getVisibleCanvases(){
   var pr=stageEl.getBoundingClientRect();
   var all=[].slice.call(document.querySelectorAll('#book .page .page-canvas')).map(function(el){
@@ -454,7 +426,7 @@ function setEditing(on){
 function enterEdit(){
   setEditing(true);
   lastPageIndex = pageFlip && pageFlip.getCurrentPageIndex ? pageFlip.getCurrentPageIndex() : 0;
-  try{ pageFlip.update({ useMouseEvents:false, swipeDistance:10000 }); }catch(_){}
+  try{ pageFlip && pageFlip.update && pageFlip.update({ useMouseEvents:false, swipeDistance:10000 }); }catch(_){}
   [].slice.call(document.querySelectorAll('#book .scrap-item')).forEach(function(el){
     if(!el.dataset._hooked){ makeDraggable(el); el.dataset._hooked='1'; }
   });
@@ -465,8 +437,8 @@ function enterEdit(){
 function exitEdit(){
   setEditing(false); deselect();
   try{
-    pageFlip.turnToPage(lastPageIndex);
-    pageFlip.update({ useMouseEvents:true, swipeDistance:30 });
+    pageFlip && pageFlip.turnToPage && pageFlip.turnToPage(lastPageIndex);
+    pageFlip && pageFlip.update && pageFlip.update({ useMouseEvents:true, swipeDistance:30 });
   }catch(_){}
 }
 
@@ -474,10 +446,10 @@ function exitEdit(){
 function closeBook(){
   exitEdit();
   try{
-    var total = pageFlip.getPageCount ? pageFlip.getPageCount() : 1;
-    var curr  = pageFlip.getCurrentPageIndex ? pageFlip.getCurrentPageIndex() : 0;
+    var total = pageFlip && pageFlip.getPageCount ? pageFlip.getPageCount() : 1;
+    var curr  = pageFlip && pageFlip.getCurrentPageIndex ? pageFlip.getCurrentPageIndex() : 0;
     var mid   = Math.floor(total/2);
-    pageFlip.turnToPage(curr <= mid ? 0 : total - 1);
+    pageFlip && pageFlip.turnToPage && pageFlip.turnToPage(curr <= mid ? 0 : total - 1);
   }catch(_){}
 }
 function removeLastSheet(){
@@ -492,11 +464,13 @@ function removeLastSheet(){
 
   var curr = pageFlip && pageFlip.getCurrentPageIndex ? pageFlip.getCurrentPageIndex() : 0;
   last.remove(); prev.remove();
-
   var newIndex = Math.max(0, Math.min(curr, document.querySelectorAll('#book .page').length - 1));
   initFlip(newIndex);
   toastShow('Removed last sheet ✓');
 }
+document.getElementById('exitEditBtn').onclick = function(){ exitEdit(); };
+document.getElementById('closeBookBtn').onclick = function(){ closeBook(); };
+document.getElementById('removeSheetBtn').onclick = function(){ removeLastSheet(); };
 
 /* ========= HUD, drag/resize/rotate, text tools, colors, images ========= */
 function positionHud(){
@@ -639,7 +613,7 @@ document.addEventListener('click',function(e){
 });
 function deselect(){ if (selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); hideItemHud(); }
 
-/* text modal (simple prompt) */
+/* Text add/edit via prompt (simple) */
 document.getElementById('addTextBtn').onclick=function(){
   var val = prompt('Add text:','');
   if(val==null) return;
@@ -662,6 +636,10 @@ hudEdit.onclick = function(){
   }
 };
 
+document.getElementById('deleteSelectedBtn').onclick=function(){ if(selectedItem){selectedItem.remove(); deselect();} };
+document.getElementById('clearPageBtn').onclick=function(){ (activeCanvas||getVisibleCanvases().right).innerHTML=''; deselect(); };
+
+/* keyboard helpers */
 document.addEventListener('keydown',function(e){
   if(!document.body.classList.contains('editing')) return;
   if(!selectedItem) return;
@@ -748,7 +726,7 @@ fileInput.addEventListener('change',async function(e){
   imgEl._preb64={mime:mime,base64:base64}; fileInput.value='';
 });
 
-/* Save */
+/* Save to Supabase */
 document.getElementById('saveBtn').onclick=function(){ saveToTables().catch(function(e){ alert('Save failed: '+e); }); };
 async function saveToTables(){
   toastShow('Saving…');
@@ -784,7 +762,7 @@ async function saveToTables(){
   toastShow('Saved ✓'); setTimeout(function(){ exitEdit(); },300);
 }
 
-/* Load from tables — chunked image fetch with progress */
+/* Load from Supabase (chunked) */
 async function loadFromTablesChunked(){
   var stateRow=await supabase.from(TABLE_STATE).select('pages').eq('id',STATE_ID).maybeSingle();
   if(stateRow.error) throw stateRow.error;
@@ -796,9 +774,7 @@ async function loadFromTablesChunked(){
     var p=document.createElement('div'); p.className='page'; p.innerHTML='<div class="page-canvas"></div>'; bookEl.appendChild(p);
   }
 
-  // collect image IDs
   var ids=[]; state.pages.forEach(function(pg){ (pg.items||[]).forEach(function(it){ if(it.type==='image'&&it.imageId) ids.push(it.imageId); }); });
-  // unique
   var uniq=[]; ids.forEach(function(id){ if(uniq.indexOf(id)===-1) uniq.push(id); });
 
   var urlMap={};
