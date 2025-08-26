@@ -26,14 +26,7 @@
     /* Stage (portrait) */
     #stage{ width:840px; height:1180px; position:relative; }
 
-    /* Secret code tap (left edge) */
-    #codeTap{
-      position:absolute; left:-6px; top:42%; width:12px; height:96px; z-index:60; cursor:pointer;
-      background:rgba(255,255,255,.08); border-radius:8px; border:1px solid rgba(255,255,255,.15);
-    }
-    #codeTap:active{ transform:scale(.98); }
-
-    /* Toolbar (inside stage so it never goes off-screen) */
+    /* Toolbar (starts hidden; unlock with code 123) */
     #toolbar{
       position:absolute; left:50%; transform:translateX(-50%);
       top:10px; height:56px; display:flex; gap:10px; align-items:center; z-index:50;
@@ -99,7 +92,7 @@
     #next{ right:10px }
     .nav svg{ width:26px; height:26px; fill:var(--ink) }
 
-    /* Footer status */
+    /* Footer status (minimal) */
     #status{ position:absolute; bottom:8px; left:0; right:0; display:flex; justify-content:center; gap:12px; font-size:14px; color:#e9f8f4; opacity:.9; text-align:center; }
 
     /* Click-to-nav zones (disabled in edit mode) */
@@ -118,10 +111,7 @@
 <body>
 
   <div id="stage">
-    <!-- secret unlock strip on the left edge -->
-    <div id="codeTap" title=""></div>
-
-    <!-- Toolbar (starts hidden; unlock with code 123) -->
+    <!-- Toolbar (hidden by default; unlock by typing 123) -->
     <div id="toolbar" class="hidden">
       <button id="toggleEdit" class="btn" aria-pressed="false">✏️ Edit</button>
       <button id="addText" class="btn">＋ Text</button>
@@ -167,7 +157,7 @@
       <div class="hotzone hz-right" title="Next"></div>
     </div>
 
-    <div id="status"> <span id="pageLabel">Front Cover (1 / 14)</span> • <span>Autosaved</span> • <span>Tips: drag to move • [ / ] to resize • Delete to remove • Double‑click text to edit</span> </div>
+    <div id="status"> <span id="pageLabel">Front Cover (1 / 14)</span> • <span>Autosaved</span></div>
   </div>
 
 <script>
@@ -185,7 +175,6 @@
   const rightHz = document.querySelector('.hz-right');
   const toolbar = document.getElementById('toolbar');
   const rehide = document.getElementById('rehide');
-  const codeTap = document.getElementById('codeTap');
 
   const SECRET_CODE = '123';
   const SECRET_KEY = 'scrapbook_toolbar_unlocked';
@@ -227,21 +216,43 @@
     toolbar.classList.add('hidden');
     localStorage.removeItem(SECRET_KEY);
   }
+  function unlockAndEnter(){
+    unlockToolbar();
+    enableEdit(true);
+  }
 
-  // secret: click strip → prompt for code; also allow quick type 1-2-3 anywhere
-  codeTap.addEventListener('click', ()=>{
-    const code = prompt('Enter code');
-    if(code===SECRET_CODE) unlockToolbar();
-  });
+  // secret: type 1-2-3 quickly to unlock + enter edit (no visual hints)
   let seq=''; let timer=null;
-  window.addEventListener('keydown', (e)=>{
-    if(['1','2','3'].includes(e.key)){
-      seq += e.key;
+  function secretHandler(e){
+    if(e.ctrlKey||e.metaKey||e.altKey) return;
+    const k=e.key;
+    if(k==='1' || k==='2' || k==='3'){
+      seq += k;
       clearTimeout(timer);
       timer = setTimeout(()=> seq='', 1200);
-      if(seq===SECRET_CODE){ unlockToolbar(); seq=''; }
-    } else { seq=''; }
-  });
+      if(seq.endsWith(SECRET_CODE)){
+        seq='';
+        unlockAndEnter();
+        // prevent the final key from typing into any focused editable
+        if(e.target && (e.target.isContentEditable || ['INPUT','TEXTAREA'].includes(e.target.tagName))){
+          e.preventDefault();
+          try{
+            // if something already typed the '1','2','3', remove them
+            if(e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA'){
+              const el=e.target; const v=el.value; el.value=v.slice(0, -SECRET_CODE.length);
+            } else if(e.target.isContentEditable){
+              document.execCommand('undo');
+            }
+          }catch(_){/* noop */}
+        }
+      }
+    } else {
+      seq='';
+    }
+  }
+  // capture phase then bubble to be robust
+  window.addEventListener('keydown', secretHandler, true);
+  window.addEventListener('keydown', secretHandler);
 
   rehide.addEventListener('click', lockToolbar);
 
