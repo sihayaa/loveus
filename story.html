@@ -68,6 +68,43 @@
     .page-canvas{ position:absolute; inset:26px; background:transparent; border-radius:12px; overflow:hidden; outline:2px dashed transparent; transition:outline-color .2s ease; }
     .page[data-active="true"] .page-canvas{ outline-color:rgba(122,90,248,.25); }
 
+    /* cover pages fill fully */
+    .page.cover{ background-color:var(--paper); background-position:center; background-repeat:no-repeat; background-size:cover; }
+    .page.cover::before, .page.cover::after{ display:none; }
+    .page.cover .page-canvas{ outline:none; }
+
+    /* Empty hints */
+    .hint{ position:absolute; inset:26px; display:flex; align-items:center; justify-content:center; opacity:.3; }
+
+    /* Items */
+    .item{ position:absolute; cursor:move; touch-action:none; }
+    .note{ min-width:140px; min-height:40px; padding:10px 12px; background:#fffef8; color:var(--ink); border:2px solid #e7dfcf; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.12); font-size:24px; line-height:1.1; user-select:text; outline:none; resize:both; overflow:auto; }
+    .photo{ width:260px; border-radius:14px; border:3px solid #fff; box-shadow:0 16px 30px rgba(0,0,0,.18); }
+
+    .selected{ outline:3px solid var(--accent2); outline-offset:2px; }
+
+    /* Footer status */
+    #status{ position:absolute; bottom:-42px; left:0; right:0; display:flex; justify-content:center; gap:12px; font-size:14px; color:#e9f8f4; opacity:.9; }
+
+    /* Click-to-nav zones (disabled in edit mode) */
+    .hotzone{ position:absolute; top:0; bottom:0; width:22%; z-index:10; }
+    .hz-left{ left:0; }
+    .hz-right{ right:0; }
+
+    @media (max-width:1100px){ #stage{ transform:scale(.9); transform-origin:center; } }
+    @media (max-width:980px){ #stage{ transform:scale(.8); } }
+
+    .page{ position:absolute; inset:0; margin:auto; width:100%; height:100%; background:var(--paper);
+      border-radius:18px; box-shadow:var(--shadow); overflow:hidden; border:2px solid #efe6d5; display:none; }
+    .page.active{ display:block; }
+
+    /* layered look for inner pages */
+    .page::before, .page::after{ content:""; position:absolute; inset:8px 10px; border-radius:16px; pointer-events:none; border:1px dashed rgba(13,42,107,.12); transform:rotate(.4deg); }
+    .page::after{ inset:14px 16px; transform:rotate(-.5deg); }
+
+    .page-canvas{ position:absolute; inset:26px; background:transparent; border-radius:12px; overflow:hidden; outline:2px dashed transparent; transition:outline-color .2s ease; }
+    .page[data-active="true"] .page-canvas{ outline-color:rgba(122,90,248,.25); }
+
     /* cover pages fit full image without cropping */
     .page.cover{ background-color:var(--paper); background-position:center; background-repeat:no-repeat; background-size:contain; }
     .page.cover::before, .page.cover::after{ display:none; }
@@ -93,13 +130,15 @@
 
     @media (max-width:1100px){ #stage{ transform:scale(.9); transform-origin:center; } }
     @media (max-width:980px){ #stage{ transform:scale(.8); } }
+      /* toolbar secret visibility */
+    #toolbar.hidden{ display:none; }
   </style>
 </head>
 <body>
 
   <div id="stage">
     <!-- Toolbar -->
-    <div id="toolbar">
+    <div id="toolbar" class="hidden">
       <button id="toggleEdit" class="btn" aria-pressed="false">✏️ Edit</button>
       <button id="addText" class="btn">＋ Text</button>
       <label class="btn" style="display:inline-flex; align-items:center; gap:8px;">
@@ -315,6 +354,30 @@
   // Initialize
   load();
   showPage(current);
+})();
+  // Secret code: type 1, then 2, then 3 anywhere (not in a text box) to toggle toolbar
+  const toolbar = document.getElementById('toolbar');
+  let toolbarVisible = false;
+  let codeBuffer = '';
+  let codeTimer = null;
+  function showToolbar(on){
+    toolbarVisible = !!on;
+    toolbar.classList.toggle('hidden', !toolbarVisible);
+    if(!toolbarVisible) enableEdit(false); // auto-exit edit when hiding controls
+  }
+  function handleSecret(e){
+    // ignore when typing inside editable content or inputs
+    const t = e.target;
+    if((t && (t.tagName === 'INPUT' || t.isContentEditable))) return;
+    if(e.key && e.key.length === 1 && /[0-9]/.test(e.key)){
+      codeBuffer += e.key;
+      clearTimeout(codeTimer);
+      codeTimer = setTimeout(()=> codeBuffer = '', 1500);
+      if(codeBuffer.endsWith('123')){ showToolbar(!toolbarVisible); codeBuffer=''; }
+    }
+    if(e.key === 'Escape' && toolbarVisible){ showToolbar(false); }
+  }
+  window.addEventListener('keydown', handleSecret);
 })();
 </script>
 </body>
