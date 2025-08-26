@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Our Scrapbook — portrait, 14 pages (with covers)</title>
+  <link rel="icon" href="data:," />
   <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -221,12 +222,14 @@
     enableEdit(true);
     cleanupTypedCode();
   }
+  // expose a dev-only hook (no UI). You can call this in console if needed.
+  window.__unlock123 = unlockAndEnter;
 
-  // --- robust secret listener (works with main row + numpad, inputs, and contenteditable) ---
+  // --- robust secret listener (works with top row, numpad, inputs, and contenteditable) ---
   let seq = '';
-  let timer = null;
+  let last = 0;
+  const WINDOW_MS = 3000;
   function normDigit(e){
-    // map both e.key and e.code to '1'|'2'|'3'
     if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1') return '1';
     if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2') return '2';
     if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3') return '3';
@@ -235,21 +238,30 @@
   function secretHandler(e){
     if(e.ctrlKey||e.metaKey||e.altKey) return; // ignore combos
     const d = normDigit(e);
-    if(!d){ seq=''; return; }
+    if(!d) return;
+    const now = Date.now();
+    if(now - last > WINDOW_MS) seq = '';
+    last = now;
     seq += d;
-    clearTimeout(timer);
-    timer = setTimeout(()=> seq='', 2500); // generous window
-    if(seq.endsWith(SECRET_CODE)){
-      seq='';
-      // prevent this final key from typing
+    if(seq.length > SECRET_CODE.length) seq = seq.slice(-SECRET_CODE.length);
+    if(seq === SECRET_CODE){
       e.preventDefault();
       e.stopPropagation();
+      seq='';
       unlockAndEnter();
     }
   }
-  // capture first so we run before page inputs; also bubble as fallback
-  window.addEventListener('keydown', secretHandler, true);
-  window.addEventListener('keydown', secretHandler);
+  function attachSecretListeners(){
+    const targets = [window, document, document.body];
+    const types = ['keydown','keyup','keypress'];
+    for(const t of targets){
+      for(const ty of types){
+        t.addEventListener(ty, secretHandler, true);
+        t.addEventListener(ty, secretHandler);
+      }
+    }
+  }
+  attachSecretListeners();
 
   // remove trailing '123' from focused field/contenteditable if it slipped in
   function cleanupTypedCode(){
@@ -260,14 +272,7 @@
       if(v.endsWith(SECRET_CODE)) el.value = v.slice(0, -SECRET_CODE.length);
     } else if(el.isContentEditable){
       try{
-        // naive cleanup: remove last 3 characters if they are exactly 123
-        const sel = window.getSelection();
-        if(sel && sel.rangeCount){
-          const r = sel.getRangeAt(0);
-          // collapse to end to delete last 3
-          r.collapse(false);
-          for(let i=0;i<3;i++) document.execCommand('delete');
-        }
+        document.execCommand('undo');
       }catch(_){/* ignore */}
     }
   }
