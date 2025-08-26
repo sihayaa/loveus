@@ -68,7 +68,7 @@
     body.editing .scrap-item{ cursor:move; }
     body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{ display:block; }
 
-    /* Secret Toolbar (no visible hints) */
+    /* Secret Toolbar */
     #toolbar{ position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column; }
     #toolbar.open{ display:flex; }
     #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -78,7 +78,6 @@
     #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
     #toolbar input[type="number"]{ width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff; }
     #toolbar input[type="color"]{ width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff; }
-    #fileInput{ display:none; }
 
     #textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
     #textEditor.open{display:flex}
@@ -178,7 +177,7 @@
 
 <script>
 (function(){
-  // ===== Supabase config (CLOUD ONLY persistence) =====
+  // ===== Supabase config (cloud-only) =====
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const TABLE_STATE   = "scrapbook_state";
@@ -191,8 +190,7 @@
   };
 
   const stage = document.getElementById('stage');
-  const deck  = document.getElementById('deck');
-  const pages = [...deck.querySelectorAll('.page')];
+  const pages = [...document.querySelectorAll('#deck .page')];
   const prevBtn=document.getElementById('prev');
   const nextBtn=document.getElementById('next');
 
@@ -213,7 +211,6 @@
   let current = 0; // start on cover
   let selectedItem = null; let zCounter=10;
 
-  // ==== Fit to viewport (no scrolling) ====
   function fitStage(){
     const vw = window.innerWidth, vh = window.innerHeight;
     const marginX = 200, marginY = 40;
@@ -225,7 +222,6 @@
   }
   fitStage(); window.addEventListener('resize', fitStage);
 
-  // ==== Navigation (forward wraps, backward clamped) ====
   function setClasses(){
     pages.forEach((p,i)=>{
       p.classList.remove('pos--2','pos--1','pos-1','pos-2','active');
@@ -318,7 +314,6 @@
     canvas.appendChild(box); makeDraggable(box); const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} }; if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect); fileInput.value=''; saveCloudDebounced(); select(box);
   });
 
-  // Selection & toolbar state
   function updateToolbarState(){
     const t = selectedItem?.querySelector('.scrap-text'); const onText=!!t; const onImg=!!selectedItem?.querySelector('.scrap-img');
     fontSizeInput.disabled = !onText; fontColorInput.disabled = !onText; fitBtn.disabled = !onImg; lockBtn.disabled = !onImg;
@@ -339,7 +334,6 @@
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex = ++zCounter; } updateToolbarState(); }
   function deselect(){ if(selectedItem){ selectedItem.classList.remove('selected'); selectedItem=null; } updateToolbarState(); }
 
-  // Drag/resize/rotate
   function makeDraggable(el){
     let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0; let dragging=false, dragPointerId=null; let rotating=false,startAngle=0,startPointerAngle=0;
     const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
@@ -363,14 +357,12 @@
   function setRotation(el,deg){ if(!el) return; el.dataset.rot=String(deg); el.style.transform='rotate('+deg+'deg)'; }
   function rgbToHex(rgb){ const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); if(!m) return '#000000'; const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0'); return '#'+r+g+b; }
 
-  // Delete / Clear
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); saveCloudDebounced(); } };
   clearPageBtn.onclick=()=>{ const canvas=pages[current].querySelector('.page-canvas'); if(current===0||current===pages.length-1){ alert('Covers are locked.'); return; } if(confirm('Clear this page?')){ canvas.querySelectorAll('.scrap-item').forEach(el=>el.remove()); saveCloudDebounced(); } };
 
-  // ===== CLOUD persistence (no localStorage) =====
+  // ===== CLOUD persistence (no localStorage, no "current" column) =====
   function snapshot(){
     return {
-      current,
       pages: pages.map(p=>{
         const c = p.querySelector('.page-canvas');
         const items = [...c.querySelectorAll('.scrap-item')].map(el=>{
@@ -394,13 +386,13 @@
       await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_STATE}`,{
         method:'POST',
         headers:{...sbHeaders, Prefer:'resolution=merge-duplicates'},
-        body: JSON.stringify({ id: STATE_ID, current: obj.current|0, pages: obj.pages })
+        body: JSON.stringify({ id: STATE_ID, pages: obj.pages })
       });
     }catch(err){ console.warn('Cloud save failed:', err); }
   }
   async function cloudLoad(){
     try{
-      const url = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?select=pages,current&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
+      const url = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?select=pages&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
       const res = await fetch(url,{headers:sbHeaders});
       if(!res.ok) throw new Error('state '+res.status);
       const arr = await res.json();
@@ -417,8 +409,7 @@
 
   async function load(){
     const cloud = await cloudLoad();
-    if(!cloud){ setClasses(); return; } // no row yet, blank book
-    current = Math.max(0, Math.min(pages.length-1, cloud.current|0));
+    if(!cloud){ setClasses(); return; } // no row yet
     (cloud.pages||[]).forEach((pg,i)=>{
       const c=pages[i]?.querySelector('.page-canvas'); if(!c) return;
       c.innerHTML = '';
@@ -460,7 +451,6 @@
     return {mime,base64};
   }
 
-  // ==== init ====
   (async function(){
     await load();
     setClasses();
