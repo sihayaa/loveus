@@ -92,6 +92,21 @@
     #editorSave{background:var(--mint);color:#022d2c}
 
     .scrap-text[contenteditable="true"]{ outline:2px dashed #7a5af888; outline-offset:4px; }
+
+    /* === AUDIO CONTROL (added) === */
+    #audioCtrl{
+      position:fixed; right:12px; bottom:10px; z-index:100000;
+      display:flex; align-items:center; gap:6px;
+      background:rgba(12,16,44,.85); color:#fff; border:2px solid #e8dcc6;
+      padding:6px 8px; border-radius:12px; box-shadow:0 8px 18px rgba(0,0,0,.35);
+      user-select:none;
+    }
+    #audioCtrl button{
+      all:unset; cursor:pointer; font-size:16px; line-height:1; padding:4px 6px;
+    }
+    #audioCtrl input[type="range"]{ width:90px; height:18px; }
+    /* keep the youtube iframe hidden but alive */
+    #yt-holder{ position:fixed; left:-9999px; width:0; height:0; overflow:hidden; }
   </style>
 </head>
 <body>
@@ -174,6 +189,13 @@
     </div>
   </div>
 </div>
+
+<!-- === AUDIO CONTROL (added) === -->
+<div id="audioCtrl" aria-label="Music controls">
+  <button id="musicPlay" title="Play/Pause">▶</button>
+  <input id="musicVol" type="range" min="0" max="100" value="60" title="Volume">
+</div>
+<div id="yt-holder" aria-hidden="true"></div>
 
 <script>
 (function(){
@@ -455,6 +477,63 @@
     await load();
     setClasses();
   })();
+
+  // ======== YOUTUBE BACKGROUND MUSIC (added) ========
+  const YT_VIDEO_ID = 'XNGtzfRdTtU'; // from your link
+  const musicBtn = document.getElementById('musicPlay');
+  const musicVol = document.getElementById('musicVol');
+  let ytPlayer = null, ytReady = false;
+
+  // load iframe api
+  const ytScript = document.createElement('script');
+  ytScript.src = "https://www.youtube.com/iframe_api";
+  document.head.appendChild(ytScript);
+
+  window.onYouTubeIframeAPIReady = function(){
+    ytPlayer = new YT.Player('yt-holder', {
+      height: '0', width: '0',
+      videoId: YT_VIDEO_ID,
+      playerVars: {
+        autoplay: 0, // user must click
+        controls: 0, disablekb: 1, playsinline: 1,
+        modestbranding: 1, rel: 0, loop: 1, playlist: YT_VIDEO_ID
+      },
+      events: {
+        onReady: (e)=>{
+          ytReady = true;
+          ytPlayer.setVolume(parseInt(musicVol.value,10) || 60);
+          updateBtn(false);
+        },
+        onStateChange: (e)=>{
+          const playing = e.data === YT.PlayerState.PLAYING;
+          updateBtn(playing);
+        }
+      }
+    });
+  };
+
+  function updateBtn(playing){
+    musicBtn.textContent = playing ? '⏸' : '▶';
+  }
+
+  musicBtn.addEventListener('click', ()=>{
+    if(!ytReady) return; // ignore until ready
+    const state = ytPlayer.getPlayerState();
+    const isPlaying = state === YT.PlayerState.PLAYING;
+    if(isPlaying){ ytPlayer.pauseVideo(); }
+    else{
+      ytPlayer.unMute();
+      ytPlayer.playVideo();
+    }
+  });
+
+  musicVol.addEventListener('input', ()=>{
+    const v = parseInt(musicVol.value,10) || 0;
+    if(!ytReady) return;
+    if(v <= 0){ ytPlayer.mute(); }
+    else { ytPlayer.unMute(); ytPlayer.setVolume(v); }
+  });
+  // ======== /YOUTUBE BACKGROUND MUSIC ========
 })();
 </script>
 </body>
