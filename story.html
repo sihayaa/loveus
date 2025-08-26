@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Our Story — scrapbook (no‑flip)</title>
+  <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#0b0f2f;          /* deep night blue */
+      --paper:#f7eddc;       /* warm paper */
+      --ink:#0d2a6b;         /* navy ink */
+      --accent:#67e4ca;      /* mint */
+      --accent2:#7a5af8;     /* purple */
+      --shadow:0 18px 40px rgba(0,0,0,.35);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:var(--bg); color:var(--ink);
+      display:flex; align-items:center; justify-content:center;
+      font-family:"Lobster", cursive; letter-spacing:.3px;
+      user-select:none; /* editing mode will re-enable where needed */
+    }
+
+    /* Stage */
+    #stage{ width:1000px; height:650px; position:relative; }
+
+    /* Nav arrows */
+    .nav{
+      position:absolute; top:50%; transform:translateY(-50%);
+      width:54px; height:54px; border-radius:50%;
+      background:white; box-shadow:var(--shadow);
+      display:flex; align-items:center; justify-content:center;
+      cursor:pointer; border:2px solid #e8e6e0; z-index:30;
+      transition:transform .12s ease;
+    }
+    .nav:active{ transform:translateY(-50%) scale(.96); }
+    #prev{ left:-78px }
+    #next{ right:-78px }
+    .nav svg{ width:26px; height:26px; fill:var(--ink) }
+
+    /* Toolbar */
+    #toolbar{
+      position:absolute; left:0; right:0; top:-70px; height:56px;
+      display:flex; gap:10px; align-items:center; justify-content:center;
+    }
+    .btn{
+      padding:10px 14px; border-radius:14px; background:white; color:var(--ink);
+      border:2px solid #e8e6e0; box-shadow:var(--shadow); cursor:pointer;
+      font-size:16px; line-height:1; letter-spacing:.2px;
+    }
+    .btn[aria-pressed="true"]{ outline:3px solid var(--accent); }
+    .pill{
+      display:flex; align-items:center; gap:6px; padding:8px 10px; border-radius:999px;
+      background:white; border:2px solid #e8e6e0; box-shadow:var(--shadow);
+      font-size:14px; height:42px;
+    }
+    .seg{
+      display:flex; gap:6px; background:#f6f5f2; padding:4px; border-radius:999px;
+      border:1px solid #e1dfda;
+    }
+    .seg button{
+      border:0; background:transparent; padding:7px 12px; border-radius:999px; cursor:pointer;
+      font-size:14px;
+    }
+    .seg button[aria-pressed="true"]{ background:white; box-shadow:0 1px 0 rgba(0,0,0,.05), inset 0 0 0 2px var(--accent2); }
+
+    /* Book (no flip) */
+    #book{ width:100%; height:100%; position:relative; }
+
+    .spread{ position:absolute; inset:0; display:none; padding:18px; }
+    .spread.active{ display:flex; gap:16px; }
+
+    .page{
+      position:relative; flex:1; height:100%; background:var(--paper);
+      border-radius:18px; box-shadow:var(--shadow);
+      overflow:hidden; border:2px solid #efe6d5;
+    }
+    /* cover pages */
+    .page.cover{ background-size:cover; background-position:center; background-repeat:no-repeat; }
+    .page.cover::before, .page.cover::after{ display:none; }
+    .page.cover .page-canvas{ outline:none; }
+$1    .page::before, .page::after{
+      content:""; position:absolute; inset:8px 10px; border-radius:16px; pointer-events:none;
+      border:1px dashed rgba(13,42,107,.12);
+      transform:rotate(.4deg);
+    }
+    .page::after{ inset:14px 16px; transform:rotate(-.5deg); }
+
+    .page-canvas{
+      position:absolute; inset:26px; background:transparent;
+      border-radius:12px; overflow:hidden; /* items can extend a bit */
+      outline:2px dashed transparent; transition:outline-color .2s ease;
+    }
+    .page[data-active="true"] .page-canvas{ outline-color:rgba(122,90,248,.25); }
+
+    /* Empty hints */
+    .hint{ position:absolute; inset:26px; display:flex; align-items:center; justify-content:center; opacity:.3; }
+
+    /* Items */
+    .item{ position:absolute; cursor:move; touch-action:none; }
+    .note{
+      min-width:140px; min-height:40px; padding:10px 12px; background:#fffef8; color:var(--ink);
+      border:2px solid #e7dfcf; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.12);
+      font-size:24px; line-height:1.1; user-select:text; outline:none; resize:both; overflow:auto;
+    }
+    .photo{ width:260px; border-radius:14px; border:3px solid #fff; box-shadow:0 16px 30px rgba(0,0,0,.18); }
+
+    .selected{ outline:3px solid var(--accent2); outline-offset:2px; }
+
+    /* Footer status */
+    #status{ position:absolute; bottom:-42px; left:0; right:0; display:flex; justify-content:center; gap:12px; font-size:14px; color:#e9f8f4; opacity:.9; }
+
+    /* Click-to-nav zones (disabled in edit mode) */
+    .hotzone{ position:absolute; top:0; bottom:0; width:22%; z-index:10; }
+    .hz-left{ left:0; }
+    .hz-right{ right:0; }
+
+    @media (max-width:1100px){
+      #stage{ transform:scale(.9); transform-origin:center; }
+    }
+    @media (max-width:980px){
+      #stage{ transform:scale(.8); }
+    }
+  </style>
+  <link rel="preload" as="image" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png" />
+  <link rel="preload" as="image" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png" />
+</head>
+<body>
+
+  <div id="stage">
+    <!-- Toolbar -->
+    <div id="toolbar">
+      <button id="toggleEdit" class="btn" aria-pressed="false">✏️ Edit</button>
+      <div class="pill">
+        <span>Side</span>
+        <div id="sideSeg" class="seg" role="tablist">
+          <button data-side="left" aria-pressed="true">Left</button>
+          <button data-side="right" aria-pressed="false">Right</button>
+        </div>
+      </div>
+      <button id="addText" class="btn">＋ Text</button>
+      <label class="btn" style="display:inline-flex; align-items:center; gap:8px;">
+        ＋ Image <input id="addImg" type="file" accept="image/*" style="display:none">
+      </label>
+      <button id="clearPage" class="btn" title="Remove all items on the active page">🧹 Clear Page</button>
+    </div>
+
+    <!-- Nav arrows -->
+    <div id="prev" class="nav" title="Previous spread">
+      <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
+    </div>
+    <div id="next" class="nav" title="Next spread">
+      <svg viewBox="0 0 24 24"><path d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L12.17 12z"/></svg>
+    </div>
+
+    <div id="book">
+      <!-- 3 spreads = 6 pages -->
+      <div class="spread active" data-spread="0">
+        <div class="page cover" data-side="left" data-active="true" style="background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png');">
+          <div class="page-canvas" aria-label="Left page 1"></div>
+          <div class="hint">front cover — page 1</div>
+        </div>
+        <div class="page" data-side="right">
+          <div class="page-canvas" aria-label="Right page 2"></div>
+          <div class="hint">right page 2 — add text or images</div>
+        </div>
+      </div>
+      <div class="spread" data-spread="1">
+        <div class="page" data-side="left">
+          <div class="page-canvas" aria-label="Left page 3"></div>
+          <div class="hint">left page 3</div>
+        </div>
+        <div class="page" data-side="right">
+          <div class="page-canvas" aria-label="Right page 4"></div>
+          <div class="hint">right page 4</div>
+        </div>
+      </div>
+      <div class="spread" data-spread="2">$1<div class="page cover" data-side="right" style="background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png');">
+          <div class="page-canvas" aria-label="Right page 6"></div>
+          <div class="hint">back cover — page 6</div>
+        </div>
+      </div>
+
+      <!-- click-to-nav zones (disabled in edit) -->
+      <div class="hotzone hz-left" title="Previous"></div>
+      <div class="hotzone hz-right" title="Next"></div>
+    </div>
+
+    <div id="status"> <span id="spreadLabel">Spread 1 / 3</span> • <span>Autosaved</span> • <span>Tips: drag to move • [ / ] to resize • Delete to remove • Double‑click text to edit</span> </div>
+  </div>
+
+<script>
+(function(){
+  const book = document.getElementById('book');
+  const spreads = [...book.querySelectorAll('.spread')];
+  const prevBtn = document.getElementById('prev');
+  const nextBtn = document.getElementById('next');
+  const toggleEdit = document.getElementById('toggleEdit');
+  const addTextBtn = document.getElementById('addText');
+  const addImgInput = document.getElementById('addImg');
+  const sideSeg = document.getElementById('sideSeg');
+  const clearPageBtn = document.getElementById('clearPage');
+  const spreadLabel = document.getElementById('spreadLabel');
+  const leftHz = document.querySelector('.hz-left');
+  const rightHz = document.querySelector('.hz-right');
+
+  let current = 0; // spread index 0..2
+  let edit = false;
+  let targetSide = 'left';
+  let zCounter = 10;
+  const KEY = 'story_noflip_v1';
+
+  function qsPageCanvas(spreadIdx, side){
+    return spreads[spreadIdx].querySelector(`.page[data-side="${side}"] .page-canvas`);
+  }
+  function setActiveSide(side){
+    targetSide = side;
+    spreads[current].querySelectorAll('.page').forEach(p=>p.dataset.active = (p.dataset.side===side));
+    [...sideSeg.querySelectorAll('button')].forEach(b=>b.setAttribute('aria-pressed', b.dataset.side===side));
+  }
+
+  function showSpread(i){
+    if(i<0||i>=spreads.length) return; current=i;
+    spreads.forEach((s,idx)=>s.classList.toggle('active', idx===i));
+    spreadLabel.textContent = `Spread ${i+1} / ${spreads.length}`;
+    setActiveSide(targetSide); // keep side highlight
+    save(); // persist current index
+  }
+
+  function enableEdit(on){
+    edit = !!on;
+    toggleEdit.setAttribute('aria-pressed', edit);
+    document.body.style.userSelect = edit? 'text' : 'none';
+    book.classList.toggle('editing', edit);
+    leftHz.style.pointerEvents = rightHz.style.pointerEvents = edit? 'none':'auto';
+  }
+
+  function createNote(){
+    const el = document.createElement('div');
+    el.className = 'item note';
+    el.contentEditable = true;
+    el.textContent = 'type here…';
+    placeNew(el);
+  }
+  function createPhotoFromFile(file){
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.className = 'item photo';
+      img.src = e.target.result; // local preview
+      placeNew(img);
+    };
+    reader.readAsDataURL(file);
+  }
+  function placeNew(el){
+    const canvas = qsPageCanvas(current, targetSide);
+    el.style.left = Math.round(canvas.clientWidth*0.15 + Math.random()*40) + 'px';
+    el.style.top  = Math.round(canvas.clientHeight*0.2 + Math.random()*40) + 'px';
+    el.style.zIndex = ++zCounter;
+    canvas.appendChild(el);
+    wireItem(el);
+    save();
+  }
+
+  // Drag + select + simple resize via [ ] keys
+  let drag = null; // {el,dx,dy}
+  function wireItem(el){
+    el.addEventListener('pointerdown', (e)=>{
+      if(!edit) return; 
+      select(el);
+      drag = { el, dx:e.clientX - el.offsetLeft, dy:e.clientY - el.offsetTop };
+      el.setPointerCapture(e.pointerId);
+    });
+    el.addEventListener('pointermove', (e)=>{
+      if(!drag||drag.el!==el) return;
+      const p = el.parentElement.getBoundingClientRect();
+      let x = e.clientX - drag.dx; let y = e.clientY - drag.dy;
+      x = Math.max(0, Math.min(x, p.width - el.offsetWidth));
+      y = Math.max(0, Math.min(y, p.height - el.offsetHeight));
+      el.style.left = x + 'px'; el.style.top = y + 'px';
+    });
+    el.addEventListener('pointerup', ()=>{ if(drag&&drag.el===el){ drag=null; save(); } });
+    el.addEventListener('dblclick', ()=>{ if(edit && el.classList.contains('note')) el.focus(); });
+    el.addEventListener('click', ()=>{ if(edit) select(el); });
+  }
+
+  let selected = null;
+  function select(el){
+    if(selected) selected.classList.remove('selected');
+    selected = el; if(selected){ selected.classList.add('selected'); selected.style.zIndex = ++zCounter; }
+  }
+  window.addEventListener('keydown', (e)=>{
+    if(!edit || !selected) return;
+    if(e.key === 'Delete' || e.key === 'Backspace'){
+      selected.remove(); selected=null; save(); e.preventDefault(); return;
+    }
+    if(e.key === '['){ // scale down
+      if(selected.classList.contains('photo')){
+        const w = selected.offsetWidth; selected.style.width = Math.max(80, w-20) + 'px'; save();
+      }else if(selected.classList.contains('note')){
+        selected.style.transform = `scale(${Math.max(.6, (parseFloat(selected.dataset.scale)||1)-.1)})`;
+        selected.dataset.scale = parseFloat(selected.dataset.scale||'1')-.1; save();
+      }
+    }
+    if(e.key === ']'){
+      if(selected.classList.contains('photo')){
+        const w = selected.offsetWidth; selected.style.width = (w+20) + 'px'; save();
+      }else if(selected.classList.contains('note')){
+        selected.style.transform = `scale(${Math.min(2, (parseFloat(selected.dataset.scale)||1)+.1)})`;
+        selected.dataset.scale = (parseFloat(selected.dataset.scale||'1')+.1); save();
+      }
+    }
+    if(e.key.toLowerCase()==='f'){ // bring to front quick
+      selected.style.zIndex = ++zCounter; save();
+    }
+  });
+
+  // Clearing page
+  clearPageBtn.addEventListener('click', ()=>{
+    const canvas = qsPageCanvas(current, targetSide);
+    if(confirm('Clear all items on the active page?')){
+      canvas.innerHTML=''; save();
+    }
+  });
+
+  // Seg control
+  sideSeg.addEventListener('click', (e)=>{
+    const b = e.target.closest('button'); if(!b) return;
+    setActiveSide(b.dataset.side);
+  });
+
+  // Toolbar actions
+  toggleEdit.addEventListener('click', ()=> enableEdit(!edit));
+  addTextBtn.addEventListener('click', ()=>{ if(edit) createNote(); });
+  addImgInput.addEventListener('change', (e)=>{
+    if(!edit || !e.target.files?.length) return;
+    createPhotoFromFile(e.target.files[0]); e.target.value='';
+  });
+
+  // Nav
+  function next(){ if(current<spreads.length-1){ showSpread(current+1);} }
+  function prev(){ if(current>0){ showSpread(current-1);} }
+  nextBtn.addEventListener('click', next);
+  prevBtn.addEventListener('click', prev);
+  rightHz.addEventListener('click', ()=>{ if(!edit) next(); });
+  leftHz.addEventListener('click', ()=>{ if(!edit) prev(); });
+
+  // Save / Load from localStorage
+  function save(){
+    const data = { current, z:zCounter, pages:[] };
+    spreads.forEach((sp,si)=>{
+      sp.querySelectorAll('.page-canvas').forEach((pc)=>{
+        data.pages.push({spread:si, side:pc.closest('.page').dataset.side, html:pc.innerHTML});
+      });
+    });
+    localStorage.setItem(KEY, JSON.stringify(data));
+  }
+  function load(){
+    const raw = localStorage.getItem(KEY);
+    if(!raw) return;
+    try{
+      const data = JSON.parse(raw);
+      if(typeof data.current==='number') current = data.current;
+      if(typeof data.z==='number') zCounter = data.z;
+      if(Array.isArray(data.pages)){
+        data.pages.forEach(p=>{
+          const pc = qsPageCanvas(p.spread, p.side);
+          if(pc){ pc.innerHTML = p.html; [...pc.children].forEach(wireItem); }
+        });
+      }
+    }catch(err){ console.warn('load fail', err); }
+  }
+
+  // Initialize
+  load();
+  showSpread(current);
+  setActiveSide('left');
+
+  // Make existing (empty) canvases clickable to set active side
+  spreads.forEach(sp=>{
+    sp.querySelectorAll('.page').forEach(p=>{
+      p.addEventListener('click', ()=>{ if(edit) setActiveSide(p.dataset.side); });
+    });
+  });
+})();
+</script>
+</body>
+</html>
