@@ -136,7 +136,7 @@
 </div>
 
 <!-- Secret Toolbar -->
-<div id="toolbar" aria-hidden="true">
+<div id="toolbar" aria-hidden="true" inert>
   <div class="group">
     <button id="addTextBtn" class="mint">Add Text</button>
     <button id="editSelectedBtn" class="secondary">Edit Selected</button>
@@ -169,7 +169,7 @@
 </div>
 
 <!-- Big Text Editor -->
-<div id="textEditor" aria-hidden="true">
+<div id="textEditor" aria-hidden="true" inert>
   <div class="panel">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
     <textarea id="editorInput" placeholder="type here…"></textarea>
@@ -267,6 +267,15 @@
   window.addEventListener('keydown', (e)=>{ if(document.body.classList.contains('editing')) return; if(e.key==='ArrowLeft') go(-1); if(e.key==='ArrowRight') go(1); });
   pages.forEach((p,i)=> p.querySelector('.page-canvas').addEventListener('mousedown', ()=>{ if(!document.body.classList.contains('editing')) return; current=i; setClasses(); }));
 
+  // ===== helpers to safely show/hide focusable overlays =====
+  function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
+  function hideToolbar(){
+    if (toolbar.contains(document.activeElement)) document.activeElement.blur();
+    toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert','');
+  }
+  function showEditor(el){ el.classList.add('open'); el.removeAttribute('aria-hidden'); el.removeAttribute('inert'); }
+  function hideEditor(el){ if (el.contains(document.activeElement)) document.activeElement.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
+
   // ===== SECRET UNLOCK (type 123) =====
   const PASSCODE='123'; let keyBuffer='', keyTimer=null;
   function normDigit(e){
@@ -282,9 +291,9 @@
     keyBuffer += d; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
     if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); e.preventDefault(); }
   });
-  function enterEdit(){ document.body.classList.add('editing'); toolbar.classList.add('open'); setClasses(); }
-  function exitEditMode(){ document.body.classList.remove('editing'); toolbar.classList.remove('open'); deselect(); }
-  exitEdit.onclick = exitEditMode; hideBar.onclick = ()=> toolbar.classList.remove('open');
+  function enterEdit(){ document.body.classList.add('editing'); showToolbar(); setClasses(); }
+  function exitEditMode(){ document.body.classList.remove('editing'); hideToolbar(); deselect(); }
+  exitEdit.onclick = exitEditMode; hideBar.onclick = hideToolbar;
 
   // ===== Big Text Editor + inline quick edit =====
   const editor = {
@@ -297,13 +306,13 @@
     targetBox: null
   };
   addTextBtn.onclick = ()=> openTextEditor();
-  document.getElementById('editorCancel').onclick = ()=> editor.el.classList.remove('open');
-  document.getElementById('textEditor').addEventListener('click', e=>{ if(e.target.id==='textEditor') editor.el.classList.remove('open'); });
+  editor.cancel.onclick = ()=> hideEditor(editor.el);
+  document.getElementById('textEditor').addEventListener('click', e=>{ if(e.target.id==='textEditor') hideEditor(editor.el); });
   function openTextEditor({ text = '', size = 28, color = '#0d2a6b', targetBox = null } = {}) {
-    editor.targetBox = targetBox; editor.input.value = text; editor.size.value = size; editor.color.value = color; editor.el.classList.add('open'); setTimeout(()=>editor.input.focus(),0);
+    editor.targetBox = targetBox; editor.input.value = text; editor.size.value = size; editor.color.value = color; showEditor(editor.el); setTimeout(()=>editor.input.focus(),0);
   }
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && editor.el.classList.contains('open')) editor.el.classList.remove('open'); });
-  document.getElementById('editorSave').onclick = () => {
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && editor.el.classList.contains('open')) hideEditor(editor.el); });
+  editor.save.onclick = () => {
     const text = editor.input.value; const size = Math.max(8, Math.min(200, parseInt(editor.size.value || '22', 10))); const color = editor.color.value || '#0d2a6b';
     if (editor.targetBox) {
       const t = editor.targetBox.querySelector('.scrap-text'); if (!t) return; t.textContent = text; t.style.fontSize = size+'px'; t.style.color = color; t.style.height = 'auto'; editor.targetBox.style.height = Math.max(40, t.scrollHeight)+'px'; select(editor.targetBox);
@@ -314,7 +323,7 @@
                       '<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>';
       box.querySelector('.scrap-text').textContent = text; canvas.appendChild(box); makeDraggable(box); select(box);
     }
-    editor.el.classList.remove('open'); saveCloudDebounced();
+    hideEditor(editor.el); saveCloudDebounced();
   };
   document.getElementById('editSelectedBtn').onclick = ()=>{
     if(!selectedItem) return; const t = selectedItem.querySelector('.scrap-text'); if(!t) return; const size = Math.round(parseFloat(getComputedStyle(t).fontSize)||28); const color = rgbToHex(getComputedStyle(t).color); openTextEditor({ text: t.textContent||'', size, color, targetBox: selectedItem });
@@ -447,6 +456,22 @@
     const data = snapshot();
     cloudTimer = setTimeout(()=> cloudSave(data), 800);
   }
+
+  // ===== Save button: immediate save + auto-exit edit =====
+  saveBtn.addEventListener('click', async ()=>{
+    const orig = saveBtn.textContent;
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving…';
+    try{
+      await cloudSave(snapshot());
+      saveBtn.textContent = 'Saved ✓';
+      setTimeout(()=>{ saveBtn.textContent = orig; saveBtn.disabled = false; exitEditMode(); }, 600);
+    }catch(err){
+      console.warn('Save failed:', err);
+      saveBtn.textContent = 'Retry Save';
+      saveBtn.disabled = false;
+    }
+  });
 
   // ======== YOUTUBE BACKGROUND MUSIC ========
   const YT_VIDEO_ID = 'XNGtzfRdTtU';
