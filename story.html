@@ -3,421 +3,319 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Our Scrapbook — portrait, 14 pages (with covers)</title>
-  <link rel="icon" href="data:," />
+  <title>Our Scrapbook — Simple (no page‑flip)</title>
+  <link rel="icon" href="data:,">
   <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+  <!-- keep your cover reference & variables identical to the old build -->
+  <link rel="preload" as="image" href="./lovestory_cover.png?v=8" fetchpriority="high">
   <style>
     :root{
-      --bg:#0b0f2f;          /* deep night blue */
-      --paper:#f7eddc;       /* warm paper */
-      --ink:#0d2a6b;         /* navy ink */
-      --accent:#67e4ca;      /* mint */
-      --accent2:#7a5af8;     /* purple */
-      --shadow:0 18px 40px rgba(0,0,0,.35);
+      --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
+      --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster", cursive;
+      --cover-y:28%;
+      --cover-img:url("./lovestory_cover.png?v=8");
     }
     *{box-sizing:border-box}
     html,body{height:100%}
-    body{
-      margin:0; background:var(--bg); color:var(--ink);
-      display:flex; align-items:center; justify-content:center;
-      font-family:"Lobster", cursive; letter-spacing:.3px;
-      user-select:none; /* editing mode will re-enable where needed */
-    }
+    body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font);}
 
-    /* Stage (portrait) */
-    #stage{ width:840px; height:1180px; position:relative; }
+    /* Word-style stack of portrait pages */
+    .wrap{ width:min(960px,98vw); margin:28px auto 80px; }
+    .page{ width:720px; min-height:1020px; margin:28px auto; position:relative; overflow:hidden; background:var(--paper); border-radius:20px; box-shadow: inset 0 0 60px rgba(0,0,0,.22); border:2px solid #efe6d5; }
+    .page .page-canvas{ position:relative; width:100%; min-height:100%; padding:28px; color:var(--ink); font-size:22px; line-height:1.35; }
 
-    /* Toolbar (starts hidden; unlock with code 123) */
-    #toolbar{
-      position:absolute; left:50%; transform:translateX(-50%);
-      top:10px; height:56px; display:flex; gap:10px; align-items:center; z-index:50;
-      transition:opacity .2s ease, filter .2s ease, transform .2s ease;
-    }
-    #toolbar.hidden{ opacity:0; pointer-events:none; filter:blur(1px); transform:translateX(-50%) scale(.96); }
-    .btn{
-      padding:10px 14px; border-radius:14px; background:white; color:var(--ink);
-      border:2px solid #e8e6e0; box-shadow:var(--shadow); cursor:pointer;
-      font-size:16px; line-height:1; letter-spacing:.2px;
-    }
-    .btn[aria-pressed="true"]{ outline:3px solid var(--accent); }
-
-    /* Page deck */
-    #deck{ position:absolute; inset:80px 0 56px 0; display:flex; align-items:center; justify-content:center; }
-
-    .page{
-      position:absolute; width:720px; height:100%; background:var(--paper);
-      border-radius:22px; box-shadow:var(--shadow); border:2px solid #efe6d5; display:none;
-    }
-    .page.active{ display:block; }
-
-    /* layered look */
-    .page::before, .page::after{
-      content:""; position:absolute; inset:10px 12px; border-radius:18px; pointer-events:none;
-      border:1px dashed rgba(13,42,107,.12); transform:rotate(.4deg);
-    }
-    .page::after{ inset:16px 18px; transform:rotate(-.6deg); }
-
-    /* Covers styling */
-    .page.cover{
-      background:linear-gradient(145deg,#fde7e7,#fffdf8 45%,#e6f8f3);
-      border-color:#fff; box-shadow:0 24px 60px rgba(0,0,0,.45);
-    }
-    .page.cover::before,.page.cover::after{ display:none; }
-
-    .page-canvas{
-      position:absolute; inset:34px; background:transparent; border-radius:14px; overflow:hidden;
-      outline:2px dashed transparent; transition:outline-color .2s ease;
-    }
-    .page[data-active="true"] .page-canvas{ outline-color:rgba(122,90,248,.25); }
+    /* Cover matches your old build */
+    .page.cover{ box-shadow:0 8px 28px rgba(0,0,0,.35); }
+    .page.cover .page-canvas{ padding:0; background:#0c102c; background-image:var(--cover-img); background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat; }
 
     /* Items */
-    .item{ position:absolute; cursor:move; touch-action:none; }
-    .note{
-      min-width:140px; min-height:40px; padding:10px 12px; background:#fffef8; color:var(--ink);
-      border:2px solid #e7dfcf; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.12);
-      font-size:28px; line-height:1.15; user-select:text; outline:none; resize:both; overflow:auto;
-    }
-    .photo{ display:block; width:300px; height:auto; border-radius:14px; border:3px solid #fff; box-shadow:0 16px 30px rgba(0,0,0,.18); }
+    .scrap-item{ position:absolute; transform-origin:center; touch-action:none; overflow:visible; }
+    .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
+    .rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; }
+    .mover{ display:none; position:absolute; left:-10px; top:-10px; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent); cursor:grab; }
+    .resizer{ display:none; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
+    .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; user-select:none; pointer-events:none; }
+    .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
+    .scrap-text{ width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em; }
 
-    .selected{ outline:3px solid var(--accent2); outline-offset:2px; }
+    /* Only interactive while editing */
+    .page .page-canvas, .scrap-item { pointer-events:none; }
+    body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto; }
+    body.editing .scrap-item{ cursor:move; }
+    body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{ display:block; }
 
-    /* Nav arrows (kept inside stage) */
-    .nav{
-      position:absolute; top:50%; transform:translateY(-50%);
-      width:54px; height:54px; border-radius:50%; background:white; box-shadow:var(--shadow);
-      display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #e8e6e0; z-index:40;
-      transition:transform .12s ease;
-    }
-    .nav:active{ transform:translateY(-50%) scale(.96); }
-    #prev{ left:10px }
-    #next{ right:10px }
-    .nav svg{ width:26px; height:26px; fill:var(--ink) }
+    /* Toolbar — same visual as your old */
+    #toolbar{ position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column; }
+    #toolbar.open{ display:flex; }
+    #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
+    #toolbar button{ border:0; padding:8px 12px; border-radius:8px; cursor:pointer; font-weight:700; color:#fff; background:var(--accent); width:100%; }
+    #toolbar button.secondary{ background:#5d47d4; }
+    #toolbar button.mint{ background:var(--mint); color:#022d2c; }
+    #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
+    #toolbar input[type="number"]{ width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff; }
+    #toolbar input[type="color"]{ width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff; }
+    #fileInput{ display:none; }
 
-    /* Footer status (minimal) */
-    #status{ position:absolute; bottom:8px; left:0; right:0; display:flex; justify-content:center; gap:12px; font-size:14px; color:#e9f8f4; opacity:.9; text-align:center; }
+    /* Active page highlight (when you click a page to edit) */
+    .page.active .page-canvas{ outline:3px dashed var(--accent); outline-offset:-12px; }
 
-    /* Click-to-nav zones (disabled in edit mode) */
-    .hotzone{ position:absolute; top:80px; bottom:56px; width:28%; z-index:20; }
-    .hz-left{ left:0; }
-    .hz-right{ right:0; }
-
-    @media (max-width:980px){
-      #stage{ transform:scale(.8); transform-origin:center; }
-    }
-    @media (max-width:860px){
-      #stage{ transform:scale(.72); }
-    }
+    /* Big Text Editor (same look) */
+    #textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
+    #textEditor.open{display:flex}
+    #textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+    #textEditor textarea{width:100%;height:320px;font:28px/1.35 var(--font);color:var(--ink);padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical}
+    #textEditor .row{display:flex;gap:12px;margin-top:10px}
+    #textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
+    #textEditor input[type="color"]{width:80px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
+    #textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+    #textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+    #editorCancel{background:#ff9aa2;color:#4c0a17}
+    #editorSave{background:var(--mint);color:#022d2c}
   </style>
 </head>
 <body>
 
-  <div id="stage">
-    <!-- Toolbar (hidden by default; unlock by typing 123) -->
-    <div id="toolbar" class="hidden">
-      <button id="toggleEdit" class="btn" aria-pressed="false">✏️ Edit</button>
-      <button id="addText" class="btn">＋ Text</button>
-      <label class="btn" style="display:inline-flex; align-items:center; gap:8px;">
-        ＋ Image <input id="addImg" type="file" accept="image/*" style="display:none">
-      </label>
-      <button id="clearPage" class="btn" title="Remove all items on this page">🧹 Clear Page</button>
-      <button id="rehide" class="btn" title="Hide toolbar again">🔒 Hide</button>
-    </div>
+<div class="wrap" id="doc">
+  <!-- 14 pages: cover + 12 inside + back cover -->
+  <div class="page cover" data-page="1"><div class="page-canvas"></div></div>
+  <div class="page" data-page="2"><div class="page-canvas"></div></div>
+  <div class="page" data-page="3"><div class="page-canvas"></div></div>
+  <div class="page" data-page="4"><div class="page-canvas"></div></div>
+  <div class="page" data-page="5"><div class="page-canvas"></div></div>
+  <div class="page" data-page="6"><div class="page-canvas"></div></div>
+  <div class="page" data-page="7"><div class="page-canvas"></div></div>
+  <div class="page" data-page="8"><div class="page-canvas"></div></div>
+  <div class="page" data-page="9"><div class="page-canvas"></div></div>
+  <div class="page" data-page="10"><div class="page-canvas"></div></div>
+  <div class="page" data-page="11"><div class="page-canvas"></div></div>
+  <div class="page" data-page="12"><div class="page-canvas"></div></div>
+  <div class="page" data-page="13"><div class="page-canvas"></div></div>
+  <div class="page cover" data-page="14"><div class="page-canvas"></div></div>
+</div>
 
-    <!-- Nav arrows -->
-    <div id="prev" class="nav" title="Previous page">
-      <svg viewBox="0 0 24 24"><path d="M15.41 7.41 14 6l-6 6 6 6 1.41-1.41L10.83 12z"/></svg>
-    </div>
-    <div id="next" class="nav" title="Next page">
-      <svg viewBox="0 0 24 24"><path d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L12.17 12z"/></svg>
-    </div>
-
-    <!-- Page deck: 14 portrait pages (1=front cover, 14=back cover) -->
-    <div id="deck">
-      <div class="page cover active" data-page="1" data-active="true">
-        <div class="page-canvas" aria-label="Front Cover"></div>
-      </div>
-      <!-- Inner pages 2..13 (12 pages) -->
-      <div class="page" data-page="2"><div class="page-canvas" aria-label="Page 2"></div></div>
-      <div class="page" data-page="3"><div class="page-canvas" aria-label="Page 3"></div></div>
-      <div class="page" data-page="4"><div class="page-canvas" aria-label="Page 4"></div></div>
-      <div class="page" data-page="5"><div class="page-canvas" aria-label="Page 5"></div></div>
-      <div class="page" data-page="6"><div class="page-canvas" aria-label="Page 6"></div></div>
-      <div class="page" data-page="7"><div class="page-canvas" aria-label="Page 7"></div></div>
-      <div class="page" data-page="8"><div class="page-canvas" aria-label="Page 8"></div></div>
-      <div class="page" data-page="9"><div class="page-canvas" aria-label="Page 9"></div></div>
-      <div class="page" data-page="10"><div class="page-canvas" aria-label="Page 10"></div></div>
-      <div class="page" data-page="11"><div class="page-canvas" aria-label="Page 11"></div></div>
-      <div class="page" data-page="12"><div class="page-canvas" aria-label="Page 12"></div></div>
-      <div class="page" data-page="13"><div class="page-canvas" aria-label="Page 13"></div></div>
-      <div class="page cover" data-page="14">
-        <div class="page-canvas" aria-label="Back Cover"></div>
-      </div>
-
-      <!-- click-to-nav zones (disabled in edit) -->
-      <div class="hotzone hz-left" title="Previous"></div>
-      <div class="hotzone hz-right" title="Next"></div>
-    </div>
-
-    <div id="status"> <span id="pageLabel">Front Cover (1 / 14)</span> • <span>Autosaved</span></div>
+<!-- Toolbar (identical look/feel) -->
+<div id="toolbar">
+  <div class="group">
+    <button id="targetLeft" class="secondary">Prev Page</button>
+    <button id="targetRight" class="secondary">Next Page</button>
   </div>
+  <div class="group">
+    <button id="addTextBtn" class="mint">Add Text</button>
+    <button id="addPhotoBtn" class="secondary">Add Photo</button>
+  </div>
+  <div class="group">
+    <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
+    <input id="fontSizeInput" type="number" min="8" max="200" step="1" placeholder="px" disabled>
+  </div>
+  <div class="group">
+    <label for="fontColorInput" style="font-weight:700;color:#0d2a6b;">Text Color</label>
+    <input id="fontColorInput" type="color" value="#0d2a6b" disabled>
+  </div>
+  <div class="group">
+    <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
+    <button id="lockToggleBtn" class="secondary">Lock: On</button>
+  </div>
+  <div class="group">
+    <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
+    <button id="clearPageBtn" class="warn">Clear Page</button>
+    <button id="saveBtn" class="mint">Save</button>
+  </div>
+  <div class="group">
+    <button id="exitEdit" class="warn">Exit Edit</button>
+    <button id="hideBar">🔒 Hide</button>
+  </div>
+  <input id="fileInput" type="file" accept="image/*" />
+</div>
+
+<!-- Big Text Editor -->
+<div id="textEditor" aria-hidden="true">
+  <div class="panel">
+    <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
+    <textarea id="editorInput" placeholder="type here…"></textarea>
+    <div class="row">
+      <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+        Size (px)
+        <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
+      </label>
+      <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+        Color
+        <input id="editorColor" type="color" value="#0d2a6b">
+      </label>
+    </div>
+    <div class="actions">
+      <button id="editorCancel">Cancel</button>
+      <button id="editorSave">Save</button>
+    </div>
+  </div>
+</div>
 
 <script>
 (function(){
-  const deck = document.getElementById('deck');
-  const pages = [...deck.querySelectorAll('.page')];
-  const prevBtn = document.getElementById('prev');
-  const nextBtn = document.getElementById('next');
-  const toggleEdit = document.getElementById('toggleEdit');
-  const addTextBtn = document.getElementById('addText');
-  const addImgInput = document.getElementById('addImg');
-  const clearPageBtn = document.getElementById('clearPage');
-  const pageLabel = document.getElementById('pageLabel');
-  const leftHz = document.querySelector('.hz-left');
-  const rightHz = document.querySelector('.hz-right');
+  const KEY = 'scrapbook_simple_stack_v1_14p';
+  const pages = [...document.querySelectorAll('.page')];
   const toolbar = document.getElementById('toolbar');
-  const rehide = document.getElementById('rehide');
+  const fileInput = document.getElementById('fileInput');
+  const addTextBtn = document.getElementById('addTextBtn');
+  const addPhotoBtn = document.getElementById('addPhotoBtn');
+  const clearPageBtn = document.getElementById('clearPageBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const hideBar = document.getElementById('hideBar');
+  const exitEdit = document.getElementById('exitEdit');
+  const fontSizeInput=document.getElementById('fontSizeInput');
+  const fontColorInput=document.getElementById('fontColorInput');
+  const fitBtn=document.getElementById('fitToggleBtn');
+  const lockBtn=document.getElementById('lockToggleBtn');
+  const prevBtn=document.getElementById('targetLeft');
+  const nextBtn=document.getElementById('targetRight');
 
-  const SECRET_CODE = '123';
-  const SECRET_KEY = 'scrapbook_toolbar_unlocked';
-
-  let current = 0; // index 0..13
-  let edit = false;
+  let activePageIdx = 1; // default to first inner page
+  let activeCanvas = null;
+  let selectedItem = null;
   let zCounter = 10;
-  const KEY = 'scrapbook_portrait_v2_14p';
 
-  function getCanvas(i){ return pages[i].querySelector('.page-canvas'); }
-  function nameFor(i){
-    if(i===0) return 'Front Cover';
-    if(i===pages.length-1) return 'Back Cover';
-    return `Page ${i+1}`;
-  }
-  function showPage(i){
-    if(i<0||i>=pages.length) return;
-    pages.forEach((p,idx)=>{
-      p.classList.toggle('active', idx===i);
-      p.dataset.active = (idx===i);
-    });
-    current = i;
-    pageLabel.textContent = `${nameFor(i)} (${i+1} / ${pages.length})`;
-    save();
+  function setActive(idx){
+    idx = Math.max(0, Math.min(idx, pages.length-1));
+    pages.forEach((p,i)=> p.classList.toggle('active', i===idx));
+    activePageIdx = idx; activeCanvas = pages[idx].querySelector('.page-canvas');
+    selectedItem = null; updateToolbarState();
+    // ensure into view
+    pages[idx].scrollIntoView({behavior:'smooth', block:'center'});
   }
 
-  function enableEdit(on){
-    edit = !!on;
-    toggleEdit.setAttribute('aria-pressed', edit);
-    document.body.style.userSelect = edit? 'text' : 'none';
-    leftHz.style.pointerEvents = rightHz.style.pointerEvents = edit? 'none':'auto';
-  }
+  pages.forEach((p,i)=>{
+    const c=p.querySelector('.page-canvas');
+    c.addEventListener('mousedown', ()=> setActive(i));
+  });
 
-  function unlockToolbar(){
-    toolbar.classList.remove('hidden');
-    localStorage.setItem(SECRET_KEY, '1');
-  }
-  function lockToolbar(){
-    toolbar.classList.add('hidden');
-    localStorage.removeItem(SECRET_KEY);
-  }
-  function unlockAndEnter(){
-    unlockToolbar();
-    enableEdit(true);
-    cleanupTypedCode();
-  }
-  // expose a dev-only hook (no UI). You can call this in console if needed.
-  window.__unlock123 = unlockAndEnter;
+  prevBtn.onclick = ()=> setActive(activePageIdx-1);
+  nextBtn.onclick = ()=> setActive(activePageIdx+1);
 
-  // --- robust secret listener (works with top row, numpad, inputs, and contenteditable) ---
-  let seq = '';
-  let last = 0;
-  const WINDOW_MS = 3000;
+  // ===== SECRET UNLOCK (like your old snippet) =====
+  const PASSCODE='123'; let keyBuffer='', keyTimer=null;
   function normDigit(e){
     if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1') return '1';
     if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2') return '2';
     if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3') return '3';
     return '';
   }
-  function secretHandler(e){
-    if(e.ctrlKey||e.metaKey||e.altKey) return; // ignore combos
-    const d = normDigit(e);
+  document.addEventListener('keydown',(e)=>{
+    if(e.ctrlKey||e.metaKey||e.altKey) return;
+    const d = normDigit(e) || (typeof e.key==='string'&&e.key.length===1?e.key:'');
     if(!d) return;
-    const now = Date.now();
-    if(now - last > WINDOW_MS) seq = '';
-    last = now;
-    seq += d;
-    if(seq.length > SECRET_CODE.length) seq = seq.slice(-SECRET_CODE.length);
-    if(seq === SECRET_CODE){
-      e.preventDefault();
-      e.stopPropagation();
-      seq='';
-      unlockAndEnter();
-    }
-  }
-  function attachSecretListeners(){
-    const targets = [window, document, document.body];
-    const types = ['keydown','keyup','keypress'];
-    for(const t of targets){
-      for(const ty of types){
-        t.addEventListener(ty, secretHandler, true);
-        t.addEventListener(ty, secretHandler);
-      }
-    }
-  }
-  attachSecretListeners();
-
-  // remove trailing '123' from focused field/contenteditable if it slipped in
-  function cleanupTypedCode(){
-    const el = document.activeElement;
-    if(!el) return;
-    if(el.tagName==='INPUT' || el.tagName==='TEXTAREA'){
-      const v = el.value || '';
-      if(v.endsWith(SECRET_CODE)) el.value = v.slice(0, -SECRET_CODE.length);
-    } else if(el.isContentEditable){
-      try{
-        document.execCommand('undo');
-      }catch(_){/* ignore */}
-    }
-  }
-
-  rehide.addEventListener('click', lockToolbar);
-
-  function createNote(){
-    const el = document.createElement('div');
-    el.className = 'item note';
-    el.contentEditable = true;
-    el.textContent = 'type here…';
-    placeNew(el);
-  }
-  function createPhotoFromFile(file){
-    const reader = new FileReader();
-    reader.onload = e => {
-      const img = document.createElement('img');
-      img.className = 'item photo';
-      img.src = e.target.result; // local preview
-      placeNew(img);
-    };
-    reader.readAsDataURL(file);
-  }
-  function placeNew(el){
-    const canvas = getCanvas(current);
-    el.style.left = Math.round(canvas.clientWidth*0.12 + Math.random()*40) + 'px';
-    el.style.top  = Math.round(canvas.clientHeight*0.14 + Math.random()*40) + 'px';
-    el.style.zIndex = ++zCounter;
-    canvas.appendChild(el);
-    wireItem(el);
-    save();
-  }
-
-  // Drag + select + simple resize via [ ] keys
-  let drag = null; // {el,dx,dy}
-  function wireItem(el){
-    el.addEventListener('pointerdown', (e)=>{
-      if(!edit) return; 
-      select(el);
-      drag = { el, dx:e.clientX - el.offsetLeft, dy:e.clientY - el.offsetTop };
-      if(el.setPointerCapture && e.pointerId!=null) el.setPointerCapture(e.pointerId);
-    });
-    el.addEventListener('pointermove', (e)=>{
-      if(!drag||drag.el!==el) return;
-      const p = el.parentElement.getBoundingClientRect();
-      let x = e.clientX - drag.dx; let y = e.clientY - drag.dy;
-      x = Math.max(0, Math.min(x, p.width - el.offsetWidth));
-      y = Math.max(0, Math.min(y, p.height - el.offsetHeight));
-      el.style.left = x + 'px'; el.style.top = y + 'px';
-    });
-    el.addEventListener('pointerup', ()=>{ if(drag&&drag.el===el){ drag=null; save(); } });
-    el.addEventListener('dblclick', ()=>{ if(edit && el.classList.contains('note')) el.focus(); });
-    el.addEventListener('click', ()=>{ if(edit) select(el); });
-  }
-
-  let selected = null;
-  function select(el){
-    if(selected) selected.classList.remove('selected');
-    selected = el; if(selected){ selected.classList.add('selected'); selected.style.zIndex = ++zCounter; }
-  }
-  window.addEventListener('keydown', (e)=>{
-    if(!edit || !selected) return;
-    if(e.key === 'Delete' || e.key === 'Backspace'){
-      selected.remove(); selected=null; save(); e.preventDefault(); return;
-    }
-    if(e.key === '['){ // scale down
-      if(selected.classList.contains('photo')){
-        const w = selected.offsetWidth; selected.style.width = Math.max(80, w-20) + 'px'; save();
-      }else if(selected.classList.contains('note')){
-        selected.style.transform = `scale(${Math.max(.6, (parseFloat(selected.dataset.scale)||1)-.1)})`;
-        selected.dataset.scale = parseFloat(selected.dataset.scale||'1')-.1; save();
-      }
-    }
-    if(e.key === ']'){
-      if(selected.classList.contains('photo')){
-        const w = selected.offsetWidth; selected.style.width = (w+20) + 'px'; save();
-      }else if(selected.classList.contains('note')){
-        selected.style.transform = `scale(${Math.min(2, (parseFloat(selected.dataset.scale)||1)+.1)})`;
-        selected.dataset.scale = (parseFloat(selected.dataset.scale||'1')+.1); save();
-      }
-    }
-    if(e.key.toLowerCase()==='f'){ // bring to front quick
-      selected.style.zIndex = ++zCounter; save();
-    }
+    keyBuffer += d; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
+    if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); e.preventDefault(); }
   });
 
-  // Clear page
-  clearPageBtn.addEventListener('click', ()=>{
-    const canvas = getCanvas(current);
-    if(confirm('Clear all items on this page?')){
-      canvas.innerHTML=''; save();
+  function enterEdit(){ document.body.classList.add('editing'); toolbar.classList.add('open'); setActive(activePageIdx); localStorage.setItem(KEY+':unlocked','1'); }
+  function exitEditMode(){ document.body.classList.remove('editing'); toolbar.classList.remove('open'); localStorage.removeItem(KEY+':unlocked'); }
+  exitEdit.onclick = exitEditMode; hideBar.onclick = ()=> toolbar.classList.remove('open');
+
+  // ===== Add Text (with modal editor) =====
+  const editor = {
+    el: document.getElementById('textEditor'),
+    input: document.getElementById('editorInput'),
+    size: document.getElementById('editorSize'),
+    color: document.getElementById('editorColor'),
+    save: document.getElementById('editorSave'),
+    cancel: document.getElementById('editorCancel'),
+    targetBox: null
+  };
+  addTextBtn.onclick = ()=> openTextEditor();
+  function openTextEditor({ text = '', size = 28, color = '#0d2a6b', targetBox = null } = {}) {
+    editor.targetBox = targetBox; editor.input.value = text; editor.size.value = size; editor.color.value = color; editor.el.classList.add('open'); setTimeout(()=>editor.input.focus(),0);
+  }
+  function closeTextEditor(){ editor.el.classList.remove('open'); editor.targetBox=null; }
+  editor.cancel.onclick = closeTextEditor;
+  editor.el.addEventListener('click', e => { if (e.target === editor.el) closeTextEditor(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && editor.el.classList.contains('open')) closeTextEditor(); });
+  editor.save.onclick = () => {
+    const text = editor.input.value; const size = Math.max(8, Math.min(200, parseInt(editor.size.value || '22', 10))); const color = editor.color.value || '#0d2a6b';
+    if (editor.targetBox) {
+      const t = editor.targetBox.querySelector('.scrap-text'); if (!t) return; t.textContent = text; t.style.fontSize = size+'px'; t.style.color = color; t.style.height = 'auto'; editor.targetBox.style.height = Math.max(40, t.scrollHeight)+'px';
+    } else {
+      if(!activeCanvas) setActive(activePageIdx);
+      const box=document.createElement('div'); box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
+      box.innerHTML = `<div class="scrap-text" contenteditable="false" style="font-size:${size}px;color:${color}"></div><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
+      box.querySelector('.scrap-text').textContent = text; activeCanvas.appendChild(box); makeDraggable(box);
     }
+    closeTextEditor(); save();
+  };
+
+  // ===== Photos =====
+  addPhotoBtn.onclick=()=> fileInput.click();
+  fileInput.addEventListener('change',async e=>{
+    const f=e.target.files?.[0]; if(!f) return; const {mime,base64}=await fileToBase64(f);
+    if(!activeCanvas) setActive(activePageIdx);
+    const box=document.createElement('div'); box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
+    box.dataset.fit='contain'; box.dataset.lock='1';
+    box.innerHTML=`<img class="scrap-img" alt="" src="data:${mime};base64,${base64}" decoding="async"><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
+    activeCanvas.appendChild(box); makeDraggable(box); const imgEl=box.querySelector('.scrap-img');
+    const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+    if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
+    fileInput.value=''; save();
   });
 
-  // Toolbar actions
-  toggleEdit.addEventListener('click', ()=> enableEdit(!edit));
-  addTextBtn.addEventListener('click', ()=>{ if(edit) createNote(); });
-  addImgInput.addEventListener('change', (e)=>{
-    if(!edit || !e.target.files?.length) return;
-    createPhotoFromFile(e.target.files[0]); e.target.value='';
-  });
-
-  // Nav
-  function next(){ if(current<pages.length-1){ showPage(current+1);} }
-  function prev(){ if(current>0){ showPage(current-1);} }
-  nextBtn.addEventListener('click', next);
-  prevBtn.addEventListener('click', prev);
-  rightHz.addEventListener('click', ()=>{ if(!edit) next(); });
-  leftHz.addEventListener('click', ()=>{ if(!edit) prev(); });
-  window.addEventListener('keydown', (e)=>{
-    if(e.key==='ArrowRight' && !edit) next();
-    if(e.key==='ArrowLeft' && !edit) prev();
-  });
-
-  // Save / Load from localStorage
-  function save(){
-    const data = { current, z:zCounter, pages:[] };
-    pages.forEach((p,idx)=>{
-      const pc = p.querySelector('.page-canvas');
-      data.pages[idx] = pc.innerHTML;
-    });
-    localStorage.setItem(KEY, JSON.stringify(data));
+  // ===== Selection & item controls =====
+  function updateToolbarState(){
+    const t = selectedItem?.querySelector('.scrap-text'); const onText=!!t; const onImg=!!selectedItem?.querySelector('.scrap-img');
+    fontSizeInput.disabled = !onText; fontColorInput.disabled = !onText; fitBtn.disabled = !onImg; lockBtn.disabled = !onImg;
+    if(onText){ const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr; fontColorInput.value = rgbToHex(getComputedStyle(t).color); }
+    if(onImg){ const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1'; fitBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); lockBtn.textContent='Lock: '+(lock?'On':'Off'); }
+    else { fitBtn.textContent='Fit: Contain'; lockBtn.textContent='Lock: On'; }
   }
-  function load(){
-    const raw = localStorage.getItem(KEY);
-    if(!raw) return;
-    try{
-      const data = JSON.parse(raw);
-      if(typeof data.current==='number') current = Math.min(data.current, pages.length-1);
-      if(typeof data.z==='number') zCounter = data.z;
-      if(Array.isArray(data.pages)){
-        data.pages.forEach((html,idx)=>{
-          if(idx>=pages.length) return; // ignore extras if any
-          const pc = getCanvas(idx);
-          if(pc){ pc.innerHTML = html||''; [...pc.children].forEach(wireItem); }
-        });
-      }
-    }catch(err){ console.warn('load fail', err); }
-  }
+  fontSizeInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return; v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto'; const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; save(); });
+  fontColorInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; t.style.color=fontColorInput.value; save(); });
+  fitBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateToolbarState(); save(); });
+  lockBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateToolbarState(); save(); });
 
-  // Initialize
-  if(localStorage.getItem(SECRET_KEY)==='1') toolbar.classList.remove('hidden');
-  load();
-  showPage(current);
-  enableEdit(false);
+  document.addEventListener('click',e=>{
+    if(!document.body.classList.contains('editing')) return;
+    const onItem=e.target.closest?.('.scrap-item'); const onBar=e.target.closest?.('#toolbar');
+    if(onItem){ select(onItem); } else if(!onBar){ deselect(); }
+  });
+
+  function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex = ++zCounter; } updateToolbarState(); }
+  function deselect(){ if(selectedItem){ selectedItem.classList.remove('selected'); selectedItem=null; } updateToolbarState(); }
+
+  // Drag/resize/rotate (trimmed)
+  function makeDraggable(el){
+    let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0; let dragging=false, dragPointerId=null; let rotating=false,startAngle=0,startPointerAngle=0;
+    const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
+    let mover=el.querySelector('.mover'); if(!mover){ mover=document.createElement('div'); mover.className='mover'; el.appendChild(mover); }
+    el.addEventListener('dragstart', e=>e.preventDefault());
+    if(res){ res.addEventListener('mousedown',e=>{ if(!document.body.classList.contains('editing')) return; e.stopPropagation(); e.preventDefault(); resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); }); }
+    function onMove(e){ if(!resizing) return; const dx=e.clientX-startX, dy=e.clientY-startY; const hasImg=!!el.querySelector('.scrap-img'); const lockOn=hasImg && el.dataset.lock==='1' && !e.shiftKey; const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight))); let w=Math.max(60,startW+dx), h=Math.max(40,startH+dy); if(lockOn && ratio>0){ if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio)); else w=Math.max(60,Math.round(h*ratio)); } el.style.width=w+'px'; el.style.height=h+'px'; const t=el.querySelector('.scrap-text'); if(t && !hasImg){ t.style.height='auto'; el.style.height=Math.max(40,t.scrollHeight)+'px'; } }
+    function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; save(); }
+    rot.addEventListener('mousedown',e=>{ if(!document.body.classList.contains('editing')) return; e.stopPropagation(); e.preventDefault(); rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2; startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx); startAngle=getRotation(el); document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate); });
+    function onRotate(e){ if(!rotating) return; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2; const a=Math.atan2(e.clientY-cy,e.clientX-cx); setRotation(el, startAngle+(a-startPointerAngle)*180/Math.PI); }
+    function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); save(); }
+    function startDrag(e){ dragging=true; dragPointerId=e.pointerId ?? 'mouse'; try{ if(e.pointerId!=null && el.setPointerCapture) el.setPointerCapture(e.pointerId);}catch(_){ } startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop; window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp); window.addEventListener('pointercancel',onPointerUp); el.addEventListener('lostpointercapture',onPointerUp); }
+    function onPointerMove(e){ if(!dragging) return; const dx=e.clientX-startX, dy=e.clientY-startY; el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px'; }
+    function onPointerUp(){ if(!dragging) return; try{ if(dragPointerId!=null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId);}catch(_){ } dragging=false; dragPointerId=null; window.removeEventListener('pointermove',onPointerMove); window.removeEventListener('pointerup',onPointerUp); window.removeEventListener('pointercancel',onPointerUp); el.removeEventListener('lostpointercapture',onPointerUp); save(); }
+    el.addEventListener('pointerdown', e=>{ if(!document.body.classList.contains('editing')) return; const isControl = e.target.classList.contains('resizer')||e.target.classList.contains('rotator')||e.target.classList.contains('mover'); if(isControl) return; e.preventDefault(); e.stopPropagation(); select(el); startDrag(e); });
+    mover.addEventListener('pointerdown', e=>{ if(!document.body.classList.contains('editing')) return; e.preventDefault(); e.stopPropagation(); select(el); startDrag(e); });
+    const tnode=el.querySelector('.scrap-text'); if(tnode) enableAutoGrow(el,tnode);
+  }
+  function enableAutoGrow(box,textEl){ const grow=()=>{ textEl.style.height='auto'; box.style.height=Math.max(40,textEl.scrollHeight)+'px'; }; textEl.addEventListener('input',grow); new ResizeObserver(grow).observe(textEl); grow(); }
+  function getRotation(el){ return parseFloat(el?.dataset.rot || '0') || 0; }
+  function setRotation(el,deg){ if(!el) return; el.dataset.rot=String(deg); el.style.transform=`rotate(${deg}deg)`; }
+  function rgbToHex(rgb){ const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); if(!m) return '#000000'; const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0'); return `#${r}${g}${b}`; }
+
+  // Delete / Clear
+  document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); save(); } };
+  clearPageBtn.onclick=()=>{ if(!activeCanvas){ alert('Click a page first.'); return; } if(confirm('Clear this page?')){ activeCanvas.querySelectorAll('.scrap-item').forEach(el=>el.remove()); save(); } };
+
+  // Save / Load (localStorage)
+  function save(){ const data = pages.map(p=>{ const c=p.querySelector('.page-canvas'); const items=[...c.querySelectorAll('.scrap-item')].map(el=>{ const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height}; const rot=parseFloat(el.dataset.rot||'0')||0; const img=el.querySelector('.scrap-img'); if(img){ return {type:'image',style,rot,fit:el.dataset.fit||'contain',lock:el.dataset.lock==='1',src:img.src}; } else { const txt=el.querySelector('.scrap-text'); return {type:'text',style,rot,html:txt?txt.outerHTML:''}; } }); return {items}; }); localStorage.setItem(KEY, JSON.stringify(data)); }
+  function load(){ const raw = localStorage.getItem(KEY); if(!raw) return; try{ const arr = JSON.parse(raw); arr.forEach((pg,i)=>{ const c=pages[i]?.querySelector('.page-canvas'); if(!c) return; (pg.items||[]).forEach(it=>{ const box=document.createElement('div'); box.className='scrap-item'; if(it.style?.left) box.style.left=it.style.left; if(it.style?.top) box.style.top=it.style.top; if(it.style?.width) box.style.width=it.style.width; if(it.style?.height) box.style.height=it.style.height; if(it.rot){ box.dataset.rot=it.rot; box.style.transform=`rotate(${it.rot}deg)`; } if(it.type==='image' && it.src){ box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0'; box.innerHTML=`<img class="scrap-img" alt="" src="${it.src}" decoding="async"><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`; const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} }; if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect); } else if(it.type==='text' && it.html){ const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim(); const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner); box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'); } c.appendChild(box); makeDraggable(box); }); }); }catch(_){ }
+  }
+  saveBtn.onclick = ()=>{ save(); alert('Saved ✓'); };
+
+  // helpers
+  async function fileToBase64(file){ const blob = file instanceof Blob ? file : new Blob([file]); const mime = blob.type || 'image/jpeg'; const buf = await blob.arrayBuffer(); let binary=''; const bytes=new Uint8Array(buf); for(let i=0;i<bytes.length;i++) binary+=String.fromCharCode(bytes[i]); const base64=btoa(binary); return {mime,base64}; }
+
+  // init
+  load(); setActive(1); if(localStorage.getItem(KEY+':unlocked')==='1'){ enterEdit(); }
 })();
 </script>
 </body>
