@@ -230,7 +230,7 @@
   const fitBtn=document.getElementById('fitToggleBtn');
   const lockBtn=document.getElementById('lockToggleBtn');
 
-  let current = 0; // start on cover
+  let current = 0; // will be set to last page at init
   let selectedItem = null; let zCounter=10;
 
   function fitStage(){
@@ -429,55 +429,6 @@
     cloudTimer = setTimeout(()=> cloudSave(data), 800);
   }
 
-  async function load(){
-    const cloud = await cloudLoad();
-    if(!cloud){ setClasses(); return; } // no row yet
-    (cloud.pages||[]).forEach((pg,i)=>{
-      const c=pages[i]?.querySelector('.page-canvas'); if(!c) return;
-      c.innerHTML = '';
-      (pg.items||[]).forEach(it=>{
-        const box=document.createElement('div'); box.className='scrap-item';
-        if(it.style?.left)  box.style.left=it.style.left;
-        if(it.style?.top)   box.style.top=it.style.top;
-        if(it.style?.width) box.style.width=it.style.width;
-        if(it.style?.height)box.style.height=it.style.height;
-        if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; }
-        if(it.type==='image' && it.src){
-          box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
-          box.innerHTML='<img class="scrap-img" alt="" src="'+it.src+'" decoding="async">'+
-                        '<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>';
-          const imgEl=box.querySelector('.scrap-img');
-          const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
-          if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
-        } else if(it.type==='text' && it.html){
-          const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
-          const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false');
-          box.appendChild(inner);
-          box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
-        }
-        c.appendChild(box); makeDraggable(box);
-      });
-    });
-    setClasses();
-  }
-
-  saveBtn.onclick = async ()=>{ await cloudSave(snapshot()); exitEditMode(); };
-
-  async function fileToBase64(file){
-    const blob = file instanceof Blob ? file : new Blob([file]);
-    const mime = blob.type || 'image/jpeg';
-    const buf = await file.arrayBuffer();
-    let binary=''; const bytes=new Uint8Array(buf);
-    for(let i=0;i<bytes.length;i++) binary+=String.fromCharCode(bytes[i]);
-    const base64=btoa(binary);
-    return {mime,base64};
-  }
-
-  (async function(){
-    await load();
-    setClasses();
-  })();
-
   // ======== YOUTUBE BACKGROUND MUSIC (added) ========
   const YT_VIDEO_ID = 'XNGtzfRdTtU'; // from your link
   const musicBtn = document.getElementById('musicPlay');
@@ -499,7 +450,7 @@
         modestbranding: 1, rel: 0, loop: 1, playlist: YT_VIDEO_ID
       },
       events: {
-        onReady: (e)=>{
+        onReady: ()=>{
           ytReady = true;
           ytPlayer.setVolume(parseInt(musicVol.value,10) || 60);
           updateBtn(false);
@@ -534,6 +485,14 @@
     else { ytPlayer.unMute(); ytPlayer.setVolume(v); }
   });
   // ======== /YOUTUBE BACKGROUND MUSIC ========
+
+  // ======== INIT: START ON LAST PAGE (fix the bounce) ========
+  // show last page immediately, then load cloud state and keep position
+  current = pages.length - 1;
+  setClasses();
+  load().then(()=> setClasses());
+  // ======== /INIT ========
+
 })();
 </script>
 </body>
