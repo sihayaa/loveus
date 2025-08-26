@@ -18,7 +18,10 @@
     html,body{height:100%; overflow:hidden}
     body{margin:0; background:var(--bg); color:var(--ink); font-family:var(--font); display:flex; align-items:center; justify-content:center;}
 
-    #stage{ position:relative; width:var(--pageW); height:var(--pageH); transform-origin:center center; overflow:visible; }
+    /* background effects canvas */
+    #bgFx{ position:fixed; inset:0; pointer-events:none; z-index:0; }
+
+    #stage{ position:relative; width:var(--pageW); height:var(--pageH); transform-origin:center center; overflow:visible; z-index:1; }
     .deck{ position:absolute; inset:0; perspective:1200px; }
 
     .page{ position:absolute; inset:0; background:var(--paper); border-radius:20px; border:2px solid #efe6d5;
@@ -101,15 +104,15 @@
       padding:6px 8px; border-radius:12px; box-shadow:0 8px 18px rgba(0,0,0,.35);
       user-select:none;
     }
-    #audioCtrl button{
-      all:unset; cursor:pointer; font-size:16px; line-height:1; padding:4px 6px;
-    }
+    #audioCtrl button{ all:unset; cursor:pointer; font-size:16px; line-height:1; padding:4px 6px; }
     #audioCtrl input[type="range"]{ width:90px; height:18px; }
-    /* keep the youtube iframe hidden but alive */
     #yt-holder{ position:fixed; left:-9999px; width:0; height:0; overflow:hidden; }
   </style>
 </head>
 <body>
+
+<!-- background effects canvas -->
+<canvas id="bgFx" aria-hidden="true"></canvas>
 
 <div id="stage">
   <div class="deck" id="deck">
@@ -472,11 +475,106 @@
   });
   // ======== /YOUTUBE BACKGROUND MUSIC ========
 
+  // ======== FALLING STARS & HEARTS (background effect) ========
+  (function(){
+    const c = document.getElementById('bgFx');
+    const ctx = c.getContext('2d');
+    let W=0, H=0, DPR=1, last=0;
+    const particles=[];
+    function rand(a,b){ return a + Math.random()*(b-a); }
+
+    function resize(){
+      DPR = window.devicePixelRatio || 1;
+      W = Math.floor(window.innerWidth * DPR);
+      H = Math.floor(window.innerHeight * DPR);
+      c.width = W; c.height = H;
+      c.style.width = window.innerWidth + 'px';
+      c.style.height = window.innerHeight + 'px';
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const BASE_COUNT = Math.min(120, Math.round((window.innerWidth*window.innerHeight)/15000));
+    function spawn(){
+      const type = Math.random() < 0.6 ? 'star' : 'heart';
+      const size = type==='star' ? rand(6,12) : rand(8,16);
+      return {
+        type,
+        x: rand(0, W),
+        y: rand(-H, 0),
+        vx: rand(-15, 15) * DPR,
+        vy: rand(20, 60) * DPR,
+        s: size * DPR,
+        rot: rand(0, Math.PI*2),
+        rs: rand(-0.8, 0.8),
+        alpha: rand(0.35, 0.9),
+        tw: rand(0.5, 1.5),
+        life: rand(0, 100)
+      };
+    }
+    for(let i=0;i<BASE_COUNT;i++) particles.push(spawn());
+
+    function star(x,y,r,rot,a){
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.rotate(rot);
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      const spikes=5, outer=r, inner=r*0.5;
+      for(let i=0;i<spikes;i++){
+        ctx.lineTo(Math.cos((i*2*Math.PI)/spikes)*outer, Math.sin((i*2*Math.PI)/spikes)*outer);
+        ctx.lineTo(Math.cos(((i*2+1)*Math.PI)/spikes)*inner, Math.sin(((i*2+1)*Math.PI)/spikes)*inner);
+      }
+      ctx.closePath();
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(255,255,255,0.6)';
+      ctx.shadowBlur = 8*DPR;
+      ctx.fill();
+      ctx.restore();
+    }
+    function heart(x,y,r,rot,a){
+      ctx.save();
+      ctx.translate(x,y);
+      ctx.rotate(rot);
+      ctx.scale(r/10, r/10);
+      ctx.globalAlpha = a;
+      ctx.beginPath();
+      ctx.moveTo(0,-8);
+      ctx.bezierCurveTo(5,-12,12,-10,12,-2);
+      ctx.bezierCurveTo(12,6,6,10,0,14);
+      ctx.bezierCurveTo(-6,10,-12,6,-12,-2);
+      ctx.bezierCurveTo(-12,-10,-5,-12,0,-8);
+      ctx.closePath();
+      ctx.fillStyle = 'rgba(255,120,150,0.9)';
+      ctx.shadowColor = 'rgba(255,120,150,0.5)';
+      ctx.shadowBlur = 8*DPR;
+      ctx.fill();
+      ctx.restore();
+    }
+
+    function frame(t){
+      const dt = (t - last) / 1000 || 0.016; last = t;
+      ctx.clearRect(0,0,W,H);
+      for(const p of particles){
+        p.y += p.vy*dt; p.x += p.vx*dt; p.rot += p.rs*dt;
+        const tw = (Math.sin((p.life += p.tw*dt)*2)+1)/2;
+        const a = p.alpha * (0.6 + 0.4*tw);
+        if(p.type==='star') star(p.x, p.y, p.s, p.rot, a);
+        else heart(p.x, p.y, p.s, p.rot, a);
+        if(p.y - p.s > H + 20 || p.x < -20 || p.x > W + 20){
+          Object.assign(p, spawn(), {y: -20});
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  })();
+  // ======== /FALLING STARS & HEARTS ========
+
   // ======== INIT: keep front cover visible from first paint ========
   (async function(){
     await cloudLoad().then(cloud=>{
       if(!cloud){ setClasses(); return; }
-      // rebuild from cloud
       (cloud.pages||[]).forEach((pg,i)=>{
         const c=pages[i]?.querySelector('.page-canvas'); if(!c) return;
         c.innerHTML = '';
