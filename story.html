@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Scrapbook — Layered Deck (16 pages, secret 123)</title>
+  <title>Scrapbook — Layered Deck (16 pages, secret 123, loop)</title>
   <link rel="icon" href="data:,">
   <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
   <style>
@@ -31,6 +31,7 @@
 
     /* Covers */
     .page.cover .page-canvas{ padding:0; background:#0c102c; background-image:var(--cover-img); background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat; }
+    .page.backcover .page-canvas{ padding:0; background:#0c102c; background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png'); background-size:cover; background-position:center; background-repeat:no-repeat; }
 
     /* Stack positions */
     .page.active{ opacity:1; filter:none; pointer-events:auto; }
@@ -88,7 +89,6 @@
     #editorCancel{background:#ff9aa2;color:#4c0a17}
     #editorSave{background:var(--mint);color:#022d2c}
 
-    /* Optional subtle ring on inline edit */
     .scrap-text[contenteditable="true"]{ outline:2px dashed #7a5af888; outline-offset:4px; }
   </style>
 </head>
@@ -112,7 +112,7 @@
     <div class="page" data-page="13"><div class="page-canvas"></div></div>
     <div class="page" data-page="14"><div class="page-canvas"></div></div>
     <div class="page" data-page="15"><div class="page-canvas"></div></div>
-    <div class="page cover" data-page="16"><div class="page-canvas"></div></div>
+    <div class="page cover backcover" data-page="16"><div class="page-canvas"></div></div>
   </div>
   <button class="nav left"  id="prev" aria-label="Previous">◀</button>
   <button class="nav right" id="next" aria-label="Next">▶</button>
@@ -175,7 +175,7 @@
 
 <script>
 (function(){
-  const KEY = 'scrapbook_layered_deck_v2_16p';
+  const KEY = 'scrapbook_layered_deck_v2_16p_loop';
   const stage = document.getElementById('stage');
   const deck  = document.getElementById('deck');
   const pages = [...deck.querySelectorAll('.page')];
@@ -196,7 +196,7 @@
   const fitBtn=document.getElementById('fitToggleBtn');
   const lockBtn=document.getElementById('lockToggleBtn');
 
-  let current = 1; // start near the front cover
+  let current = 1; // starting index near front cover
   let selectedItem = null; let zCounter=10;
 
   // Fit stage to viewport without scrolling
@@ -221,12 +221,13 @@
       if(i===current+2) p.classList.add('pos-2');
     });
   }
-  function go(delta){ const next = Math.max(0, Math.min(pages.length-1, current+delta)); if(next!==current){ current=next; setClasses(); save(); } }
+  function wrap(i){ const n = pages.length; return ((i % n) + n) % n; }
+  function go(delta){ const next = wrap(current + delta); if(next!==current){ current=next; setClasses(); save(); } }
   prevBtn.onclick = ()=> go(-1);
   nextBtn.onclick = ()=> go(1);
   window.addEventListener('keydown', (e)=>{ if(document.body.classList.contains('editing')) return; if(e.key==='ArrowLeft') go(-1); if(e.key==='ArrowRight') go(1); });
 
-  // click page to select (only while editing)
+  // click page to set active (only while editing)
   pages.forEach((p,i)=> p.querySelector('.page-canvas').addEventListener('mousedown', ()=>{ if(!document.body.classList.contains('editing')) return; current=i; setClasses(); }));
 
   // ===== SECRET UNLOCK =====
