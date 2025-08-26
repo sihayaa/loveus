@@ -26,11 +26,20 @@
     /* Stage (portrait) */
     #stage{ width:840px; height:1180px; position:relative; }
 
+    /* Secret code tap (left edge) */
+    #codeTap{
+      position:absolute; left:-6px; top:42%; width:12px; height:96px; z-index:60; cursor:pointer;
+      background:rgba(255,255,255,.08); border-radius:8px; border:1px solid rgba(255,255,255,.15);
+    }
+    #codeTap:active{ transform:scale(.98); }
+
     /* Toolbar (inside stage so it never goes off-screen) */
     #toolbar{
       position:absolute; left:50%; transform:translateX(-50%);
       top:10px; height:56px; display:flex; gap:10px; align-items:center; z-index:50;
+      transition:opacity .2s ease, filter .2s ease, transform .2s ease;
     }
+    #toolbar.hidden{ opacity:0; pointer-events:none; filter:blur(1px); transform:translateX(-50%) scale(.96); }
     .btn{
       padding:10px 14px; border-radius:14px; background:white; color:var(--ink);
       border:2px solid #e8e6e0; box-shadow:var(--shadow); cursor:pointer;
@@ -67,9 +76,6 @@
     }
     .page[data-active="true"] .page-canvas{ outline-color:rgba(122,90,248,.25); }
 
-    /* Empty hints */
-    .hint{ position:absolute; inset:34px; display:flex; align-items:center; justify-content:center; opacity:.28; font-size:18px; text-align:center; }
-
     /* Items */
     .item{ position:absolute; cursor:move; touch-action:none; }
     .note{
@@ -94,7 +100,7 @@
     .nav svg{ width:26px; height:26px; fill:var(--ink) }
 
     /* Footer status */
-    #status{ position:absolute; bottom:8px; left:0; right:0; display:flex; justify-content:center; gap:12px; font-size:14px; color:#e9f8f4; opacity:.9; }
+    #status{ position:absolute; bottom:8px; left:0; right:0; display:flex; justify-content:center; gap:12px; font-size:14px; color:#e9f8f4; opacity:.9; text-align:center; }
 
     /* Click-to-nav zones (disabled in edit mode) */
     .hotzone{ position:absolute; top:80px; bottom:56px; width:28%; z-index:20; }
@@ -112,14 +118,18 @@
 <body>
 
   <div id="stage">
-    <!-- Toolbar -->
-    <div id="toolbar">
+    <!-- secret unlock strip on the left edge -->
+    <div id="codeTap" title=""></div>
+
+    <!-- Toolbar (starts hidden; unlock with code 123) -->
+    <div id="toolbar" class="hidden">
       <button id="toggleEdit" class="btn" aria-pressed="false">✏️ Edit</button>
       <button id="addText" class="btn">＋ Text</button>
       <label class="btn" style="display:inline-flex; align-items:center; gap:8px;">
         ＋ Image <input id="addImg" type="file" accept="image/*" style="display:none">
       </label>
       <button id="clearPage" class="btn" title="Remove all items on this page">🧹 Clear Page</button>
+      <button id="rehide" class="btn" title="Hide toolbar again">🔒 Hide</button>
     </div>
 
     <!-- Nav arrows -->
@@ -134,24 +144,22 @@
     <div id="deck">
       <div class="page cover active" data-page="1" data-active="true">
         <div class="page-canvas" aria-label="Front Cover"></div>
-        <div class="hint">front cover — add title art, photo, or background</div>
       </div>
       <!-- Inner pages 2..13 (12 pages) -->
-      <div class="page" data-page="2"><div class="page-canvas" aria-label="Page 2"></div><div class="hint">page 2</div></div>
-      <div class="page" data-page="3"><div class="page-canvas" aria-label="Page 3"></div><div class="hint">page 3</div></div>
-      <div class="page" data-page="4"><div class="page-canvas" aria-label="Page 4"></div><div class="hint">page 4</div></div>
-      <div class="page" data-page="5"><div class="page-canvas" aria-label="Page 5"></div><div class="hint">page 5</div></div>
-      <div class="page" data-page="6"><div class="page-canvas" aria-label="Page 6"></div><div class="hint">page 6</div></div>
-      <div class="page" data-page="7"><div class="page-canvas" aria-label="Page 7"></div><div class="hint">page 7</div></div>
-      <div class="page" data-page="8"><div class="page-canvas" aria-label="Page 8"></div><div class="hint">page 8</div></div>
-      <div class="page" data-page="9"><div class="page-canvas" aria-label="Page 9"></div><div class="hint">page 9</div></div>
-      <div class="page" data-page="10"><div class="page-canvas" aria-label="Page 10"></div><div class="hint">page 10</div></div>
-      <div class="page" data-page="11"><div class="page-canvas" aria-label="Page 11"></div><div class="hint">page 11</div></div>
-      <div class="page" data-page="12"><div class="page-canvas" aria-label="Page 12"></div><div class="hint">page 12</div></div>
-      <div class="page" data-page="13"><div class="page-canvas" aria-label="Page 13"></div><div class="hint">page 13</div></div>
+      <div class="page" data-page="2"><div class="page-canvas" aria-label="Page 2"></div></div>
+      <div class="page" data-page="3"><div class="page-canvas" aria-label="Page 3"></div></div>
+      <div class="page" data-page="4"><div class="page-canvas" aria-label="Page 4"></div></div>
+      <div class="page" data-page="5"><div class="page-canvas" aria-label="Page 5"></div></div>
+      <div class="page" data-page="6"><div class="page-canvas" aria-label="Page 6"></div></div>
+      <div class="page" data-page="7"><div class="page-canvas" aria-label="Page 7"></div></div>
+      <div class="page" data-page="8"><div class="page-canvas" aria-label="Page 8"></div></div>
+      <div class="page" data-page="9"><div class="page-canvas" aria-label="Page 9"></div></div>
+      <div class="page" data-page="10"><div class="page-canvas" aria-label="Page 10"></div></div>
+      <div class="page" data-page="11"><div class="page-canvas" aria-label="Page 11"></div></div>
+      <div class="page" data-page="12"><div class="page-canvas" aria-label="Page 12"></div></div>
+      <div class="page" data-page="13"><div class="page-canvas" aria-label="Page 13"></div></div>
       <div class="page cover" data-page="14">
         <div class="page-canvas" aria-label="Back Cover"></div>
-        <div class="hint">back cover — credits, dedication, or solid color</div>
       </div>
 
       <!-- click-to-nav zones (disabled in edit) -->
@@ -175,6 +183,12 @@
   const pageLabel = document.getElementById('pageLabel');
   const leftHz = document.querySelector('.hz-left');
   const rightHz = document.querySelector('.hz-right');
+  const toolbar = document.getElementById('toolbar');
+  const rehide = document.getElementById('rehide');
+  const codeTap = document.getElementById('codeTap');
+
+  const SECRET_CODE = '123';
+  const SECRET_KEY = 'scrapbook_toolbar_unlocked';
 
   let current = 0; // index 0..13
   let edit = false;
@@ -204,6 +218,32 @@
     document.body.style.userSelect = edit? 'text' : 'none';
     leftHz.style.pointerEvents = rightHz.style.pointerEvents = edit? 'none':'auto';
   }
+
+  function unlockToolbar(){
+    toolbar.classList.remove('hidden');
+    localStorage.setItem(SECRET_KEY, '1');
+  }
+  function lockToolbar(){
+    toolbar.classList.add('hidden');
+    localStorage.removeItem(SECRET_KEY);
+  }
+
+  // secret: click strip → prompt for code; also allow quick type 1-2-3 anywhere
+  codeTap.addEventListener('click', ()=>{
+    const code = prompt('Enter code');
+    if(code===SECRET_CODE) unlockToolbar();
+  });
+  let seq=''; let timer=null;
+  window.addEventListener('keydown', (e)=>{
+    if(['1','2','3'].includes(e.key)){
+      seq += e.key;
+      clearTimeout(timer);
+      timer = setTimeout(()=> seq='', 1200);
+      if(seq===SECRET_CODE){ unlockToolbar(); seq=''; }
+    } else { seq=''; }
+  });
+
+  rehide.addEventListener('click', lockToolbar);
 
   function createNote(){
     const el = document.createElement('div');
@@ -340,6 +380,7 @@
   }
 
   // Initialize
+  if(localStorage.getItem(SECRET_KEY)==='1') toolbar.classList.remove('hidden');
   load();
   showPage(current);
   enableEdit(false);
