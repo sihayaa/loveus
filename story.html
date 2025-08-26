@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Scrapbook — Layered Deck (16 pages, secret 123, loop)</title>
+  <title>Scrapbook — Layered Deck (front cover fixed, one‑way wrap)</title>
   <link rel="icon" href="data:,">
   <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
   <style>
@@ -11,8 +11,9 @@
       --pageW:760px; --pageH:1060px;
       --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
       --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster", cursive;
-      --cover-y:28%;
+      /* ⤵ Set this to your neon cover image URL */
       --cover-img:url("./lovestory_cover.png?v=8");
+      --cover-y:28%;
     }
     *{box-sizing:border-box}
     html,body{height:100%; overflow:hidden}
@@ -29,9 +30,18 @@
            pointer-events:none; }
     .page .page-canvas{ position:relative; width:100%; height:100%; padding:28px; font-size:22px; line-height:1.35; }
 
-    /* Covers */
-    .page.cover .page-canvas{ padding:0; background:#0c102c; background-image:var(--cover-img); background-size:cover; background-position:50% var(--cover-y); background-repeat:no-repeat; }
-    .page.backcover .page-canvas{ padding:0; background:#0c102c; background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png'); background-size:cover; background-position:center; background-repeat:no-repeat; }
+    /* Front cover */
+    .page.cover .page-canvas{
+      padding:0; background:#0c102c;
+      background-image:var(--cover-img), radial-gradient(closest-side at 50% 40%, #1d2a55 0%, #0c102c 60%);
+      background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
+    }
+    /* Back cover (leave as-is or swap your image) */
+    .page.backcover .page-canvas{
+      padding:0; background:#0c102c;
+      background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png');
+      background-size:cover; background-position:center; background-repeat:no-repeat;
+    }
 
     /* Stack positions */
     .page.active{ opacity:1; filter:none; pointer-events:auto; }
@@ -41,12 +51,13 @@
     .pos-1 { transform:translateX(36px)  rotate(.6deg)  scale(.975); z-index:2; }
     .pos-2 { transform:translateX(70px)  rotate(1.2deg) scale(.95); z-index:1; }
 
-    /* Arrows INSIDE stage so they scale with it */
+    /* Arrows inside stage */
     .nav{ position:absolute; top:50%; transform:translateY(-50%); border:0; width:56px; height:56px; border-radius:50%; cursor:pointer; z-index:10;
           background:#ffffffd8; box-shadow:0 10px 22px rgba(0,0,0,.25); font-weight:900; font-size:22px; color:#182042; display:grid; place-items:center; }
     .nav.left{ left:-72px; }
     .nav.right{ right:-72px; }
     .nav:active{ transform:translateY(-50%) scale(.96); }
+    .nav.disabled{ opacity:.45; pointer-events:none; }
 
     /* Items */
     .scrap-item{ position:absolute; transform-origin:center; touch-action:none; overflow:visible; }
@@ -175,7 +186,7 @@
 
 <script>
 (function(){
-  const KEY = 'scrapbook_layered_deck_v2_16p_loop';
+  const KEY = 'scrapbook_layered_deck_v3_coverfix_nowrapleft';
   const stage = document.getElementById('stage');
   const deck  = document.getElementById('deck');
   const pages = [...deck.querySelectorAll('.page')];
@@ -196,7 +207,7 @@
   const fitBtn=document.getElementById('fitToggleBtn');
   const lockBtn=document.getElementById('lockToggleBtn');
 
-  let current = 1; // starting index near front cover
+  let current = 0; // start on the front cover (index 0)
   let selectedItem = null; let zCounter=10;
 
   // Fit stage to viewport without scrolling
@@ -220,9 +231,16 @@
       if(i===current+1) p.classList.add('pos-1');
       if(i===current+2) p.classList.add('pos-2');
     });
+    // disable left on first page
+    prevBtn.classList.toggle('disabled', current===0);
   }
-  function wrap(i){ const n = pages.length; return ((i % n) + n) % n; }
-  function go(delta){ const next = wrap(current + delta); if(next!==current){ current=next; setClasses(); save(); } }
+  function go(delta){
+    const n = pages.length;
+    let next = current + delta;
+    if(delta > 0 && next >= n) next = 0; // wrap forward only
+    if(delta < 0 && next < 0) next = 0;  // clamp on first page
+    if(next!==current){ current=next; setClasses(); save(); }
+  }
   prevBtn.onclick = ()=> go(-1);
   nextBtn.onclick = ()=> go(1);
   window.addEventListener('keydown', (e)=>{ if(document.body.classList.contains('editing')) return; if(e.key==='ArrowLeft') go(-1); if(e.key==='ArrowRight') go(1); });
