@@ -3,10 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Our Story — scrapbook (single page)</title>
+  <title>Our Scrapbook — portrait, 14 pages (with covers)</title>
   <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
-  <link rel="preload" as="image" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png" />
-  <link rel="preload" as="image" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png" />
   <style>
     :root{
       --bg:#0b0f2f;          /* deep night blue */
@@ -25,68 +23,103 @@
       user-select:none; /* editing mode will re-enable where needed */
     }
 
-    /* Stage */
-    #stage{ width:1000px; height:650px; position:relative; }
+    /* Stage (portrait) */
+    #stage{ width:840px; height:1180px; position:relative; }
 
-    /* Nav arrows */
-    .nav{
-      position:absolute; top:50%; transform:translateY(-50%);
-      width:54px; height:54px; border-radius:50%;
-      background:white; box-shadow:var(--shadow);
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer; border:2px solid #e8e6e0; z-index:30;
-      transition:transform .12s ease; user-select:none;
+    /* Toolbar (inside stage so it never goes off-screen) */
+    #toolbar{
+      position:absolute; left:50%; transform:translateX(-50%);
+      top:10px; height:56px; display:flex; gap:10px; align-items:center; z-index:50;
     }
-    .nav:active{ transform:translateY(-50%) scale(.96); }
-    #prev{ left:-78px }
-    #next{ right:-78px }
-    .nav svg{ width:26px; height:26px; fill:var(--ink) }
-
-    /* Toolbar (hidden by secret code) */
-    #toolbar{ position:absolute; left:0; right:0; top:-70px; height:56px; display:flex; gap:10px; align-items:center; justify-content:center; }
-    #toolbar.hidden{ display:none; }
-    .btn{ padding:10px 14px; border-radius:14px; background:white; color:var(--ink); border:2px solid #e8e6e0; box-shadow:var(--shadow); cursor:pointer; font-size:16px; line-height:1; letter-spacing:.2px; }
+    .btn{
+      padding:10px 14px; border-radius:14px; background:white; color:var(--ink);
+      border:2px solid #e8e6e0; box-shadow:var(--shadow); cursor:pointer;
+      font-size:16px; line-height:1; letter-spacing:.2px;
+    }
     .btn[aria-pressed="true"]{ outline:3px solid var(--accent); }
 
-    /* Book (single page) */
-    #book{ width:100%; height:100%; position:relative; display:flex; align-items:center; justify-content:center; }
+    /* Page deck */
+    #deck{ position:absolute; inset:80px 0 56px 0; display:flex; align-items:center; justify-content:center; }
 
-    .page{ position:absolute; inset:0; margin:auto; width:100%; height:100%; background:var(--paper);
-      border-radius:18px; box-shadow:var(--shadow); overflow:hidden; border:2px solid #efe6d5; display:none; }
+    .page{
+      position:absolute; width:720px; height:100%; background:var(--paper);
+      border-radius:22px; box-shadow:var(--shadow); border:2px solid #efe6d5; display:none;
+    }
     .page.active{ display:block; }
 
-    /* layered look for inner pages */
-    .page::before, .page::after{ content:""; position:absolute; inset:8px 10px; border-radius:16px; pointer-events:none; border:1px dashed rgba(13,42,107,.12); transform:rotate(.4deg); }
-    .page::after{ inset:14px 16px; transform:rotate(-.5deg); }
+    /* layered look */
+    .page::before, .page::after{
+      content:""; position:absolute; inset:10px 12px; border-radius:18px; pointer-events:none;
+      border:1px dashed rgba(13,42,107,.12); transform:rotate(.4deg);
+    }
+    .page::after{ inset:16px 18px; transform:rotate(-.6deg); }
 
-    .page-canvas{ position:absolute; inset:26px; background:transparent; border-radius:12px; overflow:hidden; outline:2px dashed transparent; transition:outline-color .2s ease; }
+    /* Covers styling */
+    .page.cover{
+      background:linear-gradient(145deg,#fde7e7,#fffdf8 45%,#e6f8f3);
+      border-color:#fff; box-shadow:0 24px 60px rgba(0,0,0,.45);
+    }
+    .page.cover::before,.page.cover::after{ display:none; }
+
+    .page-canvas{
+      position:absolute; inset:34px; background:transparent; border-radius:14px; overflow:hidden;
+      outline:2px dashed transparent; transition:outline-color .2s ease;
+    }
     .page[data-active="true"] .page-canvas{ outline-color:rgba(122,90,248,.25); }
 
-    /* cover pages fill fully */
-    .page.cover{ background-color:var(--paper); background-position:center; background-repeat:no-repeat; background-size:cover; }
-    .page.cover::before, .page.cover::after{ display:none; }
-    .page.cover .page-canvas{ outline:none; }
+    /* Empty hints */
+    .hint{ position:absolute; inset:34px; display:flex; align-items:center; justify-content:center; opacity:.28; font-size:18px; text-align:center; }
+
+    /* Items */
+    .item{ position:absolute; cursor:move; touch-action:none; }
+    .note{
+      min-width:140px; min-height:40px; padding:10px 12px; background:#fffef8; color:var(--ink);
+      border:2px solid #e7dfcf; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,.12);
+      font-size:28px; line-height:1.15; user-select:text; outline:none; resize:both; overflow:auto;
+    }
+    .photo{ display:block; width:300px; height:auto; border-radius:14px; border:3px solid #fff; box-shadow:0 16px 30px rgba(0,0,0,.18); }
+
+    .selected{ outline:3px solid var(--accent2); outline-offset:2px; }
+
+    /* Nav arrows (kept inside stage) */
+    .nav{
+      position:absolute; top:50%; transform:translateY(-50%);
+      width:54px; height:54px; border-radius:50%; background:white; box-shadow:var(--shadow);
+      display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #e8e6e0; z-index:40;
+      transition:transform .12s ease;
+    }
+    .nav:active{ transform:translateY(-50%) scale(.96); }
+    #prev{ left:10px }
+    #next{ right:10px }
+    .nav svg{ width:26px; height:26px; fill:var(--ink) }
+
+    /* Footer status */
+    #status{ position:absolute; bottom:8px; left:0; right:0; display:flex; justify-content:center; gap:12px; font-size:14px; color:#e9f8f4; opacity:.9; }
 
     /* Click-to-nav zones (disabled in edit mode) */
-    .hotzone{ position:absolute; top:0; bottom:0; width:22%; z-index:10; }
+    .hotzone{ position:absolute; top:80px; bottom:56px; width:28%; z-index:20; }
     .hz-left{ left:0; }
     .hz-right{ right:0; }
 
-    @media (max-width:1100px){ #stage{ transform:scale(.9); transform-origin:center; } }
-    @media (max-width:980px){ #stage{ transform:scale(.8); } }
+    @media (max-width:980px){
+      #stage{ transform:scale(.8); transform-origin:center; }
+    }
+    @media (max-width:860px){
+      #stage{ transform:scale(.72); }
+    }
   </style>
 </head>
 <body>
 
   <div id="stage">
-    <!-- Toolbar (hidden by default; show with 1-2-3) -->
-    <div id="toolbar" class="hidden">
+    <!-- Toolbar -->
+    <div id="toolbar">
       <button id="toggleEdit" class="btn" aria-pressed="false">✏️ Edit</button>
       <button id="addText" class="btn">＋ Text</button>
       <label class="btn" style="display:inline-flex; align-items:center; gap:8px;">
         ＋ Image <input id="addImg" type="file" accept="image/*" style="display:none">
       </label>
-      <button id="clearPage" class="btn" title="Remove all items on the current page">🧹 Clear Page</button>
+      <button id="clearPage" class="btn" title="Remove all items on this page">🧹 Clear Page</button>
     </div>
 
     <!-- Nav arrows -->
@@ -97,64 +130,77 @@
       <svg viewBox="0 0 24 24"><path d="M8.59 16.59 10 18l6-6-6-6-1.41 1.41L12.17 12z"/></svg>
     </div>
 
-    <div id="book">
-      <!-- 12 pages: 1 cover front, 10 inner, 1 cover back -->
-      <div class="page cover active" data-page="1" style="background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/lovestory_cover.png');">
-        <div class="page-canvas" aria-label="Front cover (page 1)"></div>
+    <!-- Page deck: 14 portrait pages (1=front cover, 14=back cover) -->
+    <div id="deck">
+      <div class="page cover active" data-page="1" data-active="true">
+        <div class="page-canvas" aria-label="Front Cover"></div>
+        <div class="hint">front cover — add title art, photo, or background</div>
       </div>
-
-      <div class="page" data-page="2"><div class="page-canvas" aria-label="Page 2"></div></div>
-      <div class="page" data-page="3"><div class="page-canvas" aria-label="Page 3"></div></div>
-      <div class="page" data-page="4"><div class="page-canvas" aria-label="Page 4"></div></div>
-      <div class="page" data-page="5"><div class="page-canvas" aria-label="Page 5"></div></div>
-      <div class="page" data-page="6"><div class="page-canvas" aria-label="Page 6"></div></div>
-      <div class="page" data-page="7"><div class="page-canvas" aria-label="Page 7"></div></div>
-      <div class="page" data-page="8"><div class="page-canvas" aria-label="Page 8"></div></div>
-      <div class="page" data-page="9"><div class="page-canvas" aria-label="Page 9"></div></div>
-      <div class="page" data-page="10"><div class="page-canvas" aria-label="Page 10"></div></div>
-      <div class="page" data-page="11"><div class="page-canvas" aria-label="Page 11"></div></div>
-
-      <div class="page cover" data-page="12" style="background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png');">
-        <div class="page-canvas" aria-label="Back cover (page 12)"></div>
+      <!-- Inner pages 2..13 (12 pages) -->
+      <div class="page" data-page="2"><div class="page-canvas" aria-label="Page 2"></div><div class="hint">page 2</div></div>
+      <div class="page" data-page="3"><div class="page-canvas" aria-label="Page 3"></div><div class="hint">page 3</div></div>
+      <div class="page" data-page="4"><div class="page-canvas" aria-label="Page 4"></div><div class="hint">page 4</div></div>
+      <div class="page" data-page="5"><div class="page-canvas" aria-label="Page 5"></div><div class="hint">page 5</div></div>
+      <div class="page" data-page="6"><div class="page-canvas" aria-label="Page 6"></div><div class="hint">page 6</div></div>
+      <div class="page" data-page="7"><div class="page-canvas" aria-label="Page 7"></div><div class="hint">page 7</div></div>
+      <div class="page" data-page="8"><div class="page-canvas" aria-label="Page 8"></div><div class="hint">page 8</div></div>
+      <div class="page" data-page="9"><div class="page-canvas" aria-label="Page 9"></div><div class="hint">page 9</div></div>
+      <div class="page" data-page="10"><div class="page-canvas" aria-label="Page 10"></div><div class="hint">page 10</div></div>
+      <div class="page" data-page="11"><div class="page-canvas" aria-label="Page 11"></div><div class="hint">page 11</div></div>
+      <div class="page" data-page="12"><div class="page-canvas" aria-label="Page 12"></div><div class="hint">page 12</div></div>
+      <div class="page" data-page="13"><div class="page-canvas" aria-label="Page 13"></div><div class="hint">page 13</div></div>
+      <div class="page cover" data-page="14">
+        <div class="page-canvas" aria-label="Back Cover"></div>
+        <div class="hint">back cover — credits, dedication, or solid color</div>
       </div>
 
       <!-- click-to-nav zones (disabled in edit) -->
       <div class="hotzone hz-left" title="Previous"></div>
       <div class="hotzone hz-right" title="Next"></div>
     </div>
+
+    <div id="status"> <span id="pageLabel">Front Cover (1 / 14)</span> • <span>Autosaved</span> • <span>Tips: drag to move • [ / ] to resize • Delete to remove • Double‑click text to edit</span> </div>
   </div>
 
 <script>
 (function(){
-  const book = document.getElementById('book');
-  const pages = [...book.querySelectorAll('.page')];
+  const deck = document.getElementById('deck');
+  const pages = [...deck.querySelectorAll('.page')];
   const prevBtn = document.getElementById('prev');
   const nextBtn = document.getElementById('next');
   const toggleEdit = document.getElementById('toggleEdit');
   const addTextBtn = document.getElementById('addText');
   const addImgInput = document.getElementById('addImg');
   const clearPageBtn = document.getElementById('clearPage');
+  const pageLabel = document.getElementById('pageLabel');
   const leftHz = document.querySelector('.hz-left');
   const rightHz = document.querySelector('.hz-right');
-  const toolbar = document.getElementById('toolbar');
 
-  let current = 0; // 0..11 (12 pages)
+  let current = 0; // index 0..13
   let edit = false;
   let zCounter = 10;
-  const KEY = 'story_single_v2';
+  const KEY = 'scrapbook_portrait_v2_14p';
 
-  function currentCanvas(){ return pages[current].querySelector('.page-canvas'); }
-
+  function getCanvas(i){ return pages[i].querySelector('.page-canvas'); }
+  function nameFor(i){
+    if(i===0) return 'Front Cover';
+    if(i===pages.length-1) return 'Back Cover';
+    return `Page ${i+1}`;
+  }
   function showPage(i){
     if(i<0||i>=pages.length) return;
-    pages.forEach((p,idx)=>p.classList.toggle('active', idx===i));
-    pages[i].dataset.active = 'true';
+    pages.forEach((p,idx)=>{
+      p.classList.toggle('active', idx===i);
+      p.dataset.active = (idx===i);
+    });
+    current = i;
+    pageLabel.textContent = `${nameFor(i)} (${i+1} / ${pages.length})`;
     save();
   }
 
   function enableEdit(on){
     edit = !!on;
-    if(toggleEdit) toggleEdit.setAttribute('aria-pressed', edit);
+    toggleEdit.setAttribute('aria-pressed', edit);
     document.body.style.userSelect = edit? 'text' : 'none';
     leftHz.style.pointerEvents = rightHz.style.pointerEvents = edit? 'none':'auto';
   }
@@ -177,16 +223,16 @@
     reader.readAsDataURL(file);
   }
   function placeNew(el){
-    const canvas = currentCanvas();
-    el.style.left = Math.round(canvas.clientWidth*0.15 + Math.random()*40) + 'px';
-    el.style.top  = Math.round(canvas.clientHeight*0.2 + Math.random()*40) + 'px';
+    const canvas = getCanvas(current);
+    el.style.left = Math.round(canvas.clientWidth*0.12 + Math.random()*40) + 'px';
+    el.style.top  = Math.round(canvas.clientHeight*0.14 + Math.random()*40) + 'px';
     el.style.zIndex = ++zCounter;
     canvas.appendChild(el);
     wireItem(el);
     save();
   }
 
-  // Drag + select + resize keys
+  // Drag + select + simple resize via [ ] keys
   let drag = null; // {el,dx,dy}
   function wireItem(el){
     el.addEventListener('pointerdown', (e)=>{
@@ -213,72 +259,66 @@
     if(selected) selected.classList.remove('selected');
     selected = el; if(selected){ selected.classList.add('selected'); selected.style.zIndex = ++zCounter; }
   }
-
-  // Keyboard shortcuts
   window.addEventListener('keydown', (e)=>{
-    // navigation always available when not editing text
-    const t = e.target;
-    const typing = (t && (t.tagName === 'INPUT' || t.isContentEditable));
-    if(!typing){
-      if(e.key === 'ArrowRight'){ next(); }
-      if(e.key === 'ArrowLeft'){ prev(); }
-    }
-
     if(!edit || !selected) return;
     if(e.key === 'Delete' || e.key === 'Backspace'){
       selected.remove(); selected=null; save(); e.preventDefault(); return;
     }
-    if(e.key === '['){
+    if(e.key === '['){ // scale down
       if(selected.classList.contains('photo')){
         const w = selected.offsetWidth; selected.style.width = Math.max(80, w-20) + 'px'; save();
       }else if(selected.classList.contains('note')){
-        const sc = parseFloat(selected.dataset.scale||'1') - .1; const s = Math.max(.6, sc);
-        selected.style.transform = `scale(${s})`; selected.dataset.scale = s; save();
+        selected.style.transform = `scale(${Math.max(.6, (parseFloat(selected.dataset.scale)||1)-.1)})`;
+        selected.dataset.scale = parseFloat(selected.dataset.scale||'1')-.1; save();
       }
     }
     if(e.key === ']'){
       if(selected.classList.contains('photo')){
         const w = selected.offsetWidth; selected.style.width = (w+20) + 'px'; save();
       }else if(selected.classList.contains('note')){
-        const sc = parseFloat(selected.dataset.scale||'1') + .1; const s = Math.min(2, sc);
-        selected.style.transform = `scale(${s})`; selected.dataset.scale = s; save();
+        selected.style.transform = `scale(${Math.min(2, (parseFloat(selected.dataset.scale)||1)+.1)})`;
+        selected.dataset.scale = (parseFloat(selected.dataset.scale||'1')+.1); save();
       }
     }
-    if(e.key.toLowerCase()==='f'){ selected.style.zIndex = ++zCounter; save(); }
+    if(e.key.toLowerCase()==='f'){ // bring to front quick
+      selected.style.zIndex = ++zCounter; save();
+    }
   });
 
-  // Clearing page
-  if(clearPageBtn){
-    clearPageBtn.addEventListener('click', ()=>{
-      const canvas = currentCanvas();
-      if(confirm('Clear all items on this page?')){ canvas.innerHTML=''; save(); }
-    });
-  }
+  // Clear page
+  clearPageBtn.addEventListener('click', ()=>{
+    const canvas = getCanvas(current);
+    if(confirm('Clear all items on this page?')){
+      canvas.innerHTML=''; save();
+    }
+  });
 
   // Toolbar actions
-  if(toggleEdit){ toggleEdit.addEventListener('click', ()=> enableEdit(!edit)); }
-  if(addTextBtn){ addTextBtn.addEventListener('click', ()=>{ if(edit) createNote(); }); }
-  if(addImgInput){
-    addImgInput.addEventListener('change', (e)=>{
-      if(!edit || !e.target.files?.length) return;
-      createPhotoFromFile(e.target.files[0]); e.target.value='';
-    });
-  }
+  toggleEdit.addEventListener('click', ()=> enableEdit(!edit));
+  addTextBtn.addEventListener('click', ()=>{ if(edit) createNote(); });
+  addImgInput.addEventListener('change', (e)=>{
+    if(!edit || !e.target.files?.length) return;
+    createPhotoFromFile(e.target.files[0]); e.target.value='';
+  });
 
   // Nav
-  function next(){ if(current<pages.length-1){ current++; showPage(current);} }
-  function prev(){ if(current>0){ current--; showPage(current);} }
+  function next(){ if(current<pages.length-1){ showPage(current+1);} }
+  function prev(){ if(current>0){ showPage(current-1);} }
   nextBtn.addEventListener('click', next);
   prevBtn.addEventListener('click', prev);
   rightHz.addEventListener('click', ()=>{ if(!edit) next(); });
   leftHz.addEventListener('click', ()=>{ if(!edit) prev(); });
+  window.addEventListener('keydown', (e)=>{
+    if(e.key==='ArrowRight' && !edit) next();
+    if(e.key==='ArrowLeft' && !edit) prev();
+  });
 
   // Save / Load from localStorage
   function save(){
     const data = { current, z:zCounter, pages:[] };
-    pages.forEach((pg,idx)=>{
-      const pc = pg.querySelector('.page-canvas');
-      data.pages.push({index:idx, html:pc.innerHTML});
+    pages.forEach((p,idx)=>{
+      const pc = p.querySelector('.page-canvas');
+      data.pages[idx] = pc.innerHTML;
     });
     localStorage.setItem(KEY, JSON.stringify(data));
   }
@@ -287,41 +327,22 @@
     if(!raw) return;
     try{
       const data = JSON.parse(raw);
-      if(typeof data.current==='number') current = Math.min(Math.max(0, data.current), pages.length-1);
+      if(typeof data.current==='number') current = Math.min(data.current, pages.length-1);
       if(typeof data.z==='number') zCounter = data.z;
       if(Array.isArray(data.pages)){
-        data.pages.forEach(p=>{
-          const pg = pages[p.index];
-          if(pg){ const pc = pg.querySelector('.page-canvas'); pc.innerHTML = p.html; [...pc.children].forEach(wireItem); }
+        data.pages.forEach((html,idx)=>{
+          if(idx>=pages.length) return; // ignore extras if any
+          const pc = getCanvas(idx);
+          if(pc){ pc.innerHTML = html||''; [...pc.children].forEach(wireItem); }
         });
       }
     }catch(err){ console.warn('load fail', err); }
   }
 
-  // Secret code: type 1 then 2 then 3 to toggle toolbar
-  let toolbarVisible = false;
-  let codeBuffer = '';
-  let codeTimer = null;
-  function showToolbar(on){
-    toolbarVisible = !!on;
-    toolbar.classList.toggle('hidden', !toolbarVisible);
-    if(!toolbarVisible) enableEdit(false);
-  }
-  function handleSecret(e){
-    const t = e.target; if(t && (t.tagName==='INPUT' || t.isContentEditable)) return;
-    if(e.key && e.key.length===1 && /[0-9]/.test(e.key)){
-      codeBuffer += e.key;
-      clearTimeout(codeTimer);
-      codeTimer = setTimeout(()=> codeBuffer = '', 1500);
-      if(codeBuffer.endsWith('123')){ showToolbar(!toolbarVisible); codeBuffer=''; }
-    }
-    if(e.key==='Escape' && toolbarVisible){ showToolbar(false); }
-  }
-  window.addEventListener('keydown', handleSecret);
-
   // Initialize
   load();
   showPage(current);
+  enableEdit(false);
 })();
 </script>
 </body>
