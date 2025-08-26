@@ -485,30 +485,26 @@
     }
     .secret-frame { width: 100%; height: clamp(220px, 56vw, 520px); display:block; }
 
-    /* --- purple heart button next to title --- */
+    /* --- ultra subtle title heart (looks like a normal emoji, smaller) --- */
     .title-heart{
-      margin-left: 8px;
-      font-size: 0.9em;
+      margin-left: 6px;
+      font-size: 0.8em;          /* smaller than the title text */
       line-height: 1;
-      background: transparent;
-      border: 2px solid rgba(212,180,232,0.55);
-      border-radius: 999px;
-      padding: 2px 10px;
-      cursor: pointer;
+      display: inline-block;
       user-select: none;
-      -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 0 10px rgba(142,93,210,0.45);
-      transition: transform .15s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+      -webkit-user-select: none;
+      -ms-user-select: none;
+      touch-action: none;        /* helps long-press on mobile */
+      cursor: default;           /* not “clicky” */
+      vertical-align: baseline;
     }
-    .title-heart:hover{ box-shadow: 0 0 14px rgba(228,63,236,0.55); }
-    .title-heart:focus-visible{ outline: 2px dashed #e43fec; outline-offset: 2px; }
-    .title-heart.holding{ transform: scale(.95); box-shadow: 0 0 18px rgba(228,63,236,0.75); }
+    /* no :hover, no borders, no animations */
   </style>
 </head>
 <body>
   <h1>
     Started Dating: October 13, 2024
-    <button id="title-heart" class="title-heart" type="button" title="press & hold for 3 seconds">💜</button>
+    <span id="title-heart" class="title-heart">💜</span>
   </h1>
 
   <div id="duration-block">
@@ -1032,34 +1028,36 @@
     })();
   </script>
 
-  <!-- Title heart long-press → story.html -->
   <script>
     (() => {
-      const heartBtn = document.getElementById('title-heart');
-      if (!heartBtn) return;
+      const heartEl = document.getElementById('title-heart');
+      if (!heartEl) return;
 
       const HOLD_MS = 3000;
       let holdTimer = null;
 
       const startHold = (e) => {
-        e.preventDefault();
+        e.preventDefault();              
+        e.stopPropagation();               
         clearTimeout(holdTimer);
-        heartBtn.classList.add('holding');
         holdTimer = setTimeout(() => {
           window.location.href = 'story.html';
         }, HOLD_MS);
       };
 
-      const cancelHold = () => {
-        heartBtn.classList.remove('holding');
+      const cancelHold = (e) => {
+        if (e) e.stopPropagation();
         clearTimeout(holdTimer);
         holdTimer = null;
       };
 
-      heartBtn.addEventListener('pointerdown', startHold, { passive: false });
+      heartEl.addEventListener('pointerdown', startHold, { passive: false });
       ['pointerup','pointerleave','pointercancel'].forEach(ev =>
-        heartBtn.addEventListener(ev, cancelHold)
+        heartEl.addEventListener(ev, cancelHold)
       );
+
+      heartEl.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); });
+      heartEl.addEventListener('click', (e) => e.stopPropagation());
     })();
   </script>
 </body>
