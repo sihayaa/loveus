@@ -219,40 +219,58 @@
   function unlockAndEnter(){
     unlockToolbar();
     enableEdit(true);
+    cleanupTypedCode();
   }
 
-  // secret: type 1-2-3 quickly to unlock + enter edit (no visual hints)
-  let seq=''; let timer=null;
+  // --- robust secret listener (works with main row + numpad, inputs, and contenteditable) ---
+  let seq = '';
+  let timer = null;
+  function normDigit(e){
+    // map both e.key and e.code to '1'|'2'|'3'
+    if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1') return '1';
+    if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2') return '2';
+    if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3') return '3';
+    return '';
+  }
   function secretHandler(e){
-    if(e.ctrlKey||e.metaKey||e.altKey) return;
-    const k=e.key;
-    if(k==='1' || k==='2' || k==='3'){
-      seq += k;
-      clearTimeout(timer);
-      timer = setTimeout(()=> seq='', 1200);
-      if(seq.endsWith(SECRET_CODE)){
-        seq='';
-        unlockAndEnter();
-        // prevent the final key from typing into any focused editable
-        if(e.target && (e.target.isContentEditable || ['INPUT','TEXTAREA'].includes(e.target.tagName))){
-          e.preventDefault();
-          try{
-            // if something already typed the '1','2','3', remove them
-            if(e.target.tagName==='INPUT' || e.target.tagName==='TEXTAREA'){
-              const el=e.target; const v=el.value; el.value=v.slice(0, -SECRET_CODE.length);
-            } else if(e.target.isContentEditable){
-              document.execCommand('undo');
-            }
-          }catch(_){/* noop */}
-        }
-      }
-    } else {
+    if(e.ctrlKey||e.metaKey||e.altKey) return; // ignore combos
+    const d = normDigit(e);
+    if(!d){ seq=''; return; }
+    seq += d;
+    clearTimeout(timer);
+    timer = setTimeout(()=> seq='', 2500); // generous window
+    if(seq.endsWith(SECRET_CODE)){
       seq='';
+      // prevent this final key from typing
+      e.preventDefault();
+      e.stopPropagation();
+      unlockAndEnter();
     }
   }
-  // capture phase then bubble to be robust
+  // capture first so we run before page inputs; also bubble as fallback
   window.addEventListener('keydown', secretHandler, true);
   window.addEventListener('keydown', secretHandler);
+
+  // remove trailing '123' from focused field/contenteditable if it slipped in
+  function cleanupTypedCode(){
+    const el = document.activeElement;
+    if(!el) return;
+    if(el.tagName==='INPUT' || el.tagName==='TEXTAREA'){
+      const v = el.value || '';
+      if(v.endsWith(SECRET_CODE)) el.value = v.slice(0, -SECRET_CODE.length);
+    } else if(el.isContentEditable){
+      try{
+        // naive cleanup: remove last 3 characters if they are exactly 123
+        const sel = window.getSelection();
+        if(sel && sel.rangeCount){
+          const r = sel.getRangeAt(0);
+          // collapse to end to delete last 3
+          r.collapse(false);
+          for(let i=0;i<3;i++) document.execCommand('delete');
+        }
+      }catch(_){/* ignore */}
+    }
+  }
 
   rehide.addEventListener('click', lockToolbar);
 
@@ -290,7 +308,7 @@
       if(!edit) return; 
       select(el);
       drag = { el, dx:e.clientX - el.offsetLeft, dy:e.clientY - el.offsetTop };
-      el.setPointerCapture(e.pointerId);
+      if(el.setPointerCapture && e.pointerId!=null) el.setPointerCapture(e.pointerId);
     });
     el.addEventListener('pointermove', (e)=>{
       if(!drag||drag.el!==el) return;
