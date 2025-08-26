@@ -3,12 +3,10 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Scrapbook — Layered Deck (16p, secret 123, Supabase)</title>
+<title>Scrapbook — layered (16p, secret 123, Supabase)</title>
 <link rel="icon" href="data:," />
-
 <!-- Supabase client -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
 <style>
 :root{
   --bg:#0b0f2f;
@@ -16,10 +14,10 @@
   --ink:#0d2a6b;
   --accent:#7a5af8;
   --mint:#67e4ca;
-  --cover-front:url("lovestory_cover.png?v=8"); /* change this to your front cover image */
-  --cover-back:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png");
   --page-w:720px;
   --page-h:1020px;
+  --cover-front:url("lovestory_cover.png?v=8");
+  --cover-back:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png");
 }
 *{box-sizing:border-box}
 html,body{height:100%}
@@ -29,19 +27,13 @@ body{
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
 
-/* Stage */
-#stage{ position:relative; width:calc(var(--page-w) + 220px); height:calc(var(--page-h) + 120px); }
-@media (max-width:1100px){
-  #stage{ transform:scale(.9); transform-origin:center; }
-}
-@media (max-width:980px){
-  #stage{ transform:scale(.8); }
-}
-
-/* Layered frame (fake stack on right) */
+/* Stage & frame */
+#stage{ position:relative; width:100vw; height:100vh; overflow:hidden; }
 .frame{ position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); }
+
+/* Fake stack */
 .stack{
-  position:absolute; inset:auto; width:var(--page-w); height:var(--page-h);
+  position:absolute; width:var(--page-w); height:var(--page-h);
   background:#e7dfcf; border-radius:18px; border:2px solid #efe6d5;
   box-shadow: 0 12px 30px rgba(0,0,0,.35);
   right:-26px; top:-22px; opacity:.8;
@@ -49,7 +41,7 @@ body{
 .stack.s2{ right:-52px; top:-44px; opacity:.6; }
 .stack.s3{ right:-78px; top:-66px; opacity:.4; }
 
-/* Page itself */
+/* Page */
 .page{
   position:relative; width:var(--page-w); height:var(--page-h);
   background:var(--paper); border:2px solid #efe6d5; border-radius:20px;
@@ -60,16 +52,14 @@ body{
   position:relative; width:100%; height:100%; padding:40px;
   color:var(--ink); font-size:22px; line-height:1.35;
 }
-.page.cover{
-  border-color:#ffffff; background:#0c102c;
-}
+.page.cover{ background:#0c102c; border-color:#fff; }
 .page.cover.front .page-canvas{
-  background-image:var(--cover-front); background-size:cover;
-  background-position:center; background-repeat:no-repeat; padding:0;
+  background-image:var(--cover-front);
+  background-size:cover; background-position:center; background-repeat:no-repeat; padding:0;
 }
 .page.cover.back .page-canvas{
-  background-image:var(--cover-back); background-size:cover;
-  background-position:center; background-repeat:no-repeat; padding:0;
+  background-image:var(--cover-back);
+  background-size:cover; background-position:center; background-repeat:no-repeat; padding:0;
 }
 
 /* Nav buttons */
@@ -83,7 +73,7 @@ body{
 #next{ right:40px; top:50%; transform:translateY(-50%); }
 .nav:disabled{ opacity:.35; cursor:default; }
 
-/* Items */
+/* Items (boxes) */
 .scrap-item{ position:absolute; transform-origin:center; touch-action:none; overflow:visible; }
 .scrap-item.selected{ box-shadow:0 0 0 3px var(--accent); }
 .rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%;
@@ -100,7 +90,7 @@ body.editing .page .page-canvas, body.editing .scrap-item { pointer-events:auto;
 body.editing .scrap-item{ cursor:move; }
 body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{ display:block; }
 
-/* Toolbar (SECRET – only shows after 123) */
+/* SECRET Toolbar (only shows after typing 123) */
 #toolbar{
   position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100;
   background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px;
@@ -123,8 +113,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 #itemHud button.warn{ background:#ff9aa2; color:#4c0a17; }
 #itemHud button.mint{ background:var(--mint); color:#022d2c; }
 #itemHud input[type="number"]{ width:70px; padding:6px 8px; border-radius:8px; border:2px solid #2b3258; background:#0f1430; color:#fff; font-weight:700; font-size:12px; }
-
-/* subtle focus ring when editing text */
 .scrap-text[contenteditable="true"]{ outline:2px dashed #7a5af888; outline-offset:4px; }
 </style>
 </head>
@@ -142,15 +130,13 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     <div class="stack s3" aria-hidden="true"></div>
     <div class="stack s2" aria-hidden="true"></div>
     <div class="stack s1" aria-hidden="true"></div>
-
-    <!-- Active page -->
     <div id="page" class="page cover front">
       <div class="page-canvas"></div>
     </div>
   </div>
 </div>
 
-<!-- Secret Toolbar (hidden until 123) -->
+<!-- Secret Toolbar -->
 <div id="toolbar" aria-hidden="true">
   <div class="group">
     <button id="addTextBtn"  class="mint">Add Text</button>
@@ -193,21 +179,21 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 
 <script>
 (function(){
-  /* ===== Supabase (simple single-table JSON) ===== */
+  /* ===== Supabase config ===== */
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const STATE_ID = "main";
   const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
 
-  /* ===== Book state ===== */
+  /* ===== Settings ===== */
   const PAGE_COUNT = 16;
-  let current = 0; // start on front cover (page 1)
-  // Each element is { items: [...] } where item = {type:'text'|'image', style:{left,top,width,height}, rot, html? | src?, fit, lock }
+  let current = 0;
   let book = Array.from({length:PAGE_COUNT}, ()=>({items:[]}));
 
   /* ===== Refs ===== */
-  const pageEl = document.getElementById('page');
-  const canvas = pageEl.querySelector('.page-canvas');
+  const frameEl = document.querySelector('.frame');
+  const pageEl  = document.getElementById('page');
+  const canvas  = pageEl.querySelector('.page-canvas');
   const prevBtn = document.getElementById('prev');
   const nextBtn = document.getElementById('next');
 
@@ -238,23 +224,37 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 
   let selectedItem = null, zCounter=10;
 
+  /* ===== Fit-to-viewport scale (no scrolling, accurate drag/resize) ===== */
+  let SCALE = 1;
+  function fitToViewport(){
+    const pad = 40;
+    const pageW = 720, pageH = 1020;
+    const stageW = pageW + 220;  // stacks width
+    const stageH = pageH + 120;  // stacks height
+    SCALE = Math.min(
+      (window.innerWidth  - pad) / stageW,
+      (window.innerHeight - pad) / stageH,
+      1
+    );
+    frameEl.style.transform = `translate(-50%,-50%) scale(${SCALE})`;
+  }
+  window.addEventListener('resize', fitToViewport);
+  fitToViewport();
+
   /* ===== Secret unlock: type 123 ===== */
   const PASSCODE='123'; let keyBuffer='', keyTimer=null;
   document.addEventListener('keydown',(e)=>{
     if(e.metaKey||e.ctrlKey||e.altKey) return;
     if(typeof e.key!=='string' || e.key.length!==1) return;
     keyBuffer+=e.key; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuffer='',1200);
-    if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); }
+    if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; setEditing(true); }
   });
-
   function setEditing(on){
     document.body.classList.toggle('editing', on);
     toolbar.classList.toggle('open', on);
     if(!on){ deselect(); }
-    // Covers stay uneditable
     updateCoverClass();
   }
-  function enterEdit(){ setEditing(true); }
   function isCover(i){ return i===0 || i===PAGE_COUNT-1; }
 
   /* ===== Navigation ===== */
@@ -266,23 +266,19 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     }
   }
   function updateNav(){
-    // Left disabled on front cover only
-    prevBtn.disabled = (current===0);
+    prevBtn.disabled = (current===0); // no left from front cover
   }
   function goTo(idx){
-    saveDomIntoBook(); // keep current edits
+    saveDomIntoBook();
     current = ((idx%PAGE_COUNT)+PAGE_COUNT)%PAGE_COUNT;
     renderCurrent();
   }
   prevBtn.onclick = ()=>{ if(current>0) goTo(current-1); };
-  nextBtn.onclick = ()=>{ if(current===PAGE_COUNT-1) goTo(0); else goTo(current+1); };
+  nextBtn.onclick = ()=>{ if(current===PAGE_COUNT-1) goTo(0); else goTo(current+1); }; // loop right
 
-  /* ===== Render & collect ===== */
+  /* ===== Render / collect ===== */
   function renderCurrent(){
-    canvas.innerHTML='';
-    updateCoverClass(); updateNav();
-
-    // Build DOM from book[current]
+    canvas.innerHTML=''; updateCoverClass(); updateNav();
     const items = book[current]?.items || [];
     for(const it of items){
       const box=document.createElement('div'); box.className='scrap-item';
@@ -307,7 +303,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     }
   }
   function saveDomIntoBook(){
-    if(!canvas) return;
     const items=[...canvas.querySelectorAll('.scrap-item')].map(el=>{
       const style={left:el.style.left, top:el.style.top, width:el.style.width, height:el.style.height};
       const rot=parseFloat(el.dataset.rot||'0')||0;
@@ -318,7 +313,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     book[current] = { items };
   }
 
-  /* ===== Draggable / resizable / rotate & HUD ===== */
+  /* ===== Drag/Resize/Rotate + HUD ===== */
   function deselect(){ if(selectedItem){ selectedItem.classList.remove('selected'); } selectedItem=null; hideItemHud(); updateToolbarState(); }
   function getRotation(el){ return parseFloat(el?.dataset.rot || '0') || 0; }
   function setRotation(el,deg){
@@ -376,7 +371,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     }
     function onMove(e){
       if(!resizing) return;
-      const dx=e.clientX-startX, dy=e.clientY-startY;
+      const dx=(e.clientX-startX)/SCALE, dy=(e.clientY-startY)/SCALE; /* SCALE-aware */
       const hasImg=!!el.querySelector('.scrap-img');
       const lockOn=hasImg && el.dataset.lock==='1' && !e.shiftKey;
       const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight)));
@@ -432,7 +427,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     }
     function onPointerMove(e){
       if(!dragging) return;
-      const dx=e.clientX-startX, dy=e.clientY-startY;
+      const dx=(e.clientX-startX)/SCALE, dy=(e.clientY-startY)/SCALE; /* SCALE-aware */
       el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px';
       positionHud();
     }
@@ -459,7 +454,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     if(!onItem && !onBar && !onHud) deselect();
   });
 
-  /* ===== Text editing (inline) ===== */
+  /* ===== Text editing (double-click) ===== */
   function editTextBox(box){
     const t = box.querySelector('.scrap-text'); if(!t) return;
     t.setAttribute('contenteditable','true'); t.focus();
@@ -469,24 +464,29 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   }
   hudEdit.onclick = ()=>{ if(selectedItem) editTextBox(selectedItem); };
 
-  /* ===== Toolbar actions & sync ===== */
+  /* ===== Toolbar actions ===== */
   function selectedTextEl(){ if(!selectedItem) return null; return selectedItem.querySelector('.scrap-text'); }
+  function selectedAnyTextEl(){ if(!selectedItem) return null; return selectedItem.querySelector('.scrap-text'); }
+  function rgbToHex(rgb){ const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); if(!m) return '#000000';
+    const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0'); return `#${r}${g}${b}`; }
   function updateFontInput(){
     const t=selectedTextEl(); if(!t){ fontSizeInput.disabled=true; fontSizeInput.value=''; return; }
     fontSizeInput.disabled=false; const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr; hudFont.value=curr;
-  }
-  function selectedAnyTextEl(){ if(!selectedItem) return null; return selectedItem.querySelector('.scrap-text'); }
-  function rgbToHex(rgb){
-    const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
-    if(!m) return '#000000';
-    const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0');
-    return `#${r}${g}${b}`;
   }
   function updateColorInput(){
     const t=selectedAnyTextEl();
     if(!t){ fontColorInput.disabled=true; return; }
     const comp=getComputedStyle(t).color; fontColorInput.disabled=false; fontColorInput.value=comp.startsWith('#')?comp:rgbToHex(comp);
   }
+  function updateImageButtons(){
+    const onImg=!!(selectedItem && selectedItem.querySelector('.scrap-img'));
+    fitBtn.disabled=!onImg; lockBtn.disabled=!onImg;
+    if(onImg){ const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1';
+      fitBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); lockBtn.textContent='Lock: '+(lock?'On':'Off'); }
+    else{ fitBtn.textContent='Fit: Contain'; lockBtn.textContent='Lock: On'; }
+  }
+  function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
+
   fontSizeInput.addEventListener('input',()=>{
     const t=selectedTextEl(); if(!t) return; let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return;
     v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto';
@@ -498,19 +498,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; fontSizeInput.value=v; saveDomIntoBook();
   });
   fontColorInput.addEventListener('input',()=>{ const t=selectedAnyTextEl(); if(!t) return; t.style.color=fontColorInput.value; saveDomIntoBook(); });
-
-  function updateImageButtons(){
-    const onImg=!!(selectedItem && selectedItem.querySelector('.scrap-img'));
-    fitBtn.disabled=!onImg; lockBtn.disabled=!onImg;
-    if(onImg){
-      const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1';
-      fitBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain');
-      lockBtn.textContent='Lock: '+(lock?'On':'Off');
-    } else {
-      fitBtn.textContent='Fit: Contain'; lockBtn.textContent='Lock: On';
-    }
-  }
-  function updateToolbarState(){ updateImageButtons(); updateFontInput(); updateColorInput(); }
 
   fitBtn.onclick = ()=>{ if(!(selectedItem && selectedItem.querySelector('.scrap-img'))) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateImageButtons(); showItemHud(selectedItem); saveDomIntoBook(); };
   lockBtn.onclick= ()=>{ if(!(selectedItem && selectedItem.querySelector('.scrap-img'))) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateImageButtons(); showItemHud(selectedItem); saveDomIntoBook(); };
@@ -539,7 +526,8 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
       const box=document.createElement('div');
       box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='360px'; box.style.height='260px';
       box.dataset.fit='contain'; box.dataset.lock='1';
-      box.innerHTML=`<img class="scrap-img" alt="" src="${src}" decoding="async"><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
+      box.innerHTML=`<img class="scrap-img" alt="" src="${src}" decoding="async">
+                     <div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>`;
       canvas.appendChild(box); makeDraggable(box); box.dataset._hooked='1';
       const imgEl=box.querySelector('.scrap-img');
       const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
@@ -558,7 +546,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   hudBack.onclick  = ()=>{ if(selectedItem){ selectedItem.style.zIndex=0; saveDomIntoBook(); } };
   hudDelete.onclick= ()=>{ if(selectedItem){ selectedItem.remove(); deselect(); saveDomIntoBook(); } };
 
-  /* ===== Inline text edit on double-click ===== */
+  /* Double-click text to edit */
   canvas.addEventListener('dblclick', (e)=>{
     if(!document.body.classList.contains('editing')) return;
     const t = e.target.closest('.scrap-text'); if(!t) return;
@@ -566,9 +554,9 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     editTextBox(box);
   });
 
-  /* ===== Supabase save / load ===== */
+  /* ===== Supabase save/load ===== */
   async function saveToCloudSimple(){
-    saveDomIntoBook(); // capture current page DOM
+    saveDomIntoBook();
     const { error } = await sb
       .from('scrapbook_state')
       .upsert({ id: STATE_ID, pages: book, updated_at: new Date().toISOString() }, { onConflict:'id' });
@@ -582,7 +570,9 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
       .eq('id', STATE_ID)
       .single();
     if(!error && data && Array.isArray(data.pages) && data.pages.length){
-      book = data.pages;
+      const loaded = data.pages;
+      // keep exactly PAGE_COUNT pages
+      book = Array.from({length:PAGE_COUNT}, (_,i)=> loaded[i] || {items:[]});
     }
   }
   saveBtn.onclick = ()=> saveToCloudSimple().catch(err => { console.error(err); alert('Save failed'); });
@@ -594,7 +584,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     setEditing(false);            // start locked
     updateNav();
   })();
-
 })();
 </script>
 </body>
