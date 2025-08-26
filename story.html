@@ -24,7 +24,7 @@
     .page{ position:absolute; inset:0; background:var(--paper); border-radius:20px; border:2px solid #efe6d5;
            box-shadow: inset 0 0 60px rgba(0,0,0,.22), 0 18px 40px rgba(0,0,0,.35);
            overflow:hidden; transform-origin:center; transition:transform .45s cubic-bezier(.2,.7,.2,1), opacity .45s, filter .45s; opacity:.75; filter:saturate(.95);
-           pointer-events:none; }
+           pointer-events:none; z-index:0; }
     .page .page-canvas{ position:relative; width:100%; height:100%; padding:28px; font-size:22px; line-height:1.35; }
 
     /* Front cover */
@@ -40,7 +40,7 @@
       background-size:cover; background-position:center; background-repeat:no-repeat;
     }
 
-    .page.active{ opacity:1; filter:none; pointer-events:auto; }
+    .page.active{ opacity:1; filter:none; pointer-events:auto; z-index:3; }
     .pos--2{ transform:translateX(-70px) rotate(-1.2deg) scale(.95); z-index:1; }
     .pos--1{ transform:translateX(-36px) rotate(-.6deg)  scale(.975); z-index:2; }
     .active { transform:translateX(0) rotate(0deg) scale(1); z-index:3; }
@@ -93,7 +93,7 @@
 
     .scrap-text[contenteditable="true"]{ outline:2px dashed #7a5af888; outline-offset:4px; }
 
-    /* === AUDIO CONTROL (added) === */
+    /* === AUDIO CONTROL === */
     #audioCtrl{
       position:fixed; right:12px; bottom:10px; z-index:100000;
       display:flex; align-items:center; gap:6px;
@@ -114,7 +114,7 @@
 <div id="stage">
   <div class="deck" id="deck">
     <!-- 16 pages: 1 front cover, 14 inner, 16 back cover -->
-    <div class="page cover" data-page="1"><div class="page-canvas"></div></div>
+    <div class="page cover active" data-page="1"><div class="page-canvas"></div></div>
     <div class="page" data-page="2"><div class="page-canvas"></div></div>
     <div class="page" data-page="3"><div class="page-canvas"></div></div>
     <div class="page" data-page="4"><div class="page-canvas"></div></div>
@@ -190,7 +190,7 @@
   </div>
 </div>
 
-<!-- === AUDIO CONTROL (added) === -->
+<!-- === AUDIO CONTROL === -->
 <div id="audioCtrl" aria-label="Music controls">
   <button id="musicPlay" title="Play/Pause">▶</button>
   <input id="musicVol" type="range" min="0" max="100" value="60" title="Volume">
@@ -230,7 +230,7 @@
   const fitBtn=document.getElementById('fitToggleBtn');
   const lockBtn=document.getElementById('lockToggleBtn');
 
-  let current = 0; // will be set to last page at init
+  let current = 0; // front cover
   let selectedItem = null; let zCounter=10;
 
   function fitStage(){
@@ -429,13 +429,12 @@
     cloudTimer = setTimeout(()=> cloudSave(data), 800);
   }
 
-  // ======== YOUTUBE BACKGROUND MUSIC (added) ========
-  const YT_VIDEO_ID = 'XNGtzfRdTtU'; // from your link
+  // ======== YOUTUBE BACKGROUND MUSIC ========
+  const YT_VIDEO_ID = 'XNGtzfRdTtU';
   const musicBtn = document.getElementById('musicPlay');
   const musicVol = document.getElementById('musicVol');
   let ytPlayer = null, ytReady = false;
 
-  // load iframe api
   const ytScript = document.createElement('script');
   ytScript.src = "https://www.youtube.com/iframe_api";
   document.head.appendChild(ytScript);
@@ -444,11 +443,7 @@
     ytPlayer = new YT.Player('yt-holder', {
       height: '0', width: '0',
       videoId: YT_VIDEO_ID,
-      playerVars: {
-        autoplay: 0, // user must click
-        controls: 0, disablekb: 1, playsinline: 1,
-        modestbranding: 1, rel: 0, loop: 1, playlist: YT_VIDEO_ID
-      },
+      playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, modestbranding: 1, rel: 0, loop: 1, playlist: YT_VIDEO_ID },
       events: {
         onReady: ()=>{
           ytReady = true;
@@ -463,34 +458,54 @@
     });
   };
 
-  function updateBtn(playing){
-    musicBtn.textContent = playing ? '⏸' : '▶';
-  }
-
+  function updateBtn(playing){ musicBtn.textContent = playing ? '⏸' : '▶'; }
   musicBtn.addEventListener('click', ()=>{
-    if(!ytReady) return; // ignore until ready
+    if(!ytReady) return;
     const state = ytPlayer.getPlayerState();
-    const isPlaying = state === YT.PlayerState.PLAYING;
-    if(isPlaying){ ytPlayer.pauseVideo(); }
-    else{
-      ytPlayer.unMute();
-      ytPlayer.playVideo();
-    }
+    if(state === YT.PlayerState.PLAYING){ ytPlayer.pauseVideo(); }
+    else { ytPlayer.unMute(); ytPlayer.playVideo(); }
   });
-
   musicVol.addEventListener('input', ()=>{
     const v = parseInt(musicVol.value,10) || 0;
     if(!ytReady) return;
-    if(v <= 0){ ytPlayer.mute(); }
-    else { ytPlayer.unMute(); ytPlayer.setVolume(v); }
+    if(v <= 0){ ytPlayer.mute(); } else { ytPlayer.unMute(); ytPlayer.setVolume(v); }
   });
   // ======== /YOUTUBE BACKGROUND MUSIC ========
 
-  // ======== INIT: START ON LAST PAGE (fix the bounce) ========
-  // show last page immediately, then load cloud state and keep position
-  current = pages.length - 1;
-  setClasses();
-  load().then(()=> setClasses());
+  // ======== INIT: keep front cover visible from first paint ========
+  (async function(){
+    await cloudLoad().then(cloud=>{
+      if(!cloud){ setClasses(); return; }
+      // rebuild from cloud
+      (cloud.pages||[]).forEach((pg,i)=>{
+        const c=pages[i]?.querySelector('.page-canvas'); if(!c) return;
+        c.innerHTML = '';
+        (pg.items||[]).forEach(it=>{
+          const box=document.createElement('div'); box.className='scrap-item';
+          if(it.style?.left)  box.style.left=it.style.left;
+          if(it.style?.top)   box.style.top=it.style.top;
+          if(it.style?.width) box.style.width=it.style.width;
+          if(it.style?.height)box.style.height=it.style.height;
+          if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; }
+          if(it.type==='image' && it.src){
+            box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
+            box.innerHTML='<img class="scrap-img" alt="" src="'+it.src+'" decoding="async">'+
+                          '<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>';
+            const imgEl=box.querySelector('.scrap-img');
+            const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+            if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
+          } else if(it.type==='text' && it.html){
+            const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
+            const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false');
+            box.appendChild(inner);
+            box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>');
+          }
+          c.appendChild(box); makeDraggable(box);
+        });
+      });
+      setClasses(); // stays at cover (current=0)
+    });
+  })();
   // ======== /INIT ========
 
 })();
