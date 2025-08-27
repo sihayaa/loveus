@@ -32,11 +32,10 @@
 
   .listwrap{overflow:auto;padding:0 10px 12px 10px}
   table{width:100%;border-collapse:separate;border-spacing:0 12px;table-layout:fixed}
-  /* exact % widths so header & rows lock perfectly */
   col.date{width:22%} col.type{width:28%} col.notes{width:50%}
 
-  thead th{position:sticky;top:0;z-index:3;background:#0d1815;color:var(--muted);padding:14px 16px;text-align:left;font-weight:700;border-bottom:1px solid var(--line)}
-  thead th+th{border-left:1px solid #24423a} /* match body separators */
+  thead th{position:sticky;top:0;z-index:3;background:#0d1815;color:#a6c9bf;padding:14px 16px;text-align:left;font-weight:700;border-bottom:1px solid var(--line)}
+  thead th+th{border-left:1px solid #24423a}
 
   /* full-row accent + hover */
   tbody tr{position:relative;transition:transform .12s ease,filter .12s ease}
@@ -57,21 +56,27 @@
   tbody td{position:relative;z-index:2;background:transparent;border:none;color:var(--ink);padding:14px 16px;vertical-align:top}
   tbody td+td{border-left:1px solid #24423a}
 
-  /* column content wrappers */
+  /* shared cell content */
   .cell{display:flex;flex-direction:column;gap:6px}
-  .field-label{font-size:12px;color:var(--muted);letter-spacing:.2px}
+  .field-label{font-size:12px;color:#a6c9bf;letter-spacing:.2px}
   .cell input[type="text"],.cell input[type="date"],.cell textarea{width:100%}
   .cell .grow{flex:0 0 auto}
 
-  /* ---------- HARD ALIGN LEFT for DATE column ---------- */
-  td.col-date .cell{align-items:flex-start}
-  td.col-date .checkline{display:flex;align-items:center;gap:8px;justify-content:flex-start !important;width:auto !important}
-  td.col-date input[type="date"]{width:170px} /* consistent width so it doesn’t float */
+  /* >>> HARD LEFT ALIGN for DATE column <<< */
+  td.col-date .cell-date{align-items:flex-start}
+  td.col-date .cell-date .checkline{
+    display:flex;align-items:center;gap:8px;
+    justify-content:flex-start;
+    width:max-content;     /* prevents centering in the cell */
+    margin:0;              /* kill any inherited margins */
+  }
+  td.col-date input[type="date"]{width:170px}
   td.col-date *{text-align:left}
-  /* Notes visible height */
-  td.col-notes textarea.row-note{min-height:48px}
 
-  /* checklist */
+  /* Notes visible height */
+  td.col-notes textarea.row-note{min-height:56px}
+
+  /* checklist checkbox */
   .checkline input[type="checkbox"]{appearance:none;width:18px;height:18px;border-radius:6px;border:2px solid #2b463f;background:#0f1f1b;cursor:pointer;position:relative;outline:none}
   .checkline input[type="checkbox"]:checked{border-color:#1f6b5e;background:#18453c}
   .checkline input[type="checkbox"]:checked::after{content:"✔";position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--accent)}
@@ -124,9 +129,9 @@
         </colgroup>
         <thead>
           <tr>
-            <th class="col-date">date</th>
-            <th class="col-type">type</th>
-            <th class="col-notes">notes</th>
+            <th>date</th>
+            <th>type</th>
+            <th>notes</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -214,7 +219,7 @@ function render(list){
     const tdNote = document.createElement('td');   tdNote.className = 'col-notes';
 
     tdDate.innerHTML = `
-      <div class="cell">
+      <div class="cell cell-date">
         <div class="field-label">Date:</div>
         <div class="checkline">
           <input type="checkbox" ${r.done ? 'checked':''} aria-label="mark as done" data-act="done">
@@ -289,7 +294,7 @@ async function handleModalSave(){ if(!editingId) return; const payload={ date:mD
 
 /* Realtime + start */
 btnSaveTop.addEventListener('click',saveNew);
-sb.channel('public:'+TABLE).on('postgres_changes',{event:'*',schema:'public',table:TABLE},fetchAll).subscribe();
+sb.channel('public':' + TABLE).on('postgres_changes',{event:'*',schema:'public',table:TABLE},fetchAll).subscribe();
 fetchAll();
 </script>
 </body>
