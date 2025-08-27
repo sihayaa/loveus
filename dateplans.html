@@ -17,6 +17,7 @@
     *{box-sizing:border-box}
     html,body{height:100%}
     body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);min-height:100svh;display:grid;place-items:center}
+
     .shell{width:min(100%,var(--maxw));height:min(94svh,900px);background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.55);display:grid;grid-template-rows:auto auto 1fr;overflow:hidden}
     .topbar{display:flex;align-items:center;gap:16px;padding:14px 18px;background:linear-gradient(90deg,#145a4f,#3f2a9e);color:#fff;border-bottom:1px solid var(--line)}
     .topbar h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.3px}
@@ -31,10 +32,11 @@
     .btn.danger{background:var(--danger);border-color:#7c2424}
 
     .listwrap{overflow:auto;padding:0 10px 12px 10px}
-    table{width:100%;border-collapse:separate;border-spacing:0 12px}
-    thead th{position:sticky;top:0;z-index:3;background:#0d1815;color:var(--muted);padding:10px 12px;text-align:left;font-weight:700;border-bottom:1px solid var(--line)}
+    table{width:100%;border-collapse:separate;border-spacing:0 12px;table-layout:fixed}
+    thead th{position:sticky;top:0;z-index:3;background:#0d1815;color:var(--muted);padding:14px 16px;text-align:left;font-weight:700;border-bottom:1px solid var(--line)}
+    thead th+th{border-left:1px solid #24423a} /* match body separators */
 
-    /* FULL-ROW accent + hover */
+    /* full-row accent + hover */
     tbody tr{position:relative;transition:transform .12s ease,filter .12s ease}
     tbody tr::before{
       content:"";position:absolute;inset:0;background:
@@ -45,30 +47,28 @@
     }
     tbody tr:hover{transform:translateY(-1px)}
     tbody tr:hover::before{filter:brightness(1.08);box-shadow:inset 0 0 0 2px rgba(12,255,107,.65),0 0 20px rgba(12,255,107,.14)}
+
     tr.done::before{filter:brightness(.95) saturate(.9)}
     tr.done .field-label{text-decoration:line-through;color:#88a79d}
     tr.done input,tr.done textarea{opacity:.78}
 
     tbody td{position:relative;z-index:2;background:transparent;border:none;color:var(--ink);padding:14px 16px;vertical-align:top}
-    /* keep clear vertical guides between cells, subtle */
-    tbody td+td{border-left:1px solid #24423a}
+    tbody td+td{border-left:1px solid #24423a} /* body separators */
 
-    /* column content */
     .cell{display:flex;flex-direction:column;gap:6px}
     .field-label{font-size:12px;color:var(--muted);letter-spacing:.2px}
     .cell input[type="text"],.cell input[type="date"],.cell textarea{width:100%}
-    .cell .grow{flex:0 0 auto} /* prevent vertical stretch */
+    .cell .grow{flex:0 0 auto}
 
-    /* checklist */
     .checkline{display:flex;align-items:center;gap:8px}
     .checkline input[type="checkbox"]{appearance:none;width:18px;height:18px;border-radius:6px;border:2px solid #2b463f;background:#0f1f1b;cursor:pointer;position:relative;outline:none}
     .checkline input[type="checkbox"]:checked{border-color:#1f6b5e;background:#18453c}
     .checkline input[type="checkbox"]:checked::after{content:"✔";position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--accent)}
 
-    /* tiny, subtle row tools (top-right) */
-    .row-tools{position:absolute;right:8px;top:8px;z-index:4;display:flex;gap:6px;opacity:.25;transition:opacity .15s}
+    /* tiny, subtle row tools at top-right */
+    .row-tools{position:absolute;right:8px;top:6px;z-index:4;display:flex;gap:6px;opacity:.18;transition:opacity .15s}
     tbody tr:hover .row-tools{opacity:.85}
-    .iconbtn{width:28px;height:28px;display:inline-grid;place-items:center;border-radius:10px;padding:0;border:1px solid transparent;background:transparent;color:var(--ink);font-size:14px;cursor:pointer}
+    .iconbtn{width:22px;height:22px;display:inline-grid;place-items:center;border-radius:7px;padding:0;border:1px solid transparent;background:transparent;color:var(--ink);font-size:12px;cursor:pointer}
     .iconbtn:hover{background:#0f1f1b;border-color:#2a3d36}
     .iconbtn.delete:hover{background:#2a1a1a;border-color:#5a2a2a}
 
@@ -108,11 +108,11 @@
 
     <div class="listwrap">
       <table>
-        <!-- fixed column widths so header + rows align perfectly -->
+        <!-- exact % widths so header & rows align -->
         <colgroup>
-          <col style="width:220px">
-          <col style="width:320px">
-          <col style="width:auto">
+          <col style="width:22%">
+          <col style="width:28%">
+          <col style="width:50%">
         </colgroup>
         <thead>
           <tr>
