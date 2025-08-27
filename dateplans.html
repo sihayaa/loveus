@@ -9,68 +9,86 @@
 <style>
   :root{
     --bg:#07110e; --card:#0f1a17; --ink:#eaf7f1; --muted:#a6c9bf; --line:#22332d;
-    --accent:#0CFF6B;                /* neon green accent */
-    --purple:#6a4cff;                /* richer purple */
-    --green:#1b8f7d; --danger:#e65353;
+
+    /* accents */
+    --accent:#0CFF6B;          /* neon green edge vibe */
+    --purple:#6a4cff;          /* richer purple for headers/focus */
+    --btn-purple-start:#2f236f;
+    --btn-purple-end:#3a2bd9;
+
+    /* strike (solid, non-transparent) */
+    --strike:#FFD90F;          /* bright yellow; change to #FF3B30 for red */
+    --strike-rgb:255,217,15;   /* if you change strike, update this RGB too */
+
+    --danger:#e65353;
     --radius:16px; --maxw:1100px;
     --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
   }
+
   *{box-sizing:border-box}
   html,body{height:100%}
-  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);min-height:100svh;display:grid;place-items:center}
+  body{
+    margin:0; background:var(--bg); color:var(--ink); font-family:var(--font);
+    min-height:100svh; display:grid; place-items:center;
+  }
 
-  .shell{width:min(100%,var(--maxw));height:min(94svh,900px);background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.55);display:grid;grid-template-rows:auto auto 1fr;overflow:hidden}
+  .shell{
+    width:min(100%,var(--maxw)); height:min(94svh,900px);
+    background:var(--card); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:0 10px 30px rgba(0,0,0,.55);
+    display:grid; grid-template-rows:auto auto 1fr; overflow:hidden;
+  }
 
-  /* centered title + more purple */
+  /* centered title with more purple */
   .topbar{
     display:flex; justify-content:center; align-items:center;
     padding:14px 18px;
-    background:linear-gradient(90deg, #134f46, #2c3aa3 45%, #6a4cff);
-    color:#fff; border-bottom:1px solid #1b2a25
+    background:linear-gradient(90deg,#134f46, #2c3aa3 45%, var(--purple));
+    color:#fff; border-bottom:1px solid #1b2a25;
   }
-  .topbar h1{margin:0;font-size:22px;font-weight:800;letter-spacing:.3px}
+  .topbar h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:.3px }
 
+  /* add form */
   .controls{
     display:flex; flex-wrap:wrap; gap:10px; padding:12px 16px;
     background:#0d1815; border-bottom:1px solid var(--line);
   }
-  input[type="date"],input[type="text"],textarea{
+  input[type="date"], input[type="text"], textarea{
     height:40px; border:1px solid #26323d; border-radius:12px; padding:10px 12px;
-    background:#12231e; color:var(--ink); outline:none
+    background:#12231e; color:var(--ink); outline:none;
   }
-  input:focus, textarea:focus{ border-color:#3a2bd9; box-shadow:0 0 0 2px rgba(106,76,255,.25) }
+  input:focus, textarea:focus{
+    border-color:#3a2bd9; box-shadow:0 0 0 2px rgba(106,76,255,.25);
+  }
   textarea{ min-height:40px; height:40px; max-height:160px; resize:vertical }
-  input::placeholder,textarea::placeholder{ color:var(--muted) }
+  input::placeholder, textarea::placeholder{ color:var(--muted) }
   .grow{ flex:1 1 260px }
   .btn{
     border:1px solid #3a2bd9; border-radius:12px; padding:10px 14px; height:40px;
-    background:linear-gradient(90deg, #2f236f, #3a2bd9); color:#fff; cursor:pointer;
+    background:linear-gradient(90deg,var(--btn-purple-start),var(--btn-purple-end));
+    color:#fff; cursor:pointer; font-weight:700;
   }
 
   .listwrap{ overflow:auto; padding:0 12px 14px }
 
-  /* simple 3-col grid; locked widths keep everything aligned */
-  .hdr,.row{ display:grid; grid-template-columns:220px 320px 1fr; gap:0 }
+  /* simple 3-col grid; keeps alignment tight */
+  .hdr, .row{ display:grid; grid-template-columns:220px 320px 1fr; gap:0 }
   .hdr{ position:sticky; top:0; background:#0d1815; border-bottom:1px solid var(--line); z-index:3 }
   .hdr div{ padding:12px 14px; color:#c7bfff; font-weight:800; text-transform:lowercase }
   .hdr div+div{ border-left:1px solid #2b2f44 }
 
-  /* row container: add purple to the look */
+  /* row shell with green+purple vibe */
   .row{
     position:relative; margin-top:12px; padding:14px; border-radius:14px;
-    background:
-      linear-gradient(90deg, rgba(106,76,255,.08), rgba(12,255,107,.06)),
-      #15382f;
+    background:linear-gradient(90deg, rgba(106,76,255,.10), rgba(12,255,107,.07)), #15382f;
     border:1px solid #2b463f;
-    box-shadow:
-      inset 0 0 0 2px rgba(12,255,107,.18),
-      0 0 0 0 rgba(106,76,255,0);
-    transition: box-shadow .15s, transform .12s, filter .12s;
+    box-shadow: inset 0 0 0 2px rgba(12,255,107,.20);
+    transition: transform .12s, box-shadow .15s;
   }
   .row:hover{
-    transform: translateY(-1px);
+    transform:translateY(-1px);
     box-shadow:
-      inset 0 0 0 2px rgba(106,76,255,.45),
+      inset 0 0 0 2px rgba(106,76,255,.55),
       0 0 14px rgba(106,76,255,.18);
   }
   .row > div{ padding:6px 10px }
@@ -79,66 +97,61 @@
   .cell input[type="text"], .cell input[type="date"], .cell textarea{ width:100% }
   .notes textarea{ min-height:56px }
 
-  /* date cell: hard-left align checkbox + date */
+  /* date column: hard-left align */
   .date .inline{ display:flex; align-items:center; gap:8px; justify-content:flex-start; width:max-content }
   .date input[type="date"]{ width:170px }
 
   /* checklist checkbox */
-  .chk{ appearance:none; width:18px; height:18px; border-radius:6px;
-        border:2px solid #2b463f; background:#0f1f1b; cursor:pointer; position:relative; outline:none }
+  .chk{
+    appearance:none; width:18px; height:18px; border-radius:6px;
+    border:2px solid #2b463f; background:#0f1f1b; cursor:pointer; position:relative; outline:none;
+  }
   .chk:checked{ border-color:#3a2bd9; background:#251f51 }
-  .chk:checked::after{ content:"✔"; position:absolute; inset:0; display:grid; place-items:center; font-size:12px; color:var(--accent) }
+  .chk:checked::after{
+    content:"✔"; position:absolute; inset:0; display:grid; place-items:center; font-size:12px; color:var(--accent);
+  }
 
-  .tools{ position:absolute; right:8px; top:6px; display:flex; gap:6px; opacity:.15; transition:opacity .15s }
-  .row:hover .tools{ opacity:.7 }
-  .icon{ width:18px; height:18px; display:inline-grid; place-items:center; border-radius:6px; padding:0; border:1px solid transparent; background:transparent; color:#e7e2ff; font-size:11px; cursor:pointer }
+  /* tiny top-right row tools */
+  .tools{ position:absolute; right:8px; top:6px; display:flex; gap:6px; opacity:.18; transition:opacity .15s }
+  .row:hover .tools{ opacity:.8 }
+  .icon{ width:18px; height:18px; display:inline-grid; place-items:center; border-radius:6px; padding:0;
+         border:1px solid transparent; background:transparent; color:#e7e2ff; font-size:11px; cursor:pointer }
   .icon:hover{ background:#0f1f1b; border-color:#2a3d36 }
   .icon.del:hover{ background:#2a1a1a; border-color:#5a2a2a }
 
-.row.done{
-  filter:none;
-  opacity:1;
-}
+  /* DONE: only a bold, solid strike (no transparency/fade) */
+  .row.done{ filter:none; opacity:1 }
+  .row.done::after{
+    content:"";
+    position:absolute; left:12px; right:12px; top:50%;
+    transform:translateY(-50%);
+    height:8px; border-radius:8px;
+    background:var(--strike);                 /* solid line */
+    box-shadow:
+      0 0 18px rgba(var(--strike-rgb), .55),
+      0 0 2px  rgba(var(--strike-rgb), .95);  /* matching glow */
+    pointer-events:none;
+  }
 
-.row.done::after{
-  content:"";
-  position:absolute;
-  left:12px; right:12px; top:50%;
-  transform:translateY(-50%);
-  height:8px;                 /* thicker */
-  border-radius:8px;
-  background:linear-gradient(
-    90deg,
-    transparent,
-    var(--strike),
-    var(--strike),
-    transparent
-  );
-
-  box-shadow:
-    0 0 20px rgba(255,217,15,.55),  /* if using red, swap to rgba(255,59,48,.55) */
-    0 0 2px  rgba(255,217,15,.95);  /* and rgba(255,59,48,.95) */
-  pointer-events:none;
-}
-
-  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(2px); display:none; place-items:center; z-index:50 }
+  /* modal theme (edit + delete) */
+  .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
+            display:none; place-items:center; z-index:50 }
   .overlay.show{ display:grid }
   .modal{
-    width:min(96vw,720px);
-    background:#132620; border:1px solid #285045; border-radius:16px;
+    width:min(96vw,720px); background:#132620; border:1px solid #285045; border-radius:16px;
     box-shadow:0 20px 48px rgba(0,0,0,.55); padding:16px; position:relative;
-  }
-  .modal .head{
-    display:flex; align-items:center; gap:10px; margin-bottom:10px; color:#e7e2ff; font-weight:800
   }
   .modal .bar{
     position:absolute; left:10px; top:10px; bottom:10px; width:5px; border-radius:4px;
-    background:linear-gradient(#6a4cff, #0CFF6B);
+    background:linear-gradient(var(--purple), var(--accent));
     box-shadow:0 0 12px rgba(106,76,255,.6);
   }
+  .modal .head{ display:flex; align-items:center; gap:10px; margin-bottom:10px; color:#e7e2ff; font-weight:800 }
   .modal .grid{ display:grid; grid-template-columns:160px 1fr; gap:12px }
   .modal label{ font-size:12px; color:#c7bfff }
-  .modal input,.modal textarea{ border:1px solid #3a2bd9; border-radius:12px; padding:10px 12px; background:#0f1f1b; color:#eaf7f1; width:100% }
+  .modal input, .modal textarea{
+    border:1px solid #3a2bd9; border-radius:12px; padding:10px 12px; background:#0f1f1b; color:#eaf7f1; width:100%;
+  }
   .modal textarea{ min-height:120px }
   .modal .actions{ margin-top:12px; display:flex; gap:10px; justify-content:flex-end }
   .btn.ghost{ background:transparent; border:1px solid #365e55; color:#dff6ee }
@@ -181,13 +194,13 @@
         <label for="m-notes">Notes</label><textarea id="m-notes"></textarea>
       </div>
       <div class="actions">
-        <button class="btn ghost" id="m-cancel">✖️ Cancel</button>
+        <button class="btn ghost" id="m-cancel">Cancel</button>
         <button class="btn" id="m-save">✔️ Save</button>
       </div>
     </div>
   </div>
 
-  <!-- delete modal (same theme) -->
+  <!-- delete modal -->
   <div class="overlay" id="overlay-del">
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="delTitle">
       <div class="bar"></div>
@@ -205,10 +218,10 @@
 const $ = s => document.querySelector(s);
 const rowsEl = $('#rows');
 const esc = s => String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-function localYYYYMMDD(d=new Date()){ const tz = d.getTimezoneOffset()*60000; return new Date(d - tz).toISOString().slice(0,10); }
+function localYYYYMMDD(d=new Date()){ const tz=d.getTimezoneOffset()*60000; return new Date(d - tz).toISOString().slice(0,10); }
 function toast(msg){
-  const t = document.createElement('div'); t.textContent = msg;
-  Object.assign(t.style, {position:'fixed',left:'50%',top:'10px',transform:'translateX(-50%)',background:'#000',color:'#fff',padding:'10px 14px',borderRadius:'10px',zIndex:9999,opacity:.94});
+  const t=document.createElement('div'); t.textContent=msg;
+  Object.assign(t.style,{position:'fixed',left:'50%',top:'10px',transform:'translateX(-50%)',background:'#000',color:'#fff',padding:'10px 14px',borderRadius:'10px',zIndex:9999,opacity:.94});
   document.body.appendChild(t); setTimeout(()=>t.remove(),1600);
 }
 
@@ -225,11 +238,11 @@ async function fetchAll(){
   render(data || []);
 }
 async function addNew(){
-  const date = $('#in-date').value, type = $('#in-type').value.trim(), notes = $('#in-notes').value.trim();
-  if (!date || !type){ toast('need date + type'); return; }
+  const date=$('#in-date').value, type=$('#in-type').value.trim(), notes=$('#in-notes').value.trim();
+  if(!date || !type){ toast('need date + type'); return; }
   const { error } = await sb.from(TABLE).insert({ date, type, notes });
   if (error){ console.error(error); toast('save failed'); return; }
-  $('#in-notes').value = '';
+  $('#in-notes').value='';
 }
 async function updateRow(id, fields){
   const { error } = await sb.from(TABLE).update(fields).eq('id', id);
@@ -242,11 +255,10 @@ async function deleteRow(id){
 
 /* ---------- render ---------- */
 function rowEl(r){
-  const wrap = document.createElement('div');
-  wrap.className = 'row' + (r.done ? ' done' : '');
-  wrap.dataset.id = r.id;
-
-  wrap.innerHTML = `
+  const wrap=document.createElement('div');
+  wrap.className='row' + (r.done ? ' done' : '');
+  wrap.dataset.id=r.id;
+  wrap.innerHTML=`
     <div class="cell date">
       <div class="label">Date:</div>
       <div class="inline">
@@ -268,42 +280,34 @@ function rowEl(r){
     </div>
   `;
 
-  // checkbox → done
+  // checkbox → done strike
   wrap.querySelector('.chk').addEventListener('change', async e=>{
     const done = e.target.checked;
     const { error } = await sb.from(TABLE).update({ done }).eq('id', r.id);
-    if (error){ console.error(error); toast('add column "done" first'); e.target.checked = !done; return; }
+    if(error){ console.error(error); toast('add column "done" first'); e.target.checked=!done; return; }
     wrap.classList.toggle('done', done);
   });
 
-  // delete → themed pop-up
   wrap.querySelector('.del').addEventListener('click', ()=> openDelModal(r));
-  // edit
   wrap.querySelector('.edit').addEventListener('click', ()=> openEditModal(r));
-
   return wrap;
 }
-
-function render(list){
-  rowsEl.innerHTML = '';
-  list.forEach(r => rowsEl.appendChild(rowEl(r)));
-}
+function render(list){ rowsEl.innerHTML=''; list.forEach(r=>rowsEl.appendChild(rowEl(r))); }
 
 /* ---------- top controls: keyboard ---------- */
 $('#in-date').value = localYYYYMMDD();
 const inDate=$('#in-date'), inType=$('#in-type'), inNotes=$('#in-notes'), btnSave=$('#btn-save');
 [inDate,inType,inNotes,btnSave].forEach(el => el.addEventListener('keydown', e=>{
-  if (e.key !== 'Enter') return;
-  if (el === inNotes && e.shiftKey) return; // newline
+  if(e.key!=='Enter') return;
+  if(el===inNotes && e.shiftKey) return; // newline
   e.preventDefault(); addNew();
 }));
 btnSave.addEventListener('click', addNew);
 
 /* ---------- edit modal ---------- */
-const overlayEdit = $('#overlay-edit');
+const overlayEdit=$('#overlay-edit');
 const mDate=$('#m-date'), mType=$('#m-type'), mNotes=$('#m-notes'), mCancel=$('#m-cancel'), mSave=$('#m-save');
 let editingId=null;
-
 function openEditModal(row){
   editingId=row.id; mDate.value=row.date??''; mType.value=row.type??''; mNotes.value=row.notes??'';
   overlayEdit.classList.add('show'); setTimeout(()=>mType.focus(),0);
@@ -313,41 +317,38 @@ mCancel.addEventListener('click', closeEditModal);
 overlayEdit.addEventListener('click', e=>{ if(e.target===overlayEdit) closeEditModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'&&overlayEdit.classList.contains('show')) closeEditModal(); });
 [mDate,mType,mNotes,mSave].forEach(el=>el.addEventListener('keydown', e=>{
-  if (e.key!=='Enter') return; if (el===mNotes && e.shiftKey) return; e.preventDefault(); doSaveEdit();
+  if(e.key!=='Enter') return; if(el===mNotes&&e.shiftKey) return; e.preventDefault(); doSaveEdit();
 }));
 mSave.addEventListener('click', doSaveEdit);
 async function doSaveEdit(){
-  if (!editingId) return;
-  const payload = { date: mDate.value, type: mType.value.trim(), notes: mNotes.value.trim() };
-  if (!payload.date || !payload.type){ toast('need date + type'); return; }
+  if(!editingId) return;
+  const payload={ date:mDate.value, type:mType.value.trim(), notes:mNotes.value.trim() };
+  if(!payload.date || !payload.type){ toast('need date + type'); return; }
   await updateRow(editingId, payload); closeEditModal();
 }
 
-/* ---------- delete modal (same theme) ---------- */
-const overlayDel = $('#overlay-del');
-const dCancel = $('#d-cancel'), dDelete = $('#d-delete'), delText = $('#delText');
-let deletingId = null;
-
+/* ---------- delete modal ---------- */
+const overlayDel=$('#overlay-del');
+const dCancel=$('#d-cancel'), dDelete=$('#d-delete'), delText=$('#delText');
+let deletingId=null;
 function openDelModal(row){
-  deletingId = row.id;
-  delText.innerHTML = `<b>Date:</b> ${esc(row.date||'')} &nbsp;—&nbsp; <b>Type:</b> ${esc(row.type||'')}`;
+  deletingId=row.id;
+  delText.innerHTML=`<b>Date:</b> ${esc(row.date||'')} &nbsp;—&nbsp; <b>Type:</b> ${esc(row.type||'')}`;
   overlayDel.classList.add('show');
 }
-function closeDelModal(){ overlayDel.classList.remove('show'); deletingId = null; }
+function closeDelModal(){ overlayDel.classList.remove('show'); deletingId=null; }
 dCancel.addEventListener('click', closeDelModal);
 overlayDel.addEventListener('click', e=>{ if(e.target===overlayDel) closeDelModal(); });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape'&&overlayDel.classList.contains('show')) closeDelModal(); });
 dDelete.addEventListener('click', async ()=>{
-  if (!deletingId) return;
-  await deleteRow(deletingId);
-  closeDelModal();
+  if(!deletingId) return;
+  await deleteRow(deletingId); closeDelModal();
 });
 
 /* ---------- realtime + init ---------- */
 sb.channel('public:'+TABLE)
   .on('postgres_changes', { event:'*', schema:'public', table:TABLE }, fetchAll)
   .subscribe();
-
 fetchAll();
 </script>
 </body>
