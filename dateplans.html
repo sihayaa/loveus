@@ -5,170 +5,122 @@
   <title>Date Plans</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link rel="icon" href="data:,">
-  <!-- Blackadder-style vibe: Sevillana (with Griffy fallback) -->
-  <link href="https://fonts.googleapis.com/css2?family=Sevillana&family=Griffy&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
   <style>
     :root{
-      /* DARK THEME */
-      --bg:#07110e;             /* near-black green */
-      --paper:#0f1a17;          /* dark card */
-      --ink:#e6f6ef;            /* light text on dark */
-      --subtle:#a5c8be;         /* softer light text */
-      --line:#20302a;           /* separators */
+      /* dark theme */
+      --bg:#07110e;        /* near-black green */
+      --card:#0f1a17;      /* dark card */
+      --ink:#eaf7f1;       /* main text */
+      --muted:#a6c9bf;     /* secondary text */
+      --line:#22332d;      /* borders */
 
-      /* Accents (dark green + purple) */
-      --green:#1b8f7d;
-      --green-2:#145a4f;
-      --purple:#5a3ccf;
-      --purple-2:#3f2a9e;
-
+      --green:#1b8f7d;     /* accent green */
+      --purple:#5a3ccf;    /* accent purple */
       --danger:#e65353;
-      --font:"Sevillana","Griffy",cursive;
+
+      --radius:16px;
       --maxw:1100px;
-      --radius:18px;
+      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
     }
-    *{box-sizing:border-box}
-    html,body{height:100%}
+
+    *{ box-sizing:border-box }
+    html,body{ height:100% }
     body{
       margin:0; background:var(--bg); color:var(--ink);
       font-family:var(--font);
       min-height:100svh; display:grid; place-items:center;
     }
 
-    /* page shell */
     .shell{
       width:min(100%, var(--maxw));
       height:min(94svh, 900px);
-      background:var(--paper);
+      background:var(--card);
+      border:1px solid var(--line);
       border-radius:var(--radius);
       box-shadow:0 10px 30px rgba(0,0,0,.55);
       display:grid;
       grid-template-rows:auto auto 1fr;
       overflow:hidden;
-      border:1px solid var(--line);
     }
 
-    /* header */
     .topbar{
-      display:flex; align-items:center; gap:16px; padding:14px 18px;
-      background:linear-gradient(90deg, var(--green-2), var(--purple-2));
-      color:#fff;
-      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; gap:16px;
+      padding:14px 18px;
+      background:linear-gradient(90deg, #145a4f, #3f2a9e);
+      color:#fff; border-bottom:1px solid var(--line);
     }
-    .topbar h1{ margin:0; font-size:28px; letter-spacing:.5px; }
-    .count{ margin-left:auto; font-size:18px; opacity:.95 }
+    .topbar h1{ margin:0; font-size:22px; font-weight:700; letter-spacing:.3px }
 
-    /* controls row */
     .controls{
       display:flex; flex-wrap:wrap; gap:10px; padding:12px 16px;
       background:#0d1815; border-bottom:1px solid var(--line);
-      position:sticky; top:0; z-index:3;
+      position:sticky; top:0; z-index:2;
     }
-    input[type="date"], input[type="text"], textarea, select{
-      border:1.5px solid var(--line); border-radius:12px; padding:10px 12px;
-      background:#12231e; color:var(--ink); font-family:inherit; outline:none;
+    input[type="date"], input[type="text"], textarea{
+      height:40px;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:10px 12px;
+      background:#12231e; color:var(--ink); outline:none;
+      font-family:var(--font);
     }
-    input[type="date"], input[type="text"], select{ height:40px }
-    textarea{ height:40px; resize:vertical; min-height:40px; max-height:140px }
-    input::placeholder, textarea::placeholder{ color:var(--subtle); opacity:.8 }
-    .grow{ flex:1 1 240px }
-
+    textarea{
+      min-height:40px; height:40px; max-height:140px; resize:vertical;
+    }
+    input::placeholder, textarea::placeholder{ color:var(--muted) }
+    .grow{ flex:1 1 260px }
     .btn{
-      border:none; border-radius:14px; padding:10px 14px; cursor:pointer; font-family:inherit;
-      background:var(--purple); color:#fff; transition:transform .05s ease, filter .1s ease;
-      border:1px solid #2a2550;
+      border:1px solid #2a2550; border-radius:12px; padding:10px 14px; height:40px;
+      background:var(--purple); color:#fff; cursor:pointer;
+      transition:transform .05s ease, filter .1s ease;
+      font-weight:600;
     }
     .btn:hover{ transform:translateY(-1px); filter:brightness(1.05) }
-    .btn.mint{ background:var(--green); color:#eafff9; border-color:#1a6a5e }
-    .btn.ghost{ background:transparent; border:1.5px solid var(--line); color:var(--ink) }
+    .btn.green{ background:var(--green); border-color:#175e54 }
     .btn.danger{ background:var(--danger); border-color:#7c2424 }
 
-    .filters{
-      margin-left:auto; display:flex; flex-wrap:wrap; gap:10px; align-items:center;
-    }
-    .chip{
-      border:1.5px solid var(--line); border-radius:999px; padding:6px 10px;
-      background:#12231e; color:var(--ink); cursor:pointer;
-    }
-    .chip.active{ background:var(--green); color:#07110e; border-color:transparent }
-
-    /* list area */
-    .listwrap{
-      overflow:auto; padding:0 10px 10px 10px;
-    }
-    table{
-      width:100%; border-collapse:separate; border-spacing:0 10px;
-    }
+    .listwrap{ overflow:auto; padding:0 10px 12px 10px; }
+    table{ width:100%; border-collapse:separate; border-spacing:0 10px; }
     thead th{
-      position:sticky; top:0; z-index:2; background:#0d1815; padding:10px 12px;
-      text-align:left; font-size:18px; border-bottom:1px solid var(--line); color:var(--subtle);
+      position:sticky; top:0; z-index:1; background:#0d1815; color:var(--muted);
+      padding:10px 12px; text-align:left; font-weight:700; border-bottom:1px solid var(--line);
     }
     tbody td{
-      background:#0f1f1b; padding:12px; vertical-align:top; color:var(--ink);
+      background:#0f1f1b; color:var(--ink); padding:12px; vertical-align:top;
       border:1px solid var(--line);
     }
-    tbody tr{
-      box-shadow:0 8px 16px rgba(0,0,0,.25);
-    }
+    tbody tr{ box-shadow:0 8px 16px rgba(0,0,0,.25) }
     tbody td:first-child{ border-top-left-radius:14px; border-bottom-left-radius:14px }
     tbody td:last-child{ border-top-right-radius:14px; border-bottom-right-radius:14px }
 
     .row-actions{ display:flex; gap:8px; flex-wrap:wrap }
-    .row-actions .btn{ padding:8px 10px; border-radius:10px }
-
-    .muted{ color:var(--subtle) }
+    .row-actions .btn{ padding:8px 10px; height:auto }
     .row-note{ white-space:pre-wrap }
 
-    /* small screens */
-    @media (max-width: 760px){
-      .topbar h1{ font-size:24px }
+    @media (max-width:760px){
       thead{ display:none }
       table, tbody, tr, td{ display:block; width:100% }
       tbody tr{ margin-bottom:12px }
       tbody td{ border-radius:14px !important }
-      .label{ display:block; font-size:14px; color:var(--subtle); margin-bottom:4px }
+      .label{ display:block; font-size:12px; color:var(--muted); margin-bottom:4px }
     }
   </style>
 </head>
 <body>
   <div class="shell">
-    <!-- header -->
     <div class="topbar">
-      <h1>date nights</h1>
-      <div class="count" id="count">0 items</div>
+      <h1>Date Plans</h1>
     </div>
 
-    <!-- add + filters -->
-    <div class="controls" id="controls">
+    <div class="controls">
       <input id="in-date" type="date" title="date">
-      <input id="in-kind" type="text" class="grow" list="kinds" placeholder="what kind of date? (movie, dinner, game night…)" />
-      <datalist id="kinds">
-        <option value="dinner">
-        <option value="movie">
-        <option value="game night">
-        <option value="walk">
-        <option value="coffee">
-        <option value="cooking together">
-        <option value="study date">
-        <option value="celebration">
-        <option value="call">
-        <option value="chill">
-      </datalist>
-      <textarea id="in-notes" class="grow" placeholder="notes (where, what you watched/played, sweet moments, etc.)"></textarea>
-      <button class="btn mint" id="btn-add">➕ add</button>
-
-      <div class="filters">
-        <input id="q" type="text" placeholder="search type/notes…" />
-        <input id="from" type="date" title="from">
-        <input id="to" type="date" title="to">
-        <button class="btn ghost" id="btn-clear">clear</button>
-        <button class="btn" id="btn-export">export csv</button>
-      </div>
+      <input id="in-type" type="text" class="grow" placeholder="type (movie, dinner, game night…)" />
+      <textarea id="in-notes" class="grow" placeholder="notes (where, what you watched/played, moments, etc.)"></textarea>
+      <button class="btn green" id="btn-add">Add</button>
     </div>
 
-    <!-- list -->
     <div class="listwrap">
       <table>
         <thead>
@@ -185,12 +137,9 @@
   </div>
 
 <script>
-/* -----------------------
-   0) helpers
-------------------------*/
+/* ========== helpers ========== */
 const $ = s => document.querySelector(s);
 const rowsEl = $('#rows');
-const countEl = $('#count');
 
 function localYYYYMMDD(d=new Date()){
   const tz = d.getTimezoneOffset()*60000;
@@ -205,205 +154,136 @@ function toast(msg){
   Object.assign(t.style, {
     position:'fixed', left:'50%', top:'10px', transform:'translateX(-50%)',
     background:'#000', color:'#fff', padding:'10px 14px', borderRadius:'10px',
-    fontFamily:'Sevillana, Griffy, cursive', zIndex: 9999, opacity:.94
+    fontFamily:'var(--font)', zIndex: 9999, opacity:.94
   });
   document.body.appendChild(t);
-  setTimeout(()=>t.remove(), 1800);
-}
-
-/* -----------------------
-   1) Supabase init
-------------------------*/
-const SUPABASE_URL  = window.SUPABASE_URL  || "https://YOUR-PROJECT.supabase.co";
-const SUPABASE_ANON = window.SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
-
-if (SUPABASE_URL.includes("YOUR-PROJECT")) {
-  console.warn("⚠️ Set SUPABASE_URL and SUPABASE_ANON.");
-}
-
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-
-/* -----------------------
-   2) CRUD
-------------------------*/
-async function fetchAll(){
-  const from = $('#from').value;
-  const to   = $('#to').value;
-  const q    = $('#q').value.trim().toLowerCase();
-
-  let query = sb.from('date_nights').select('*')
-    .order('date', { ascending:false })
-    .order('created_at', { ascending:false });
-
-  if (from) query = query.gte('date', from);
-  if (to)   query = query.lte('date', to);
-
-  const { data, error } = await query;
-  if (error){ toast('load failed'); console.error(error); return; }
-
-  const filtered = q
-    ? data.filter(r =>
-        (r.kind||'').toLowerCase().includes(q) ||
-        (r.notes||'').toLowerCase().includes(q)
-      )
-    : data;
-
-  render(filtered);
-}
-
-async function addRow(){
-  const date  = $('#in-date').value;
-  const kind  = $('#in-kind').value.trim();
-  const notes = $('#in-notes').value.trim();
-  if (!date || !kind){ toast('need date + type'); return; }
-
-  const { data, error } = await sb.from('date_nights').insert({ date, kind, notes }).select().single();
-  if (error){ toast('add failed'); console.error(error); return; }
-
-  $('#in-notes').value = '';
-  toast('added!');
-}
-
-async function saveRow(id, fields){
-  const { error } = await sb.from('date_nights').update(fields).eq('id', id);
-  if (error){ toast('save failed'); console.error(error); return; }
-  toast('saved');
-}
-
-async function deleteRow(id){
-  const { error } = await sb.from('date_nights').delete().eq('id', id);
-  if (error){ toast('delete failed'); console.error(error); return; }
-  toast('deleted');
-}
-
-/* -----------------------
-   3) Render + Row UI
-------------------------*/
-function render(list){
-  rowsEl.innerHTML = '';
-  countEl.textContent = `${list.length} ${list.length===1?'item':'items'}`;
-
-  for (const r of list){
-    const tr = document.createElement('tr');
-
-    const tdDate = document.createElement('td');
-    const tdKind = document.createElement('td');
-    const tdNote = document.createElement('td');
-    const tdAct  = document.createElement('td');
-
-    tdDate.innerHTML = `
-      <span class="label">date</span>
-      <input type="date" value="${r.date ?? ''}" data-field="date" disabled style="width:160px; background:#101d19; color:var(--ink); border:1px solid var(--line)">
-    `;
-    tdKind.innerHTML = `
-      <span class="label">type</span>
-      <input type="text" value="${escapeHtml(r.kind||'')}" data-field="kind" disabled class="grow" list="kinds" style="background:#101d19; color:var(--ink); border:1px solid var(--line)">
-    `;
-    tdNote.innerHTML = `
-      <span class="label">notes</span>
-      <textarea data-field="notes" disabled class="row-note" style="background:#101d19; color:var(--ink); border:1px solid var(--line)">${escapeHtml(r.notes||'')}</textarea>
-    `;
-    tdAct.innerHTML = `
-      <div class="row-actions">
-        <button class="btn mint" data-act="edit">✎ edit</button>
-        <button class="btn" data-act="save" disabled>💾 save</button>
-        <button class="btn ghost" data-act="cancel" disabled>↩︎ cancel</button>
-        <button class="btn danger" data-act="delete">🗑 delete</button>
-      </div>
-    `;
-
-    tr.append(tdDate, tdKind, tdNote, tdAct);
-    rowsEl.appendChild(tr);
-
-    const inputs = tr.querySelectorAll('[data-field]');
-    const btnEdit = tr.querySelector('[data-act="edit"]');
-    const btnSave = tr.querySelector('[data-act="save"]');
-    const btnCancel = tr.querySelector('[data-act="cancel"]');
-    const btnDelete = tr.querySelector('[data-act="delete"]');
-
-    const pristine = { date: r.date ?? '', kind: r.kind ?? '', notes: r.notes ?? '' };
-
-    function setEditing(on){
-      inputs.forEach(i => i.disabled = !on);
-      btnSave.disabled = !on;
-      btnCancel.disabled = !on;
-      btnEdit.disabled = on;
-    }
-
-    btnEdit.addEventListener('click', ()=> setEditing(true));
-
-    btnCancel.addEventListener('click', ()=>{
-      inputs.forEach(i => {
-        const f = i.dataset.field;
-        i.value = f==='notes' ? pristine.notes : (f==='kind' ? pristine.kind : pristine.date);
-      });
-      setEditing(false);
-    });
-
-    btnSave.addEventListener('click', async ()=>{
-      const payload = {};
-      inputs.forEach(i => payload[i.dataset.field] = i.value);
-      await saveRow(r.id, payload);
-      pristine.date = payload.date; pristine.kind = payload.kind; pristine.notes = payload.notes;
-      setEditing(false);
-    });
-
-    btnDelete.addEventListener('click', async ()=>{
-      if (!confirm('delete this date night?')) return;
-      await deleteRow(r.id);
-    });
-  }
+  setTimeout(()=>t.remove(), 1600);
 }
 
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
 
-/* -----------------------
-   4) Filters + Export
-------------------------*/
-$('#btn-clear').addEventListener('click', ()=>{
-  $('#q').value=''; $('#from').value=''; $('#to').value='';
-  fetchAll();
-});
-['#q','#from','#to'].forEach(sel=>{
-  $(sel).addEventListener('input', debounce(fetchAll, 200));
-});
+/* ========== Supabase init ========== */
+const SUPABASE_URL  = window.SUPABASE_URL      || "https://YOUR-PROJECT.supabase.co";
+const SUPABASE_ANON = window.SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
+if (SUPABASE_URL.includes("YOUR-PROJECT")) console.warn("Set SUPABASE_URL and SUPABASE_ANON.");
 
-$('#btn-export').addEventListener('click', async ()=>{
-  const { data, error } = await sb.from('date_nights')
-    .select('id,date,kind,notes,created_at')
-    .order('date', {ascending:false});
-  if (error){ toast('export failed'); console.error(error); return; }
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+const TABLE = 'date_plans'; // <— minimal table name for this page
 
-  const rows = [['id','date','kind','notes','created_at']]
-    .concat(data.map(r=>[r.id, r.date, safeCsv(r.kind), safeCsv(r.notes), r.created_at]));
-  const csv = rows.map(r => r.map(cell=>{
-    const s = (cell==null?'':String(cell));
-    return /[",\n]/.test(s) ? `"${s.replace(/"/g,'""')}"` : s;
-  }).join(',')).join('\n');
+/* ========== CRUD ========== */
+async function fetchAll(){
+  const { data, error } = await sb.from(TABLE)
+    .select('*')
+    .order('date', { ascending:false })
+    .order('created_at', { ascending:false });
+  if (error){ console.error(error); toast('load failed'); return; }
+  render(data || []);
+}
 
-  const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url = URL.createObjectURL(blob);
-  const a = Object.assign(document.createElement('a'), { href:url, download:'date_nights.csv' });
-  document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  toast('csv exported');
-});
-function safeCsv(x){ return x==null?'':x }
-function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a), ms)} }
+async function addRow(){
+  const date  = $('#in-date').value;
+  const type  = $('#in-type').value.trim();
+  const notes = $('#in-notes').value.trim();
+  if (!date || !type){ toast('need date + type'); return; }
 
-/* -----------------------
-   5) Add + Live updates
-------------------------*/
+  const { error } = await sb.from(TABLE).insert({ date, type, notes });
+  if (error){ console.error(error); toast('add failed'); return; }
+
+  $('#in-notes').value = '';
+  toast('added');
+}
+
+async function saveRow(id, fields){
+  const { error } = await sb.from(TABLE).update(fields).eq('id', id);
+  if (error){ console.error(error); toast('save failed'); return; }
+  toast('saved');
+}
+
+async function deleteRow(id){
+  const ok = confirm('delete this plan?');
+  if (!ok) return;
+  const { error } = await sb.from(TABLE).delete().eq('id', id);
+  if (error){ console.error(error); toast('delete failed'); return; }
+  toast('deleted');
+}
+
+/* ========== render ========== */
+function render(list){
+  rowsEl.innerHTML = '';
+  for (const r of list){
+    const tr = document.createElement('tr');
+
+    const tdDate = document.createElement('td');
+    const tdType = document.createElement('td');
+    const tdNote = document.createElement('td');
+    const tdAct  = document.createElement('td');
+
+    tdDate.innerHTML = `
+      <span class="label">date</span>
+      <input type="date" value="${r.date ?? ''}" data-field="date" disabled
+             style="width:160px;background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+    `;
+    tdType.innerHTML = `
+      <span class="label">type</span>
+      <input type="text" value="${escapeHtml(r.type||'')}" data-field="type" disabled class="grow"
+             style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+    `;
+    tdNote.innerHTML = `
+      <span class="label">notes</span>
+      <textarea data-field="notes" disabled class="row-note"
+                style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">${escapeHtml(r.notes||'')}</textarea>
+    `;
+    tdAct.innerHTML = `
+      <div class="row-actions">
+        <button class="btn green" data-act="edit">Edit</button>
+        <button class="btn" data-act="save" disabled>Save</button>
+        <button class="btn danger" data-act="delete">Delete</button>
+      </div>
+    `;
+
+    tr.append(tdDate, tdType, tdNote, tdAct);
+    rowsEl.appendChild(tr);
+
+    const inputs   = tr.querySelectorAll('[data-field]');
+    const btnEdit  = tr.querySelector('[data-act="edit"]');
+    const btnSave  = tr.querySelector('[data-act="save"]');
+    const btnDel   = tr.querySelector('[data-act="delete"]');
+
+    const pristine = { date: r.date ?? '', type: r.type ?? '', notes: r.notes ?? '' };
+
+    function setEditing(on){
+      inputs.forEach(i => i.disabled = !on);
+      btnSave.disabled = !on;
+      btnEdit.disabled = on;
+    }
+
+    btnEdit.addEventListener('click', ()=> setEditing(true));
+
+    btnSave.addEventListener('click', async ()=>{
+      const payload = {};
+      inputs.forEach(i => payload[i.dataset.field] = i.value);
+      await saveRow(r.id, payload);
+      pristine.date = payload.date; pristine.type = payload.type; pristine.notes = payload.notes;
+      setEditing(false);
+    });
+
+    btnDel.addEventListener('click', ()=> deleteRow(r.id));
+  }
+}
+
+/* ========== events + realtime ========== */
 $('#btn-add').addEventListener('click', addRow);
 
-sb.channel('public:date_nights')
-  .on('postgres_changes', { event:'*', schema:'public', table:'date_nights' }, () => fetchAll())
+// optional: enter to add when focused in "type" or "notes"
+$('#in-type').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); addRow(); }});
+
+sb.channel('public:'+TABLE)
+  .on('postgres_changes', { event:'*', schema:'public', table:TABLE }, fetchAll)
   .subscribe();
 
-/* -----------------------
-   6) start
-------------------------*/
+/* start */
 fetchAll();
 </script>
 </body>
