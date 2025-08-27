@@ -5,7 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Our Story</title>
   <link rel="icon" href="data:,">
+  <!-- Fonts: Lobster (others will use local install if present) -->
   <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
+  <!-- Emoji picker (web component) -->
+  <script type="module" src="https://cdn.jsdelivr.net/npm/emoji-picker-element@^1/index.js"></script>
+
   <style>
     :root{
       --pageW:760px; --pageH:1060px;
@@ -13,6 +17,7 @@
       --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster", cursive;
       --cover-img:url("./lovestory_cover.png?v=8");
       --cover-y:28%;
+      --radius:18px;
     }
     *{box-sizing:border-box}
     html,body{height:100%; overflow:hidden}
@@ -27,11 +32,13 @@
            pointer-events:none; z-index:0; }
     .page .page-canvas{ position:relative; width:100%; height:100%; padding:28px; font-size:22px; line-height:1.35; }
 
+    /* Front cover */
     .page.cover .page-canvas{
       padding:0; background:#0c102c;
       background-image:var(--cover-img), radial-gradient(closest-side at 50% 40%, #1d2a55 0%, #0c102c 60%);
       background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
     }
+    /* Back cover */
     .page.backcover .page-canvas{
       padding:0; background:#0c102c;
       background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png');
@@ -57,7 +64,7 @@
     .rotator{ display:none; position:absolute; left:50%; top:-18px; transform:translate(-50%,-50%); width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent); box-shadow:0 2px 8px rgba(0,0,0,.25); cursor:grab; z-index:999; }
     .mover{ display:none; position:absolute; left:-10px; top:-10px; width:18px; height:18px; border-radius:50%; background:#fff; border:3px solid var(--accent); cursor:grab; }
     .resizer{ display:none; position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize; }
-    .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; user-select:none; pointer-events:none; }
+    .scrap-img{ display:block; width:100%; height:100%; object-fit:contain; user-select:none; pointer-events:none; border-radius:var(--radius); } /* round corners */
     .scrap-item[data-fit="cover"] .scrap-img{ object-fit:cover; }
     .scrap-text{ width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em; }
 
@@ -66,6 +73,7 @@
     body.editing .scrap-item{ cursor:move; }
     body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{ display:block; }
 
+    /* Secret Toolbar */
     #toolbar{ position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column; }
     #toolbar.open{ display:flex; }
     #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -73,15 +81,14 @@
     #toolbar button.secondary{ background:#5d47d4; }
     #toolbar button.mint{ background:var(--mint); color:#022d2c; }
     #toolbar button.warn{ background:#ff9aa2; color:#4c0a17; }
-    #toolbar input[type="number"]{ width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff; }
-    #toolbar input[type="color"]{ width:100%; height:40px; padding:0; border:2px solid #e8dcc6; border-radius:8px; background:#fff; }
+    #toolbar input[type="number"], #toolbar input[type="text"], #toolbar select{ width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff; }
 
     #textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
     #textEditor.open{display:flex}
     #textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
     #textEditor textarea{width:100%;height:320px;font:28px/1.35 var(--font);color:#0d2a6b;padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical}
-    #textEditor .row{display:flex;gap:12px;margin-top:10px}
-    #textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
+    #textEditor .row{display:flex;gap:12px;margin-top:10px;flex-wrap:wrap}
+    #textEditor input[type="number"], #textEditor input[type="text"], #textEditor select{padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
     #textEditor input[type="color"]{width:80px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
     #textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
     #textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
@@ -90,6 +97,7 @@
 
     .scrap-text[contenteditable="true"]{ outline:2px dashed #7a5af888; outline-offset:4px; }
 
+    /* === AUDIO CONTROL === */
     #audioCtrl{
       position:fixed; right:12px; bottom:10px; z-index:100000;
       display:flex; align-items:center; gap:6px;
@@ -97,15 +105,28 @@
       padding:6px 8px; border-radius:12px; box-shadow:0 8px 18px rgba(0,0,0,.35);
       user-select:none;
     }
-    #audioCtrl button{ all:unset; cursor:pointer; font-size:16px; line-height:1; padding:4px 6px; }
+    #audioCtrl button{
+      all:unset; cursor:pointer; font-size:16px; line-height:1; padding:4px 6px;
+    }
     #audioCtrl input[type="range"]{ width:90px; height:18px; }
+    /* keep the youtube iframe hidden but alive */
     #yt-holder{ position:fixed; left:-9999px; width:0; height:0; overflow:hidden; }
+
+    /* Emoji panel */
+    #emojiPanel{
+      position:fixed; right:16px; bottom:86px; z-index:10001;
+      width:280px; height:320px; display:none; background:#fff; border:2px solid #e8dcc6; border-radius:14px;
+      box-shadow:0 10px 22px rgba(0,0,0,.25); overflow:hidden;
+    }
+    #emojiPanel.open{ display:block; }
+    #emojiPanel emoji-picker{ width:100%; height:100%; }
   </style>
 </head>
 <body>
 
 <div id="stage">
   <div class="deck" id="deck">
+    <!-- 16 pages -->
     <div class="page cover active" data-page="1"><div class="page-canvas"></div></div>
     <div class="page" data-page="2"><div class="page-canvas"></div></div>
     <div class="page" data-page="3"><div class="page-canvas"></div></div>
@@ -133,22 +154,39 @@
     <button id="addTextBtn" class="mint">Add Text</button>
     <button id="editSelectedBtn" class="secondary">Edit Selected</button>
   </div>
+
   <div class="group">
-    <button id="addPhotoBtn" class="secondary">Add Photo</button>
-    <input id="fileInput" type="file" accept="image/*" />
+    <label for="fontSelect" style="font-weight:700;color:#0d2a6b;width:100%">Font</label>
+    <select id="fontSelect">
+      <option value='"Lobster", cursive' selected>Lobster</option>
+      <option value='"Dreaming Outloud Pro", cursive'>Dreaming Outloud Pro (if installed)</option>
+      <option value='"Blackadder ITC", cursive'>Blackadder ITC (if installed)</option>
+      <option value='"Harlow Solid Italic", cursive'>Harlow Solid Italic (if installed)</option>
+    </select>
   </div>
+
   <div class="group">
     <label for="fontSizeInput" style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
     <input id="fontSizeInput" type="number" min="8" max="200" step="1" placeholder="px" disabled>
   </div>
+
   <div class="group">
-    <label for="fontColorInput" style="font-weight:700;color:#0d2a6b;">Text Color</label>
+    <label style="font-weight:700;color:#0d2a6b;width:100%">Text Color</label>
     <input id="fontColorInput" type="color" value="#0d2a6b" disabled>
+    <input id="fontColorHex" type="text" placeholder="#RRGGBB" value="#0d2a6b" disabled>
   </div>
+
   <div class="group">
+    <button id="addPhotoBtn" class="secondary">Add Photo</button>
+    <input id="fileInput" type="file" accept="image/*" />
+  </div>
+
+  <div class="group">
+    <button id="emojiBtn" class="secondary">😀 Emoji</button>
     <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
     <button id="lockToggleBtn" class="secondary">Lock: On</button>
   </div>
+
   <div class="group">
     <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
     <button id="clearPageBtn" class="warn">Clear Page</button>
@@ -160,19 +198,42 @@
   </div>
 </div>
 
+<!-- Emoji floating panel -->
+<div id="emojiPanel" aria-hidden="true">
+  <emoji-picker id="emojiPicker"></emoji-picker>
+</div>
+
 <!-- Big Text Editor -->
 <div id="textEditor" aria-hidden="true" inert>
   <div class="panel">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
     <textarea id="editorInput" placeholder="type here…"></textarea>
+
     <div class="row">
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
-        Size (px) <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
+        Size (px)
+        <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
       </label>
+
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
-        Color <input id="editorColor" type="color" value="#0d2a6b">
+        Color
+        <input id="editorColor" type="color" value="#0d2a6b">
+        <input id="editorHex" type="text" placeholder="#RRGGBB" value="#0d2a6b" style="width:120px">
       </label>
+
+      <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+        Font
+        <select id="editorFont">
+          <option value='"Lobster", cursive' selected>Lobster</option>
+          <option value='"Dreaming Outloud Pro", cursive'>Dreaming Outloud Pro (if installed)</option>
+          <option value='"Blackadder ITC", cursive'>Blackadder ITC (if installed)</option>
+          <option value='"Harlow Solid Italic", cursive'>Harlow Solid Italic (if installed)</option>
+        </select>
+      </label>
+
+      <button id="editorEmoji" class="mint" title="Insert Emoji">😀 Emoji</button>
     </div>
+
     <div class="actions">
       <button id="editorCancel">Cancel</button>
       <button id="editorSave">Save</button>
@@ -189,7 +250,7 @@
 
 <script>
 (function(){
-  // ===== Supabase config (cloud-only) =====
+  // ===== Supabase config =====
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const TABLE_STATE   = "scrapbook_state";
@@ -217,12 +278,33 @@
   const exitEdit = document.getElementById('exitEdit');
   const fontSizeInput=document.getElementById('fontSizeInput');
   const fontColorInput=document.getElementById('fontColorInput');
+  const fontColorHex=document.getElementById('fontColorHex');
+  const fontSelect=document.getElementById('fontSelect');
   const fitBtn=document.getElementById('fitToggleBtn');
   const lockBtn=document.getElementById('lockToggleBtn');
+
+  const emojiBtn=document.getElementById('emojiBtn');
+  const emojiPanel=document.getElementById('emojiPanel');
+  const emojiPicker=document.getElementById('emojiPicker');
+
+  // Big editor refs
+  const editor = {
+    el: document.getElementById('textEditor'),
+    input: document.getElementById('editorInput'),
+    size: document.getElementById('editorSize'),
+    color: document.getElementById('editorColor'),
+    hex: document.getElementById('editorHex'),
+    font: document.getElementById('editorFont'),
+    emojiBtn: document.getElementById('editorEmoji'),
+    save: document.getElementById('editorSave'),
+    cancel: document.getElementById('editorCancel'),
+    targetBox: null
+  };
 
   let current = 0; // front cover
   let selectedItem = null; let zCounter=10;
 
+  /* === Layout === */
   function fitStage(){
     const vw = window.innerWidth, vh = window.innerHeight;
     const marginX = 200, marginY = 40;
@@ -248,8 +330,8 @@
   function go(delta){
     const n = pages.length;
     let next = current + delta;
-    if(delta > 0 && next >= n) next = 0; // wrap forward only
-    if(delta < 0 && next < 0) next = 0;  // clamp at cover
+    if(delta > 0 && next >= n) next = 0;
+    if(delta < 0 && next < 0) next = 0;
     if(next!==current){ current=next; setClasses(); saveCloudDebounced(); }
   }
   prevBtn.onclick = ()=> go(-1);
@@ -257,16 +339,14 @@
   window.addEventListener('keydown', (e)=>{ if(document.body.classList.contains('editing')) return; if(e.key==='ArrowLeft') go(-1); if(e.key==='ArrowRight') go(1); });
   pages.forEach((p,i)=> p.querySelector('.page-canvas').addEventListener('mousedown', ()=>{ if(!document.body.classList.contains('editing')) return; current=i; setClasses(); }));
 
-  // ===== helpers to safely show/hide focusable overlays =====
+  /* === Show/hide helpers for overlays === */
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
-  function hideToolbar(){
-    if (toolbar.contains(document.activeElement)) document.activeElement.blur();
-    toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert','');
-  }
+  function hideToolbar(){ if (toolbar.contains(document.activeElement)) document.activeElement.blur(); toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
   function showEditor(el){ el.classList.add('open'); el.removeAttribute('aria-hidden'); el.removeAttribute('inert'); }
   function hideEditor(el){ if (el.contains(document.activeElement)) document.activeElement.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
+  function toggleEmoji(){ emojiPanel.classList.toggle('open'); }
 
-  // ===== SECRET UNLOCK (type 123) =====
+  /* === Secret unlock === */
   const PASSCODE='123'; let keyBuffer='', keyTimer=null;
   function normDigit(e){
     if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1') return '1';
@@ -282,67 +362,106 @@
     if(keyBuffer.endsWith(PASSCODE)){ keyBuffer=''; enterEdit(); e.preventDefault(); }
   });
   function enterEdit(){ document.body.classList.add('editing'); showToolbar(); setClasses(); }
-  function exitEditMode(){ document.body.classList.remove('editing'); hideToolbar(); deselect(); }
+  function exitEditMode(){ document.body.classList.remove('editing'); hideToolbar(); emojiPanel.classList.remove('open'); deselect(); }
   exitEdit.onclick = exitEditMode; hideBar.onclick = hideToolbar;
 
-  // ===== Big Text Editor + inline quick edit =====
-  const editor = {
-    el: document.getElementById('textEditor'),
-    input: document.getElementById('editorInput'),
-    size: document.getElementById('editorSize'),
-    color: document.getElementById('editorColor'),
-    save: document.getElementById('editorSave'),
-    cancel: document.getElementById('editorCancel'),
-    targetBox: null
-  };
+  /* === Big Text Editor + inline === */
   addTextBtn.onclick = ()=> openTextEditor();
   editor.cancel.onclick = ()=> hideEditor(editor.el);
   document.getElementById('textEditor').addEventListener('click', e=>{ if(e.target.id==='textEditor') hideEditor(editor.el); });
-  function openTextEditor({ text = '', size = 28, color = '#0d2a6b', targetBox = null } = {}) {
-    editor.targetBox = targetBox; editor.input.value = text; editor.size.value = size; editor.color.value = color; showEditor(editor.el); setTimeout(()=>editor.input.focus(),0);
-  }
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && editor.el.classList.contains('open')) hideEditor(editor.el); });
+
+  function openTextEditor({ text = '', size = 28, color = '#0d2a6b', font = '"Lobster", cursive', targetBox = null } = {}) {
+    editor.targetBox = targetBox;
+    editor.input.value = text;
+    editor.size.value = size;
+    editor.color.value = color;
+    editor.hex.value = color.toUpperCase();
+    editor.font.value = font;
+    showEditor(editor.el);
+    setTimeout(()=>editor.input.focus(),0);
+  }
+
   editor.save.onclick = () => {
-    const text = editor.input.value; const size = Math.max(8, Math.min(200, parseInt(editor.size.value || '22', 10))); const color = editor.color.value || '#0d2a6b';
+    const text = editor.input.value;
+    const size = Math.max(8, Math.min(200, parseInt(editor.size.value || '22', 10)));
+    const color = normalizeHex(editor.hex.value) || editor.color.value || '#0d2a6b';
+    const fontVal = editor.font.value;
+
     if (editor.targetBox) {
-      const t = editor.targetBox.querySelector('.scrap-text'); if (!t) return; t.textContent = text; t.style.fontSize = size+'px'; t.style.color = color; t.style.height = 'auto'; editor.targetBox.style.height = Math.max(40, t.scrollHeight)+'px'; select(editor.targetBox);
+      const t = editor.targetBox.querySelector('.scrap-text'); if (!t) return;
+      t.textContent = text;
+      t.style.fontSize = size+'px';
+      t.style.color = color;
+      t.style.fontFamily = fontVal;
+      t.style.height = 'auto';
+      editor.targetBox.style.height = Math.max(40, t.scrollHeight)+'px';
+      select(editor.targetBox);
     } else {
       const canvas = pages[current].querySelector('.page-canvas');
       const box=document.createElement('div'); box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
-      box.innerHTML = '<div class="scrap-text" contenteditable="false" style="font-size:'+size+'px;color:'+color+'"></div>'+
+      box.innerHTML = '<div class="scrap-text" contenteditable="false" style="font-size:'+size+'px;color:'+color+';font-family:'+fontVal+'"></div>'+
                       '<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>';
-      box.querySelector('.scrap-text').textContent = text; canvas.appendChild(box); makeDraggable(box); select(box);
+      box.querySelector('.scrap-text').textContent = text;
+      canvas.appendChild(box); makeDraggable(box); select(box);
     }
     hideEditor(editor.el); saveCloudDebounced();
   };
+
   document.getElementById('editSelectedBtn').onclick = ()=>{
-    if(!selectedItem) return; const t = selectedItem.querySelector('.scrap-text'); if(!t) return; const size = Math.round(parseFloat(getComputedStyle(t).fontSize)||28); const color = rgbToHex(getComputedStyle(t).color); openTextEditor({ text: t.textContent||'', size, color, targetBox: selectedItem });
+    if(!selectedItem) return; const t = selectedItem.querySelector('.scrap-text'); if(!t) return;
+    const size = Math.round(parseFloat(getComputedStyle(t).fontSize)||28);
+    const color = rgbToHex(getComputedStyle(t).color);
+    const fontVal = getComputedStyle(t).fontFamily || '"Lobster", cursive';
+    openTextEditor({ text: t.textContent||'', size, color, font: fontVal, targetBox: selectedItem });
   };
 
-  function startInlineEdit(t){ if(!t || t.getAttribute('contenteditable')==='true') return; t.setAttribute('contenteditable','true'); const sel=window.getSelection(), r=document.createRange(); r.selectNodeContents(t); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); t.focus(); const onKey=(e)=>{ if(e.key==='Escape'){ e.preventDefault(); t.blur(); } }; const onBlur=()=>{ t.setAttribute('contenteditable','false'); t.removeEventListener('blur', onBlur); document.removeEventListener('keydown', onKey, true); saveCloudDebounced(); }; t.addEventListener('blur', onBlur); document.addEventListener('keydown', onKey, true); }
+  function startInlineEdit(t){ if(!t || t.getAttribute('contenteditable')==='true') return; t.setAttribute('contenteditable','true');
+    const sel=window.getSelection(), r=document.createRange(); r.selectNodeContents(t); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); t.focus();
+    const onKey=(e)=>{ if(e.key==='Escape'){ e.preventDefault(); t.blur(); } };
+    const onBlur=()=>{ t.setAttribute('contenteditable','false'); t.removeEventListener('blur', onBlur); document.removeEventListener('keydown', onKey, true); saveCloudDebounced(); };
+    t.addEventListener('blur', onBlur); document.addEventListener('keydown', onKey, true);
+  }
   document.addEventListener('dblclick', (e)=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(t) startInlineEdit(t); });
   let pressTimer=null; document.addEventListener('touchstart', (e)=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(!t) return; pressTimer=setTimeout(()=> startInlineEdit(t), 500); }, {passive:true}); document.addEventListener('touchend', ()=>{ if(pressTimer) clearTimeout(pressTimer); }, {passive:true});
 
-  // === helper needed by photo upload ===
+  /* === HEX <-> color sync helpers === */
+  function normalizeHex(v){
+    if(!v) return null;
+    let s = String(v).trim().replace(/^#/,'');
+    if (s.length===3) s = s.split('').map(ch=>ch+ch).join('');
+    if (/^[0-9a-fA-F]{6}$/.test(s)) return '#'+s.toUpperCase();
+    return null;
+  }
+  function setupColorSync(colorInput, hexInput, apply){
+    const applyColor = (hex)=>{ if(apply) apply(hex); };
+    colorInput.addEventListener('input', ()=>{
+      const hex = normalizeHex(colorInput.value) || '#0D2A6B';
+      hexInput.value = hex;
+      applyColor(hex);
+    });
+    hexInput.addEventListener('input', ()=>{
+      const hex = normalizeHex(hexInput.value);
+      if(hex){ colorInput.value = hex; applyColor(hex); }
+    });
+  }
+
+  /* === Photos === */
   async function fileToBase64(file){
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
         const dataUrl = String(reader.result || '');
         const comma = dataUrl.indexOf(',');
-        const head  = dataUrl.slice(0, comma); // "data:image/png;base64"
+        const head  = dataUrl.slice(0, comma);
         const mimeMatch = head.match(/^data:([^;]+);base64/i);
-        resolve({
-          mime: mimeMatch ? mimeMatch[1] : (file.type || 'application/octet-stream'),
-          base64: dataUrl.slice(comma + 1)
-        });
+        resolve({ mime: mimeMatch ? mimeMatch[1] : (file.type || 'application/octet-stream'), base64: dataUrl.slice(comma + 1) });
       };
       reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
       reader.readAsDataURL(file);
     });
   }
 
-  // Photos
   addPhotoBtn.onclick=()=> fileInput.click();
   fileInput.addEventListener('change',async e=>{
     const f=e.target.files?.[0]; if(!f) return; const {mime,base64}=await fileToBase64(f);
@@ -351,25 +470,46 @@
     box.dataset.fit='contain'; box.dataset.lock='1';
     box.innerHTML='<img class="scrap-img" alt="" src="data:'+mime+';base64,'+base64+'" decoding="async">'+
                  '<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>';
-    canvas.appendChild(box); makeDraggable(box); const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} }; if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect); fileInput.value=''; saveCloudDebounced(); select(box);
+    canvas.appendChild(box); makeDraggable(box);
+    const imgEl=box.querySelector('.scrap-img');
+    const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} };
+    if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
+    fileInput.value=''; saveCloudDebounced(); select(box);
   });
 
+  /* === Toolbar state === */
   function updateToolbarState(){
     const t = selectedItem?.querySelector('.scrap-text'); const onText=!!t; const onImg=!!selectedItem?.querySelector('.scrap-img');
-    fontSizeInput.disabled = !onText; fontColorInput.disabled = !onText; fitBtn.disabled = !onImg; lockBtn.disabled = !onImg;
-    if(onText){ const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr; fontColorInput.value = rgbToHex(getComputedStyle(t).color); }
+    fontSizeInput.disabled = !onText; fontColorInput.disabled = !onText; fontColorHex.disabled = !onText; fontSelect.disabled = !onText;
+    fitBtn.disabled = !onImg; lockBtn.disabled = !onImg;
+    if(onText){
+      const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
+      fontSizeInput.value=curr;
+      const color = rgbToHex(getComputedStyle(t).color);
+      fontColorInput.value = color; fontColorHex.value = color;
+      // Try to match a dropdown option based on computed family
+      const ff = (getComputedStyle(t).fontFamily||'').toLowerCase();
+      [...fontSelect.options].forEach(opt => { if(ff.includes(opt.text.toLowerCase().split(' (')[0])) fontSelect.value = opt.value; });
+    } else {
+      fontColorHex.value = '#0d2a6b'; fontSelect.value='"Lobster", cursive';
+    }
     if(onImg){ const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1'; fitBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); lockBtn.textContent='Lock: '+(lock?'On':'Off'); }
     else { fitBtn.textContent='Fit: Contain'; lockBtn.textContent='Lock: On'; }
   }
+
   fontSizeInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return; v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto'; const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px'; saveCloudDebounced(); });
-  fontColorInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; t.style.color=fontColorInput.value; saveCloudDebounced(); });
+  setupColorSync(fontColorInput, fontColorHex, (hex)=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; t.style.color=hex; saveCloudDebounced(); });
+  fontSelect.addEventListener('change',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; t.style.fontFamily = fontSelect.value; saveCloudDebounced(); });
+
+  const fitBtn=document.getElementById('fitToggleBtn');
+  const lockBtn=document.getElementById('lockToggleBtn');
   fitBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateToolbarState(); saveCloudDebounced(); });
   lockBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateToolbarState(); saveCloudDebounced(); });
 
   document.addEventListener('click',e=>{
     if(!document.body.classList.contains('editing')) return;
-    const onItem=e.target.closest?.('.scrap-item'); const onBar=e.target.closest?.('#toolbar');
-    if(onItem){ select(onItem); } else if(!onBar){ deselect(); }
+    const onItem=e.target.closest?.('.scrap-item'); const onBar=e.target.closest?.('#toolbar'); const onEmoji=e.target.closest?.('#emojiPanel');
+    if(onItem){ select(onItem); } else if(!onBar && !onEmoji){ deselect(); }
   });
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex = ++zCounter; } updateToolbarState(); }
   function deselect(){ if(selectedItem){ selectedItem.classList.remove('selected'); selectedItem=null; } updateToolbarState(); }
@@ -400,7 +540,30 @@
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); saveCloudDebounced(); } };
   clearPageBtn.onclick=()=>{ const canvas=pages[current].querySelector('.page-canvas'); if(current===0||current===pages.length-1){ alert('Covers are locked.'); return; } if(confirm('Clear this page?')){ canvas.querySelectorAll('.scrap-item').forEach(el=>el.remove()); saveCloudDebounced(); } };
 
-  // ===== CLOUD persistence =====
+  /* === Emoji handling === */
+  function insertEmoji(unicode){
+    if(editor.el.classList.contains('open')){
+      const ta = editor.input;
+      const start = ta.selectionStart ?? ta.value.length;
+      const end   = ta.selectionEnd ?? start;
+      ta.value = ta.value.slice(0,start) + unicode + ta.value.slice(end);
+      ta.selectionStart = ta.selectionEnd = start + unicode.length;
+      ta.focus();
+      return;
+    }
+    const t=selectedItem?.querySelector('.scrap-text');
+    if(t){
+      t.textContent = (t.textContent || '') + unicode;
+      t.style.height='auto';
+      const box=t.closest('.scrap-item'); if(box) box.style.height=Math.max(40,t.scrollHeight)+'px';
+      saveCloudDebounced();
+    }
+  }
+  emojiPicker.addEventListener('emoji-click', e=>{ insertEmoji(e.detail.unicode); });
+  emojiBtn.addEventListener('click', toggleEmoji);
+  editor.emojiBtn.addEventListener('click', toggleEmoji);
+
+  /* === CLOUD persistence === */
   function snapshot(){
     return {
       pages: pages.map(p=>{
@@ -421,7 +584,6 @@
     };
   }
 
-  // TRUE UPSERT + verbose error logging
   async function cloudSave(obj){
     try{
       const url = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?on_conflict=id`;
@@ -458,7 +620,7 @@
     cloudTimer = setTimeout(()=> cloudSave(data), 800);
   }
 
-  // Save button: immediate save + auto-exit edit
+  // Save button
   saveBtn.addEventListener('click', async ()=>{
     const orig = saveBtn.textContent;
     saveBtn.disabled = true;
@@ -473,7 +635,7 @@
     }
   });
 
-  // ======== YOUTUBE BACKGROUND MUSIC ========
+  /* === YouTube music (unchanged) === */
   const YT_VIDEO_ID = 'XNGtzfRdTtU';
   const musicBtn = document.getElementById('musicPlay');
   const musicVol = document.getElementById('musicVol');
@@ -489,34 +651,16 @@
       videoId: YT_VIDEO_ID,
       playerVars: { autoplay: 0, controls: 0, disablekb: 1, playsinline: 1, modestbranding: 1, rel: 0, loop: 1, playlist: YT_VIDEO_ID },
       events: {
-        onReady: ()=>{
-          ytReady = true;
-          ytPlayer.setVolume(parseInt(musicVol.value,10) || 60);
-          updateBtn(false);
-        },
-        onStateChange: (e)=>{
-          const playing = e.data === YT.PlayerState.PLAYING;
-          updateBtn(playing);
-        }
+        onReady: ()=>{ ytReady = true; ytPlayer.setVolume(parseInt(musicVol.value,10) || 60); updateBtn(false); },
+        onStateChange: (e)=>{ const playing = e.data === YT.PlayerState.PLAYING; updateBtn(playing); }
       }
     });
   };
-
   function updateBtn(playing){ musicBtn.textContent = playing ? '⏸' : '▶'; }
-  musicBtn.addEventListener('click', ()=>{
-    if(!ytReady) return;
-    const state = ytPlayer.getPlayerState();
-    if(state === YT.PlayerState.PLAYING){ ytPlayer.pauseVideo(); }
-    else { ytPlayer.unMute(); ytPlayer.playVideo(); }
-  });
-  musicVol.addEventListener('input', ()=>{
-    const v = parseInt(musicVol.value,10) || 0;
-    if(!ytReady) return;
-    if(v <= 0){ ytPlayer.mute(); } else { ytPlayer.unMute(); ytPlayer.setVolume(v); }
-  });
-  // ======== /YOUTUBE BACKGROUND MUSIC ========
+  musicBtn.addEventListener('click', ()=>{ if(!ytReady) return; const s = ytPlayer.getPlayerState(); (s===YT.PlayerState.PLAYING? ytPlayer.pauseVideo(): ytPlayer.playVideo()); });
+  musicVol.addEventListener('input', ()=>{ const v = parseInt(musicVol.value,10) || 0; if(!ytReady) return; if(v<=0){ ytPlayer.mute(); } else { ytPlayer.unMute(); ytPlayer.setVolume(v); } });
 
-  // ======== INIT ========
+  /* === INIT === */
   (async function(){
     await cloudLoad().then(cloud=>{
       if(!cloud){ setClasses(); return; }
@@ -548,8 +692,11 @@
       });
       setClasses();
     });
+
+    // color sync wiring for editor
+    setupColorSync(editor.color, editor.hex, (hex)=>{ /* live preview in editor only */ });
   })();
-  // ======== /INIT ========
+  // === /INIT ===
 
 })();
 </script>
