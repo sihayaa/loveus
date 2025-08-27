@@ -1,98 +1,109 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Date Plans</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="data:,">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+<meta charset="utf-8" />
+<title>Date Plans</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="icon" href="data:,">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 
-  <style>
-    :root{
-      --bg:#07110e; --card:#0f1a17; --ink:#eaf7f1; --muted:#a6c9bf; --line:#22332d;
-      --green:#1b8f7d; --purple:#5a3ccf; --accent:#0CFF6B; --danger:#e65353;
-      --radius:16px; --maxw:1100px;
-      --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-    }
-    *{box-sizing:border-box}
-    html,body{height:100%}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);min-height:100svh;display:grid;place-items:center}
+<style>
+  :root{
+    --bg:#07110e; --card:#0f1a17; --ink:#eaf7f1; --muted:#a6c9bf; --line:#22332d;
+    --green:#1b8f7d; --purple:#5a3ccf; --accent:#0CFF6B; --danger:#e65353;
+    --radius:16px; --maxw:1100px;
+    --font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);min-height:100svh;display:grid;place-items:center}
 
-    .shell{width:min(100%,var(--maxw));height:min(94svh,900px);background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.55);display:grid;grid-template-rows:auto auto 1fr;overflow:hidden}
-    .topbar{display:flex;align-items:center;gap:16px;padding:14px 18px;background:linear-gradient(90deg,#145a4f,#3f2a9e);color:#fff;border-bottom:1px solid var(--line)}
-    .topbar h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.3px}
+  .shell{width:min(100%,var(--maxw));height:min(94svh,900px);background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:0 10px 30px rgba(0,0,0,.55);display:grid;grid-template-rows:auto auto 1fr;overflow:hidden}
+  .topbar{display:flex;align-items:center;gap:16px;padding:14px 18px;background:linear-gradient(90deg,#145a4f,#3f2a9e);color:#fff;border-bottom:1px solid var(--line)}
+  .topbar h1{margin:0;font-size:22px;font-weight:700;letter-spacing:.3px}
 
-    .controls{display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;background:#0d1815;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
-    input[type="date"],input[type="text"],textarea{height:40px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#12231e;color:var(--ink);outline:none;font-family:var(--font)}
-    textarea{min-height:40px;height:40px;max-height:140px;resize:vertical}
-    input::placeholder,textarea::placeholder{color:var(--muted)}
-    .grow{flex:1 1 260px}
-    .btn{border:1px solid #175e54;border-radius:12px;padding:10px 14px;height:40px;background:var(--green);color:#fff;cursor:pointer;transition:transform .05s ease,filter .1s ease;font-weight:600}
-    .btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
-    .btn.danger{background:var(--danger);border-color:#7c2424}
+  .controls{display:flex;flex-wrap:wrap;gap:10px;padding:12px 16px;background:#0d1815;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:2}
+  input[type="date"],input[type="text"],textarea{height:40px;border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#12231e;color:var(--ink);outline:none;font-family:var(--font)}
+  textarea{min-height:40px;height:40px;max-height:140px;resize:vertical}
+  input::placeholder,textarea::placeholder{color:var(--muted)}
+  .grow{flex:1 1 260px}
+  .btn{border:1px solid #175e54;border-radius:12px;padding:10px 14px;height:40px;background:var(--green);color:#fff;cursor:pointer;transition:transform .05s ease,filter .1s ease;font-weight:600}
+  .btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
 
-    .listwrap{overflow:auto;padding:0 10px 12px 10px}
-    table{width:100%;border-collapse:separate;border-spacing:0 12px;table-layout:fixed}
-    thead th{position:sticky;top:0;z-index:3;background:#0d1815;color:var(--muted);padding:14px 16px;text-align:left;font-weight:700;border-bottom:1px solid var(--line)}
-    thead th+th{border-left:1px solid #24423a} /* match body separators */
+  .listwrap{overflow:auto;padding:0 10px 12px 10px}
+  table{width:100%;border-collapse:separate;border-spacing:0 12px;table-layout:fixed}
+  /* exact % widths so header & rows lock perfectly */
+  col.date{width:22%} col.type{width:28%} col.notes{width:50%}
 
-    /* full-row accent + hover */
-    tbody tr{position:relative;transition:transform .12s ease,filter .12s ease}
-    tbody tr::before{
-      content:"";position:absolute;inset:0;background:
-        linear-gradient(0deg,rgba(12,255,107,.06),rgba(12,255,107,.06)),#15382f;
-      border:1px solid #2b463f;border-radius:14px;z-index:0;
-      box-shadow:inset 0 0 0 2px rgba(12,255,107,.22);
-      transition:filter .12s ease,box-shadow .2s ease
-    }
-    tbody tr:hover{transform:translateY(-1px)}
-    tbody tr:hover::before{filter:brightness(1.08);box-shadow:inset 0 0 0 2px rgba(12,255,107,.65),0 0 20px rgba(12,255,107,.14)}
+  thead th{position:sticky;top:0;z-index:3;background:#0d1815;color:var(--muted);padding:14px 16px;text-align:left;font-weight:700;border-bottom:1px solid var(--line)}
+  thead th+th{border-left:1px solid #24423a} /* match body separators */
 
-    tr.done::before{filter:brightness(.95) saturate(.9)}
-    tr.done .field-label{text-decoration:line-through;color:#88a79d}
-    tr.done input,tr.done textarea{opacity:.78}
+  /* full-row accent + hover */
+  tbody tr{position:relative;transition:transform .12s ease,filter .12s ease}
+  tbody tr::before{
+    content:"";position:absolute;inset:0;background:
+      linear-gradient(0deg,rgba(12,255,107,.06),rgba(12,255,107,.06)),#15382f;
+    border:1px solid #2b463f;border-radius:14px;z-index:0;
+    box-shadow:inset 0 0 0 2px rgba(12,255,107,.22);
+    transition:filter .12s ease,box-shadow .2s ease
+  }
+  tbody tr:hover{transform:translateY(-1px)}
+  tbody tr:hover::before{filter:brightness(1.08);box-shadow:inset 0 0 0 2px rgba(12,255,107,.65),0 0 20px rgba(12,255,107,.14)}
 
-    tbody td{position:relative;z-index:2;background:transparent;border:none;color:var(--ink);padding:14px 16px;vertical-align:top}
-    tbody td+td{border-left:1px solid #24423a} /* body separators */
+  tr.done::before{filter:brightness(.95) saturate(.9)}
+  tr.done .field-label{text-decoration:line-through;color:#88a79d}
+  tr.done input,tr.done textarea{opacity:.78}
 
-    .cell{display:flex;flex-direction:column;gap:6px}
-    .field-label{font-size:12px;color:var(--muted);letter-spacing:.2px}
-    .cell input[type="text"],.cell input[type="date"],.cell textarea{width:100%}
-    .cell .grow{flex:0 0 auto}
+  tbody td{position:relative;z-index:2;background:transparent;border:none;color:var(--ink);padding:14px 16px;vertical-align:top}
+  tbody td+td{border-left:1px solid #24423a}
 
-    .checkline{display:flex;align-items:center;gap:8px}
-    .checkline input[type="checkbox"]{appearance:none;width:18px;height:18px;border-radius:6px;border:2px solid #2b463f;background:#0f1f1b;cursor:pointer;position:relative;outline:none}
-    .checkline input[type="checkbox"]:checked{border-color:#1f6b5e;background:#18453c}
-    .checkline input[type="checkbox"]:checked::after{content:"✔";position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--accent)}
+  /* column content wrappers */
+  .cell{display:flex;flex-direction:column;gap:6px}
+  .field-label{font-size:12px;color:var(--muted);letter-spacing:.2px}
+  .cell input[type="text"],.cell input[type="date"],.cell textarea{width:100%}
+  .cell .grow{flex:0 0 auto}
 
-    /* tiny, subtle row tools at top-right */
-    .row-tools{position:absolute;right:8px;top:6px;z-index:4;display:flex;gap:6px;opacity:.18;transition:opacity .15s}
-    tbody tr:hover .row-tools{opacity:.85}
-    .iconbtn{width:22px;height:22px;display:inline-grid;place-items:center;border-radius:7px;padding:0;border:1px solid transparent;background:transparent;color:var(--ink);font-size:12px;cursor:pointer}
-    .iconbtn:hover{background:#0f1f1b;border-color:#2a3d36}
-    .iconbtn.delete:hover{background:#2a1a1a;border-color:#5a2a2a}
+  /* ---------- HARD ALIGN LEFT for DATE column ---------- */
+  td.col-date .cell{align-items:flex-start}
+  td.col-date .checkline{display:flex;align-items:center;gap:8px;justify-content:flex-start !important;width:auto !important}
+  td.col-date input[type="date"]{width:170px} /* consistent width so it doesn’t float */
+  td.col-date *{text-align:left}
+  /* Notes visible height */
+  td.col-notes textarea.row-note{min-height:48px}
 
-    /* modal */
-    .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);display:none;place-items:center;z-index:50}
-    .overlay.show{display:grid}
-    .modal{width:min(96vw,720px);background:#132620;border:1px solid #285045;border-radius:16px;box-shadow:0 20px 48px rgba(0,0,0,.55);padding:16px;position:relative}
-    .modal::before{content:"";position:absolute;left:10px;top:10px;bottom:10px;width:5px;border-radius:4px;background:var(--accent);box-shadow:0 0 12px rgba(12,255,107,.7)}
-    .modal h2{margin:0 0 12px 20px;font-size:18px;color:#d7f4e8}
-    .modal .grid{margin-left:20px;display:grid;gap:12px;grid-template-columns:180px 1fr;align-items:start}
-    .modal label{font-size:12px;color:var(--muted)}
-    .modal input[type="date"],.modal input[type="text"],.modal textarea{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#0f1f1b;color:var(--ink);width:100%;font-family:var(--font)}
-    .modal textarea{min-height:120px;resize:vertical}
-    .modal .actions{margin-top:14px;display:flex;gap:10px;justify-content:flex-end;margin-right:6px}
-    .ghost{background:transparent;border:1px solid #365e55;color:#dff6ee}
+  /* checklist */
+  .checkline input[type="checkbox"]{appearance:none;width:18px;height:18px;border-radius:6px;border:2px solid #2b463f;background:#0f1f1b;cursor:pointer;position:relative;outline:none}
+  .checkline input[type="checkbox"]:checked{border-color:#1f6b5e;background:#18453c}
+  .checkline input[type="checkbox"]:checked::after{content:"✔";position:absolute;inset:0;display:grid;place-items:center;font-size:12px;color:var(--accent)}
 
-    @media (max-width:760px){
-      thead{display:none}
-      table,tbody,tr,td{display:block;width:100%}
-      tbody tr{margin-bottom:12px}
-      tbody td{border-radius:14px !important;border-left:none}
-      .modal .grid{grid-template-columns:1fr;margin-left:20px}
-    }
-  </style>
+  /* tiny, subtle row tools at top-right */
+  .row-tools{position:absolute;right:8px;top:6px;z-index:4;display:flex;gap:6px;opacity:0;transition:opacity .15s}
+  tbody tr:hover .row-tools{opacity:.7}
+  .iconbtn{width:18px;height:18px;display:inline-grid;place-items:center;border-radius:6px;padding:0;border:1px solid transparent;background:transparent;color:var(--ink);font-size:11px;cursor:pointer}
+  .iconbtn:hover{background:#0f1f1b;border-color:#2a3d36}
+  .iconbtn.delete:hover{background:#2a1a1a;border-color:#5a2a2a}
+
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(2px);display:none;place-items:center;z-index:50}
+  .overlay.show{display:grid}
+  .modal{width:min(96vw,720px);background:#132620;border:1px solid #285045;border-radius:16px;box-shadow:0 20px 48px rgba(0,0,0,.55);padding:16px;position:relative}
+  .modal::before{content:"";position:absolute;left:10px;top:10px;bottom:10px;width:5px;border-radius:4px;background:var(--accent);box-shadow:0 0 12px rgba(12,255,107,.7)}
+  .modal h2{margin:0 0 12px 20px;font-size:18px;color:#d7f4e8}
+  .modal .grid{margin-left:20px;display:grid;gap:12px;grid-template-columns:180px 1fr;align-items:start}
+  .modal label{font-size:12px;color:var(--muted)}
+  .modal input[type="date"],.modal input[type="text"],.modal textarea{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#0f1f1b;color:var(--ink);width:100%;font-family:var(--font)}
+  .modal textarea{min-height:120px;resize:vertical}
+  .modal .actions{margin-top:14px;display:flex;gap:10px;justify-content:flex-end;margin-right:6px}
+  .ghost{background:transparent;border:1px solid #365e55;color:#dff6ee}
+
+  @media (max-width:760px){
+    thead{display:none}
+    table,tbody,tr,td{display:block;width:100%}
+    tbody tr{margin-bottom:12px}
+    tbody td{border-radius:14px !important;border-left:none}
+    .modal .grid{grid-template-columns:1fr;margin-left:20px}
+  }
+</style>
 </head>
 <body>
   <div class="shell">
@@ -108,17 +119,14 @@
 
     <div class="listwrap">
       <table>
-        <!-- exact % widths so header & rows align -->
         <colgroup>
-          <col style="width:22%">
-          <col style="width:28%">
-          <col style="width:50%">
+          <col class="date"><col class="type"><col class="notes">
         </colgroup>
         <thead>
           <tr>
-            <th>date</th>
-            <th>type</th>
-            <th>notes</th>
+            <th class="col-date">date</th>
+            <th class="col-type">type</th>
+            <th class="col-notes">notes</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -131,12 +139,9 @@
     <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
       <h2 id="editTitle">Edit Date Plan</h2>
       <div class="grid">
-        <label for="m-date">Date</label>
-        <input id="m-date" type="date">
-        <label for="m-type">Type</label>
-        <input id="m-type" type="text">
-        <label for="m-notes">Notes</label>
-        <textarea id="m-notes"></textarea>
+        <label for="m-date">Date</label><input id="m-date" type="date">
+        <label for="m-type">Type</label><input id="m-type" type="text">
+        <label for="m-notes">Notes</label><textarea id="m-notes"></textarea>
       </div>
       <div class="actions">
         <button class="btn ghost" id="m-cancel">✖️ Cancel</button>
@@ -171,7 +176,10 @@ const TABLE = 'date_plans';
 
 /* CRUD */
 async function fetchAll(){
-  const { data, error } = await sb.from(TABLE).select('*').order('date',{ascending:false}).order('created_at',{ascending:false});
+  const { data, error } = await sb.from(TABLE)
+    .select('*')
+    .order('date',{ascending:false})
+    .order('created_at',{ascending:false});
   if (error){ console.error(error); toast('load failed'); return; }
   render(data || []);
 }
@@ -201,14 +209,14 @@ function render(list){
     const tr = document.createElement('tr');
     if (r.done) tr.classList.add('done');
 
-    const tdDate = document.createElement('td');
-    const tdType = document.createElement('td');
-    const tdNote = document.createElement('td');
+    const tdDate = document.createElement('td');   tdDate.className = 'col-date';
+    const tdType = document.createElement('td');   tdType.className = 'col-type';
+    const tdNote = document.createElement('td');   tdNote.className = 'col-notes';
 
     tdDate.innerHTML = `
       <div class="cell">
         <div class="field-label">Date:</div>
-        <div class="checkline" style="width:100%">
+        <div class="checkline">
           <input type="checkbox" ${r.done ? 'checked':''} aria-label="mark as done" data-act="done">
           <input type="date" value="${r.date ?? ''}" data-field="date" disabled
                  style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">
