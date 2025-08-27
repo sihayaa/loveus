@@ -9,7 +9,6 @@
 
   <style>
     :root{
-      /* dark theme */
       --bg:#07110e;        /* near-black green */
       --card:#0f1a17;      /* dark card */
       --ink:#eaf7f1;       /* main text */
@@ -72,38 +71,79 @@
     input::placeholder, textarea::placeholder{ color:var(--muted) }
     .grow{ flex:1 1 260px }
     .btn{
-      border:1px solid #2a2550; border-radius:12px; padding:10px 14px; height:40px;
+      border:1px solid #175e54; border-radius:12px; padding:10px 14px; height:40px;
       background:var(--green); color:#fff; cursor:pointer;
       transition:transform .05s ease, filter .1s ease;
       font-weight:600;
     }
     .btn:hover{ transform:translateY(-1px); filter:brightness(1.05) }
-    .btn.danger{ background:var(--danger); border-color:#7c2424 }
 
     .listwrap{ overflow:auto; padding:0 10px 12px 10px; }
-    table{ width:100%; border-collapse:separate; border-spacing:0 10px; }
+    table{ width:100%; border-collapse:separate; border-spacing:0 12px; }
     thead th{
       position:sticky; top:0; z-index:1; background:#0d1815; color:var(--muted);
       padding:10px 12px; text-align:left; font-weight:700; border-bottom:1px solid var(--line);
     }
-    tbody td{
-      background:#0f1f1b; color:var(--ink); padding:12px; vertical-align:top;
-      border:1px solid var(--line);
-    }
-    tbody tr{ box-shadow:0 8px 16px rgba(0,0,0,.25) }
-    tbody td:first-child{ border-top-left-radius:14px; border-bottom-left-radius:14px }
-    tbody td:last-child{ border-top-right-radius:14px; border-bottom-right-radius:14px }
 
-    .row-actions{ display:flex; gap:8px; flex-wrap:wrap }
-    .row-actions .btn{ padding:8px 10px; height:auto }
+    /* brighter rows + subtle accent bar */
+    tbody tr{
+      position:relative;
+      box-shadow:0 10px 18px rgba(0,0,0,.28);
+    }
+    tbody tr::before{
+      content:"";
+      position:absolute; inset:0;
+      background:#152e27;         /* brighter than card */
+      border:1px solid #2b463f;   /* soft ring */
+      border-radius:14px;
+      z-index:0;
+    }
+    tbody tr::after{
+      content:"";
+      position:absolute; left:8px; top:8px; bottom:8px; width:4px;
+      border-radius:3px;
+      background:linear-gradient(var(--green), var(--purple));
+      opacity:.9; z-index:1;
+    }
+    tbody tr:hover::before{ filter:brightness(1.05) }
+
+    tbody td{
+      position:relative; z-index:2; /* sit above ::before background */
+      background:transparent; border:none; color:var(--ink);
+      padding:14px 14px 16px 18px; vertical-align:top;
+    }
+    tbody td:first-child{ padding-left:24px }
+
+    /* label-on-top style */
+    .cell{ display:flex; flex-direction:column; gap:6px }
+    .field-label{ font-size:12px; color:var(--muted); letter-spacing:.2px }
+
     .row-note{ white-space:pre-wrap }
+
+    /* top-right toolbar */
+    .row-tools{
+      position:absolute; right:12px; top:10px; z-index:3;
+      display:flex; gap:8px;
+    }
+    .iconbtn{
+      display:inline-flex; align-items:center; justify-content:center;
+      gap:6px; padding:6px 10px; border-radius:12px; cursor:pointer;
+      font-weight:700; border:1px solid var(--line); background:#0f1f1b; color:var(--ink);
+      opacity:.9;
+    }
+    .iconbtn:hover{ opacity:1; filter:brightness(1.08) }
+    .iconbtn.delete{ background:#842f2f; border-color:#6d2626; color:#fff }
+    .iconbtn.save{ background:#1b8f7d; border-color:#175e54; color:#fff; display:none }
+
+    /* show Save only in edit mode; hide Edit while editing */
+    tr.editing .iconbtn.save{ display:inline-flex }
+    tr.editing .iconbtn.edit{ display:none }
 
     @media (max-width:760px){
       thead{ display:none }
       table, tbody, tr, td{ display:block; width:100% }
       tbody tr{ margin-bottom:12px }
       tbody td{ border-radius:14px !important }
-      .label{ display:block; font-size:12px; color:var(--muted); margin-bottom:4px }
     }
   </style>
 </head>
@@ -127,7 +167,6 @@
             <th style="min-width:120px">date</th>
             <th style="min-width:180px">type</th>
             <th>notes</th>
-            <th style="min-width:210px">actions</th>
           </tr>
         </thead>
         <tbody id="rows"></tbody>
@@ -212,46 +251,57 @@ function render(list){
   for (const r of list){
     const tr = document.createElement('tr');
 
+    // cells
     const tdDate = document.createElement('td');
     const tdType = document.createElement('td');
     const tdNote = document.createElement('td');
-    const tdAct  = document.createElement('td');
 
     tdDate.innerHTML = `
-      <span class="label">date</span>
-      <input type="date" value="${r.date ?? ''}" data-field="date" disabled
-             style="width:160px;background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+      <div class="cell">
+        <div class="field-label">Date:</div>
+        <input type="date" value="${r.date ?? ''}" data-field="date" disabled
+               style="width:160px;background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+      </div>
     `;
     tdType.innerHTML = `
-      <span class="label">type</span>
-      <input type="text" value="${escapeHtml(r.type||'')}" data-field="type" disabled class="grow"
-             style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+      <div class="cell">
+        <div class="field-label">Type:</div>
+        <input type="text" value="${escapeHtml(r.type||'')}" data-field="type" disabled class="grow"
+               style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+      </div>
     `;
     tdNote.innerHTML = `
-      <span class="label">notes</span>
-      <textarea data-field="notes" disabled class="row-note"
-                style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">${escapeHtml(r.notes||'')}</textarea>
-    `;
-    tdAct.innerHTML = `
-      <div class="row-actions">
-        <button class="btn" data-act="edit">Edit</button>
-        <button class="btn" data-act="save" disabled>Save</button>
-        <button class="btn danger" data-act="delete">Delete</button>
+      <div class="cell">
+        <div class="field-label">Notes:</div>
+        <textarea data-field="notes" disabled class="row-note"
+                  style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">${escapeHtml(r.notes||'')}</textarea>
       </div>
     `;
 
-    tr.append(tdDate, tdType, tdNote, tdAct);
+    tr.append(tdDate, tdType, tdNote);
+
+    // top-right tools
+    const tools = document.createElement('div');
+    tools.className = 'row-tools';
+    tools.innerHTML = `
+      <button class="iconbtn edit"   title="Edit">✍🏻</button>
+      <button class="iconbtn save"   title="Save">✔️</button>
+      <button class="iconbtn delete" title="Delete">🗑️</button>
+    `;
+    tr.appendChild(tools);
+
     rowsEl.appendChild(tr);
 
+    // logic per row
     const inputs   = tr.querySelectorAll('[data-field]');
-    const btnEdit  = tr.querySelector('[data-act="edit"]');
-    const btnSave  = tr.querySelector('[data-act="save"]');
-    const btnDel   = tr.querySelector('[data-act="delete"]');
+    const btnEdit  = tools.querySelector('.edit');
+    const btnSave  = tools.querySelector('.save');
+    const btnDel   = tools.querySelector('.delete');
 
     function setEditing(on){
       inputs.forEach(i => i.disabled = !on);
-      btnSave.disabled = !on;
-      btnEdit.disabled = on;
+      tr.classList.toggle('editing', on);
+      if (on) inputs[0]?.focus();
     }
 
     btnEdit.addEventListener('click', ()=> setEditing(true));
@@ -267,33 +317,28 @@ function render(list){
   }
 }
 
-/* ========== keyboard: arrow nav + Enter-to-save + Shift+Enter newline ========== */
+/* ========== keyboard: arrow nav + Enter-to-save-new + Shift+Enter newline ========== */
 const inDate  = $('#in-date');
 const inType  = $('#in-type');
 const inNotes = $('#in-notes');
-const btnSave = $('#btn-save');
+const btnSaveTop = $('#btn-save');
 
-const fields = [inDate, inType, inNotes, btnSave];
-
+const fields = [inDate, inType, inNotes, btnSaveTop];
 function idxOf(el){ return fields.indexOf(el); }
 function focusAt(i){
   const n = ((i % fields.length) + fields.length) % fields.length;
   fields[n]?.focus();
 }
-
 function handleArrowNav(e){
   const el = e.target;
   const idx = idxOf(el);
   if (idx === -1) return;
 
-  // DATE: Left/Right move focus (Up/Down keep native date change)
   if (el === inDate){
     if (e.key === 'ArrowLeft'){ e.preventDefault(); focusAt(idx-1); }
     if (e.key === 'ArrowRight'){ e.preventDefault(); focusAt(idx+1); }
     return;
   }
-
-  // TYPE: move when at edges
   if (el === inType){
     const pos = el.selectionStart ?? 0;
     const atStart = pos === 0;
@@ -302,8 +347,6 @@ function handleArrowNav(e){
     if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && atEnd){ e.preventDefault(); focusAt(idx+1); }
     return;
   }
-
-  // NOTES: only vertical edge nav
   if (el === inNotes){
     const pos = el.selectionStart ?? 0;
     const atStart = pos === 0;
@@ -313,21 +356,19 @@ function handleArrowNav(e){
     return;
   }
 }
-
 fields.forEach(el => el.addEventListener('keydown', handleArrowNav));
 
-// Enter to SAVE everywhere; Shift+Enter makes a NEW LINE in notes
+// Enter saves new; Shift+Enter = newline in notes
 fields.forEach(el => el.addEventListener('keydown', (e)=>{
   if (e.key !== 'Enter') return;
-  if (el === inNotes && e.shiftKey) return; // allow newline
+  if (el === inNotes && e.shiftKey) return; // newline
   e.preventDefault();
   saveNew();
 }));
 
 /* ========== click + realtime ========== */
-btnSave.addEventListener('click', saveNew);
+btnSaveTop.addEventListener('click', saveNew);
 
-// realtime updates
 sb.channel('public:'+TABLE)
   .on('postgres_changes', { event:'*', schema:'public', table:TABLE }, fetchAll)
   .subscribe();
