@@ -73,12 +73,11 @@
     .grow{ flex:1 1 260px }
     .btn{
       border:1px solid #2a2550; border-radius:12px; padding:10px 14px; height:40px;
-      background:var(--purple); color:#fff; cursor:pointer;
+      background:var(--green); color:#fff; cursor:pointer;
       transition:transform .05s ease, filter .1s ease;
       font-weight:600;
     }
     .btn:hover{ transform:translateY(-1px); filter:brightness(1.05) }
-    .btn.green{ background:var(--green); border-color:#175e54 }
     .btn.danger{ background:var(--danger); border-color:#7c2424 }
 
     .listwrap{ overflow:auto; padding:0 10px 12px 10px; }
@@ -115,10 +114,10 @@
     </div>
 
     <div class="controls">
-      <input id="in-date" type="date" title="date">
+      <input id="in-date" type="date" title="date" />
       <input id="in-type" type="text" class="grow" placeholder="type (movie, dinner, game night…)" />
       <textarea id="in-notes" class="grow" placeholder="notes (where, what you watched/played, moments, etc.)"></textarea>
-      <button class="btn green" id="btn-add">Add</button>
+      <button class="btn" id="btn-save">Save</button>
     </div>
 
     <div class="listwrap">
@@ -180,17 +179,17 @@ async function fetchAll(){
   render(data || []);
 }
 
-async function addRow(){
+async function saveNew(){
   const date  = $('#in-date').value;
   const type  = $('#in-type').value.trim();
   const notes = $('#in-notes').value.trim();
   if (!date || !type){ toast('need date + type'); return; }
 
   const { error } = await sb.from(TABLE).insert({ date, type, notes });
-  if (error){ console.error(error); toast('add failed'); return; }
+  if (error){ console.error(error); toast('save failed'); return; }
 
   $('#in-notes').value = '';
-  toast('added');
+  toast('saved');
 }
 
 async function saveRow(id, fields){
@@ -235,7 +234,7 @@ function render(list){
     `;
     tdAct.innerHTML = `
       <div class="row-actions">
-        <button class="btn green" data-act="edit">Edit</button>
+        <button class="btn" data-act="edit">Edit</button>
         <button class="btn" data-act="save" disabled>Save</button>
         <button class="btn danger" data-act="delete">Delete</button>
       </div>
@@ -249,8 +248,6 @@ function render(list){
     const btnSave  = tr.querySelector('[data-act="save"]');
     const btnDel   = tr.querySelector('[data-act="delete"]');
 
-    const pristine = { date: r.date ?? '', type: r.type ?? '', notes: r.notes ?? '' };
-
     function setEditing(on){
       inputs.forEach(i => i.disabled = !on);
       btnSave.disabled = !on;
@@ -263,7 +260,6 @@ function render(list){
       const payload = {};
       inputs.forEach(i => payload[i.dataset.field] = i.value);
       await saveRow(r.id, payload);
-      pristine.date = payload.date; pristine.type = payload.type; pristine.notes = payload.notes;
       setEditing(false);
     });
 
@@ -271,8 +267,13 @@ function render(list){
   }
 }
 
-/* ========== keyboard: arrow nav + enter-to-add ========== */
-const fields = [$('#in-date'), $('#in-type'), $('#in-notes'), $('#btn-add')];
+/* ========== keyboard: arrow nav + Enter-to-save + Shift+Enter newline ========== */
+const inDate  = $('#in-date');
+const inType  = $('#in-type');
+const inNotes = $('#in-notes');
+const btnSave = $('#btn-save');
+
+const fields = [inDate, inType, inNotes, btnSave];
 
 function idxOf(el){ return fields.indexOf(el); }
 function focusAt(i){
@@ -285,15 +286,15 @@ function handleArrowNav(e){
   const idx = idxOf(el);
   if (idx === -1) return;
 
-  // DATE: Left/Right move focus, Up/Down keep native date adjust
-  if (el.id === 'in-date'){
+  // DATE: Left/Right move focus (Up/Down keep native date change)
+  if (el === inDate){
     if (e.key === 'ArrowLeft'){ e.preventDefault(); focusAt(idx-1); }
     if (e.key === 'ArrowRight'){ e.preventDefault(); focusAt(idx+1); }
     return;
   }
 
-  // TYPE: move on edges only
-  if (el.id === 'in-type'){
+  // TYPE: move when at edges
+  if (el === inType){
     const pos = el.selectionStart ?? 0;
     const atStart = pos === 0;
     const atEnd = pos === el.value.length;
@@ -302,8 +303,8 @@ function handleArrowNav(e){
     return;
   }
 
-  // NOTES: only vertical edge nav so left/right still edit text
-  if (el.id === 'in-notes'){
+  // NOTES: only vertical edge nav
+  if (el === inNotes){
     const pos = el.selectionStart ?? 0;
     const atStart = pos === 0;
     const atEnd = pos === el.value.length;
@@ -315,16 +316,16 @@ function handleArrowNav(e){
 
 fields.forEach(el => el.addEventListener('keydown', handleArrowNav));
 
-// Enter to Add: Enter in date/type; Ctrl+Enter in notes; Enter on button works by default
+// Enter to SAVE everywhere; Shift+Enter makes a NEW LINE in notes
 fields.forEach(el => el.addEventListener('keydown', (e)=>{
   if (e.key !== 'Enter') return;
-  if (el.id === 'in-notes' && !e.ctrlKey) return; // allow normal newline
+  if (el === inNotes && e.shiftKey) return; // allow newline
   e.preventDefault();
-  addRow();
+  saveNew();
 }));
 
-/* ========== events + realtime ========== */
-$('#btn-add').addEventListener('click', addRow);
+/* ========== click + realtime ========== */
+btnSave.addEventListener('click', saveNew);
 
 // realtime updates
 sb.channel('public:'+TABLE)
