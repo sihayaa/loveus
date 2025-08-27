@@ -501,8 +501,6 @@
   setupColorSync(fontColorInput, fontColorHex, (hex)=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; t.style.color=hex; saveCloudDebounced(); });
   fontSelect.addEventListener('change',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; t.style.fontFamily = fontSelect.value; saveCloudDebounced(); });
 
-  const fitBtn=document.getElementById('fitToggleBtn');
-  const lockBtn=document.getElementById('lockToggleBtn');
   fitBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateToolbarState(); saveCloudDebounced(); });
   lockBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateToolbarState(); saveCloudDebounced(); });
 
