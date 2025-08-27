@@ -148,13 +148,13 @@ function localYYYYMMDD(d=new Date()){
 $('#in-date').value = localYYYYMMDD(new Date());
 
 function toast(msg){
-  console.log(msg);
   const t = document.createElement('div');
   t.textContent = msg;
   Object.assign(t.style, {
     position:'fixed', left:'50%', top:'10px', transform:'translateX(-50%)',
     background:'#000', color:'#fff', padding:'10px 14px', borderRadius:'10px',
-    fontFamily:'var(--font)', zIndex: 9999, opacity:.94
+    fontFamily:'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica Neue, Arial',
+    zIndex:9999, opacity:.94
   });
   document.body.appendChild(t);
   setTimeout(()=>t.remove(), 1600);
@@ -164,13 +164,11 @@ function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 }
 
-/* ========== Supabase init ========== */
-const SUPABASE_URL  = window.SUPABASE_URL      || "https://YOUR-PROJECT.supabase.co";
-const SUPABASE_ANON = window.SUPABASE_ANON_KEY || "YOUR-ANON-KEY";
-if (SUPABASE_URL.includes("YOUR-PROJECT")) console.warn("Set SUPABASE_URL and SUPABASE_ANON.");
-
+/* ========== Supabase init (your creds) ========== */
+const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
+const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
-const TABLE = 'date_plans'; // <— minimal table name for this page
+const TABLE = 'date_plans';
 
 /* ========== CRUD ========== */
 async function fetchAll(){
@@ -273,12 +271,62 @@ function render(list){
   }
 }
 
+/* ========== keyboard: arrow nav + enter-to-add ========== */
+const fields = [$('#in-date'), $('#in-type'), $('#in-notes'), $('#btn-add')];
+
+function idxOf(el){ return fields.indexOf(el); }
+function focusAt(i){
+  const n = ((i % fields.length) + fields.length) % fields.length;
+  fields[n]?.focus();
+}
+
+function handleArrowNav(e){
+  const el = e.target;
+  const idx = idxOf(el);
+  if (idx === -1) return;
+
+  // DATE: Left/Right move focus, Up/Down keep native date adjust
+  if (el.id === 'in-date'){
+    if (e.key === 'ArrowLeft'){ e.preventDefault(); focusAt(idx-1); }
+    if (e.key === 'ArrowRight'){ e.preventDefault(); focusAt(idx+1); }
+    return;
+  }
+
+  // TYPE: move on edges only
+  if (el.id === 'in-type'){
+    const pos = el.selectionStart ?? 0;
+    const atStart = pos === 0;
+    const atEnd = pos === el.value.length;
+    if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && atStart){ e.preventDefault(); focusAt(idx-1); }
+    if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && atEnd){ e.preventDefault(); focusAt(idx+1); }
+    return;
+  }
+
+  // NOTES: only vertical edge nav so left/right still edit text
+  if (el.id === 'in-notes'){
+    const pos = el.selectionStart ?? 0;
+    const atStart = pos === 0;
+    const atEnd = pos === el.value.length;
+    if (e.key === 'ArrowUp' && atStart){ e.preventDefault(); focusAt(idx-1); }
+    if (e.key === 'ArrowDown' && atEnd){ e.preventDefault(); focusAt(idx+1); }
+    return;
+  }
+}
+
+fields.forEach(el => el.addEventListener('keydown', handleArrowNav));
+
+// Enter to Add: Enter in date/type; Ctrl+Enter in notes; Enter on button works by default
+fields.forEach(el => el.addEventListener('keydown', (e)=>{
+  if (e.key !== 'Enter') return;
+  if (el.id === 'in-notes' && !e.ctrlKey) return; // allow normal newline
+  e.preventDefault();
+  addRow();
+}));
+
 /* ========== events + realtime ========== */
 $('#btn-add').addEventListener('click', addRow);
 
-// optional: enter to add when focused in "type" or "notes"
-$('#in-type').addEventListener('keydown', e => { if(e.key==='Enter'){ e.preventDefault(); addRow(); }});
-
+// realtime updates
 sb.channel('public:'+TABLE)
   .on('postgres_changes', { event:'*', schema:'public', table:TABLE }, fetchAll)
   .subscribe();
