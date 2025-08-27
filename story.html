@@ -27,13 +27,11 @@
            pointer-events:none; z-index:0; }
     .page .page-canvas{ position:relative; width:100%; height:100%; padding:28px; font-size:22px; line-height:1.35; }
 
-    /* Front cover */
     .page.cover .page-canvas{
       padding:0; background:#0c102c;
       background-image:var(--cover-img), radial-gradient(closest-side at 50% 40%, #1d2a55 0%, #0c102c 60%);
       background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
     }
-    /* Back cover */
     .page.backcover .page-canvas{
       padding:0; background:#0c102c;
       background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/backcover.png');
@@ -68,7 +66,6 @@
     body.editing .scrap-item{ cursor:move; }
     body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{ display:block; }
 
-    /* Secret Toolbar */
     #toolbar{ position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column; }
     #toolbar.open{ display:flex; }
     #toolbar .group{ display:flex; gap:8px; flex-wrap:wrap; }
@@ -93,7 +90,6 @@
 
     .scrap-text[contenteditable="true"]{ outline:2px dashed #7a5af888; outline-offset:4px; }
 
-    /* === AUDIO CONTROL === */
     #audioCtrl{
       position:fixed; right:12px; bottom:10px; z-index:100000;
       display:flex; align-items:center; gap:6px;
@@ -101,11 +97,8 @@
       padding:6px 8px; border-radius:12px; box-shadow:0 8px 18px rgba(0,0,0,.35);
       user-select:none;
     }
-    #audioCtrl button{
-      all:unset; cursor:pointer; font-size:16px; line-height:1; padding:4px 6px;
-    }
+    #audioCtrl button{ all:unset; cursor:pointer; font-size:16px; line-height:1; padding:4px 6px; }
     #audioCtrl input[type="range"]{ width:90px; height:18px; }
-    /* keep the youtube iframe hidden but alive */
     #yt-holder{ position:fixed; left:-9999px; width:0; height:0; overflow:hidden; }
   </style>
 </head>
@@ -113,7 +106,6 @@
 
 <div id="stage">
   <div class="deck" id="deck">
-    <!-- 16 pages: 1 front cover, 14 inner, 16 back cover -->
     <div class="page cover active" data-page="1"><div class="page-canvas"></div></div>
     <div class="page" data-page="2"><div class="page-canvas"></div></div>
     <div class="page" data-page="3"><div class="page-canvas"></div></div>
@@ -175,12 +167,10 @@
     <textarea id="editorInput" placeholder="type here…"></textarea>
     <div class="row">
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
-        Size (px)
-        <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
+        Size (px) <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
       </label>
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
-        Color
-        <input id="editorColor" type="color" value="#0d2a6b">
+        Color <input id="editorColor" type="color" value="#0d2a6b">
       </label>
     </div>
     <div class="actions">
@@ -340,7 +330,7 @@
       reader.onload = () => {
         const dataUrl = String(reader.result || '');
         const comma = dataUrl.indexOf(',');
-        const head  = dataUrl.slice(0, comma); // e.g. "data:image/png;base64"
+        const head  = dataUrl.slice(0, comma); // "data:image/png;base64"
         const mimeMatch = head.match(/^data:([^;]+);base64/i);
         resolve({
           mime: mimeMatch ? mimeMatch[1] : (file.type || 'application/octet-stream'),
@@ -410,7 +400,7 @@
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); saveCloudDebounced(); } };
   clearPageBtn.onclick=()=>{ const canvas=pages[current].querySelector('.page-canvas'); if(current===0||current===pages.length-1){ alert('Covers are locked.'); return; } if(confirm('Clear this page?')){ canvas.querySelectorAll('.scrap-item').forEach(el=>el.remove()); saveCloudDebounced(); } };
 
-  // ===== CLOUD persistence (no localStorage, no "current" column) =====
+  // ===== CLOUD persistence =====
   function snapshot(){
     return {
       pages: pages.map(p=>{
@@ -431,20 +421,31 @@
     };
   }
 
+  // TRUE UPSERT + verbose error logging
   async function cloudSave(obj){
     try{
-      await fetch(`${SUPABASE_URL}/rest/v1/${TABLE_STATE}`,{
+      const url = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?on_conflict=id`;
+      const res = await fetch(url,{
         method:'POST',
         headers:{...sbHeaders, Prefer:'resolution=merge-duplicates'},
         body: JSON.stringify({ id: STATE_ID, pages: obj.pages })
       });
-    }catch(err){ console.warn('Cloud save failed:', err); }
+      if (!res.ok) {
+        const t = await res.text();
+        console.error('cloudSave error:', res.status, t);
+        throw new Error(`cloudSave ${res.status}`);
+      }
+    }catch(err){ console.warn('Cloud save failed:', err); throw err; }
   }
   async function cloudLoad(){
     try{
       const url = `${SUPABASE_URL}/rest/v1/${TABLE_STATE}?select=pages&id=eq.${encodeURIComponent(STATE_ID)}&limit=1`;
       const res = await fetch(url,{headers:sbHeaders});
-      if(!res.ok) throw new Error('state '+res.status);
+      if (!res.ok) {
+        const t = await res.text();
+        console.error('cloudLoad error:', res.status, t);
+        throw new Error(`cloudLoad ${res.status}`);
+      }
       const arr = await res.json();
       return arr?.[0] || null;
     }catch(err){ console.warn('Cloud load failed:', err); return null; }
@@ -457,7 +458,7 @@
     cloudTimer = setTimeout(()=> cloudSave(data), 800);
   }
 
-  // ===== Save button: immediate save + auto-exit edit =====
+  // Save button: immediate save + auto-exit edit
   saveBtn.addEventListener('click', async ()=>{
     const orig = saveBtn.textContent;
     saveBtn.disabled = true;
@@ -467,7 +468,6 @@
       saveBtn.textContent = 'Saved ✓';
       setTimeout(()=>{ saveBtn.textContent = orig; saveBtn.disabled = false; exitEditMode(); }, 600);
     }catch(err){
-      console.warn('Save failed:', err);
       saveBtn.textContent = 'Retry Save';
       saveBtn.disabled = false;
     }
@@ -516,11 +516,10 @@
   });
   // ======== /YOUTUBE BACKGROUND MUSIC ========
 
-  // ======== INIT: keep front cover visible from first paint ========
+  // ======== INIT ========
   (async function(){
     await cloudLoad().then(cloud=>{
       if(!cloud){ setClasses(); return; }
-      // rebuild from cloud
       (cloud.pages||[]).forEach((pg,i)=>{
         const c=pages[i]?.querySelector('.page-canvas'); if(!c) return;
         c.innerHTML = '';
@@ -547,7 +546,7 @@
           c.appendChild(box); makeDraggable(box);
         });
       });
-      setClasses(); // stays at cover (current=0)
+      setClasses();
     });
   })();
   // ======== /INIT ========
