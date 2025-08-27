@@ -11,14 +11,15 @@
     --bg:#07110e; --card:#0f1a17; --ink:#eaf7f1; --muted:#a6c9bf; --line:#22332d;
 
     /* accents */
-    --accent:#0CFF6B;          /* neon green edge vibe */
-    --purple:#6a4cff;          /* richer purple for headers/focus */
+    --accent:#0CFF6B;
+    --purple:#6a4cff;
     --btn-purple-start:#2f236f;
     --btn-purple-end:#3a2bd9;
 
     /* strike (solid, non-transparent) */
-    --strike:#FFD90F;          /* bright yellow; change to #FF3B30 for red */
+    --strike:#FFD90F;          /* change to #FF3B30 for red */
     --strike-rgb:255,217,15;   /* if you change strike, update this RGB too */
+    --strike-gap-left: 96px;   /* << start the strike after the checkbox area */
 
     --danger:#e65353;
     --radius:16px; --maxw:1100px;
@@ -119,11 +120,14 @@
   .icon:hover{ background:#0f1f1b; border-color:#2a3d36 }
   .icon.del:hover{ background:#2a1a1a; border-color:#5a2a2a }
 
-  /* DONE: only a bold, solid strike (no transparency/fade) */
+  /* DONE: solid strike that skips the checkbox area */
   .row.done{ filter:none; opacity:1 }
   .row.done::after{
     content:"";
-    position:absolute; left:12px; right:12px; top:50%;
+    position:absolute;
+    left:var(--strike-gap-left);  /* <-- starts after checkbox + spacing */
+    right:12px;
+    top:50%;
     transform:translateY(-50%);
     height:8px; border-radius:8px;
     background:var(--strike);                 /* solid line */
@@ -161,6 +165,7 @@
     .hdr,.row{ grid-template-columns:1fr }
     .hdr div+div,.row > div+div{ border-left:none }
     .modal .grid{ grid-template-columns:1fr }
+    :root{ --strike-gap-left: 72px; } /* smaller gap on narrow screens */
   }
 </style>
 </head>
@@ -304,7 +309,6 @@ const inDate=$('#in-date'), inType=$('#in-type'), inNotes=$('#in-notes'), btnSav
 }));
 btnSave.addEventListener('click', addNew);
 
-/* ---------- edit modal ---------- */
 const overlayEdit=$('#overlay-edit');
 const mDate=$('#m-date'), mType=$('#m-type'), mNotes=$('#m-notes'), mCancel=$('#m-cancel'), mSave=$('#m-save');
 let editingId=null;
@@ -327,7 +331,6 @@ async function doSaveEdit(){
   await updateRow(editingId, payload); closeEditModal();
 }
 
-/* ---------- delete modal ---------- */
 const overlayDel=$('#overlay-del');
 const dCancel=$('#d-cancel'), dDelete=$('#d-delete'), delText=$('#delText');
 let deletingId=null;
@@ -345,7 +348,6 @@ dDelete.addEventListener('click', async ()=>{
   await deleteRow(deletingId); closeDelModal();
 });
 
-/* ---------- realtime + init ---------- */
 sb.channel('public:'+TABLE)
   .on('postgres_changes', { event:'*', schema:'public', table:TABLE }, fetchAll)
   .subscribe();
