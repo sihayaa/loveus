@@ -17,6 +17,7 @@
 
       --green:#1b8f7d;     /* accent green */
       --purple:#5a3ccf;    /* accent purple */
+      --accent:#0CFF6B;    /* row accent request */
       --danger:#e65353;
 
       --radius:16px;
@@ -70,6 +71,7 @@
     }
     input::placeholder, textarea::placeholder{ color:var(--muted) }
     .grow{ flex:1 1 260px }
+
     .btn{
       border:1px solid #175e54; border-radius:12px; padding:10px 14px; height:40px;
       background:var(--green); color:#fff; cursor:pointer;
@@ -77,6 +79,7 @@
       font-weight:600;
     }
     .btn:hover{ transform:translateY(-1px); filter:brightness(1.05) }
+    .btn.danger{ background:var(--danger); border-color:#7c2424 }
 
     .listwrap{ overflow:auto; padding:0 10px 12px 10px; }
     table{ width:100%; border-collapse:separate; border-spacing:0 12px; }
@@ -85,74 +88,133 @@
       padding:10px 12px; text-align:left; font-weight:700; border-bottom:1px solid var(--line);
     }
 
-    /* brighter rows + subtle accent bar */
+    /* brighter rows + accent bar + hover animation */
     tbody tr{
       position:relative;
-      box-shadow:0 10px 18px rgba(0,0,0,.28);
+      transition: transform .12s ease, filter .12s ease;
     }
     tbody tr::before{
       content:"";
       position:absolute; inset:0;
-      background:#152e27;         /* brighter than card */
-      border:1px solid #2b463f;   /* soft ring */
+      background:#15382f;              /* brighter than card */
+      border:1px solid #2b463f;        /* soft ring */
       border-radius:14px;
       z-index:0;
+      transition: filter .12s ease, box-shadow .12s ease;
     }
     tbody tr::after{
       content:"";
       position:absolute; left:8px; top:8px; bottom:8px; width:4px;
       border-radius:3px;
-      background:linear-gradient(var(--green), var(--purple));
-      opacity:.9; z-index:1;
+      background:var(--accent);
+      box-shadow:0 0 0 rgba(12,255,107,0);
+      z-index:1;
+      transition: width .12s ease, box-shadow .2s ease;
     }
-    tbody tr:hover::before{ filter:brightness(1.05) }
+    @keyframes glow {
+      0%   { box-shadow:0 0 6px rgba(12,255,107,.35); }
+      100% { box-shadow:0 0 16px rgba(12,255,107,.9); }
+    }
+    tbody tr:hover{ transform: translateY(-1px); }
+    tbody tr:hover::before{ filter:brightness(1.08); box-shadow:0 10px 24px rgba(0,0,0,.35); }
+    tbody tr:hover::after{ width:6px; animation:glow 0.9s ease-in-out infinite alternate; }
+
+    /* "done" styling for checklist */
+    tr.done::before{ filter:brightness(0.95) saturate(0.9); }
+    tr.done::after{ background:#2f5b4d; box-shadow:none; }
+    tr.done .field-label{ text-decoration: line-through; color:#88a79d; }
+    tr.done input, tr.done textarea{ opacity:.75 }
 
     tbody td{
-      position:relative; z-index:2; /* sit above ::before background */
-      background:transparent; border:none; color:var(--ink);
+      position:relative; z-index:2; background:transparent; border:none; color:var(--ink);
       padding:14px 14px 16px 18px; vertical-align:top;
     }
     tbody td:first-child{ padding-left:24px }
 
-    /* label-on-top style */
     .cell{ display:flex; flex-direction:column; gap:6px }
     .field-label{ font-size:12px; color:var(--muted); letter-spacing:.2px }
 
-    .row-note{ white-space:pre-wrap }
-
-    /* top-right toolbar */
+    /* top-right tools */
     .row-tools{
       position:absolute; right:12px; top:10px; z-index:3;
       display:flex; gap:8px;
     }
     .iconbtn{
       display:inline-flex; align-items:center; justify-content:center;
-      gap:6px; padding:6px 10px; border-radius:12px; cursor:pointer;
-      font-weight:700; border:1px solid var(--line); background:#0f1f1b; color:var(--ink);
-      opacity:.9;
+      padding:6px 10px; border-radius:12px; cursor:pointer; font-weight:700;
+      border:1px solid var(--line); background:#0f1f1b; color:var(--ink); opacity:.9;
     }
     .iconbtn:hover{ opacity:1; filter:brightness(1.08) }
     .iconbtn.delete{ background:#842f2f; border-color:#6d2626; color:#fff }
-    .iconbtn.save{ background:#1b8f7d; border-color:#175e54; color:#fff; display:none }
 
-    /* show Save only in edit mode; hide Edit while editing */
-    tr.editing .iconbtn.save{ display:inline-flex }
-    tr.editing .iconbtn.edit{ display:none }
+    /* checklist checkbox (row-left, above Date input) */
+    .checkline{ display:flex; align-items:center; gap:8px }
+    .checkline input[type="checkbox"]{
+      appearance:none; width:18px; height:18px; border-radius:6px;
+      border:2px solid #2b463f; background:#0f1f1b; cursor:pointer;
+      display:inline-block; position:relative; outline:none;
+    }
+    .checkline input[type="checkbox"]:checked{
+      border-color:#1f6b5e; background:#18453c;
+    }
+    .checkline input[type="checkbox"]:checked::after{
+      content:"✔"; position:absolute; inset:0; display:grid; place-items:center;
+      font-size:12px; color:var(--accent);
+    }
+
+    /* modal */
+    .overlay{
+      position:fixed; inset:0; background:rgba(0,0,0,.55);
+      backdrop-filter: blur(2px);
+      display:none; place-items:center; z-index:50;
+    }
+    .overlay.show{ display:grid }
+    .modal{
+      width:min(96vw, 720px);
+      background:#132620; border:1px solid #285045; border-radius:16px;
+      box-shadow:0 20px 48px rgba(0,0,0,.55);
+      padding:16px;
+      position:relative;
+    }
+    .modal::before{
+      content:""; position:absolute; left:10px; top:10px; bottom:10px; width:5px;
+      border-radius:4px; background:var(--accent); box-shadow:0 0 12px rgba(12,255,107,.7);
+    }
+    .modal h2{ margin:0 0 12px 20px; font-size:18px; color:#d7f4e8 }
+    .modal .grid{
+      margin-left:20px; display:grid; gap:12px;
+      grid-template-columns: 180px 1fr;
+      align-items:start;
+    }
+    .modal label{ font-size:12px; color:var(--muted) }
+    .modal input[type="date"], .modal input[type="text"], .modal textarea{
+      border:1px solid var(--line); border-radius:12px; padding:10px 12px;
+      background:#0f1f1b; color:var(--ink); width:100%;
+      font-family:var(--font);
+    }
+    .modal textarea{ min-height:120px; resize:vertical; }
+    .modal .actions{
+      margin-top:14px; display:flex; gap:10px; justify-content:flex-end; margin-right:6px;
+    }
+    .ghost{ background:transparent; border:1px solid #365e55; color:#dff6ee }
+
+    /* prevent row field stretching tall */
+    .cell .grow { flex: 0 0 auto; }
 
     @media (max-width:760px){
       thead{ display:none }
       table, tbody, tr, td{ display:block; width:100% }
       tbody tr{ margin-bottom:12px }
       tbody td{ border-radius:14px !important }
+      .modal .grid{ grid-template-columns: 1fr; margin-left:20px }
     }
   </style>
 </head>
 <body>
   <div class="shell">
-    <div class="topbar">
-      <h1>Date Plans</h1>
-    </div>
+    <div class="topbar"><h1>Date Plans</h1></div>
 
+    <!-- add new -->
     <div class="controls">
       <input id="in-date" type="date" title="date" />
       <input id="in-type" type="text" class="grow" placeholder="type (movie, dinner, game night…)" />
@@ -160,6 +222,7 @@
       <button class="btn" id="btn-save">Save</button>
     </div>
 
+    <!-- list -->
     <div class="listwrap">
       <table>
         <thead>
@@ -171,6 +234,27 @@
         </thead>
         <tbody id="rows"></tbody>
       </table>
+    </div>
+  </div>
+
+  <!-- modal edit -->
+  <div class="overlay" id="overlay">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="editTitle">
+      <h2 id="editTitle">Edit Date Plan</h2>
+      <div class="grid">
+        <label for="m-date">Date</label>
+        <input id="m-date" type="date">
+
+        <label for="m-type">Type</label>
+        <input id="m-type" type="text">
+
+        <label for="m-notes">Notes</label>
+        <textarea id="m-notes"></textarea>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="m-cancel">✖️ Cancel</button>
+        <button class="btn" id="m-save">✔️ Save</button>
+      </div>
     </div>
   </div>
 
@@ -250,8 +334,9 @@ function render(list){
   rowsEl.innerHTML = '';
   for (const r of list){
     const tr = document.createElement('tr');
+    if (r.done) tr.classList.add('done');
 
-    // cells
+    // COLUMNS
     const tdDate = document.createElement('td');
     const tdType = document.createElement('td');
     const tdNote = document.createElement('td');
@@ -259,14 +344,17 @@ function render(list){
     tdDate.innerHTML = `
       <div class="cell">
         <div class="field-label">Date:</div>
-        <input type="date" value="${r.date ?? ''}" data-field="date" disabled
-               style="width:160px;background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+        <div class="checkline">
+          <input type="checkbox" ${r.done ? 'checked':''} aria-label="mark as done" data-act="done">
+          <input type="date" value="${r.date ?? ''}" data-field="date" disabled
+                 style="width:160px;background:#101d19;color:#eaf7f1;border:1px solid #22332d">
+        </div>
       </div>
     `;
     tdType.innerHTML = `
       <div class="cell">
         <div class="field-label">Type:</div>
-        <input type="text" value="${escapeHtml(r.type||'')}" data-field="type" disabled class="grow"
+        <input type="text" value="${escapeHtml(r.type||'')}" data-field="type" disabled
                style="background:#101d19;color:#eaf7f1;border:1px solid #22332d">
       </div>
     `;
@@ -280,39 +368,34 @@ function render(list){
 
     tr.append(tdDate, tdType, tdNote);
 
-    // top-right tools
+    // TOOLS (top-right)
     const tools = document.createElement('div');
     tools.className = 'row-tools';
     tools.innerHTML = `
       <button class="iconbtn edit"   title="Edit">✍🏻</button>
-      <button class="iconbtn save"   title="Save">✔️</button>
       <button class="iconbtn delete" title="Delete">🗑️</button>
     `;
     tr.appendChild(tools);
-
     rowsEl.appendChild(tr);
 
-    // logic per row
-    const inputs   = tr.querySelectorAll('[data-field]');
-    const btnEdit  = tools.querySelector('.edit');
-    const btnSave  = tools.querySelector('.save');
-    const btnDel   = tools.querySelector('.delete');
-
-    function setEditing(on){
-      inputs.forEach(i => i.disabled = !on);
-      tr.classList.toggle('editing', on);
-      if (on) inputs[0]?.focus();
-    }
-
-    btnEdit.addEventListener('click', ()=> setEditing(true));
-
-    btnSave.addEventListener('click', async ()=>{
-      const payload = {};
-      inputs.forEach(i => payload[i.dataset.field] = i.value);
-      await saveRow(r.id, payload);
-      setEditing(false);
+    // handlers
+    const chkDone = tr.querySelector('[data-act="done"]');
+    chkDone.addEventListener('change', async ()=>{
+      const done = chkDone.checked;
+      const { error } = await sb.from(TABLE).update({ done }).eq('id', r.id);
+      if (error){
+        console.error(error);
+        toast('add "done" column (see SQL below)');
+        chkDone.checked = !done;
+        return;
+      }
+      tr.classList.toggle('done', done);
     });
 
+    const btnEdit  = tools.querySelector('.edit');
+    const btnDel   = tools.querySelector('.delete');
+
+    btnEdit.addEventListener('click', ()=> openModal(r));
     btnDel.addEventListener('click', ()=> deleteRow(r.id));
   }
 }
@@ -366,9 +449,50 @@ fields.forEach(el => el.addEventListener('keydown', (e)=>{
   saveNew();
 }));
 
+/* ========== modal edit logic ========== */
+const overlay = $('#overlay');
+const mDate   = $('#m-date');
+const mType   = $('#m-type');
+const mNotes  = $('#m-notes');
+const mCancel = $('#m-cancel');
+const mSave   = $('#m-save');
+let editingId = null;
+
+function openModal(row){
+  editingId = row.id;
+  mDate.value  = row.date ?? '';
+  mType.value  = row.type ?? '';
+  mNotes.value = row.notes ?? '';
+  overlay.classList.add('show');
+  setTimeout(()=> mType.focus(), 0);
+}
+function closeModal(){
+  overlay.classList.remove('show');
+  editingId = null;
+}
+mCancel.addEventListener('click', closeModal);
+overlay.addEventListener('click', (e)=>{ if(e.target === overlay) closeModal(); });
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && overlay.classList.contains('show')) closeModal(); });
+
+// Enter saves in modal; Shift+Enter = newline in notes
+[mDate, mType, mNotes, mSave].forEach(el => el.addEventListener('keydown', (e)=>{
+  if (e.key !== 'Enter') return;
+  if (el === mNotes && e.shiftKey) return;
+  e.preventDefault();
+  handleModalSave();
+}));
+mSave.addEventListener('click', handleModalSave);
+
+async function handleModalSave(){
+  if (!editingId) return;
+  const payload = { date: mDate.value, type: mType.value.trim(), notes: mNotes.value.trim() };
+  if (!payload.date || !payload.type){ toast('need date + type'); return; }
+  await saveRow(editingId, payload);
+  closeModal();
+}
+
 /* ========== click + realtime ========== */
 btnSaveTop.addEventListener('click', saveNew);
-
 sb.channel('public:'+TABLE)
   .on('postgres_changes', { event:'*', schema:'public', table:TABLE }, fetchAll)
   .subscribe();
