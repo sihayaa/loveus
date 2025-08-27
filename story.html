@@ -48,7 +48,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 .rotator{position:absolute;left:50%;top:-18px;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab;z-index:999}
 .mover{position:absolute;left:-10px;top:-10px;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);cursor:grab}
 .resizer{position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:4px;background:var(--mint);border:2px solid #0b2c28;cursor:nwse-resize}
-.scrap-img{display:block;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none;border-radius:16px} /* rounded corners */
+.scrap-img{display:block;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none;border-radius:16px}
 .scrap-item[data-fit="cover"] .scrap-img{object-fit:cover}
 .scrap-text{width:100%;background:transparent;border:0;color:inherit;font:inherit;white-space:pre-wrap;overflow:visible;min-height:1.2em}
 
@@ -66,6 +66,11 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 #toolbar button.warn{background:#ff9aa2;color:#4c0a17}
 #toolbar input[type="number"], #toolbar select{width:100%;padding:8px;border-radius:8px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b;background:#fff}
 #toolbar input[type="color"]{width:100%;height:40px;padding:0;border:2px solid #e8dcc6;border-radius:8px;background:#fff}
+/* NEW: toolbar HEX input */
+#toolbar input[type="text"]{
+  width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6;
+  font-weight:700; color:#0d2a6b; background:#fff; font-family:monospace;
+}
 
 #textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
 #textEditor.open{display:flex}
@@ -74,6 +79,11 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 #textEditor .row{display:flex;gap:12px;margin-top:10px}
 #textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
 #textEditor input[type="color"]{width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
+/* NEW: editor HEX input */
+#textEditor input[type="text"]{
+  width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6;
+  padding:0 10px;font-weight:700;color:#0d2a6b;font-family:monospace;
+}
 #textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
 #textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
 #editorCancel{background:#ff9aa2;color:#4c0a17}
@@ -92,7 +102,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 <div id="stage">
   <div class="deck" id="deck">
     <div class="page cover active" data-page="1"><div class="page-canvas"></div></div>
-    <!-- 14 inner pages -->
     <div class="page" data-page="2"><div class="page-canvas"></div></div>
     <div class="page" data-page="3"><div class="page-canvas"></div></div>
     <div class="page" data-page="4"><div class="page-canvas"></div></div>
@@ -130,6 +139,8 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   <div class="group">
     <label style="font-weight:700;color:#0d2a6b;">Text Color</label>
     <input id="fontColorInput" type="color" value="#0d2a6b" disabled>
+    <!-- NEW: toolbar HEX -->
+    <input id="fontHexInput" type="text" placeholder="#RRGGBB" value="#0d2a6b" disabled>
   </div>
   <div class="group">
     <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
@@ -159,6 +170,8 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
         Color
         <input id="editorColor" type="color" value="#0d2a6b">
+        <!-- NEW: editor HEX -->
+        <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB">
       </label>
     </div>
     <div class="actions">
@@ -180,7 +193,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   // ======= CONFIG =======
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
-  const STATE_ID = "main";            // shared document id
+  const STATE_ID = "main";
   const N_PAGES  = 16;
 
   const apiHeaders = {
@@ -206,13 +219,26 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   const exitEdit = document.getElementById('exitEdit');
   const fontSizeInput=document.getElementById('fontSizeInput');
   const fontColorInput=document.getElementById('fontColorInput');
+  const fontHexInput=document.getElementById('fontHexInput');   // NEW
   const fitToggleBtn=document.getElementById('fitToggleBtn');
   const lockToggleBtn=document.getElementById('lockToggleBtn');
+
+  // Big editor refs
+  const editor = {
+    el: document.getElementById('textEditor'),
+    input: document.getElementById('editorInput'),
+    size: document.getElementById('editorSize'),
+    color: document.getElementById('editorColor'),
+    hex:   document.getElementById('editorHex'),               // NEW
+    save: document.getElementById('editorSave'),
+    cancel: document.getElementById('editorCancel'),
+    targetBox: null
+  };
 
   let current = 0;
   let selectedItem=null, zCounter=10;
 
-  // scale to fit window
+  // fit to window
   function fitStage(){
     const vw=innerWidth, vh=innerHeight, mx=200, my=40;
     const s=Math.min(1, vw/(parseInt(getComputedStyle(stage).width)+mx),
@@ -244,7 +270,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   });
   pages.forEach((p,i)=>p.querySelector('.page-canvas').addEventListener('mousedown',()=>{ if(!document.body.classList.contains('editing')) return; current=i; setClasses(); }));
 
-  // show/hide overlays safely
+  // show/hide overlays
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
   function hideToolbar(){ if(toolbar.contains(document.activeElement)) document.activeElement.blur();
     toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
@@ -252,7 +278,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   function hideEditor(el){ if(el.contains(document.activeElement)) document.activeElement.blur();
     el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
 
-  // secret unlock (type 123)
+  // unlock (type 123)
   const PASSCODE='123'; let keyBuf='', keyTimer=null;
   function normDigit(e){ if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1')return'1';
     if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2')return'2';
@@ -267,26 +293,42 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   function exitEditMode(){ document.body.classList.remove('editing'); hideToolbar(); deselect(); }
   exitEdit.onclick=exitEditMode; hideBar.onclick=hideToolbar;
 
-  // Big text editor
-  const editor={
-    el:document.getElementById('textEditor'),
-    input:document.getElementById('editorInput'),
-    size:document.getElementById('editorSize'),
-    color:document.getElementById('editorColor'),
-    save:document.getElementById('editorSave'),
-    cancel:document.getElementById('editorCancel'),
-    targetBox:null
-  };
+  // editor open/close
   addTextBtn.onclick=()=>openTextEditor();
   editor.cancel.onclick=()=>hideEditor(editor.el);
   document.getElementById('textEditor').addEventListener('click',e=>{ if(e.target.id==='textEditor') hideEditor(editor.el); });
   function openTextEditor({text='',size=28,color='#0d2a6b',targetBox=null}={}){
-    editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color;
+    editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color; editor.hex.value=color; // sync HEX
     showEditor(editor.el); setTimeout(()=>editor.input.focus(),0);
   }
   addEventListener('keydown',e=>{ if(e.key==='Escape'&&editor.el.classList.contains('open')) hideEditor(editor.el); });
+
+  // ====== HEX helpers & syncing ======
+  function normalizeHex(v){
+    v=(v||'').trim(); if(!v) return null;
+    if(v[0]!=='#') v='#'+v; v=v.toLowerCase();
+    if(/^#[0-9a-f]{3}$/.test(v)) v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3];
+    if(/^#[0-9a-f]{6}$/.test(v)) return v;
+    return null;
+  }
+  function rgbToHex(rgb){
+    const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+    if(!m) return '#000000';
+    const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0');
+    return '#'+r+g+b;
+  }
+
+  // editor color <-> hex sync
+  editor.color.addEventListener('input',()=>{ editor.hex.value=editor.color.value; });
+  editor.hex.addEventListener('input',()=>{ const v=normalizeHex(editor.hex.value); if(v) editor.color.value=v; });
+
+  // save from editor
   editor.save.onclick=()=>{
-    const text=editor.input.value, size=Math.max(8,Math.min(200,parseInt(editor.size.value||'22',10))), color=editor.color.value||'#0d2a6b';
+    const text=editor.input.value;
+    const size=Math.max(8,Math.min(200,parseInt(editor.size.value||'22',10)));
+    const chosen=normalizeHex(editor.hex.value)||editor.color.value||'#0d2a6b';
+    const color=chosen;
+
     if(editor.targetBox){
       const t=editor.targetBox.querySelector('.scrap-text'); if(!t) return;
       t.textContent=text; t.style.fontSize=size+'px'; t.style.color=color; t.style.height='auto';
@@ -300,11 +342,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     }
     hideEditor(editor.el);
   };
-  editSelectedBtn.onclick=()=>{
-    if(!selectedItem) return; const t=selectedItem.querySelector('.scrap-text'); if(!t) return;
-    const size=Math.round(parseFloat(getComputedStyle(t).fontSize)||28); const color=rgbToHex(getComputedStyle(t).color);
-    openTextEditor({text:t.textContent||'',size,color,targetBox:selectedItem});
-  };
 
   function startInlineEdit(t){
     if(!t || t.getAttribute('contenteditable')==='true') return;
@@ -317,11 +354,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   addEventListener('dblclick',e=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(t) startInlineEdit(t); });
   let pressTimer=null; addEventListener('touchstart',e=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(!t) return; pressTimer=setTimeout(()=>startInlineEdit(t),500); },{passive:true});
   addEventListener('touchend',()=>{ if(pressTimer) clearTimeout(pressTimer); },{passive:true});
-
-  // helpers
-  function rgbToHex(rgb){ const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); if(!m) return '#000000';
-    const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0'); return '#'+r+g+b; }
-  async function fileToBase64(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>{ const s=String(r.result||''); const i=s.indexOf(','); const mime=(s.slice(0,i).match(/^data:([^;]+);base64/i)||[])[1]||file.type||'application/octet-stream'; res({mime,base64:s.slice(i+1)}); }; r.onerror=()=>rej(r.error||new Error('read fail')); r.readAsDataURL(file); }); }
 
   // Photos
   addPhotoBtn.onclick=()=>fileInput.click();
@@ -338,17 +370,43 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect);
     fileInput.value=''; select(box);
   });
+  async function fileToBase64(file){
+    return new Promise((res,rej)=>{
+      const r=new FileReader();
+      r.onload=()=>{ const s=String(r.result||''); const i=s.indexOf(','); const mime=(s.slice(0,i).match(/^data:([^;]+);base64/i)||[])[1]||file.type||'application/octet-stream'; res({mime,base64:s.slice(i+1)}); };
+      r.onerror=()=>rej(r.error||new Error('read fail'));
+      r.readAsDataURL(file);
+    });
+  }
 
-  // toolbar state
+  // toolbar state + color/hex sync for selected text
   function updateToolbarState(){
     const t=selectedItem?.querySelector('.scrap-text'); const onText=!!t; const onImg=!!selectedItem?.querySelector('.scrap-img');
-    fontSizeInput.disabled=!onText; fontColorInput.disabled=!onText; fitToggleBtn.disabled=!onImg; lockToggleBtn.disabled=!onImg;
-    if(onText){ const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr; fontColorInput.value=rgbToHex(getComputedStyle(t).color); }
-    if(onImg){ const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1'; fitToggleBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); lockToggleBtn.textContent='Lock: '+(lock?'On':'Off'); }
-    else { fitToggleBtn.textContent='Fit: Contain'; lockToggleBtn.textContent='Lock: On'; }
+    fontSizeInput.disabled=!onText; fontColorInput.disabled=!onText; fontHexInput.disabled=!onText; // enable HEX when text selected
+    if(onText){
+      const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22);
+      fontSizeInput.value=curr;
+      const hex=rgbToHex(getComputedStyle(t).color);
+      fontColorInput.value=hex; fontHexInput.value=hex;
+    }else{
+      fontHexInput.value=''; // clear when nothing selected
+    }
+    fitToggleBtn.disabled=!onImg; lockToggleBtn.disabled=!onImg;
+    if(onImg){
+      const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1';
+      fitToggleBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); lockToggleBtn.textContent='Lock: '+(lock?'On':'Off');
+    }else{
+      fitToggleBtn.textContent='Fit: Contain'; lockToggleBtn.textContent='Lock: On';
+    }
   }
+
   fontSizeInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return; v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto'; const b=t.closest('.scrap-item'); if(b) b.style.height=Math.max(40,t.scrollHeight)+'px'; });
-  fontColorInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; t.style.color=fontColorInput.value; });
+
+  // swatch -> hex + apply
+  fontColorInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; fontHexInput.value=fontColorInput.value; t.style.color=fontColorInput.value; });
+  // hex -> swatch + apply
+  fontHexInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; const v=normalizeHex(fontHexInput.value); if(v){ fontColorInput.value=v; t.style.color=v; } });
+
   fitToggleBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; const cur=selectedItem.dataset.fit||'contain'; selectedItem.dataset.fit=(cur==='cover')?'contain':'cover'; updateToolbarState(); });
   lockToggleBtn.addEventListener('click',()=>{ if(!selectedItem?.querySelector('.scrap-img')) return; selectedItem.dataset.lock=(selectedItem.dataset.lock==='1')?'0':'1'; updateToolbarState(); });
 
@@ -385,7 +443,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
   clearPageBtn.onclick=()=>{ const c=pages[current].querySelector('.page-canvas'); if(current===0 || current===pages.length-1){ alert('Covers are locked.'); return; } if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
-  // ===== CLOUD: save only CURRENT PAGE (doc_id+page_no) =====
+  // ===== CLOUD: save only CURRENT PAGE =====
   function gatherPageItems(pgIdx){
     const c=pages[pgIdx].querySelector('.page-canvas'); const out={texts:[], photos:[]};
     [...c.querySelectorAll('.scrap-item')].forEach(el=>{
@@ -407,10 +465,8 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 
   async function saveCurrentPage(){
     const p=current+1;
-    // delete existing rows for this page
     await fetch(`${SUPABASE_URL}/rest/v1/scrap_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&page_no=eq.${p}`,{method:'DELETE',headers:apiHeaders});
     await fetch(`${SUPABASE_URL}/rest/v1/scrap_photo?doc_id=eq.${encodeURIComponent(STATE_ID)}&page_no=eq.${p}`,{method:'DELETE',headers:apiHeaders});
-    // insert fresh rows
     const snap=gatherPageItems(current);
     if(snap.texts.length){
       await fetch(`${SUPABASE_URL}/rest/v1/scrap_text`,{method:'POST',headers:{...apiHeaders,Prefer:'return=minimal'},body:JSON.stringify(snap.texts)});
@@ -426,15 +482,14 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     catch(e){ console.warn(e); saveBtn.textContent='Retry Save'; saveBtn.disabled=false; }
   });
 
-  // ===== LOAD ALL PAGES ON START =====
+  // ===== LOAD ALL PAGES =====
   async function cloudLoadAll(){
     const [tRes,pRes]=await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/scrap_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders}),
       fetch(`${SUPABASE_URL}/rest/v1/scrap_photo?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders})
     ]);
-    if(!tRes.ok || !pRes.ok) return;
+    if(!tRes.ok || !pRes.ok) { setClasses(); return; }
     const texts=await tRes.json(); const photos=await pRes.json();
-    // group by page_no
     const byPage=new Map(); for(let i=1;i<=N_PAGES;i++) byPage.set(i,{texts:[],photos:[]});
     texts.forEach(r=>byPage.get(r.page_no)?.texts.push(r));
     photos.forEach(r=>byPage.get(r.page_no)?.photos.push(r));
@@ -467,7 +522,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     setClasses();
   }
 
-  // ===== YouTube bg music (unchanged) =====
+  // ===== YouTube bg music (optional) =====
   const YT_VIDEO_ID='XNGtzfRdTtU'; const musicBtn=document.getElementById('musicPlay'); const musicVol=document.getElementById('musicVol');
   let ytPlayer=null, ytReady=false; const ytScript=document.createElement('script'); ytScript.src="https://www.youtube.com/iframe_api"; document.head.appendChild(ytScript);
   window.onYouTubeIframeAPIReady=function(){ ytPlayer=new YT.Player('yt-holder',{height:'0',width:'0',videoId:YT_VIDEO_ID,
