@@ -96,14 +96,33 @@
   .icon:hover{ background:#0f1f1b; border-color:#2a3d36 }
   .icon.del:hover{ background:#2a1a1a; border-color:#5a2a2a }
 
-  /* done style: cross the whole row with purple line + soften */
-  .row.done{ filter:brightness(.96) saturate(.92); opacity:.9 }
-  .row.done::after{
-    content:""; position:absolute; left:16px; right:16px; top:50%;
-    height:2px; background:linear-gradient(90deg, transparent, rgba(106,76,255,.9), transparent);
-    transform:translateY(-50%);
-    pointer-events:none;
-  }
+  /* done state: keep the slight dim */
+.row.done{
+  filter: brightness(.96) saturate(.92);
+  opacity: .95;
+}
+
+/* thick, bright strike with glow across the whole row */
+.row.done::after{
+  content:"";
+  position:absolute;
+  left:12px; right:12px; top:50%;
+  height:6px;                     /* thicker line */
+  border-radius:6px;
+  transform:translateY(-50%);
+  background:linear-gradient(
+    90deg,
+    transparent,
+    var(--strike),
+    var(--strike),
+    transparent
+  );
+  /* glow */
+  box-shadow:
+    0 0 20px rgba(255,217,15,.55),   /* tweak if you switch to red */
+    0 0 2px  rgba(255,217,15,.95);
+  pointer-events:none;
+}
 
   /* modal (shared theme) */
   .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(2px); display:none; place-items:center; z-index:50 }
