@@ -242,13 +242,27 @@ async function fetchAll(){
   if (error){ console.error(error); toast('load failed'); return; }
   render(data || []);
 }
+
+/* allow saving with partial fields: require at least one field */
 async function addNew(){
-  const date=$('#in-date').value, type=$('#in-type').value.trim(), notes=$('#in-notes').value.trim();
-  if(!date || !type){ toast('need date + type'); return; }
-  const { error } = await sb.from(TABLE).insert({ date, type, notes });
+  const dateVal = $('#in-date').value || null;
+  const typeVal = $('#in-type').value.trim() || null;
+  const notesVal = $('#in-notes').value.trim() || null;
+
+  if (!dateVal && !typeVal && !notesVal){
+    toast('enter at least one: date, type, or notes'); 
+    return;
+  }
+
+  const payload = { date: dateVal, type: typeVal, notes: notesVal }; // nulls are fine
+  const { error } = await sb.from(TABLE).insert(payload);
   if (error){ console.error(error); toast('save failed'); return; }
+
+  // clear type/notes; keep date as-is so it’s easy to add multiple
+  $('#in-type').value='';
   $('#in-notes').value='';
 }
+
 async function updateRow(id, fields){
   const { error } = await sb.from(TABLE).update(fields).eq('id', id);
   if (error){ console.error(error); toast('save failed'); }
@@ -273,11 +287,11 @@ function rowEl(r){
     </div>
     <div class="cell type">
       <div class="label">Type:</div>
-      <input type="text" value="${esc(r.type||'')}" disabled>
+      <input type="text" value="${esc(r.type??'')}" disabled>
     </div>
     <div class="cell notes">
       <div class="label">Notes:</div>
-      <textarea disabled>${esc(r.notes||'')}</textarea>
+      <textarea disabled>${esc(r.notes??'')}</textarea>
     </div>
     <div class="tools">
       <button class="icon edit" title="Edit">✍🏻</button>
@@ -326,8 +340,15 @@ document.addEventListener('keydown', e=>{ if(e.key==='Escape'&&overlayEdit.class
 mSave.addEventListener('click', doSaveEdit);
 async function doSaveEdit(){
   if(!editingId) return;
-  const payload={ date:mDate.value, type:mType.value.trim(), notes:mNotes.value.trim() };
-  if(!payload.date || !payload.type){ toast('need date + type'); return; }
+  const payload={
+    date: mDate.value || null,
+    type: mType.value.trim() || null,
+    notes: mNotes.value.trim() || null
+  };
+  // allow fully blank edits too; if you want to prevent entirely blank rows, uncomment next 3 lines:
+  // if(!payload.date && !payload.type && !payload.notes){
+  //   toast('enter at least one: date, type, or notes'); return;
+  // }
   await updateRow(editingId, payload); closeEditModal();
 }
 
