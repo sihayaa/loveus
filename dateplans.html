@@ -17,9 +17,9 @@
     --btn-purple-end:#3a2bd9;
 
     /* strike (solid, non-transparent) */
-    --strike:#FFD90F;          /* change to #FF3B30 for red */
-    --strike-rgb:255,217,15;   /* if you change strike, update this RGB too */
-    --strike-gap-left: 96px;   /* << start the strike after the checkbox area */
+    --strike:#FFD90F;
+    --strike-rgb:255,217,15;
+    --strike-gap-left: 96px;
 
     --danger:#e65353;
     --radius:16px; --maxw:1100px;
@@ -40,7 +40,6 @@
     display:grid; grid-template-rows:auto auto 1fr; overflow:hidden;
   }
 
-  /* centered title with more purple */
   .topbar{
     display:flex; justify-content:center; align-items:center;
     padding:14px 18px;
@@ -49,7 +48,6 @@
   }
   .topbar h1{ margin:0; font-size:22px; font-weight:800; letter-spacing:.3px }
 
-  /* add form */
   .controls{
     display:flex; flex-wrap:wrap; gap:10px; padding:12px 16px;
     background:#0d1815; border-bottom:1px solid var(--line);
@@ -72,19 +70,18 @@
 
   .listwrap{ overflow:auto; padding:0 12px 14px }
 
-  /* simple 3-col grid; keeps alignment tight */
   .hdr, .row{ display:grid; grid-template-columns:220px 320px 1fr; gap:0 }
   .hdr{ position:sticky; top:0; background:#0d1815; border-bottom:1px solid var(--line); z-index:3 }
   .hdr div{ padding:12px 14px; color:#c7bfff; font-weight:800; text-transform:lowercase }
   .hdr div+div{ border-left:1px solid #2b2f44 }
 
-  /* row shell with green+purple vibe */
   .row{
     position:relative; margin-top:12px; padding:14px; border-radius:14px;
     background:linear-gradient(90deg, rgba(106,76,255,.10), rgba(12,255,107,.07)), #15382f;
     border:1px solid #2b463f;
     box-shadow: inset 0 0 0 2px rgba(12,255,107,.20);
     transition: transform .12s, box-shadow .15s;
+    cursor:pointer;
   }
   .row:hover{
     transform:translateY(-1px);
@@ -98,11 +95,9 @@
   .cell input[type="text"], .cell input[type="date"], .cell textarea{ width:100% }
   .notes textarea{ min-height:56px }
 
-  /* date column: hard-left align */
   .date .inline{ display:flex; align-items:center; gap:8px; justify-content:flex-start; width:max-content }
   .date input[type="date"]{ width:170px }
 
-  /* checklist checkbox */
   .chk{
     appearance:none; width:18px; height:18px; border-radius:6px;
     border:2px solid #2b463f; background:#0f1f1b; cursor:pointer; position:relative; outline:none;
@@ -112,7 +107,6 @@
     content:"✔"; position:absolute; inset:0; display:grid; place-items:center; font-size:12px; color:var(--accent);
   }
 
-  /* tiny top-right row tools */
   .tools{ position:absolute; right:8px; top:6px; display:flex; gap:6px; opacity:.18; transition:opacity .15s }
   .row:hover .tools{ opacity:.8 }
   .icon{ width:18px; height:18px; display:inline-grid; place-items:center; border-radius:6px; padding:0;
@@ -120,24 +114,22 @@
   .icon:hover{ background:#0f1f1b; border-color:#2a3d36 }
   .icon.del:hover{ background:#2a1a1a; border-color:#5a2a2a }
 
-  /* DONE: solid strike that skips the checkbox area */
   .row.done{ filter:none; opacity:1 }
   .row.done::after{
     content:"";
     position:absolute;
-    left:var(--strike-gap-left);  /* <-- starts after checkbox + spacing */
+    left:var(--strike-gap-left);
     right:12px;
     top:50%;
     transform:translateY(-50%);
     height:8px; border-radius:8px;
-    background:var(--strike);                 /* solid line */
+    background:var(--strike);
     box-shadow:
       0 0 18px rgba(var(--strike-rgb), .55),
-      0 0 2px  rgba(var(--strike-rgb), .95);  /* matching glow */
+      0 0 2px  rgba(var(--strike-rgb), .95);
     pointer-events:none;
   }
 
-  /* modal theme (edit + delete) */
   .overlay{ position:fixed; inset:0; background:rgba(0,0,0,.55); backdrop-filter:blur(2px);
             display:none; place-items:center; z-index:50 }
   .overlay.show{ display:grid }
@@ -161,11 +153,32 @@
   .btn.ghost{ background:transparent; border:1px solid #365e55; color:#dff6ee }
   .btn.warn{ border-color:#7c2424; background:linear-gradient(90deg,#612020,#a43333) }
 
+  /* view modal specifics */
+  .modal.view .content{ display:grid; gap:12px }
+  .modal.view .meta{ display:grid; grid-template-columns: 1fr 1fr; gap:10px }
+  .modal.view .meta .item{ background:#0f1f1b; border:1px solid #2b3e37; border-radius:12px; padding:10px 12px }
+  .modal.view .meta .label{ color:#c7bfff; font-size:12px; margin:0 0 4px }
+  .modal.view .meta .val{ font-weight:800; color:#eaf7f1; word-break:break-word }
+  .modal.view .notesbox{ background:#0f1f1b; border:1px solid #2b3e37; border-radius:12px; padding:12px }
+  .modal.view .notesbox .label{ color:#c7bfff; font-size:12px; margin:0 0 6px }
+  .modal.view .notesbox .text{ white-space:pre-wrap; line-height:1.6; font-size:15px; color:#eaf7f1 }
+
+  /* top-right buttons inside modals (view modal uses these) */
+  .modal .topbtn{
+    position:absolute; top:12px; opacity:.85;
+    background:transparent; border:1px solid transparent; color:#e7e2ff;
+    border-radius:8px; padding:2px 8px; cursor:pointer;
+  }
+  .modal .topbtn:hover{ opacity:1; background:#0f1f1b; border-color:#2a3d36 }
+  .modal .topbtn.pencil{ right:44px }
+  .modal .topbtn.x{ right:12px }
+
   @media (max-width:760px){
     .hdr,.row{ grid-template-columns:1fr }
     .hdr div+div,.row > div+div{ border-left:none }
     .modal .grid{ grid-template-columns:1fr }
-    :root{ --strike-gap-left: 72px; } /* smaller gap on narrow screens */
+    .modal.view .meta{ grid-template-columns:1fr }
+    :root{ --strike-gap-left: 72px; }
   }
 </style>
 </head>
@@ -218,6 +231,38 @@
     </div>
   </div>
 
+  <!-- view modal -->
+  <div class="overlay" id="overlay-view">
+    <div class="modal view" role="dialog" aria-modal="true" aria-labelledby="viewTitle">
+      <div class="bar"></div>
+      <!-- top-right buttons -->
+      <button class="topbtn pencil" id="v-edit-top" aria-label="Edit">✍🏻</button>
+      <button class="topbtn x" id="v-x" aria-label="Close">✕</button>
+
+      <div class="head">📖 <h2 id="viewTitle" style="margin:0">Date Plan</h2></div>
+      <div class="content">
+        <div class="meta">
+          <div class="item">
+            <div class="label">Date</div>
+            <div class="val" id="v-date">—</div>
+          </div>
+          <div class="item">
+            <div class="label">Type</div>
+            <div class="val" id="v-type">—</div>
+          </div>
+        </div>
+        <div class="notesbox">
+          <div class="label">Notes</div>
+          <div class="text" id="v-notes">—</div>
+        </div>
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="v-close">Close</button>
+        <button class="btn" id="v-edit">✍🏻 Edit</button>
+      </div>
+    </div>
+  </div>
+
 <script>
 /* ---------- utils ---------- */
 const $ = s => document.querySelector(s);
@@ -243,7 +288,6 @@ async function fetchAll(){
   render(data || []);
 }
 
-/* allow saving with partial fields: require at least one field */
 async function addNew(){
   const dateVal = $('#in-date').value || null;
   const typeVal = $('#in-type').value.trim() || null;
@@ -254,11 +298,10 @@ async function addNew(){
     return;
   }
 
-  const payload = { date: dateVal, type: typeVal, notes: notesVal }; // nulls are fine
+  const payload = { date: dateVal, type: typeVal, notes: notesVal };
   const { error } = await sb.from(TABLE).insert(payload);
   if (error){ console.error(error); toast('save failed'); return; }
 
-  // clear type/notes; keep date as-is so it’s easy to add multiple
   $('#in-type').value='';
   $('#in-notes').value='';
 }
@@ -299,6 +342,13 @@ function rowEl(r){
     </div>
   `;
 
+  // open view modal when clicking the row (ignore tools/checkbox)
+  wrap.addEventListener('click', (e)=>{
+    if (e.target.closest('.tools')) return;
+    if (e.target.classList.contains('chk')) return;
+    openViewModal(r);
+  });
+
   // checkbox → done strike
   wrap.querySelector('.chk').addEventListener('change', async e=>{
     const done = e.target.checked;
@@ -307,22 +357,23 @@ function rowEl(r){
     wrap.classList.toggle('done', done);
   });
 
-  wrap.querySelector('.del').addEventListener('click', ()=> openDelModal(r));
-  wrap.querySelector('.edit').addEventListener('click', ()=> openEditModal(r));
+  wrap.querySelector('.del').addEventListener('click', (e)=>{ e.stopPropagation(); openDelModal(r); });
+  wrap.querySelector('.edit').addEventListener('click', (e)=>{ e.stopPropagation(); openEditModal(r); });
   return wrap;
 }
 function render(list){ rowsEl.innerHTML=''; list.forEach(r=>rowsEl.appendChild(rowEl(r))); }
 
-/* ---------- top controls: keyboard ---------- */
+/* ---------- top controls ---------- */
 $('#in-date').value = localYYYYMMDD();
 const inDate=$('#in-date'), inType=$('#in-type'), inNotes=$('#in-notes'), btnSave=$('#btn-save');
 [inDate,inType,inNotes,btnSave].forEach(el => el.addEventListener('keydown', e=>{
   if(e.key!=='Enter') return;
-  if(el===inNotes && e.shiftKey) return; // newline
+  if(el===inNotes && e.shiftKey) return;
   e.preventDefault(); addNew();
 }));
 btnSave.addEventListener('click', addNew);
 
+/* ---------- edit modal ---------- */
 const overlayEdit=$('#overlay-edit');
 const mDate=$('#m-date'), mType=$('#m-type'), mNotes=$('#m-notes'), mCancel=$('#m-cancel'), mSave=$('#m-save');
 let editingId=null;
@@ -345,13 +396,10 @@ async function doSaveEdit(){
     type: mType.value.trim() || null,
     notes: mNotes.value.trim() || null
   };
-  // allow fully blank edits too; if you want to prevent entirely blank rows, uncomment next 3 lines:
-  // if(!payload.date && !payload.type && !payload.notes){
-  //   toast('enter at least one: date, type, or notes'); return;
-  // }
   await updateRow(editingId, payload); closeEditModal();
 }
 
+/* ---------- delete modal ---------- */
 const overlayDel=$('#overlay-del');
 const dCancel=$('#d-cancel'), dDelete=$('#d-delete'), delText=$('#delText');
 let deletingId=null;
@@ -369,6 +417,37 @@ dDelete.addEventListener('click', async ()=>{
   await deleteRow(deletingId); closeDelModal();
 });
 
+/* ---------- view modal ---------- */
+const overlayView = $('#overlay-view');
+const vDate = $('#v-date'), vType = $('#v-type'), vNotes = $('#v-notes');
+const vClose = $('#v-close'), vEdit = $('#v-edit');
+const vX = document.querySelector('#v-x');
+const vEditTop = document.querySelector('#v-edit-top');
+let viewingRow = null;
+
+function openViewModal(row){
+  viewingRow = row;
+  vDate.textContent = row.date || '—';
+  vType.textContent = row.type || '—';
+  vNotes.textContent = row.notes || '—';
+  overlayView.classList.add('show');
+}
+function closeViewModal(){
+  overlayView.classList.remove('show');
+  viewingRow = null;
+}
+vClose.addEventListener('click', closeViewModal);
+vX.addEventListener('click', closeViewModal);
+vEdit.addEventListener('click', ()=>{
+  if(viewingRow){ const r=viewingRow; closeViewModal(); openEditModal(r); }
+});
+vEditTop.addEventListener('click', ()=>{
+  if(viewingRow){ const r=viewingRow; closeViewModal(); openEditModal(r); }
+});
+overlayView.addEventListener('click', e=>{ if(e.target===overlayView) closeViewModal(); });
+document.addEventListener('keydown', e=>{ if(e.key==='Escape'&&overlayView.classList.contains('show')) closeViewModal(); });
+
+/* ---------- realtime + initial load ---------- */
 sb.channel('public:'+TABLE)
   .on('postgres_changes', { event:'*', schema:'public', table:TABLE }, fetchAll)
   .subscribe();
