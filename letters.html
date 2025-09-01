@@ -1,11 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Love Letters</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
+    :root{
+      --page-pad-top: 0px; /* can be nudged for phones via media queries */
+    }
+
+    *{ box-sizing: border-box }
+
     body {
       margin: 0;
       padding: 0;
@@ -17,9 +24,11 @@
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
+      padding-top: var(--page-pad-top);
     }
+
     a.back-button {
-      position: absolute;
+      position: fixed;             /* fixed so it stays put */
       top: 20px;
       left: 20px;
       background: #d1b3e0;
@@ -28,7 +37,9 @@
       color: #4b2354;
       border-radius: 10px;
       font-size: 1.1em;
+      z-index: 20;
     }
+
     .center-content {
       display: flex;
       flex-direction: column;
@@ -37,11 +48,14 @@
       margin-top: 20px;
       width: 100%;
       padding: 0 20px;
+      max-width: 1100px;
     }
+
     h1 {
       font-size: 3.4em;
       margin-bottom: 10px;
     }
+
     .forever {
       font-family: 'Great Vibes', cursive;
       font-size: 2em;
@@ -49,6 +63,7 @@
       animation: glowPulse 3s ease-in-out infinite;
       margin-bottom: 20px;
     }
+
     @keyframes glowPulse {
       0%, 100% {
         text-shadow: 0 0 6px #ffb3dd, 0 0 12px #ffb3dd, 0 0 18px #ffb3dd;
@@ -59,6 +74,7 @@
         transform: scale(1.05);
       }
     }
+
     .letter-form {
       display: flex;
       flex-direction: column;
@@ -66,6 +82,7 @@
       width: 100%;
       max-width: 600px;
     }
+
     .letter-form input,
     .letter-form textarea {
       width: 100%;
@@ -76,15 +93,18 @@
       font-size: 1.2em;
       background: #fffafc;
     }
+
     .letter-form textarea {
       height: 150px;
       resize: none;
     }
+
     .form-row {
       display: flex;
       justify-content: center;
       margin-top: 10px;
     }
+
     button {
       font-family: 'Patrick Hand', cursive;
       font-size: 1.2em;
@@ -95,6 +115,7 @@
       padding: 8px 20px;
       cursor: pointer;
     }
+
     .letters {
       margin-top: 40px;
       display: grid;
@@ -104,6 +125,7 @@
       width: 100%;
       max-width: 1100px;
     }
+
     .letter {
       background: #fff;
       border-radius: 10px;
@@ -115,19 +137,21 @@
       position: relative;
       cursor: pointer;
     }
+
     .letter-header {
       font-weight: bold;
       margin-bottom: 10px;
     }
+
     .letter-footer {
       margin-top: 10px;
       font-style: italic;
       text-align: right;
     }
+
     .zoom-overlay {
       position: fixed;
-      top: 0;
-      left: 0;
+      inset: 0;
       width: 100vw;
       height: 100vh;
       background: rgba(0,0,0,0.5);
@@ -135,23 +159,29 @@
       align-items: center;
       justify-content: center;
       z-index: 1000;
+      padding: 16px; /* breathing room on tiny screens */
     }
+
     .zoomed-letter {
       background: #fff;
-      padding: 30px;
+      padding: 30px 30px 60px; /* extra bottom so button doesn’t overlap text */
       border-radius: 14px;
       max-width: 85vw;
       width: 600px;
       font-size: 1.2em;
       box-shadow: 0 12px 30px rgba(0,0,0,0.3);
       position: relative;
+      max-height: 85vh;      /* scroll inside modal on phones */
+      overflow: auto;
     }
+
     .zoomed-letter .date {
       text-align: right;
       color: #777;
       font-size: 0.9em;
       margin-top: 20px;
     }
+
     .edit-save-button {
       position: absolute;
       bottom: 20px;
@@ -166,6 +196,7 @@
       cursor: pointer;
       opacity: 0.9;
     }
+
     .falling-heart {
       position: fixed;
       top: -40px;
@@ -175,36 +206,103 @@
       pointer-events: none;
       z-index: 999;
     }
+
     @keyframes fallHeart {
       0% { transform: translateY(0) rotate(0deg); opacity: 1; }
       100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+    }
+
+    /* ---------- Responsive polish (keeps desktop intact) ---------- */
+
+    /* laptops/tablets */
+    @media (max-width: 1024px){
+      .letters{ gap: 16px; padding: 0 16px 32px }
+      .zoomed-letter{ max-width: 92vw }
+    }
+
+    /* phones */
+    @media (max-width: 768px){
+      /* iOS Safari perf: avoid fixed backgrounds on mobile */
+      body{
+        background-attachment: scroll;
+        background-size: cover;
+        --page-pad-top: 0px;
+      }
+      a.back-button{ padding: 8px 12px; font-size: 1em; }
+
+      .center-content{ padding: 0 16px; }
+      h1{ font-size: 2.4em; }
+      .forever{ font-size: 1.8em; }
+
+      .letters{
+        grid-template-columns: 1fr; /* single column */
+        gap: 14px;
+        padding: 0 16px 28px;
+      }
+      .letter{ font-size: 1.05em; padding: 16px; }
+
+      .zoomed-letter{
+        width: 92vw;
+        max-height: 80vh;
+        padding: 22px 18px 56px;
+      }
+      button{ font-size: 1.05em; padding: 8px 16px; }
+    }
+
+    @media (max-width: 420px){
+      h1{ font-size: 2em; }
+      .forever{ font-size: 1.6em }
+      .letter-form input, .letter-form textarea{ font-size: 1.05em }
+    }
+
+    /* Respect iPhone safe areas */
+    @supports (padding: max(0px)){
+      a.back-button{
+        top: max(20px, env(safe-area-inset-top));
+        left: max(20px, env(safe-area-inset-left));
+      }
+      .zoom-overlay{ padding: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)) }
+    }
+
+    /* Motion-friendly option */
+    @media (prefers-reduced-motion: reduce){
+      .forever{ animation: none }
     }
   </style>
 </head>
 <body>
   <a href="index.html" class="back-button">← Back to Home</a>
+
   <div class="center-content">
     <h1>Love Letters</h1>
     <p class="forever">❤️Mike & Tricia Forever❤️</p>
     <p style="font-size: 1.2em;">💌 Express your love</p>
     <p style="font-size: 1.1em; color: #4b2354;">📖 You can come back anytime and read something sweet.</p>
+
     <div class="letter-form">
       <input type="text" id="toInput" placeholder="To:">
-      
+
       <div style="position: relative;">
-  <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
-  <button id="colorBtn" title="Pick a text color" style="position: absolute; top: 10px; right: 10px; font-size: 18px; border: none; background: transparent; cursor: pointer;">🎨</button>
-  <input type="color" id="colorPicker" value="#4b2354" style="display: none;" />
-</div>
+        <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
+        <button id="colorBtn" title="Pick a text color"
+                style="position: absolute; top: 10px; right: 10px; font-size: 18px; border: none; background: transparent; cursor: pointer;">🎨</button>
+        <input type="color" id="colorPicker" value="#4b2354" style="display: none;" />
+      </div>
+
       <input type="text" id="fromInput" placeholder="Love:">
       <div class="form-row">
         <button onclick="sealLetter()">Seal the Letter 💌</button>
       </div>
     </div>
   </div>
+
   <div class="letters" id="letters"></div>
+
   <script>
-    const client = supabase.createClient('https://tmjozxcjylcxgemffnoc.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI');
+    const client = supabase.createClient(
+      'https://tmjozxcjylcxgemffnoc.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
+    );
 
     function showerHearts() {
       const totalHearts = 30;
@@ -227,7 +325,7 @@
       const color = document.getElementById('colorPicker').value;
       if (!content) return;
       const { error } = await client.from('letters').insert({ to, content, from, color });
-      if (error) return alert('Error saving letter.');
+      if (error) { alert('Error saving letter.'); return; }
       document.getElementById('toInput').value = '';
       document.getElementById('letterInput').value = '';
       document.getElementById('fromInput').value = '';
@@ -245,15 +343,19 @@
         const div = document.createElement('div');
         div.className = 'letter';
         div.onclick = () => showZoomedLetter(letter);
+
         const header = document.createElement('div');
         header.className = 'letter-header';
         header.textContent = letter.to ? `To: ${letter.to}` : '';
+
         const body = document.createElement('div');
         body.textContent = letter.content;
         body.style.color = letter.color || '#4b2354';
+
         const footer = document.createElement('div');
         footer.className = 'letter-footer';
         footer.textContent = letter.from ? `Love, ${letter.from}` : '';
+
         const deleteBtn = document.createElement('span');
         deleteBtn.textContent = '❌';
         deleteBtn.style.position = 'absolute';
@@ -271,6 +373,7 @@
             else alert('Failed to delete letter.');
           }
         };
+
         div.appendChild(deleteBtn);
         div.appendChild(header);
         div.appendChild(body);
@@ -320,6 +423,10 @@
       zoomBox.appendChild(editBtn);
       overlay.appendChild(zoomBox);
       document.body.appendChild(overlay);
+
+      // allow ESC to close
+      const escClose = (ev)=>{ if(ev.key==='Escape'){ document.body.removeChild(overlay); document.removeEventListener('keydown', escClose); }};
+      document.addEventListener('keydown', escClose);
     }
 
     function switchToEditMode(letter, overlay) {
@@ -356,10 +463,10 @@
     }
 
     document.getElementById('colorBtn').addEventListener('click', () => {
-  document.getElementById('colorPicker').click();
-});
+      document.getElementById('colorPicker').click();
+    });
 
-document.addEventListener('DOMContentLoaded', loadLetters);
+    document.addEventListener('DOMContentLoaded', loadLetters);
   </script>
 </body>
 </html>
