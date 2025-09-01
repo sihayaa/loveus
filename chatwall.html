@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <title>Message Wall</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="theme-color" content="#ffffff" />
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet" />
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
   <style>
     :root{
-      --safe-top: env(safe-area-inset-top, 0px);
       --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --kb: 0px; /* keyboard overlap (iOS visualViewport) */
     }
     *{ box-sizing: border-box }
 
-    /* ---- ORIGINAL DESKTOP LOOK (unchanged) ---- */
     body {
       font-family: 'Patrick Hand', cursive;
       background: white;
@@ -24,7 +23,9 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      /* desktop look preserved */
     }
+
     h1 {
       color: #9a1047;
       font-family: 'Freestyle Script', cursive;
@@ -32,6 +33,7 @@
       margin-bottom: 20px;
       text-align: center;
     }
+
     .chat-box {
       width: 100%;
       max-width: 700px;
@@ -42,9 +44,14 @@
       min-height: 200px;
       margin-bottom: 20px;
       overflow-y: auto;
-      max-height: 400px;
+      max-height: 400px;           /* original desktop cap */
       scrollbar-width: none;
       -ms-overflow-style: none;
+      -webkit-overflow-scrolling: touch; /* smoother on iOS */
+      background: transparent;     /* original look */
+      border-radius: 0;            /* original look */
+      backdrop-filter: none;       /* original look */
+      overscroll-behavior: contain;
     }
     .chat-box::-webkit-scrollbar { display: none; }
 
@@ -54,15 +61,17 @@
       padding: 10px 16px;
       max-width: 80%;
       word-wrap: break-word;
-      border-radius: 10px;
       overflow-wrap: anywhere;
+      border-radius: 10px;
     }
+
     .boy {
       color: #6e2fb9;
       text-align: left;
       align-self: flex-start;
       background-color: #f3e7ff;
     }
+
     .girl {
       color: #28a745;
       text-align: right;
@@ -82,7 +91,9 @@
       cursor: pointer;
       padding: 0;
       line-height: 1;
-      display: none;
+      display: none; /* desktop behavior */
+      -webkit-tap-highlight-color: transparent;
+      border-radius: 8px;
     }
     .chat-message:hover .delete-btn { display: block; }
 
@@ -93,33 +104,47 @@
     }
 
     .controls {
+      /* original desktop: not sticky */
+      width: 100%;
+      max-width: 700px;
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 10px;
-      width: 100%;
-      max-width: 700px;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      padding: 0;
+      border-radius: 0;
     }
+
     input {
-      padding: 10px;
-      width: 300px;
+      padding: 12px 14px;          /* ≥16px prevents iOS zoom */
+      width: 300px;                /* original desktop width */
       border: none;
       border-radius: 8px;
       font-family: 'Patrick Hand', cursive;
+      font-size: 16px;
+      outline: none;
+      background: #fff;
+      border: 1px solid rgba(0,0,0,0.12);
     }
+
     .button-group {
       display: flex;
       gap: 10px;
     }
+
     button {
-      padding: 10px 20px;
+      padding: 12px 16px;
       background-color: #b065d9;
       color: white;
       border: none;
       border-radius: 10px;
       cursor: pointer;
-      font-family: 'Patrick+Hand', cursive;
-      transition: background-color 0.2s ease;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 16px;
+      transition: transform .08s ease, background-color 0.2s ease;
       -webkit-tap-highlight-color: transparent;
     }
     button:hover { background-color: #9a4bcc; }
@@ -150,7 +175,7 @@
       100% { transform: translateY(100vh) rotate(360deg) scale(0.8); opacity: 0; }
     }
     @media (prefers-reduced-motion: reduce){
-      .falling-heart{ animation: fallHeart 0.01s linear forwards; }
+      .falling-heart { animation: fallHeart 0.01s linear forwards; }
     }
 
     body::before {
@@ -163,56 +188,88 @@
       opacity: 0.8;
       z-index: -1;
     }
+    /* iOS: avoid background-attachment:fixed jank */
+    @supports (-webkit-touch-callout: none){
+      body::before{ background-attachment: scroll; }
+    }
 
-    /* ---- iPHONE 13 / SMALL SCREENS (≤ 640px) ---- */
+    /* ---------- Mobile (iPhone 13) enhancements only ---------- */
     @media (max-width: 640px){
-      /* respect notch + keyboard; keep desktop look otherwise */
       body{
         padding: 16px;
-        padding-top: calc(16px + var(--safe-top));
-        padding-bottom: calc(16px + 88px + var(--safe-bottom)); /* room for sticky composer */
-        min-height: 100dvh; /* dynamic vh plays nice with Safari */
+        padding-bottom: calc(16px + 88px + var(--safe-bottom) + var(--kb));
+        min-height: 100svh; /* iOS 15+ */
       }
-      h1{ font-size: 30px; margin-top: 32px }
-      .back-button{ top: calc(8px + var(--safe-top)); left: 12px; padding: 8px 12px }
+      h1{ font-size: 30px; margin-top: 56px }
+      .back-button{ top: 12px; left: 12px; padding: 8px 12px }
 
       .chat-box{
         padding: 14px;
-        max-height: 55svh;             /* keyboard-friendly on iOS */
+        max-height: 55svh;         /* leaves room for sticky controls */
         background: rgba(255,255,255,0.7);
         border-radius: 14px;
         backdrop-filter: blur(3px);
-        overscroll-behavior: contain;
       }
 
       .controls{
         position: sticky;
-        bottom: 0;                     /* sticks above the home indicator */
+        bottom: calc(var(--safe-bottom) + var(--kb));
         background: rgba(255,255,255,.9);
-        backdrop-filter: blur(8px);
         border: 1px solid rgba(0,0,0,0.06);
         border-radius: 14px;
         padding: 12px;
         box-shadow: 0 6px 22px rgba(0,0,0,.08);
         width: 100%;
+        max-width: 700px;
       }
+
       input{
         width: 100%;
         max-width: none;
-        font-size: 17px;
-        border: 1px solid rgba(0,0,0,.12);
       }
+
       .button-group{
         display: grid;
-        grid-template-columns: 1fr;    /* stack buttons on phone */
+        grid-template-columns: 1fr; /* stacked by default */
         gap: 10px;
         width: 100%;
       }
-      button{ width: 100%; font-size: 17px }
-
-      /* always show delete on touch (no hover) */
-      .chat-message .delete-btn{ display: block; font-size: 18px; padding: 4px }
+      button, input{ width: 100%; }
     }
+
+    /* ----- Hide delete button on mobile/touch ----- */
+    @media (hover: none), (pointer: coarse), (max-width: 640px) {
+      .chat-message .delete-btn,
+      .chat-message:hover .delete-btn {
+        display: none !important;
+      }
+    }
+
+    /* ----- Make mobile buttons/toggle smaller ----- */
+    @media (max-width: 640px){
+      .controls{ padding: 8px 10px; border-radius: 12px; }
+      .button-group{ gap: 6px; }
+      .button-group button{
+        padding: 8px 10px;      /* smaller height */
+        font-size: 15px;
+        border-radius: 12px;
+        min-height: 40px;       /* still tappable */
+      }
+      #input{
+        padding: 10px 12px;
+        font-size: 16px;        /* keep ≥16px to avoid zoom */
+      }
+      .toggle-switch{ width: 40px; height: 22px; }
+      .toggle-switch .slider:before{
+        width: 16px; height: 16px; left: 3px; bottom: 3px;
+      }
+      .toggle-switch input:checked + .slider:before{
+        transform: translateX(18px);
+      }
+    }
+    /* If you prefer two smaller buttons side-by-side on phones, uncomment:
+    @media (max-width: 640px){ .button-group{ grid-template-columns: 1fr 1fr; } }
+    */
   </style>
 </head>
 <body>
@@ -222,7 +279,7 @@
   <div class="chat-box" id="chatBox" aria-live="polite"></div>
 
   <div class="controls">
-    <input type="text" id="input" placeholder="Type a message..." inputmode="text" />
+    <input type="text" id="input" placeholder="Type a message..." inputmode="text" autocapitalize="sentences" />
     <div class="button-group">
       <button onclick="addMessage('boy')">Send as Godbrand 💜</button>
       <button onclick="addMessage('girl')">Send as Sihaya 💚</button>
@@ -230,6 +287,7 @@
   </div>
 
   <script>
+    // Supabase
     const client = window.supabase.createClient(
       'https://tmjozxcjylcxgemffnoc.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI'
@@ -279,6 +337,7 @@
         console.error('Load error:', error);
         return;
       }
+
       chatBox.innerHTML = '';
       data.forEach(addMessageToDOM);
     }
@@ -306,6 +365,7 @@
         heart.style.left = Math.random() * 100 + 'vw';
         heart.style.fontSize = (16 + Math.random() * 10) + 'px';
         heart.style.animationDuration = (2.5 + Math.random()) + 's';
+
         document.body.appendChild(heart);
         setTimeout(() => heart.remove(), 3000);
       }
@@ -324,11 +384,13 @@
       } else {
         sprinkleHearts();
         input.value = '';
-        if (data && data.length > 0) addMessageToDOM(data[0]);
+        if (data && data.length > 0) {
+          addMessageToDOM(data[0]);
+        }
       }
     };
 
-    // Sender toggle (injected)
+    // Sender toggle (injected switch)
     const toggleWrap = document.createElement('div');
     toggleWrap.style.display = 'flex';
     toggleWrap.style.justifyContent = 'center';
@@ -347,19 +409,15 @@
           height: 26px;
           margin-bottom: 4px;
         }
-        .toggle-switch input {
-          opacity: 0; width: 0; height: 0;
-        }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
         .slider {
-          position: absolute; cursor: pointer;
-          top: 0; left: 0; right: 0; bottom: 0;
+          position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
           background-color: #67e4ca; transition: .3s; border-radius: 26px;
           box-shadow: inset 0 0 0 1px rgba(0,0,0,.08);
         }
         .slider:before {
-          position: absolute; content: ""; height: 20px; width: 20px;
-          left: 3px; bottom: 3px; background-color: white; transition: .3s;
-          border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,.2);
+          position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+          background-color: white; transition: .3s; border-radius: 50%; box-shadow: 0 1px 2px rgba(0,0,0,.2);
         }
         .toggle-switch input:checked + .slider { background-color: #a05ee7; }
         .toggle-switch input:checked + .slider:before { transform: translateX(22px); }
@@ -375,7 +433,7 @@
       localStorage.setItem('toggleSender', toggle.checked);
     });
 
-    // Enter to send (uses toggle)
+    // Enter to send
     input.addEventListener('keydown', function (e) {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
@@ -383,6 +441,20 @@
         addMessage(isGodbrand ? 'boy' : 'girl');
       }
     });
+
+    // --- iPhone keyboard-safe sticky controls ---
+    (function iosKeyboardGuard(){
+      const controlsEl = document.querySelector('.controls');
+      if (!window.visualViewport || !controlsEl) return;
+      const onVV = () => {
+        const vv = window.visualViewport;
+        const bottomInset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+        document.documentElement.style.setProperty('--kb', bottomInset + 'px');
+      };
+      visualViewport.addEventListener('resize', onVV);
+      visualViewport.addEventListener('scroll', onVV);
+      onVV();
+    })();
 
     loadMessages();
   </script>
