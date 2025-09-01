@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Doctor Checklist & Appointments</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Dancing+Script&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.5/dist/umd/supabase.min.js"></script>
@@ -10,15 +11,21 @@
   <style>
     * { box-sizing: border-box; }
 
+    :root{
+      /* lets us shrink header space on phones without touching desktop */
+      --form-pad-top: 240px;
+    }
+
     body {
-  font-family: 'Patrick Hand', cursive;
-  background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor_bg2.jpg') no-repeat center center fixed;
-  background-size: 100% auto;
-  margin: 0;
-  padding: 0;
-  color: #333;
-  padding-top: 240px;
-}
+      font-family: 'Patrick Hand', cursive;
+      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor_bg2.jpg') no-repeat center center fixed;
+      /* desktop keeps your original sizing */
+      background-size: 100% auto;
+      margin: 0;
+      padding: 0;
+      color: #333;
+      padding-top: var(--form-pad-top);
+    }
 
     .fixed-form {
       position: fixed;
@@ -37,6 +44,7 @@
       color: #2e3a59;
       font-size: 36px;
       margin: 0 0 5px;
+      text-align: center;
     }
 
     .glowpulse {
@@ -71,7 +79,6 @@
       font-weight: bold;
       z-index: 200;
     }
-
     .back-button:hover { background: #b085c6; }
 
     .checklist {
@@ -85,6 +92,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 10px;
       padding: 12px;
       margin-bottom: 8px;
       background-color: #f0f4ff;
@@ -96,6 +104,7 @@
       align-items: center;
       gap: 10px;
       flex-grow: 1;
+      min-width: 0;
     }
 
     .checked span {
@@ -123,7 +132,6 @@
       cursor: pointer;
       font-family: 'Patrick Hand', cursive;
     }
-
     .delete-btn { background-color: #ff5c5c; }
 
     .appointment-box {
@@ -141,17 +149,18 @@
       margin-top: 0;
       font-size: 22px;
       color: #2e3a59;
+      text-align: left;
     }
 
     .appointment-item {
-  position: relative;
-  margin-bottom: 10px;
-  padding: 10px 30px 10px 10px;
-  background: #2e2b47; 
-  border-radius: 8px;
-  color: #ffffff; 
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
-}
+      position: relative;
+      margin-bottom: 10px;
+      padding: 10px 30px 10px 10px;
+      background: #2e2b47; 
+      border-radius: 8px;
+      color: #ffffff; 
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
 
     .delete-x {
       position: absolute;
@@ -166,7 +175,6 @@
       padding: 0;
       line-height: 1;
     }
-
     .delete-x:hover { color: #d11a2a; }
 
     .appointment-item button {
@@ -196,12 +204,10 @@
       color: #AA20AB !important;
       font-weight: bold;
     }
-
     .flatpickr-time input:focus {
       border-color: #AA20AB !important;
       box-shadow: 0 0 3px #AA20AB;
     }
-
     .flatpickr-time {
       border-top: 2px solid #AA20AB !important;
     }
@@ -212,13 +218,67 @@
         opacity: 0;
       }
     }
-
     .fall-item {
       position: fixed;
       z-index: 9999;
       pointer-events: none;
       user-select: none;
       animation-fill-mode: forwards;
+    }
+
+    /* --- responsive polish: keep desktop, fix phones --- */
+
+    /* bring the fixed box closer on smaller laptops */
+    @media (max-width: 1200px){
+      .appointment-box{ right: 32px; }
+    }
+
+    /* phones/tablets */
+    @media (max-width: 900px){
+      /* iOS Safari hates fixed backgrounds; also make the image cover cleanly */
+      body{
+        --form-pad-top: 180px;
+        background-size: cover;
+        background-attachment: scroll;
+      }
+
+      .fixed-form{ padding: 14px 16px 8px; }
+      h1{ font-size: 28px; }
+      .glowpulse{ font-size: 20px; }
+
+      /* make the appointments panel flow and full width */
+      .appointment-box{
+        position: static;
+        width: min(100%, 640px);
+        margin: 12px auto;
+        right: auto; top: auto;
+        background: rgba(255,255,255,0.92);
+      }
+
+      .checklist{ padding: 0 16px; }
+
+      /* smaller, neater buttons on mobile */
+      button{ padding: 8px 12px; }
+      .back-button{ padding: 8px 12px; }
+    }
+
+    @media (max-width: 480px){
+      body{ --form-pad-top: 160px; }
+      h1{ font-size: 24px; }
+      .glowpulse{ font-size: 18px; }
+      .appointment-item{ padding: 10px 28px 10px 10px; }
+      .delete-x{ font-size: 18px; top: 4px; right: 6px; }
+    }
+
+    /* respect safe areas (iPhone notch) */
+    @supports (padding: max(0px)){
+      .fixed-form{ padding-top: max(20px, env(safe-area-inset-top)); }
+      .back-button{ top: max(10px, env(safe-area-inset-top)); }
+    }
+
+    /* optional: reduce motion */
+    @media (prefers-reduced-motion: reduce){
+      .glowpulse{ animation: none; }
     }
   </style>
 </head>
@@ -253,20 +313,20 @@
     );
 
     flatpickr("#appointmentDate", {
-  enableTime: true,
-  dateFormat: "Y-m-d h:i K",
-  time_24hr: false,
-  allowInput: true,
-  minuteIncrement: 1,
-  onReady: function(selectedDates, dateStr, instance) {
-    const confirmBtn = document.createElement('button');
-    confirmBtn.textContent = 'Confirm';
-    confirmBtn.type = 'button';
-    confirmBtn.className = 'flatpickr-confirm';
-    confirmBtn.addEventListener('click', () => instance.close());
-    instance.calendarContainer.appendChild(confirmBtn);
-  }
-});
+      enableTime: true,
+      dateFormat: "Y-m-d h:i K",
+      time_24hr: false,
+      allowInput: true,
+      minuteIncrement: 1,
+      onReady: function(selectedDates, dateStr, instance) {
+        const confirmBtn = document.createElement('button');
+        confirmBtn.textContent = 'Confirm';
+        confirmBtn.type = 'button';
+        confirmBtn.className = 'flatpickr-confirm';
+        confirmBtn.addEventListener('click', () => instance.close());
+        instance.calendarContainer.appendChild(confirmBtn);
+      }
+    });
 
     const checklist = document.getElementById('checklist');
     const newItemInput = document.getElementById('newItem');
@@ -380,11 +440,12 @@
         apptDiv.className = 'appointment-item';
         const apptTime = appt.datetime;
 
+        /* safer string injection using JSON.stringify so quotes don’t break HTML */
         apptDiv.innerHTML = `
           <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
           <div><strong>${appt.reason}</strong></div>
           <div>${apptTime}</div>
-          <button onclick="editAppointment('${appt.id}', '${appt.reason}', '${appt.datetime}')">Edit</button>
+          <button onclick="editAppointment('${appt.id}', ${JSON.stringify(appt.reason)}, ${JSON.stringify(appt.datetime)})">Edit</button>
         `;
 
         appointmentList.appendChild(apptDiv);
@@ -411,7 +472,11 @@
 
     function editAppointment(id, reason, datetime) {
       appointmentReasonInput.value = reason;
-      appointmentDateInput._flatpickr.setDate(datetime, true);
+      if (appointmentDateInput._flatpickr) {
+        appointmentDateInput._flatpickr.setDate(datetime, true);
+      } else {
+        appointmentDateInput.value = datetime;
+      }
       editingAppointmentId = id;
     }
 
@@ -426,12 +491,12 @@
       .subscribe();
 
     client
-  .channel('doctor_appointments')
-  .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_appointments' }, () => loadAppointments())
-  .subscribe();
+      .channel('doctor_appointments')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'doctor_appointments' }, () => loadAppointments())
+      .subscribe();
 
     loadItems();
     loadAppointments();
   </script>
 </body>
-</html>        
+</html>
