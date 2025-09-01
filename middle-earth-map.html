@@ -22,12 +22,16 @@
   #particles{position:fixed; inset:0; z-index:1; pointer-events:none}
 
   /* top bar */
-  .topbar{position:fixed; inset:12px 12px auto 12px; z-index:12; display:flex; gap:12px; align-items:center}
-  .chip{display:inline-flex; align-items:center; gap:8px; padding:7px 12px; border:1px solid rgba(212,175,55,.5);
-    border-radius:10px; background:rgba(36,31,24,.6); color:var(--ink); box-shadow:var(--shadow); text-decoration:none; font-size:13px; cursor:pointer}
+  .topbar{
+    position:fixed;
+    top:12px; left:12px; right:12px;
+    z-index:12; display:flex; gap:12px; align-items:center; flex-wrap:wrap; row-gap:8px;
+  }
+  .chip{display:inline-flex; align-items:center; gap:8px; padding:9px 12px; border:1px solid rgba(212,175,55,.5);
+    border-radius:10px; background:rgba(36,31,24,.6); color:var(--ink); box-shadow:var(--shadow); text-decoration:none; font-size:13px; cursor:pointer; min-height:36px}
   .chip[disabled]{opacity:.45; pointer-events:none}
   .chip:hover{background:rgba(54,46,36,.78)}
-  .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2)}
+  .title{flex:1; text-align:center; font-family:"Cinzel",serif; font-weight:700; letter-spacing:.5px; font-size:28px; text-shadow:0 0 8px rgba(255,231,160,.2); min-width:220px}
 
   /* === One Ring pin counter === */
   .ring-badge{
@@ -52,7 +56,10 @@
   }
 
   /* map */
-  .viewport{position:absolute; inset:64px 0 0 0; z-index:2; overflow:hidden; touch-action:none; cursor:grab}
+  .viewport{
+    position:absolute; top:64px; right:0; bottom:0; left:0;
+    z-index:2; overflow:hidden; touch-action:none; cursor:grab; overscroll-behavior:contain;
+  }
   .viewport.dragging{cursor:grabbing}
   .map-inner{position:absolute; top:0; left:0; transform-origin:0 0; will-change:transform}
   .map-img{display:block; height:auto; pointer-events:none; filter:contrast(1.02) brightness(.96) sepia(.08); box-shadow:var(--shadow); border-radius:4px}
@@ -76,17 +83,20 @@
   .pintip{position:absolute; transform:translate(-50%,-120%); background:rgba(30,25,20,.92);
     color:#e7dbc3; border:1px solid rgba(212,175,55,.55); border-radius:8px; padding:4px 8px; font-size:12px; white-space:nowrap; pointer-events:none}
 
-  .hint{position:fixed; right:16px; top:58px; z-index:12; background:rgba(30,25,20,.92); border:1px solid rgba(212,175,55,.5);
-    color:#e7dbc3; border-radius:10px; padding:8px 10px; font-size:12px; display:none}
+  .hint{
+    position:fixed; right:16px; top:58px; z-index:12; background:rgba(30,25,20,.92); border:1px solid rgba(212,175,55,.5);
+    color:#e7dbc3; border-radius:10px; padding:8px 10px; font-size:12px; display:none
+  }
   .hint.on{display:block}
 
   /* modals base */
-  .modal{position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); overflow:hidden}
+  .modal{position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.55); overflow:hidden; padding:16px}
   .modal.on{display:flex}
   .panel{
     position:relative; width:min(720px, 92vw); max-height:85vh;
     overflow-y:auto; overflow-x:clip;
     border-radius:16px; box-shadow:var(--shadow);
+    overscroll-behavior:contain;
   }
   .panel::-webkit-scrollbar{ width:0; height:0; }
   .panel{ scrollbar-width:none; -ms-overflow-style:none; }
@@ -212,12 +222,32 @@
   .btn-danger{padding:9px 14px; border-radius:10px; border:1px solid #E86415; background:linear-gradient(#ffe0cc,#ffd0b3); color:#521f00; font-weight:700; cursor:pointer}
   .btn-ghost:hover{filter:brightness(1.03)}
   .btn-danger:hover{filter:brightness(1.02)}
+
+  /* ---------- Responsive polish ---------- */
+  @media (max-width: 900px){
+    .title{ font-size: 22px }
+    .chip{ font-size: 12px; padding:8px 10px }
+  }
+  @media (max-width: 760px){
+    .hint{ left:50%; right:auto; top:auto; bottom:16px; transform:translateX(-50%); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ring-badge{ animation: none }
+  }
+  /* iPhone safe areas */
+  @supports (padding: max(0px)){
+    .topbar{
+      top: max(12px, env(safe-area-inset-top));
+      left: max(12px, env(safe-area-inset-left));
+      right: max(12px, env(safe-area-inset-right));
+    }
+  }
 </style>
 </head>
 <body>
   <canvas id="particles"></canvas>
 
-  <div class="topbar">
+  <div class="topbar" id="topbar">
     <a class="chip" href="javascript:history.back()">⟵ Back Home</a>
     <div class="title">MIDDLE-EARTH MAP</div>
     <button id="pinBtn" class="chip">📍 Pin it</button>
@@ -313,10 +343,21 @@
   const viewport = document.getElementById('viewport');
   const mapInner = document.getElementById('mapInner');
   const mapImg   = document.getElementById('mapImg');
+  const topbar   = document.getElementById('topbar');
 
-  const FIT = 0.70;
   const ZOOM_SMOOTH = 0.24;
   const cam = { x:0,y:0,s:1, tx:0,ty:0,ts:1, sMin:0.35, sMax:3.5, dragging:false, lx:0, ly:0, natW:2048, natH:1536 };
+
+  function getFit(){
+    // Fit tighter on phones so the whole map is visible initially
+    return (innerWidth < 768 || innerHeight < 560) ? 0.96 : 0.70;
+  }
+
+  function setViewportTop(){
+    const r = topbar.getBoundingClientRect();
+    const top = Math.max(64, Math.round(r.bottom + 8)); // at least old 64px, or below a wrapped topbar
+    viewport.style.top = top + 'px';
+  }
 
   mapImg.addEventListener('load', ()=>{
     cam.natW = mapImg.naturalWidth || cam.natW;
@@ -327,12 +368,13 @@
     for (const id of ["evenstarCore","evenstarGlow","evenstarShine"]){
       document.getElementById(id).src = EVENSTAR_URL;
     }
+    setViewportTop();
   });
   if (mapImg.complete) mapImg.dispatchEvent(new Event('load'));
 
   function centerFit(){
     const vw = viewport.clientWidth, vh = viewport.clientHeight;
-    const s  = Math.min(vw/cam.natW, vh/cam.natH) * FIT;
+    const s  = Math.min(vw/cam.natW, vh/cam.natH) * getFit();
     cam.s = cam.ts = s;
     cam.x = cam.tx = vw/2 - (cam.natW*s)/2;
     cam.y = cam.ty = vh/2 - (cam.natH*s)/2;
@@ -351,23 +393,48 @@
     cam.ty = cy - r.top  - wy * newScale;
   }
 
+  // Mouse drag
   viewport.addEventListener('pointerdown', e=>{
     if (e.target.closest('.pin')) return;  // don't start panning on pins
-    cam.dragging = true; moved=false; cam.lx=e.clientX; cam.ly=e.clientY;
-    viewport.classList.add('dragging'); viewport.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+    if (pointers.size === 1 && !pinch.active){
+      cam.dragging = true; moved=false; cam.lx=e.clientX; cam.ly=e.clientY;
+      viewport.classList.add('dragging'); viewport.setPointerCapture(e.pointerId);
+    } else if (pointers.size === 2){
+      startPinch();
+    }
   });
+
   let moved=false;
   viewport.addEventListener('pointermove', e=>{
+    // Update pointer set
+    if (pointers.has(e.pointerId)) pointers.set(e.pointerId, {x:e.clientX, y:e.clientY});
+
+    if (pinch.active){
+      updatePinch();
+      return;
+    }
     if(!cam.dragging) return;
     const dx=e.clientX-cam.lx, dy=e.clientY-cam.ly; moved = moved || Math.hypot(dx,dy)>2;
     cam.tx+=dx; cam.ty+=dy; cam.lx=e.clientX; cam.ly=e.clientY;
   });
+
   viewport.addEventListener('pointerup', e=>{
-    cam.dragging=false; viewport.classList.remove('dragging'); if (e.pointerId) viewport.releasePointerCapture(e.pointerId);
+    pointers.delete(e.pointerId);
+    if (pinch.active && pointers.size < 2) endPinch();
+    cam.dragging=false; viewport.classList.remove('dragging'); try{ viewport.releasePointerCapture(e.pointerId); }catch(_){}
   });
+  viewport.addEventListener('pointercancel', e=>{
+    pointers.delete(e.pointerId);
+    if (pinch.active && pointers.size < 2) endPinch();
+    cam.dragging=false; viewport.classList.remove('dragging'); try{ viewport.releasePointerCapture(e.pointerId); }catch(_){}
+  });
+
+  // Wheel zoom (desktop)
   viewport.addEventListener('wheel', e=>{
     e.preventDefault(); const factor=(e.deltaY<0)?1.08:0.92; zoomAt(e.clientX,e.clientY, cam.ts*factor);
   },{passive:false});
+
   function resetView(){ centerFit(); renderPins(); }
 
   let lastCam = performance.now();
@@ -378,7 +445,33 @@
     applyCam(); setZoomVar(); requestAnimationFrame(animateCam);
   }
   requestAnimationFrame(animateCam);
-  addEventListener('resize', ()=>{ centerFit(); renderPins(); });
+  addEventListener('resize', ()=>{ setViewportTop(); centerFit(); renderPins(); });
+
+  /* ===== Pinch-to-zoom (touch) ===== */
+  const pointers = new Map(); // id -> {x,y}
+  const pinch = { active:false, startDist:0, startScale:1, mid:{x:0,y:0} };
+
+  function dist(a,b){ const dx=a.x-b.x, dy=a.y-b.y; return Math.hypot(dx,dy); }
+  function mid(a,b){ return { x:(a.x+b.x)/2, y:(a.y+b.y)/2 }; }
+
+  function startPinch(){
+    const vals = [...pointers.values()];
+    if (vals.length < 2) return;
+    pinch.active = true;
+    pinch.startDist = dist(vals[0], vals[1]);
+    pinch.startScale = cam.ts;
+    pinch.mid = mid(vals[0], vals[1]);
+    cam.dragging = false; viewport.classList.remove('dragging');
+  }
+  function updatePinch(){
+    const vals = [...pointers.values()];
+    if (vals.length < 2) return;
+    const d = dist(vals[0], vals[1]);
+    const m = mid(vals[0], vals[1]);
+    const factor = d / Math.max(1, pinch.startDist);
+    zoomAt(m.x, m.y, pinch.startScale * factor);
+  }
+  function endPinch(){ pinch.active = false; }
 
   /* ===== Background falling symbols (adaptive + pausable) ===== */
   const glyphs=["✶","✷","✸","✹","✺","✧","✦","✳"];
@@ -398,6 +491,7 @@
   const DM = navigator.deviceMemory || 4;
   const AREA = (innerWidth*innerHeight)/(1280*720);
   let FLAKE_COUNT = Math.round(180 * Math.min(1.6, Math.max(.6, AREA)) * (DM>=8?1.2:DM>=4?1:0.8));
+  if (innerWidth < 480) FLAKE_COUNT = Math.round(FLAKE_COUNT * 0.7);
 
   const spriteCache=new Map();
   function getSprite(ch,sz){ const k=ch+"@"+sz; if(spriteCache.has(k)) return spriteCache.get(k);
