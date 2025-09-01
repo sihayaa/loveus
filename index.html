@@ -342,7 +342,6 @@
       display: flex;
       gap: 8px;
       margin-bottom: 10px;
-      /* Keep input and Add button vertically aligned on desktop */
       align-items: center;
     }
 
@@ -507,21 +506,18 @@
       vertical-align: baseline;
     }
 
-    /* ======= Responsive tweaks ======= */
     @media (max-width: 1024px){
       body{ padding: 28px }
       h1{ font-size: 2.8em }
       #timezone-box, #countdown-box, #reminder-box{ right: 20px }
     }
 
-    /* Phones: stack info cards + bottom tray for icons */
     @media (max-width: 768px){
       body{ padding:16px }
       h1{ font-size:2.2em; margin-bottom:12px }
       #duration-block{ padding:10px 14px }
       #duration-label, #duration-value{ font-size:1.5em }
 
-      /* stack the right-side cards */
       #timezone-box, #countdown-box, #reminder-box{
         position: static;
         width: 100%;
@@ -530,7 +526,6 @@
       }
       #reminder-list{ max-height: 40vh }
 
-      /* fixed bottom tray */
       #icon-area{
         position: fixed;
         left: 50%;
@@ -552,7 +547,6 @@
       #icon-area::-webkit-scrollbar{ height:6px }
       #icon-area::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.25); border-radius: 999px }
 
-      /* icons inside the tray */
       .album-icon{
         position: static !important;
         left: auto !important;
@@ -561,13 +555,11 @@
       }
       .album-icon .icon-label{ font-size: 12px }
 
-      /* move logout so it doesn't overlap the tray */
       #logout-btn{
         top: 12px; right: 12px; bottom: auto;
         z-index: 40;
       }
 
-      /* lift secret heart above tray */
       .secret-heart{ bottom: 84px }
     }
 
@@ -591,9 +583,7 @@
 
   <br>
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
-  <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <!-- Wrap icons so we can turn them into a bottom tray on mobile -->
   <div id="icon-area">
     <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
       <img src="album-icon.png" alt="Album Icon">
@@ -618,6 +608,13 @@
         src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png"
         alt="Middle Earth Map Icon"
         onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
+    </div>
+
+    <div class="album-icon" style="top: 400px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png"
+        alt="Love Letters Icon"
+        onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
     
     <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
@@ -670,6 +667,9 @@
   </template>
   <template id="gamelist-label-template">
     <div class="icon-label">🎮<br>Game&nbsp;List</div>
+  </template>
+  <template id="letters-label-template">
+    <div class="icon-label">💌<br>Letters</div>
   </template>
 
   <div class="secret-heart" id="secretHeart" title=" ">
@@ -783,7 +783,6 @@
     setInterval(applyMoodOverlay, 60 * 60 * 1000); 
   </script>
 
-  <!-- HEARTS + logout + quotes + reminders (all restored) -->
   <script>
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
@@ -962,7 +961,6 @@
       }
     });
 
-    // reminders
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
