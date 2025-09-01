@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Love Space</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="icon" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/icon.png?v=2" type="image/png" sizes="32x32">
 
@@ -39,6 +40,8 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Patrick+Hand&display=swap" rel="stylesheet">
   <style>
+    *{ box-sizing: border-box }
+
     :root{
       --quote-green:#246B3E;
       --quote-blue:#27658A;
@@ -117,12 +120,18 @@
       cursor: pointer;
       transition: all 0.3s ease;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      touch-action: manipulation;
     }
 
     button:hover {
       background-color: #8fc6bb;
       transform: scale(1.07);
       box-shadow: 0 0 15px #fff;
+    }
+
+    /* --- icon area wrapper (new) --- */
+    #icon-area{
+      /* desktop: acts like a simple wrapper; icons keep their fixed positions */
     }
 
     .album-icon {
@@ -498,7 +507,69 @@
       cursor: default;           /* not “clicky” */
       vertical-align: baseline;
     }
-    /* no :hover, no borders, no animations */
+
+    @media (max-width: 1024px){
+      body{ padding: 28px }
+      h1{ font-size: 2.8em }
+      #timezone-box, #countdown-box, #reminder-box{ right: 20px }
+    }
+
+    @media (max-width: 768px){
+      body{ padding: 16px }
+
+      h1{ font-size: 2.2em; margin-bottom: 12px }
+      #duration-block{ padding: 10px 14px }
+      #duration-label{ font-size: 1.5em }
+      #duration-value{ font-size: 1.5em }
+
+      #timezone-box, #countdown-box, #reminder-box{
+        position: static;
+        width: 100%;
+        max-width: 540px;
+        margin: 10px auto;
+      }
+      #reminder-list{ max-height: 40vh }
+
+      #icon-area{
+        position: fixed;
+        left: 50%;
+        bottom: 8px;
+        transform: translateX(-50%);
+        width: min(680px, calc(100% - 16px));
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 76px;
+        gap: 10px;
+        padding: 8px;
+        overflow-x: auto;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 16px;
+        z-index: 30;
+      }
+      #icon-area::-webkit-scrollbar{ height:6px }
+      #icon-area::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.25); border-radius: 999px }
+
+      .album-icon{
+        position: static !important; 
+        width: 64px; height: 64px; left: auto !important; top: auto !important;
+      }
+      .album-icon .icon-label{ font-size: 12px }
+
+      #logout-btn{
+        top: 12px; right: 12px; bottom: auto;
+        z-index: 40;
+      }
+
+      .secret-heart{ bottom: 84px }
+    }
+
+    @media (max-width: 420px){
+      h1{ font-size: 1.8em }
+      #duration-label, #duration-value{ font-size: 1.35em }
+      button{ padding: 9px 14px; font-size: .95em }
+    }
   </style>
 </head>
 <body>
@@ -516,47 +587,48 @@
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
   <button onclick="location.href='letters.html'">💌 Letters</button>
 
-  <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
-    <img src="album-icon.png" alt="Album Icon">
-  </div>
+  <div id="icon-area">
+    <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
+      <img src="album-icon.png" alt="Album Icon">
+    </div>
 
-  <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
-    <img
-      src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
-      alt="Work Schedule Icon"
-      onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
-  </div>
+    <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
+        alt="Work Schedule Icon"
+        onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
+    </div>
 
-  <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='gamelist.html'" title="Game List">
-    <img
-      src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png"
-      alt="Game List Icon"
-      onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
-  </div>
+    <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='gamelist.html'" title="Game List">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png"
+        alt="Game List Icon"
+        onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
+    </div>
 
-  <div class="album-icon" style="top: 300px; left: 150px;" onclick="location.href='middle-earth-map.html'" title="Middle Earth Map">
-    <img
-      src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png"
-      alt="Middle Earth Map Icon"
-      onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
-  </div>
-  
-  <!-- REPLACED: Mandarin icon -> Date Plans icon -->
-  <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/dateplan_bg.png" alt="Date Plans Icon">
-  </div>
+    <div class="album-icon" style="top: 300px; left: 150px;" onclick="location.href='middle-earth-map.html'" title="Middle Earth Map">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png"
+        alt="Middle Earth Map Icon"
+        onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
+    </div>
 
-  <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
-  </div>
-  <div class="album-icon" style="top: 400px;" onclick="location.href='doctor.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
-  </div>
-  <div class="album-icon" style="top: 500px;" onclick="location.href='wishlist.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish-icon.png" alt="Wishlist Icon">
-  </div>
-  <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
-    <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
+    <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/dateplan_bg.png" alt="Date Plans Icon">
+    </div>
+
+    <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
+    </div>
+    <div class="album-icon" style="top: 400px;" onclick="location.href='doctor.html'">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
+    </div>
+    <div class="album-icon" style="top: 500px;" onclick="location.href='wishlist.html'">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish-icon.png" alt="Wishlist Icon">
+    </div>
+    <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
+    </div>
   </div>
   
   <div id="timezone-box">
@@ -704,13 +776,11 @@
     setInterval(applyMoodOverlay, 60 * 60 * 1000); 
   </script>
 
-  <!-- HEARTS + logout + quotes + reminders (all restored) -->
   <script>
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
     let hearts = [];
 
-    // your 4 colors
     const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
 
     function resizeCanvas() {
@@ -721,7 +791,6 @@
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
-    // same spawn behavior (3 per move)
     document.addEventListener('mousemove', e => {
       for (let i = 0; i < 3; i++) {
         hearts.push({
@@ -740,14 +809,14 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       hearts.forEach((h, i) => {
         ctx.globalAlpha = h.alpha;
-        // monochrome heart so fillStyle applies (no pink)
+
         ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
         ctx.fillStyle = h.color;
         ctx.fillText('♥', h.x, h.y);
 
         h.x += h.dx;
         h.y += h.dy;
-        h.alpha -= 0.02; // same fade
+        h.alpha -= 0.02;
         if (h.alpha <= 0) hearts.splice(i, 1);
       });
       requestAnimationFrame(drawHearts);
@@ -755,13 +824,11 @@
 
     drawHearts();
 
-    // logout
     document.getElementById('logout-btn').addEventListener('click', async () => {
       await supabase.auth.signOut();
       location.href = "login.html";
     });
 
-    // quotes (restored)
     const sweetQuotes = [
       "You make ordinary moments feel special.",
       "Your laugh is my favorite sound.",
@@ -888,7 +955,6 @@
       }
     });
 
-    // reminders (restored)
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
