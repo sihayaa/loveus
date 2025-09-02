@@ -98,13 +98,13 @@
       0%, 100% {
         text-shadow:
           -1px -1px 0 #000, 1px -1px 0 #000,
-          -1px 1px 0 #000, 1px 1px 0 #000,
+          -1px 1px 0 #000, 1px  1px 0 #000,
           0 0 4px #4fa981, 0 0 8px #4fa981;
       }
       50% {
         text-shadow:
           -1px -1px 0 #000, 1px -1px 0 #000,
-          -1px 1px 0 #000, 1px 1px 0 #000,
+          -1px 1px 0 #000, 1px  1px 0 #000,
           0 0 10px #4fa981, 0 0 18px #4fa981;
       }
     }
@@ -128,7 +128,7 @@
     }
 
     /* Wrapper for icons so we can turn them into a bottom tray on phones */
-    #icon-area { /* desktop: no special layout; icons keep their fixed spots */ }
+    #icon-area { }
 
     .album-icon {
       position: fixed;
@@ -243,29 +243,6 @@
       font-size: 1em;
       color: #f8e5f8;
       text-shadow: 0 0 6px #a027a0;
-    }
-
-    #logout-btn {
-      position: fixed;
-      bottom: 20px;
-      right: 20px;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      color: white;
-      font-size: 1em;
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      box-shadow: 0 0 10px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
-      z-index: 20;
-    }
-
-    #logout-btn:hover {
-      background: rgba(255, 0, 0, 0.4);
-      transform: scale(1.07);
-      box-shadow: 0 0 15px #fff;
     }
 
     canvas#heart-canvas {
@@ -555,11 +532,6 @@
       }
       .album-icon .icon-label{ font-size: 12px }
 
-      #logout-btn{
-        top: 12px; right: 12px; bottom: auto;
-        z-index: 40;
-      }
-
       .secret-heart{ bottom: 84px }
     }
 
@@ -655,8 +627,6 @@
     </div>
     <div id="reminder-list"></div>
   </div>
-
-  <button id="logout-btn">🚪 Logout</button>
 
   <canvas id="heart-canvas"></canvas>
 
@@ -830,11 +800,6 @@
 
     drawHearts();
 
-    document.getElementById('logout-btn').addEventListener('click', async () => {
-      await supabase.auth.signOut();
-      location.href = "login.html";
-    });
-
     const sweetQuotes = [
       "You make ordinary moments feel special.",
       "Your laugh is my favorite sound.",
@@ -947,7 +912,7 @@
 
     document.addEventListener('click', (e) => {
       const disallow = ['BUTTON','A','IMG','CANVAS','INPUT','TEXTAREA','SELECT'];
-      const blocked = e.target.closest('.album-icon, #timezone-box, #countdown-box, #reminder-box, #logout-btn');
+      const blocked = e.target.closest('.album-icon, #timezone-box, #countdown-box, #reminder-box');
       if (blocked) return;
       if (disallow.includes(e.target.tagName)) return;
 
@@ -956,7 +921,7 @@
         return;
       }
 
-      if (!e.target.closest('a, button, .album-icon, #timezone-box, #countdown-box, #reminder-box, #logout-btn')) {
+      if (!e.target.closest('a, button, .album-icon, #timezone-box, #countdown-box, #reminder-box')) {
         showRandomQuote();
       }
     });
