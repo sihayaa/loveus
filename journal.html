@@ -30,35 +30,31 @@
     .moods{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end }
     .chip{ user-select:none; cursor:pointer; padding:6px 10px; border-radius:999px; border:1px dashed #ccd1ff; background:#eef2ff; font-size:14px }
     .chip.sel{ background:#eafff8; border-color:#baf2e7; color:#0e5d4f }
-    .chip.disabled{ opacity:.5; pointer-events:none }
-    .limit{ font-size:12px; opacity:.6 }
+
+    .mood-badges{ display:flex; flex-wrap:wrap; gap:6px; justify-content:flex-end }
+    .badge{ padding:4px 8px; border-radius:999px; background:#f4f6ff; border:1px solid #e5e9ff; font-size:12px; color:#3a3360 }
 
     .card{ background:var(--paper); border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px }
 
     .datewrap{ display:flex; align-items:center; gap:8px; flex-wrap:wrap }
     input[type="date"]{ padding:6px 10px; border-radius:10px; border:1px solid #e6e0ee; font:inherit }
-    input[type="date"].disabled{ opacity:.6; pointer-events:none }
 
     .toolbar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:10px 0 8px }
     .swatch{ width:22px; height:22px; border-radius:6px; border:1px solid rgba(0,0,0,.08); cursor:pointer }
     .swatch.sel{ outline:2px solid #cfe9ff }
-    .swatch.disabled{ opacity:.5; pointer-events:none }
     .hex{ width:110px; padding:6px 8px; border-radius:8px; border:1px solid #e6e0ee; font:inherit }
 
     #letter{ width:100%; min-height:45vh; resize:vertical; padding:14px; border-radius:14px; border:1px solid #eadff4; background:#fff; line-height:1.5 }
     #letter::placeholder{ color:#aa96bd }
-    #letter[readonly]{ background:#fdfdff }
 
     .letter-view{ white-space:pre-wrap; padding:14px; border-radius:14px; border:1px solid #eadff4; background:#fff; line-height:1.5 }
 
     .footer{ margin-top:12px }
     #notes{ width:100%; min-height:120px; resize:vertical; padding:12px; border-radius:12px; border:1px solid #eadff4; background:#fff }
-    #notes[readonly]{ background:#fdfdff }
 
     .actions{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; margin-top:12px }
     button{ cursor:pointer; border:none; border-radius:12px; padding:9px 12px; font:inherit; background:#f2f6ff; box-shadow: 0 3px 8px rgba(0,0,0,.06) }
     button.primary{ background:linear-gradient(135deg, var(--mint), #aaf1e0); color:#0c3b33 }
-    button.ghost{ background:#f3f1ff }
 
     .status{ margin-left:6px; font-size:12px; opacity:.75 }
     .banner{ margin:10px 0; padding:10px 12px; border:1px dashed #e0d8ef; border-radius:12px; background:#ffffffaa; backdrop-filter:blur(2px) }
@@ -66,6 +62,10 @@
     .history{ margin-top:18px; display:grid; gap:8px }
     .row{ display:flex; justify-content:space-between; gap:8px; align-items:center; padding:10px; border:1px solid #e7ecff; border-radius:12px; background:#f9fbff; cursor:pointer }
     .row:hover{ background:#f2fbf7; border-color:#d2f5ea }
+
+    /* view/edit toggles */
+    .edit-only{ display:none }
+    .view-only{ display:block }
 
     /* gate overlay */
     .gate{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:10; background:rgba(14,14,20,.6); backdrop-filter:blur(2px) }
@@ -106,39 +106,50 @@
         </div>
       </div>
       <div>
-        <div class="moods" id="moodsBox"></div>
-        <div class="limit" id="moodLimit">pick up to 3</div>
+        <!-- EDIT: mood chips -->
+        <div class="moods edit-only" id="moodsBox"></div>
+        <div class="limit edit-only" id="moodLimit">pick up to 3</div>
+        <!-- VIEW: mood badges -->
+        <div class="mood-badges view-only" id="moodsView"></div>
       </div>
     </header>
 
     <section class="card">
-      <div class="datewrap">
+      <!-- VIEW date text -->
+      <div id="dateView" class="view-only" style="margin-bottom:6px; opacity:.75"></div>
+      <!-- EDIT date input -->
+      <div class="datewrap edit-only">
         <label for="dateInput">entry date:</label>
         <input id="dateInput" type="date" />
       </div>
 
-      <div class="toolbar">
+      <!-- EDIT color tools -->
+      <div class="toolbar edit-only">
         <div>text color:</div>
         <div id="swatches" style="display:flex; gap:6px"></div>
         <input id="hex" class="hex" placeholder="#custom" maxlength="7" />
       </div>
 
       <!-- edit textarea -->
-      <textarea id="letter" placeholder="Dear self,\n\n…"></textarea>
-      <!-- read view -->
-      <div id="letterView" class="letter-view" hidden></div>
+      <textarea id="letter" class="edit-only" placeholder="Dear self,
 
-      <div class="footer" id="notesWrap">
+…"></textarea>
+      <!-- read view -->
+      <div id="letterView" class="letter-view view-only"></div>
+
+      <!-- notes never shown to viewers -->
+      <div class="footer edit-only" id="notesWrap">
         <label style="display:block; margin-bottom:6px">notes (private)</label>
         <textarea id="notes" placeholder="freeform notes…"></textarea>
       </div>
 
-      <div class="actions" id="ownerActions">
+      <div class="actions edit-only" id="ownerActions">
         <button id="newBtn" class="ghost" title="start a fresh entry">new</button>
         <button id="saveBtn" class="primary">save</button>
         <span class="status" id="status">—</span>
       </div>
-      <div class="banner" id="banner" hidden></div>
+      <!-- banner only for edit mode when enabled -->
+      <div class="banner edit-only" id="banner" hidden></div>
     </section>
 
     <section class="history" id="history"></section>
@@ -152,10 +163,13 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 
     // Which user's letters to show on this page (so visitors can view). Optional.
-    const OWNER_USER_ID = ""; // <- paste your uid after first load, or leave blank to show only the current session's letters
+    const OWNER_USER_ID = ""; // paste your uid (optional)
 
     // Passcode to reveal editor (change this!)
     const EDIT_PASSCODE = "word"; // ← set your secret; editor unlocks only when this matches
+
+    // Show UID helper banner in edit mode? (set to true only if you need it once)
+    const SHOW_UID_BANNER = false;
 
     const PRESET_COLORS = ["#67e4ca", "#7a5af8", "#342943", "#e476e9", "#0b3c5d"]; // mint, purple, ink, rose, midnight
     const STARTER_MOODS = ["sad","confused","depressed","angry","numb","anxious","lonely","guilty","overwhelmed","hopeful"];
@@ -165,10 +179,13 @@
     const localKey = 'dearself_v1';
     const $ = s => document.querySelector(s); const $$ = s => Array.from(document.querySelectorAll(s));
     const ymd = (d=new Date()) => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
+    const fmt = (d)=> new Date(d).toLocaleString([], {year:'numeric', month:'short', day:'2-digit', hour:'2-digit', minute:'2-digit'});
     const uid = () => crypto.randomUUID();
 
     function freshEntry(){
-      return { id: uid(), user_id: null, entry_date: ymd(), body: 'Dear self,\n\n', notes: '', moods: [], palette_hex: PRESET_COLORS[0], is_public: true, created_at: Date.now(), updated_at: Date.now() };
+      return { id: uid(), user_id: null, entry_date: ymd(), body: 'Dear self,
+
+', notes: '', moods: [], palette_hex: PRESET_COLORS[0], is_public: true, created_at: Date.now(), updated_at: Date.now() };
     }
     function saveLocal(){ localStorage.setItem(localKey, JSON.stringify(draft)); $('#status').textContent = 'saved local'; }
     function loadLocal(){ try{ return JSON.parse(localStorage.getItem(localKey)); }catch(e){ return null }
@@ -177,28 +194,27 @@
 
     // ====== render ======
     function render(){
-      $('#dateStamp').textContent = new Date(draft.created_at||Date.now()).toLocaleString();
+      $('#dateStamp').textContent = fmt(draft.created_at||Date.now());
+      $('#dateView').textContent = draft.entry_date;
       $('#dateInput').value = draft.entry_date;
       $('#letter').value = draft.body;
       $('#letterView').textContent = draft.body;
       $('#notes').value = draft.notes;
       setTextColor(draft.palette_hex);
       $$('#moodsBox .chip').forEach(ch => ch.classList.toggle('sel', draft.moods.includes(ch.dataset.mood)));
-      setEditable(gateOK);
+      renderMoodsView();
+      toggleEditUI(gateOK);
       renderHistory(window.__history || []);
     }
 
-    function setEditable(edit){
-      // toggle fields
-      $('#letter').hidden = !edit; $('#letterView').hidden = edit;
-      $('#letter').readOnly = !edit; $('#notes').readOnly = !edit;
-      $('#dateInput').disabled = !edit; $('#dateInput').classList.toggle('disabled', !edit);
-      $('#hex').disabled = !edit; $('#hex').classList.toggle('disabled', !edit);
-      $$('#swatches .swatch').forEach(s=> s.classList.toggle('disabled', !edit));
-      $$('#moodsBox .chip').forEach(ch=> ch.classList.toggle('disabled', !edit));
-      $('#ownerActions').style.display = edit ? 'flex' : 'none';
-      // notes visibility: viewers never see notes
-      $('#notesWrap').style.display = edit ? 'block' : 'none';
+    function toggleEditUI(edit){
+      $$('.edit-only').forEach(el=> el.hidden = !edit);
+      $$('.view-only').forEach(el=> el.hidden = edit);
+    }
+
+    function renderMoodsView(){
+      const box = $('#moodsView'); box.innerHTML='';
+      (draft.moods||[]).forEach(m=>{ const b=document.createElement('span'); b.className='badge'; b.textContent=m; box.appendChild(b); });
     }
 
     function renderSwatches(){
@@ -226,7 +242,8 @@
       if(!list.length){ box.innerHTML = '<div class="sub">no entries yet</div>'; return; }
       list.forEach(row=>{
         const div = document.createElement('div'); div.className='row';
-        div.innerHTML = `<div><b>${row.entry_date}</b> — ${(row.body||'').split('\n')[0].slice(0,50)}</div><div style="font-size:12px; opacity:.7">${(row.moods||[]).join(', ')}</div>`;
+        div.innerHTML = `<div><b>${row.entry_date}</b> — ${(row.body||'').split('
+')[0].slice(0,50)}</div><div style="font-size:12px; opacity:.7">${(row.moods||[]).join(', ')}</div>`;
         div.onclick = ()=>{ draft = { ...row, created_at: new Date(row.created_at).getTime(), updated_at: Date.now() }; saveLocal(); render(); window.scrollTo({top:0,behavior:'smooth'}); };
         box.appendChild(div);
       });
@@ -236,8 +253,8 @@
     $('#letter').addEventListener('input', ()=>{ if(!gateOK) return; draft.body = $('#letter').value; draft.updated_at = Date.now(); saveLocal(); $('#letterView').textContent = draft.body; });
     $('#notes').addEventListener('input',  ()=>{ if(!gateOK) return; draft.notes = $('#notes').value; draft.updated_at = Date.now(); saveLocal(); });
     $('#hex').addEventListener('change',   ()=>{ if(!gateOK) return; const v=$('#hex').value.trim(); if(/^#([0-9a-f]{6})$/i.test(v)){ draft.palette_hex=v; setTextColor(v); saveLocal(); }});
-    $('#dateInput').addEventListener('change', ()=>{ if(!gateOK) return; draft.entry_date = $('#dateInput').value || ymd(); draft.updated_at = Date.now(); saveLocal(); });
-    $('#newBtn').onclick = ()=>{ if(!gateOK) return; draft = freshEntry(); draft.user_id = user?.id || null; saveLocal(); render(); };
+    $('#dateInput').addEventListener('change', ()=>{ if(!gateOK) return; draft.entry_date = $('#dateInput').value || ymd(); draft.updated_at = Date.now(); saveLocal(); $('#dateView').textContent = draft.entry_date; });
+    $('#newBtn').onclick = ()=>{ if(!gateOK) return; draft = freshEntry(); if(user) draft.user_id = user.id; saveLocal(); render(); };
     $('#saveBtn').onclick = ()=> saveCloud();
 
     // ====== gate ======
@@ -246,10 +263,10 @@
     $('#gateOk').onclick = ()=>{
       const v = $('#gateInput').value.trim();
       if(!v){ $('#gateMsg').textContent = 'enter passcode'; return; }
-      if(v === EDIT_PASSCODE){ gateOK = true; localStorage.setItem('dearself_gate_ok','1'); closeGate(); setEditable(gateOK); maybeShowUidBanner(); }
+      if(v === EDIT_PASSCODE){ gateOK = true; localStorage.setItem('dearself_gate_ok','1'); closeGate(); toggleEditUI(true); maybeShowUidBanner(); }
       else { $('#gateMsg').textContent = 'wrong passcode'; }
     };
-    $('#gateCancel').onclick = ()=>{ closeGate(); gateOK=false; localStorage.removeItem('dearself_gate_ok'); setEditable(false); };
+    $('#gateCancel').onclick = ()=>{ closeGate(); gateOK=false; localStorage.removeItem('dearself_gate_ok'); toggleEditUI(false); };
 
     // ====== supabase ======
     async function bootSupabase(){
@@ -278,7 +295,7 @@
       if(error){ $('#status').textContent = 'save error'; banner('save error: '+error.message); return; }
       $('#status').textContent = 'saved to cloud';
       // after save, hide editor (show letter only)
-      gateOK = false; localStorage.removeItem('dearself_gate_ok'); setEditable(false);
+      gateOK = false; localStorage.removeItem('dearself_gate_ok'); toggleEditUI(false);
       await loadHistory(); render();
     }
 
@@ -293,8 +310,9 @@
       window.__history = data || [];
     }
 
-    function banner(html){ const b=$('#banner'); b.innerHTML=html; b.hidden=false; }
+    function banner(html){ const b=$('#banner'); if(!SHOW_UID_BANNER) return; b.innerHTML=html; b.hidden=false; }
     function maybeShowUidBanner(){
+      if(!SHOW_UID_BANNER) return;
       if(!OWNER_USER_ID && user && gateOK){ banner(`Your uid: <code>${user.id}</code><br/>Paste this into <code>OWNER_USER_ID</code> in the script to make this page show your letters to visitors.`); }
     }
 
