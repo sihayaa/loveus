@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Journal Book — Blank (Supabase, passcode 123, fixed cover)</title>
+<title>Journal Book — Blank (Supabase, passcode 123)</title>
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pageW:980px; --pageH:1060px; /* change these to resize the book */
+  --pageW:980px; --pageH:1060px; /* widen or narrow the book here */
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
 }
@@ -20,15 +20,21 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
   box-shadow:inset 0 0 60px rgba(0,0,0,.22),0 18px 40px rgba(0,0,0,.35);
   overflow:hidden;transform-origin:center;transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .45s,filter .45s;opacity:.85;filter:saturate(.95);
   pointer-events:none;z-index:0}
-.page .page-canvas{position:relative;width:100%;height:100%;padding:28px;font-size:22px;line-height:1.35}
-/* ===== FIXED COVER IMAGE (not editable) ===== */
+$1
+/* ===== FIXED COVER IMAGE (full-bleed, non-editable) ===== */
 .page.cover .page-canvas{
-  padding:0; /* full-bleed */
+  padding:0;
   background:#0c102c;
   background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-bg.png');
-  background-size:cover; background-position:center; background-repeat:no-repeat;
-  pointer-events:none !important; /* never editable */
+  background-size:cover;
+  background-position:center;
+  background-repeat:no-repeat;
+  pointer-events:none!important; /* never editable */
 }
+/* Hide any accidental scraps on the cover */
+.page.cover .scrap-item{display:none!important}
+/* Even in edit mode, keep the cover locked */
+body.editing .page.cover .page-canvas{pointer-events:none!important}
 
 .page.active{opacity:1;filter:none;pointer-events:auto;z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95);z-index:1}
@@ -36,6 +42,15 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 .active{transform:translateX(0) rotate(0) scale(1);z-index:3}
 .pos-1{transform:translateX(36px) rotate(.6deg) scale(.975);z-index:2}
 .pos-2{transform:translateX(70px) rotate(1.2deg) scale(.95);z-index:1}
+
+.nav{position:absolute;top:50%;transform:translateY(-50%);border:0;width:56px;height:56px;border-radius:50%;cursor:pointer;z-index:10;
+  background:#ffffffd8;box-shadow:0 10px 22px rgba(0,0,0,.25);font-weight:900;font-size:22px;color:#182042;display:grid;place-items:center}
+.nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45;pointer-events:none}
+
+/* Add Page shows only in edit mode */
+.addpage{position:absolute;left:50%;bottom:-64px;transform:translateX(-50%);border:0;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:900;
+  background:#ffffffd8;color:#182042;box-shadow:0 10px 22px rgba(0,0,0,.25);display:none}
+body.editing .addpage{display:block}
 
 /* Scrap items */
 .scrap-item{position:absolute;transform-origin:center;touch-action:none;overflow:visible}
@@ -52,10 +67,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 body.editing .page.active .page-canvas, body.editing .scrap-item { pointer-events:auto }
 body.editing .scrap-item{cursor:move}
 body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{display:block}
-/* keep COVER uneditable even in editing */
-body.editing .page.cover .page-canvas{ pointer-events:none !important }
-/* and hide any accidental scraps on cover */
-.page.cover .scrap-item{ display:none !important }
 
 /* Sidebar toolbar (same as scrapbook) */
 #toolbar{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:100;background:#fff;border:2px solid #e8dcc6;border-radius:14px;padding:12px;width:260px;gap:10px;box-shadow:0 10px 22px rgba(0,0,0,.25);display:none;flex-direction:column}
@@ -83,15 +94,6 @@ body.editing .page.cover .page-canvas{ pointer-events:none !important }
 #editorCancel{background:#ff9aa2;color:#4c0a17}
 #editorSave{background:var(--mint);color:#022d2c}
 .scrap-text[contenteditable="true"]{outline:2px dashed #7a5af888;outline-offset:4px}
-
-/* nav + add page */
-.nav{position:absolute;top:50%;transform:translateY(-50%);border:0;width:56px;height:56px;border-radius:50%;cursor:pointer;z-index:10;
-  background:#ffffffd8;box-shadow:0 10px 22px rgba(0,0,0,.25);font-weight:900;font-size:22px;color:#182042;display:grid;place-items:center}
-.nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45;pointer-events:none}
-
-.addpage{position:absolute;left:50%;bottom:-64px;transform:translateX(-50%);border:0;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:900;
-  background:#ffffffd8;color:#182042;box-shadow:0 10px 22px rgba(0,0,0,.25);display:none}
-body.editing .addpage{display:block}
 </style>
 </head>
 <body>
@@ -268,7 +270,7 @@ body.editing .addpage{display:block}
 
   // ===== text editor
   addTextBtn.onclick=()=>{ if(current===0){ alert('Cover is fixed and cannot be edited.'); return; } openTextEditor(); };
-  editSelectedBtn.onclick=()=>{ if(current===0){ alert('Cover is fixed.'); return; } const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; openTextEditor({ text:t.textContent, size:parseInt(getComputedStyle(t).fontSize)||28, color:rgbToHex(getComputedStyle(t).color), targetBox:selectedItem }); };
+  editSelectedBtn.onclick=()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; openTextEditor({ text:t.textContent, size:parseInt(getComputedStyle(t).fontSize)||28, color:rgbToHex(getComputedStyle(t).color), targetBox:selectedItem }); };
   editor.cancel.onclick=()=>hideEditor();
   document.getElementById('textEditor').addEventListener('click',e=>{ if(e.target.id==='textEditor') hideEditor(); });
 
@@ -288,10 +290,9 @@ body.editing .addpage{display:block}
     hideEditor();
   };
 
-  // ===== photo upload → NEW bucket (blocked on cover)
+  // ===== photo upload → NEW bucket
   addPhotoBtn.onclick=()=>{ if(current===0){ alert('Cover is fixed and cannot accept photos.'); return; } fileInput.click(); };
   fileInput.addEventListener('change',async e=>{
-    if(current===0){ e.target.value=''; return; }
     const f=e.target.files?.[0]; if(!f) return; try{ const url = await uploadToBucket(f, { page: current+1 }); const c=getPages()[current].querySelector('.page-canvas'); const box=document.createElement('div'); box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px'; box.dataset.fit='contain'; box.dataset.lock='1'; box.innerHTML='<img class="scrap-img" alt="" src="'+url+'" decoding="async"><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'; c.appendChild(box); makeDraggable(box); const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} }; if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect); fileInput.value=''; select(box); }catch(err){ alert("Upload failed: " + (err?.message || err)); console.warn(err); }});
 
   function safeName(name){ return String(name||'photo').replace(/[\/\\?#%]+/g,'-').replace(/[^\w.\-]+/g,'_').slice(-80); }
@@ -311,7 +312,7 @@ body.editing .addpage{display:block}
   fitToggleBtn.onclick=()=>{ if(!selectedItem) return; const fit=selectedItem.dataset.fit==='cover'?'contain':'cover'; selectedItem.dataset.fit=fit; fitToggleBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); };
   lockToggleBtn.onclick=()=>{ if(!selectedItem) return; const lock=selectedItem.dataset.lock==='1'? '0':'1'; selectedItem.dataset.lock=lock; lockToggleBtn.textContent='Lock: '+(lock==='1'?'On':'Off'); };
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
-  clearPageBtn.onclick=()=>{ const c=getPages()[current].querySelector('.page-canvas'); if(current===0){ alert('Cover is fixed.'); return; } if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
+  clearPageBtn.onclick=()=>{ const c=getPages()[current].querySelector('.page-canvas'); if(current===0){ alert('Cover is locked.'); return; } if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
   // ===== selection
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex=++zCounter; } updateToolbarState(); }
@@ -356,7 +357,6 @@ body.editing .addpage{display:block}
   }
 
   async function saveCurrentPage(){
-    if(current===0){ alert('Cover is fixed and not saved. Switch to a content page.'); return; }
     const p=current+1;
     await fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&page_no=eq.${p}`,{method:'DELETE',headers:apiHeaders});
     await fetch(`${SUPABASE_URL}/rest/v1/journal_photo?doc_id=eq.${encodeURIComponent(STATE_ID)}&page_no=eq.${p}`,{method:'DELETE',headers:apiHeaders});
@@ -375,17 +375,14 @@ body.editing .addpage{display:block}
     if(!tRes.ok || !pRes.ok){ setClasses(); return; }
     const texts=await tRes.json(); const photos=await pRes.json();
     const maxPageFromCloud = Math.max(1, ...texts.map(r=>r.page_no||1), ...photos.map(r=>r.page_no||1));
-    // ensure DOM has enough pages (keep cover)
-    while(getPages().length < Math.max(1, maxPageFromCloud)){
-      const el=document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(el);
-    }
+    // ensure DOM has enough pages
+    while(getPages().length < maxPageFromCloud){ const el=document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(el); }
 
     const byPage=new Map(); for(let i=1;i<=getPages().length;i++) byPage.set(i,{texts:[],photos:[]});
     texts.forEach(r=>byPage.get(r.page_no)?.texts.push(r));
     photos.forEach(r=>byPage.get(r.page_no)?.photos.push(r));
 
-    for(let i=1;i<=getPages().length;i++){
-      if(i===1) continue; // never render items on cover
+    for(let i=1;i<=getPages().length;i++){ if(i===1) continue;
       const c=getPages()[i-1]?.querySelector('.page-canvas'); if(!c) continue;
       (byPage.get(i).texts||[]).forEach(it=>{ const box=document.createElement('div'); box.className='scrap-item'; box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px'; if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; } const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim(); const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner); box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'); c.appendChild(box); makeDraggable(box); });
       (byPage.get(i).photos||[]).forEach(it=>{ const box=document.createElement('div'); box.className='scrap-item'; box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px'; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0'; if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; } box.innerHTML='<img class="scrap-img" alt="" src="'+it.src+'" decoding="async"><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'; const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} }; if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect); c.appendChild(box); makeDraggable(box); });
