@@ -3,15 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Book Journal — Minimal</title>
+<title>Book Journal — Blank Pages (type 123 to edit)</title>
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* Wider book — change this only */
   --pageW: 980px; --pageH: 1060px;
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --font:"Lobster", cursive;
-  --cover-img: radial-gradient(closest-side at 50% 40%,#1d2a55 0%,#0c102c 60%);
 }
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
@@ -20,10 +18,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 .deck{position:absolute;inset:0;perspective:1200px}
 .page{position:absolute;inset:0;background:var(--paper);border-radius:20px;border:2px solid #efe6d5;
   box-shadow:inset 0 0 60px rgba(0,0,0,.22),0 18px 40px rgba(0,0,0,.35);
-  overflow:hidden;transform-origin:center;transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .45s,filter .45s;opacity:.75;filter:saturate(.95);pointer-events:none;z-index:0}
+  overflow:hidden;transform-origin:center;transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .45s,filter .45s;opacity:.9;filter:saturate(.95);pointer-events:none;z-index:0}
 .page .page-canvas{position:relative;width:100%;height:100%;padding:32px}
-.page.cover .page-canvas{padding:0;background:#0c102c;background-image:var(--cover-img);}
-.page.backcover .page-canvas{padding:0;background:#0c102c}
 .page.active{opacity:1;filter:none;pointer-events:auto;z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95);z-index:1}
 .pos--1{transform:translateX(-36px) rotate(-.6deg) scale(.975);z-index:2}
@@ -31,20 +27,17 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 .pos-1{transform:translateX(36px) rotate(.6deg) scale(.975);z-index:2}
 .pos-2{transform:translateX(70px) rotate(1.2deg) scale(.95);z-index:1}
 
-/* Clean reader UI */
-.entry{position:relative; width:100%; height:100%; padding:28px;}
-.date-view{position:absolute; top:18px; right:22px; opacity:.7; font-size:22px}
-.letter-view{white-space:pre-wrap; font-size:34px; line-height:1.35}
+/* Clean page */
+.entry{position:relative; width:100%; height:100%;}
+.letter-view{white-space:pre-wrap; font-size:34px; line-height:1.35; width:100%; height:100%;}
 
-/* Editor elements (only visible in edit mode) */
+/* Editor (only when unlocked) */
 .edit-only{display:none}
 body.editing .edit-only{display:block}
 body.editing .view-only{display:none}
 
-textarea.letter-edit{width:100%; height:78%; resize:vertical; border:2px dashed #e8dcc6; background:rgba(255,255,255,.65); border-radius:16px; padding:18px; font:34px/1.35 var(--font); color:var(--ink)}
-.controls{position:absolute; left:28px; bottom:22px; display:flex; gap:8px}
-.btn{border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:900; background:#ffffffd8; color:#182042; box-shadow:0 10px 22px rgba(0,0,0,.25)}
-.btn:active{transform:scale(.98)}
+.editor{position:absolute; inset:32px;}
+.editor [contenteditable]{outline:none; border:0; width:100%; height:100%; padding:0; background:transparent; font:34px/1.35 var(--font); color:var(--ink);}
 
 /* nav + add page */
 .nav{position:absolute;top:50%;transform:translateY(-50%);border:0;width:56px;height:56px;border-radius:50%;cursor:pointer;z-index:10;
@@ -53,52 +46,35 @@ textarea.letter-edit{width:100%; height:78%; resize:vertical; border:2px dashed 
 .addpage{position:absolute;left:50%;bottom:-64px;transform:translateX(-50%);border:0;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:900;
   background:#ffffffd8;color:#182042;box-shadow:0 10px 22px rgba(0,0,0,.25);display:none}
 body.editing .addpage{display:block}
-
-/* Passcode Gate */
-#gate{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:1000}
-#gate.open{display:flex}
-#gate .panel{background:#fff;border:2px solid #e8dcc6;border-radius:16px;padding:18px;width:min(420px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.45)}
-#gate input{width:100%;padding:12px;border-radius:12px;border:2px solid #e8dcc6;font:700 20px var(--font);color:#0d2a6b}
-#gate .row{display:flex;gap:8px;justify-content:flex-end;margin-top:10px}
 </style>
 </head>
 <body>
 
 <div id="stage">
   <div class="deck" id="deck">
+    <!-- cover + 5 blank sheets to start; no back cover -->
     <div class="page cover active" data-page="1"><div class="page-canvas"></div></div>
     <div class="page" data-page="2"><div class="page-canvas"></div></div>
-    <div class="page backcover" data-page="3"><div class="page-canvas"></div></div>
+    <div class="page" data-page="3"><div class="page-canvas"></div></div>
+    <div class="page" data-page="4"><div class="page-canvas"></div></div>
+    <div class="page" data-page="5"><div class="page-canvas"></div></div>
+    <div class="page" data-page="6"><div class="page-canvas"></div></div>
   </div>
   <button class="nav left"  id="prev" aria-label="Previous">◀</button>
   <button class="nav right" id="next" aria-label="Next">▶</button>
   <button class="addpage" id="addPageBtn" title="Add Page">＋ Add Page</button>
 </div>
 
-<!-- Gate -->
-<div id="gate" aria-hidden="true">
-  <div class="panel">
-    <h3 style="margin:0 0 8px;color:#0d2a6b">enter passcode to edit</h3>
-    <input id="gateInput" type="password" placeholder="passcode">
-    <div class="row">
-      <button id="gateCancel" class="btn">Cancel</button>
-      <button id="gateOk" class="btn">Unlock</button>
-    </div>
-    <div id="gateMsg" style="margin-top:6px;opacity:.7"></div>
-  </div>
-</div>
-
 <script>
 (function(){
-  const PASSCODE = 'word'; // change this
-  const STORAGE_KEY = 'book_journal_min_v1';
+  const PASSCODE = '123'; // type this anywhere to unlock edit mode
+  const STORAGE_KEY = 'book_journal_blank_v1';
 
   const deck = document.getElementById('deck');
   const stage = document.getElementById('stage');
   const prevBtn=document.getElementById('prev');
   const nextBtn=document.getElementById('next');
   const addPageBtn=document.getElementById('addPageBtn');
-  const gate = document.getElementById('gate');
 
   let current = 0; // page index
   let state = load() || makeInitial();
@@ -112,17 +88,13 @@ body.editing .addpage{display:block}
   addEventListener('resize', fitStage); fitStage();
 
   function makeInitial(){
-    return { pages: [
-      { kind:'cover' },
-      { kind:'entry', date: today(), body: 'Dear self,\n\n' },
-      { kind:'back' }
-    ]};
+    // cover + 5 blank pages
+    return { pages: [ {kind:'cover'}, {kind:'entry', body:''}, {kind:'entry', body:''}, {kind:'entry', body:''}, {kind:'entry', body:''}, {kind:'entry', body:''} ] };
   }
-  function today(){ const d=new Date(); return d.getFullYear()+ '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); }
   function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
   function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(_){ return null } }
 
-  function getPages(){ return Array.from(deck.querySelectorAll('.page')); }
+  const getPages = ()=> Array.from(deck.querySelectorAll('.page'));
   function setClasses(){
     const pages=getPages();
     pages.forEach((p,i)=>{
@@ -137,16 +109,14 @@ body.editing .addpage{display:block}
   }
 
   function renderAll(){
-    // ensure DOM pages match state
     deck.innerHTML='';
     state.pages.forEach((pg,idx)=>{
-      const el=document.createElement('div'); el.className='page'; if(idx===0) el.classList.add('cover'); if(idx===state.pages.length-1) el.classList.add('backcover');
+      const el=document.createElement('div'); el.className='page'; if(idx===0) el.classList.add('cover');
       el.dataset.page=String(idx+1);
       el.innerHTML='<div class="page-canvas"></div>';
       deck.appendChild(el);
       if(pg.kind==='entry') buildEntry(el, pg, idx);
     });
-    // set active
     current = Math.min(current, state.pages.length-1);
     setClasses();
   }
@@ -155,55 +125,49 @@ body.editing .addpage{display:block}
     const canvas = pageEl.querySelector('.page-canvas');
     const wrap = document.createElement('div'); wrap.className='entry';
     wrap.innerHTML = `
-      <div class="date-view view-only">${pageData.date}</div>
-      <textarea class="letter-edit edit-only" placeholder="Dear self,\n\n"></textarea>
       <div class="letter-view view-only"></div>
-      <div class="controls edit-only">
-        <button class="btn" data-act="save">Save</button>
-        <button class="btn" data-act="exit">Exit Edit</button>
-      </div>`;
+      <div class="editor edit-only"><div class="letter-edit" contenteditable="true" spellcheck="true"></div></div>`;
     canvas.appendChild(wrap);
 
-    const ta = wrap.querySelector('.letter-edit');
     const view = wrap.querySelector('.letter-view');
-    const dateView = wrap.querySelector('.date-view');
+    const ed   = wrap.querySelector('.letter-edit');
 
-    const sync = ()=>{ ta.value = pageData.body; view.textContent = pageData.body; dateView.textContent = pageData.date; };
+    const sync = ()=>{ view.textContent = pageData.body||''; ed.textContent = pageData.body||''; };
     sync();
 
-    // Save / Exit
-    wrap.addEventListener('click', (e)=>{
-      const b=e.target.closest('button'); if(!b) return;
-      if(b.dataset.act==='save'){ pageData.body = ta.value; save(); exitEdit(); }
-      if(b.dataset.act==='exit'){ exitEdit(); }
-    });
+    // autosave on edit
+    ed.addEventListener('input', ()=>{ pageData.body = ed.textContent; save(); view.textContent = pageData.body; });
   }
 
-  // add page before back cover
+  // add page (append at end)
   addPageBtn.addEventListener('click', ()=>{
-    state.pages.splice(state.pages.length-1, 0, { kind:'entry', date: today(), body: 'Dear self,\n\n' });
-    current = state.pages.length-2; // newly inserted index
+    state.pages.push({kind:'entry', body:''});
+    current = state.pages.length-1;
     renderAll();
   });
 
   // nav
-  document.getElementById('prev').onclick = ()=>{ current=Math.max(0,current-1); setClasses(); };
-  document.getElementById('next').onclick = ()=>{ current=Math.min(state.pages.length-1,current+1); setClasses(); };
+  prevBtn.onclick = ()=>{ current=Math.max(0,current-1); setClasses(); };
+  nextBtn.onclick = ()=>{ current=Math.min(state.pages.length-1,current+1); setClasses(); };
 
-  // ===== edit gate =====
-  function openGate(){ gate.classList.add('open'); document.getElementById('gateInput').value=''; document.getElementById('gateMsg').textContent=''; document.getElementById('gateInput').focus(); }
-  function closeGate(){ gate.classList.remove('open'); }
+  // ===== direct passcode (type 123) =====
+  let buf=''; let t=null;
+  function normalizeDigit(e){
+    if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1') return '1';
+    if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2') return '2';
+    if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3') return '3';
+    return /^[0-9]$/.test(e.key)? e.key : '';
+  }
+  addEventListener('keydown', (e)=>{
+    if(e.ctrlKey||e.metaKey||e.altKey) return; // ignore combos
+    const d = normalizeDigit(e); if(!d) return;
+    buf += d; clearTimeout(t); t = setTimeout(()=> buf='', 1200);
+    if(buf.endsWith(PASSCODE)){
+      buf=''; enterEdit();
+    }
+  });
+
   function enterEdit(){ document.body.classList.add('editing'); }
-  function exitEdit(){ document.body.classList.remove('editing'); }
-  document.getElementById('gateOk').onclick = ()=>{
-    const v = document.getElementById('gateInput').value.trim();
-    if(!v){ document.getElementById('gateMsg').textContent='enter passcode'; return; }
-    if(v===PASSCODE){ closeGate(); enterEdit(); }
-    else { document.getElementById('gateMsg').textContent='wrong passcode'; }
-  };
-  document.getElementById('gateCancel').onclick = ()=>{ closeGate(); };
-  // keyboard toggle
-  addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.key.toLowerCase()==='e'){ if(document.body.classList.contains('editing')) exitEdit(); else openGate(); }});
 
   // click on page in edit mode selects it
   deck.addEventListener('mousedown', (e)=>{
