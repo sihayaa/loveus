@@ -16,7 +16,7 @@
     .wrap{ max-width: 1000px; margin: 16px auto 40px; padding: 0 12px; position: relative; }
 
     /* back button */
-    .back-button{ position:fixed; top:14px; left:14px; z-index:10; text-decoration:none;
+    .back-button{ position:fixed; top:14px; left:14px; z-index:11; text-decoration:none;
       background:#ffffffcc; backdrop-filter:blur(4px); color:#2a2740; padding:8px 12px; border-radius:12px;
       border:1px solid #e0d8ef; box-shadow:0 6px 18px rgba(0,0,0,.08) }
     .back-button:hover{ transform:translateY(-1px) }
@@ -49,6 +49,8 @@
     #letter::placeholder{ color:#aa96bd }
     #letter[readonly]{ background:#fdfdff }
 
+    .letter-view{ white-space:pre-wrap; padding:14px; border-radius:14px; border:1px solid #eadff4; background:#fff; line-height:1.5 }
+
     .footer{ margin-top:12px }
     #notes{ width:100%; min-height:120px; resize:vertical; padding:12px; border-radius:12px; border:1px solid #eadff4; background:#fff }
     #notes[readonly]{ background:#fdfdff }
@@ -65,12 +67,34 @@
     .row{ display:flex; justify-content:space-between; gap:8px; align-items:center; padding:10px; border:1px solid #e7ecff; border-radius:12px; background:#f9fbff; cursor:pointer }
     .row:hover{ background:#f2fbf7; border-color:#d2f5ea }
 
+    /* gate overlay */
+    .gate{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:10; background:rgba(14,14,20,.6); backdrop-filter:blur(2px) }
+    .gate .box{ background:#fff; padding:16px; border-radius:14px; width:min(420px, 92vw); box-shadow:0 18px 40px rgba(0,0,0,.25) }
+    .gate .box h3{ margin:0 0 8px 0; font-size:20px }
+    .gate input{ width:100%; padding:10px; border-radius:10px; border:1px solid #e0d8ef; font:inherit }
+    .gate .row{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px }
+    .tip{ font-size:12px; opacity:.7 }
+
     @media (max-width: 760px){ .moods{ justify-content:flex-start } }
   </style>
 </head>
 <body>
   <!-- Back button: change href to your site’s home -->
   <a class="back-button" href="index.html">← back</a>
+
+  <!-- Passcode Gate -->
+  <div class="gate" id="gate">
+    <div class="box">
+      <h3>enter passcode to edit</h3>
+      <div class="tip">viewers can read letters without a passcode. the passcode only reveals the editor.</div>
+      <input id="gateInput" type="password" placeholder="passcode" />
+      <div class="row">
+        <button id="gateCancel">cancel</button>
+        <button id="gateOk" class="primary">unlock editor</button>
+      </div>
+      <div class="tip" id="gateMsg"></div>
+    </div>
+  </div>
 
   <div class="wrap">
     <header>
@@ -99,10 +123,13 @@
         <input id="hex" class="hex" placeholder="#custom" maxlength="7" />
       </div>
 
+      <!-- edit textarea -->
       <textarea id="letter" placeholder="Dear self,\n\n…"></textarea>
+      <!-- read view -->
+      <div id="letterView" class="letter-view" hidden></div>
 
-      <div class="footer">
-        <label style="display:block; margin-bottom:6px">notes</label>
+      <div class="footer" id="notesWrap">
+        <label style="display:block; margin-bottom:6px">notes (private)</label>
         <textarea id="notes" placeholder="freeform notes…"></textarea>
       </div>
 
@@ -111,7 +138,6 @@
         <button id="saveBtn" class="primary">save</button>
         <span class="status" id="status">—</span>
       </div>
-
       <div class="banner" id="banner" hidden></div>
     </section>
 
@@ -121,79 +147,80 @@
   <!-- Supabase JS -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
-    // ====== CONFIG (fill these) ======
-    const SUPABASE_URL = "";       // e.g., "https://xxxxx.supabase.co"
-    const SUPABASE_ANON_KEY = "";  // your anon public key
-    const OWNER_USER_ID = "";      // your uid (set after first load – see steps)
+    // ====== CONFIG ======
+    const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
 
-    // presets
+    // Which user's letters to show on this page (so visitors can view). Optional.
+    const OWNER_USER_ID = ""; // <- paste your uid after first load, or leave blank to show only the current session's letters
+
+    // Passcode to reveal editor (change this!)
+    const EDIT_PASSCODE = "word"; // ← set your secret; editor unlocks only when this matches
+
     const PRESET_COLORS = ["#67e4ca", "#7a5af8", "#342943", "#e476e9", "#0b3c5d"]; // mint, purple, ink, rose, midnight
     const STARTER_MOODS = ["sad","confused","depressed","angry","numb","anxious","lonely","guilty","overwhelmed","hopeful"];
 
-    // state
-    let supa = null, user = null, isOwner = false;
+    // ====== state ======
+    let supa = null, user = null, gateOK = false;
     const localKey = 'dearself_v1';
-    const $ = s => document.querySelector(s);
-    const $$ = s => Array.from(document.querySelectorAll(s));
+    const $ = s => document.querySelector(s); const $$ = s => Array.from(document.querySelectorAll(s));
     const ymd = (d=new Date()) => [d.getFullYear(), String(d.getMonth()+1).padStart(2,'0'), String(d.getDate()).padStart(2,'0')].join('-');
     const uid = () => crypto.randomUUID();
+
     function freshEntry(){
       return { id: uid(), user_id: null, entry_date: ymd(), body: 'Dear self,\n\n', notes: '', moods: [], palette_hex: PRESET_COLORS[0], is_public: true, created_at: Date.now(), updated_at: Date.now() };
     }
+    function saveLocal(){ localStorage.setItem(localKey, JSON.stringify(draft)); $('#status').textContent = 'saved local'; }
+    function loadLocal(){ try{ return JSON.parse(localStorage.getItem(localKey)); }catch(e){ return null }
+    }
     let draft = loadLocal() || freshEntry();
 
-    // local save/load
-    function saveLocal(){ localStorage.setItem(localKey, JSON.stringify(draft)); $('#status').textContent = 'saved local'; }
-    function loadLocal(){ try{ return JSON.parse(localStorage.getItem(localKey)); }catch(e){ return null } }
-
-    // render
+    // ====== render ======
     function render(){
       $('#dateStamp').textContent = new Date(draft.created_at||Date.now()).toLocaleString();
       $('#dateInput').value = draft.entry_date;
       $('#letter').value = draft.body;
+      $('#letterView').textContent = draft.body;
       $('#notes').value = draft.notes;
       setTextColor(draft.palette_hex);
       $$('#moodsBox .chip').forEach(ch => ch.classList.toggle('sel', draft.moods.includes(ch.dataset.mood)));
-      setEditable(isOwner);
+      setEditable(gateOK);
       renderHistory(window.__history || []);
     }
+
     function setEditable(edit){
-      $('#letter').readOnly = !edit;
-      $('#notes').readOnly = !edit;
+      // toggle fields
+      $('#letter').hidden = !edit; $('#letterView').hidden = edit;
+      $('#letter').readOnly = !edit; $('#notes').readOnly = !edit;
       $('#dateInput').disabled = !edit; $('#dateInput').classList.toggle('disabled', !edit);
       $('#hex').disabled = !edit; $('#hex').classList.toggle('disabled', !edit);
       $$('#swatches .swatch').forEach(s=> s.classList.toggle('disabled', !edit));
       $$('#moodsBox .chip').forEach(ch=> ch.classList.toggle('disabled', !edit));
       $('#ownerActions').style.display = edit ? 'flex' : 'none';
+      // notes visibility: viewers never see notes
+      $('#notesWrap').style.display = edit ? 'block' : 'none';
     }
+
     function renderSwatches(){
       const box = $('#swatches'); box.innerHTML = '';
       PRESET_COLORS.forEach(c=>{
         const s = document.createElement('div'); s.className='swatch'; s.style.background = c; s.title=c;
-        s.onclick = ()=>{ if(!isOwner) return; draft.palette_hex=c; setTextColor(c); saveLocal(); };
-        if(draft.palette_hex===c) s.classList.add('sel');
-        box.appendChild(s);
+        s.onclick = ()=>{ if(!gateOK) return; draft.palette_hex=c; setTextColor(c); saveLocal(); };
+        if(draft.palette_hex===c) s.classList.add('sel'); box.appendChild(s);
       });
     }
-    function setTextColor(hex){
-      $('#letter').style.color = hex;
-      $('#hex').value = hex;
-      $$('#swatches .swatch').forEach(s=> s.classList.toggle('sel', s.title===hex));
-    }
+    function setTextColor(hex){ $('#letter').style.color = hex; $('#hex').value = hex; $$('#swatches .swatch').forEach(s=> s.classList.toggle('sel', s.title===hex)); }
+
     function renderMoodChips(){
       const box = $('#moodsBox'); box.innerHTML='';
       STARTER_MOODS.forEach(m=>{
         const el = document.createElement('span'); el.className='chip'; el.textContent=m; el.dataset.mood=m;
-        el.onclick = ()=>{ if(!isOwner) return;
-          const i = draft.moods.indexOf(m);
-          if(i>-1) draft.moods.splice(i,1);
-          else { if(draft.moods.length>=3) return flashLimit(); draft.moods.push(m); }
-          saveLocal(); render();
-        };
+        el.onclick = ()=>{ if(!gateOK) return; const i = draft.moods.indexOf(m); if(i>-1) draft.moods.splice(i,1); else { if(draft.moods.length>=3) return flashLimit(); draft.moods.push(m); } saveLocal(); render(); };
         box.appendChild(el);
       });
     }
     function flashLimit(){ const n=$('#moodLimit'); n.style.color='#b33'; setTimeout(()=> n.style.color='', 600); }
+
     function renderHistory(list){
       const box = $('#history'); box.innerHTML='';
       if(!list.length){ box.innerHTML = '<div class="sub">no entries yet</div>'; return; }
@@ -205,19 +232,28 @@
       });
     }
 
-    // events
-    $('#letter').addEventListener('input', ()=>{ if(!isOwner) return; draft.body = $('#letter').value; draft.updated_at = Date.now(); saveLocal(); });
-    $('#notes').addEventListener('input',  ()=>{ if(!isOwner) return; draft.notes = $('#notes').value; draft.updated_at = Date.now(); saveLocal(); });
-    $('#hex').addEventListener('change',   ()=>{ if(!isOwner) return; const v=$('#hex').value.trim(); if(/^#([0-9a-f]{6})$/i.test(v)){ draft.palette_hex=v; setTextColor(v); saveLocal(); }});
-    $('#dateInput').addEventListener('change', ()=>{ if(!isOwner) return; draft.entry_date = $('#dateInput').value || ymd(); draft.updated_at = Date.now(); saveLocal(); });
-    $('#newBtn').onclick = ()=>{ if(!isOwner) return; draft = freshEntry(); draft.user_id = user?.id || null; saveLocal(); render(); };
+    // ====== events ======
+    $('#letter').addEventListener('input', ()=>{ if(!gateOK) return; draft.body = $('#letter').value; draft.updated_at = Date.now(); saveLocal(); $('#letterView').textContent = draft.body; });
+    $('#notes').addEventListener('input',  ()=>{ if(!gateOK) return; draft.notes = $('#notes').value; draft.updated_at = Date.now(); saveLocal(); });
+    $('#hex').addEventListener('change',   ()=>{ if(!gateOK) return; const v=$('#hex').value.trim(); if(/^#([0-9a-f]{6})$/i.test(v)){ draft.palette_hex=v; setTextColor(v); saveLocal(); }});
+    $('#dateInput').addEventListener('change', ()=>{ if(!gateOK) return; draft.entry_date = $('#dateInput').value || ymd(); draft.updated_at = Date.now(); saveLocal(); });
+    $('#newBtn').onclick = ()=>{ if(!gateOK) return; draft = freshEntry(); draft.user_id = user?.id || null; saveLocal(); render(); };
     $('#saveBtn').onclick = ()=> saveCloud();
 
-    // supabase
+    // ====== gate ======
+    function openGate(){ $('#gate').style.display='flex'; $('#gateInput').focus(); }
+    function closeGate(){ $('#gate').style.display='none'; $('#gateMsg').textContent=''; $('#gateInput').value=''; }
+    $('#gateOk').onclick = ()=>{
+      const v = $('#gateInput').value.trim();
+      if(!v){ $('#gateMsg').textContent = 'enter passcode'; return; }
+      if(v === EDIT_PASSCODE){ gateOK = true; localStorage.setItem('dearself_gate_ok','1'); closeGate(); setEditable(gateOK); maybeShowUidBanner(); }
+      else { $('#gateMsg').textContent = 'wrong passcode'; }
+    };
+    $('#gateCancel').onclick = ()=>{ closeGate(); gateOK=false; localStorage.removeItem('dearself_gate_ok'); setEditable(false); };
+
+    // ====== supabase ======
     async function bootSupabase(){
-      if(!SUPABASE_URL || !SUPABASE_ANON_KEY){
-        banner(`cloud is <b>off</b>. paste your SUPABASE_URL and ANON KEY to enable sync.`); $('#syncBadge').textContent=''; window.__history=[]; render(); return;
-      }
+      if(!SUPABASE_URL || !SUPABASE_ANON_KEY){ banner(`cloud is <b>off</b>. add your project keys to enable sync.`); $('#syncBadge').textContent=''; window.__history=[]; render(); return; }
       supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       const { data: { session } } = await supa.auth.getSession();
       if(!session){ await supa.auth.signInAnonymously(); }
@@ -225,47 +261,54 @@
       user = me?.user || null;
 
       $('#syncBadge').textContent = user ? ' • cloud: on (anon)' : '';
-      if(!OWNER_USER_ID){ banner(`Owner UID not set. Current session uid: <code>${user?.id || 'none'}</code><br/>Copy this uid and paste into <code>OWNER_USER_ID</code> at the top of the script.`); }
-      isOwner = !!(user && OWNER_USER_ID && user.id === OWNER_USER_ID);
+      // passcode remembered?
+      gateOK = localStorage.getItem('dearself_gate_ok') === '1';
 
-      // attach uid to draft for new rows
       if(user && !draft.user_id){ draft.user_id = user.id; saveLocal(); }
       await loadHistory();
+      maybeShowUidBanner();
       render();
     }
+
     async function saveCloud(){
       if(!supa || !user){ $('#status').textContent = 'cloud off — saved local'; return; }
-      if(!isOwner){ banner('view-only mode. only the owner can save.'); return; }
-      const row = {
-        id: draft.id, user_id: user.id, entry_date: draft.entry_date,
-        body: draft.body, notes: draft.notes, moods: draft.moods,
-        palette_hex: draft.palette_hex, is_public: true
-      };
+      if(!gateOK){ banner('view-only mode. enter passcode to save.'); return; }
+      const row = { id: draft.id, user_id: user.id, entry_date: draft.entry_date, body: draft.body, notes: draft.notes, moods: draft.moods, palette_hex: draft.palette_hex, is_public: true };
       const { error } = await supa.from('journal_entries').upsert(row, { onConflict: 'id' });
       if(error){ $('#status').textContent = 'save error'; banner('save error: '+error.message); return; }
       $('#status').textContent = 'saved to cloud';
-      await loadHistory();
+      // after save, hide editor (show letter only)
+      gateOK = false; localStorage.removeItem('dearself_gate_ok'); setEditable(false);
+      await loadHistory(); render();
     }
+
     async function loadHistory(){
       if(!supa){ window.__history=[]; return; }
-      const targetId = OWNER_USER_ID || user?.id || null;
-      if(!targetId){ window.__history=[]; return; }
-      let query = supa.from('journal_entries').select('*').eq('user_id', targetId).order('created_at', { ascending:false }).limit(20);
-      if(!(user && user.id === targetId)) query = query.eq('is_public', true); // visitors see only public
-      const { data, error } = await query;
-      if(error){ banner('history error: '+error.message); window.__history=[]; return; }
+      const targetId = OWNER_USER_ID || user?.id || null; if(!targetId){ window.__history=[]; return; }
+      // viewers: never fetch notes; editor unlocked: include notes
+      const cols = gateOK ? 'id,user_id,entry_date,body,notes,moods,palette_hex,created_at' : 'id,user_id,entry_date,body,moods,palette_hex,created_at';
+      let query = supa.from('journal_entries').select(cols).eq('user_id', targetId).order('created_at', { ascending:false }).limit(20);
+      if(!(user && user.id === targetId)) query = query.eq('is_public', true);
+      const { data, error } = await query; if(error){ banner('history error: '+error.message); window.__history=[]; return; }
       window.__history = data || [];
     }
-    function banner(html){ const b=$('#banner'); b.innerHTML=html; b.hidden=false; }
 
-    // boot
+    function banner(html){ const b=$('#banner'); b.innerHTML=html; b.hidden=false; }
+    function maybeShowUidBanner(){
+      if(!OWNER_USER_ID && user && gateOK){ banner(`Your uid: <code>${user.id}</code><br/>Paste this into <code>OWNER_USER_ID</code> in the script to make this page show your letters to visitors.`); }
+    }
+
+    // ====== boot ======
     (function init(){
       // build UI
       (function renderMoodChips(){ const box=$('#moodsBox'); STARTER_MOODS.forEach(m=>{ const el=document.createElement('span'); el.className='chip'; el.dataset.mood=m; el.textContent=m;
-        el.onclick=()=>{ if(!isOwner) return; const i=draft.moods.indexOf(m); if(i>-1) draft.moods.splice(i,1); else { if(draft.moods.length>=3) return flashLimit(); draft.moods.push(m);} saveLocal(); render(); };
+        el.onclick=()=>{ if(!gateOK) return; const i=draft.moods.indexOf(m); if(i>-1) draft.moods.splice(i,1); else { if(draft.moods.length>=3) return flashLimit(); draft.moods.push(m);} saveLocal(); render(); };
         box.appendChild(el); }); })();
-      renderSwatches(); render();
-      bootSupabase();
+      renderSwatches(); render(); bootSupabase();
+      // open gate on Ctrl+E or long‑press title
+      document.addEventListener('keydown', (e)=>{ if(e.ctrlKey && e.key.toLowerCase()==='e'){ openGate(); }});
+      let pressTimer=null; document.querySelector('h1').addEventListener('mousedown', ()=>{ pressTimer=setTimeout(openGate, 800); });
+      document.querySelector('h1').addEventListener('mouseup', ()=>{ clearTimeout(pressTimer); });
     })();
   </script>
 </body>
