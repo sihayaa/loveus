@@ -22,15 +22,8 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
   pointer-events:none;z-index:0}
 $1
 /* ===== FIXED COVER IMAGE (full-bleed, non-editable) ===== */
-.page.cover .page-canvas{
-  padding:0;
-  background:#0c102c;
-  background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-bg.png');
-  background-size:cover;
-  background-position:center;
-  background-repeat:no-repeat;
-  pointer-events:none!important; /* never editable */
-}
+.page.cover .page-canvas{padding:0; position:relative; background:#0c102c; pointer-events:none!important;}
+.page.cover .page-canvas::before{content:""; position:absolute; inset:0; background-image:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-bg.png'); background-size:cover; background-position:center; background-repeat:no-repeat;}
 /* Hide any accidental scraps on the cover */
 .page.cover .scrap-item{display:none!important}
 /* Even in edit mode, keep the cover locked */
