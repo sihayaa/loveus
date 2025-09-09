@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Book Journal — Blank Pages (type 123 to edit)</title>
+<title>Journal Book — Blank (Supabase, passcode 123)</title>
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pageW: 980px; --pageH: 1060px;
+  --pageW:980px; --pageH:1060px; /* widen or narrow the book here */
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
-  --font:"Lobster", cursive;
+  --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
 }
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
@@ -18,8 +18,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 .deck{position:absolute;inset:0;perspective:1200px}
 .page{position:absolute;inset:0;background:var(--paper);border-radius:20px;border:2px solid #efe6d5;
   box-shadow:inset 0 0 60px rgba(0,0,0,.22),0 18px 40px rgba(0,0,0,.35);
-  overflow:hidden;transform-origin:center;transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .45s,filter .45s;opacity:.9;filter:saturate(.95);pointer-events:none;z-index:0}
-.page .page-canvas{position:relative;width:100%;height:100%;padding:32px}
+  overflow:hidden;transform-origin:center;transition:transform .45s cubic-bezier(.2,.7,.2,1),opacity .45s,filter .45s;opacity:.85;filter:saturate(.95);
+  pointer-events:none;z-index:0}
+.page .page-canvas{position:relative;width:100%;height:100%;padding:28px;font-size:22px;line-height:1.35}
 .page.active{opacity:1;filter:none;pointer-events:auto;z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95);z-index:1}
 .pos--1{transform:translateX(-36px) rotate(-.6deg) scale(.975);z-index:2}
@@ -27,32 +28,64 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 .pos-1{transform:translateX(36px) rotate(.6deg) scale(.975);z-index:2}
 .pos-2{transform:translateX(70px) rotate(1.2deg) scale(.95);z-index:1}
 
-/* Clean page */
-.entry{position:relative; width:100%; height:100%;}
-.letter-view{white-space:pre-wrap; font-size:34px; line-height:1.35; width:100%; height:100%;}
-
-/* Editor (only when unlocked) */
-.edit-only{display:none}
-body.editing .edit-only{display:block}
-body.editing .view-only{display:none}
-
-.editor{position:absolute; inset:32px;}
-.editor [contenteditable]{outline:none; border:0; width:100%; height:100%; padding:0; background:transparent; font:34px/1.35 var(--font); color:var(--ink);}
-
-/* nav + add page */
 .nav{position:absolute;top:50%;transform:translateY(-50%);border:0;width:56px;height:56px;border-radius:50%;cursor:pointer;z-index:10;
   background:#ffffffd8;box-shadow:0 10px 22px rgba(0,0,0,.25);font-weight:900;font-size:22px;color:#182042;display:grid;place-items:center}
-.nav.left{left:-72px} .nav.right{right:-72px} .nav.disabled{opacity:.45;pointer-events:none}
+.nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45;pointer-events:none}
+
+/* Add Page shows only in edit mode */
 .addpage{position:absolute;left:50%;bottom:-64px;transform:translateX(-50%);border:0;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:900;
   background:#ffffffd8;color:#182042;box-shadow:0 10px 22px rgba(0,0,0,.25);display:none}
 body.editing .addpage{display:block}
+
+/* Scrap items */
+.scrap-item{position:absolute;transform-origin:center;touch-action:none;overflow:visible}
+.scrap-item.selected{box-shadow:0 0 0 3px var(--accent)}
+.rotator,.mover,.resizer{display:none}
+.rotator{position:absolute;left:50%;top:-18px;transform:translate(-50%,-50%);width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:grab;z-index:999}
+.mover{position:absolute;left:-10px;top:-10px;width:18px;height:18px;border-radius:50%;background:#fff;border:3px solid var(--accent);cursor:grab}
+.resizer{position:absolute;right:-6px;bottom:-6px;width:16px;height:16px;border-radius:4px;background:var(--mint);border:2px solid #0b2c28;cursor:nwse-resize}
+.scrap-img{display:block;width:100%;height:100%;object-fit:contain;user-select:none;pointer-events:none;border-radius:16px}
+.scrap-item[data-fit="cover"] .scrap-img{object-fit:cover}
+.scrap-text{width:100%;background:transparent;border:0;color:inherit;font:inherit;white-space:pre-wrap;overflow:visible;min-height:1.2em}
+
+.page .page-canvas, .scrap-item { pointer-events:none }
+body.editing .page.active .page-canvas, body.editing .scrap-item { pointer-events:auto }
+body.editing .scrap-item{cursor:move}
+body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{display:block}
+
+/* Sidebar toolbar (same as scrapbook) */
+#toolbar{position:fixed;right:16px;top:50%;transform:translateY(-50%);z-index:100;background:#fff;border:2px solid #e8dcc6;border-radius:14px;padding:12px;width:260px;gap:10px;box-shadow:0 10px 22px rgba(0,0,0,.25);display:none;flex-direction:column}
+#toolbar.open{display:flex}
+#toolbar .group{display:flex;gap:8px;flex-wrap:wrap}
+#toolbar button{border:0;padding:8px 12px;border-radius:8px;cursor:pointer;font-weight:700;color:#fff;background:var(--accent);width:100%}
+#toolbar button.secondary{background:#5d47d4}
+#toolbar button.mint{background:var(--mint);color:#022d2c}
+#toolbar button.warn{background:#ff9aa2;color:#4c0a17}
+#toolbar input[type="number"], #toolbar select{width:100%;padding:8px;border-radius:8px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b;background:#fff}
+#toolbar input[type="color"]{width:100%;height:40px;padding:0;border:2px solid #e8dcc6;border-radius:8px;background:#fff}
+#toolbar input[type="text"]{width:100%;padding:8px;border-radius:8px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b;background:#fff;font-family:monospace}
+
+/* Big text editor */
+#textEditor{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;z-index:10000;align-items:center;justify-content:center}
+#textEditor.open{display:flex}
+#textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#textEditor textarea{width:100%;height:320px;font:28px/1.35 var(--font);color:#0d2a6b;padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical}
+#textEditor .row{display:flex;gap:12px;margin-top:10px}
+#textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
+#textEditor input[type="color"]{width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
+#textEditor input[type="text"]{width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6;padding:0 10px;font-weight:700;color:#0d2a6b;font-family:monospace}
+#textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+#textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+#editorCancel{background:#ff9aa2;color:#4c0a17}
+#editorSave{background:var(--mint);color:#022d2c}
+.scrap-text[contenteditable="true"]{outline:2px dashed #7a5af888;outline-offset:4px}
 </style>
 </head>
 <body>
 
 <div id="stage">
   <div class="deck" id="deck">
-    <!-- cover + 5 blank sheets to start; no back cover -->
+    <!-- cover + 5 BLANK pages (no back cover) -->
     <div class="page cover active" data-page="1"><div class="page-canvas"></div></div>
     <div class="page" data-page="2"><div class="page-canvas"></div></div>
     <div class="page" data-page="3"><div class="page-canvas"></div></div>
@@ -65,36 +98,124 @@ body.editing .addpage{display:block}
   <button class="addpage" id="addPageBtn" title="Add Page">＋ Add Page</button>
 </div>
 
+<!-- Toolbar -->
+<div id="toolbar" aria-hidden="true" inert>
+  <div class="group">
+    <button id="addTextBtn" class="mint">Add Text</button>
+    <button id="editSelectedBtn" class="secondary">Edit Selected</button>
+  </div>
+  <div class="group">
+    <button id="addPhotoBtn" class="secondary">Add Photo</button>
+    <input id="fileInput" type="file" accept="image/*">
+  </div>
+  <div class="group">
+    <label style="font-weight:700;color:#0d2a6b;">Text Size (px)</label>
+    <input id="fontSizeInput" type="number" min="8" max="200" step="1" placeholder="px" disabled>
+  </div>
+  <div class="group">
+    <label style="font-weight:700;color:#0d2a6b;">Text Color</label>
+    <input id="fontColorInput" type="color" value="#0d2a6b" disabled>
+    <input id="fontHexInput" type="text" placeholder="#RRGGBB" value="#0d2a6b" disabled>
+  </div>
+  <div class="group">
+    <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
+    <button id="lockToggleBtn" class="secondary">Lock: On</button>
+  </div>
+  <div class="group">
+    <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
+    <button id="clearPageBtn" class="warn">Clear Page</button>
+    <button id="saveBtn" class="mint">Save Page</button>
+  </div>
+  <div class="group">
+    <button id="exitEdit" class="warn">Exit Edit</button>
+    <button id="hideBar">🔒 Hide</button>
+  </div>
+</div>
+
+<!-- Big Text Editor -->
+<div id="textEditor" aria-hidden="true" inert>
+  <div class="panel">
+    <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
+    <textarea id="editorInput" placeholder="type here…"></textarea>
+    <div class="row">
+      <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+        Size (px)
+        <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
+      </label>
+      <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
+        Color
+        <input id="editorColor" type="color" value="#0d2a6b">
+        <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB">
+      </label>
+    </div>
+    <div class="actions">
+      <button id="editorCancel">Cancel</button>
+      <button id="editorSave">Save</button>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
-  const PASSCODE = '123'; // type this anywhere to unlock edit mode
-  const STORAGE_KEY = 'book_journal_blank_v1';
+  // ======== Supabase (NEW bucket+tables) ========
+  const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";   // your project URL
+  const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI"; // anon key
+  const BUCKET        = "journalbook"; // NEW bucket (public)
+  const STATE_ID      = "journal_main"; // group id for this book
 
+  const apiHeaders = {
+    apikey: SUPABASE_ANON,
+    Authorization: "Bearer " + SUPABASE_ANON,
+    "Content-Type": "application/json",
+    Accept: "application/json"
+  };
+
+  // ======== DOM refs ========
   const deck = document.getElementById('deck');
   const stage = document.getElementById('stage');
   const prevBtn=document.getElementById('prev');
   const nextBtn=document.getElementById('next');
   const addPageBtn=document.getElementById('addPageBtn');
 
-  let current = 0; // page index
-  let state = load() || makeInitial();
+  const toolbar = document.getElementById('toolbar');
+  const fileInput = document.getElementById('fileInput');
+  const addTextBtn = document.getElementById('addTextBtn');
+  const editSelectedBtn = document.getElementById('editSelectedBtn');
+  const addPhotoBtn = document.getElementById('addPhotoBtn');
+  const clearPageBtn = document.getElementById('clearPageBtn');
+  const saveBtn = document.getElementById('saveBtn');
+  const hideBar = document.getElementById('hideBar');
+  const exitEdit = document.getElementById('exitEdit');
+  const fontSizeInput=document.getElementById('fontSizeInput');
+  const fontColorInput=document.getElementById('fontColorInput');
+  const fontHexInput=document.getElementById('fontHexInput');
+  const fitToggleBtn=document.getElementById('fitToggleBtn');
+  const lockToggleBtn=document.getElementById('lockToggleBtn');
 
-  // === helpers ===
-  const fitStage = ()=>{
+  const editor = {
+    el: document.getElementById('textEditor'),
+    input: document.getElementById('editorInput'),
+    size: document.getElementById('editorSize'),
+    color: document.getElementById('editorColor'),
+    hex:   document.getElementById('editorHex'),
+    save: document.getElementById('editorSave'),
+    cancel: document.getElementById('editorCancel'),
+    targetBox: null
+  };
+
+  let current = 0;
+  let selectedItem=null, zCounter=10;
+
+  // ===== fit stage
+  function fitStage(){
     const vw=innerWidth, vh=innerHeight, mx=200, my=40;
     const s=Math.min(1, vw/(parseInt(getComputedStyle(stage).width)+mx), vh/(parseInt(getComputedStyle(stage).height)+my));
     stage.style.transform='scale('+s+')';
-  };
-  addEventListener('resize', fitStage); fitStage();
-
-  function makeInitial(){
-    // cover + 5 blank pages
-    return { pages: [ {kind:'cover'}, {kind:'entry', body:''}, {kind:'entry', body:''}, {kind:'entry', body:''}, {kind:'entry', body:''}, {kind:'entry', body:''} ] };
   }
-  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-  function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(_){ return null } }
+  fitStage(); addEventListener('resize', fitStage);
 
-  const getPages = ()=> Array.from(deck.querySelectorAll('.page'));
+  function getPages(){ return Array.from(deck.querySelectorAll('.page')); }
+
   function setClasses(){
     const pages=getPages();
     pages.forEach((p,i)=>{
@@ -107,76 +228,158 @@ body.editing .addpage{display:block}
     });
     prevBtn.classList.toggle('disabled', current===0);
   }
+  function go(delta){
+    const n=getPages().length; let next=current+delta;
+    if(delta>0 && next>=n) next=0;
+    if(delta<0 && next<0) next=0;
+    if(next!==current){ current=next; setClasses(); }
+  }
+  prevBtn.onclick=()=>go(-1); nextBtn.onclick=()=>go(1);
 
-  function renderAll(){
-    deck.innerHTML='';
-    state.pages.forEach((pg,idx)=>{
-      const el=document.createElement('div'); el.className='page'; if(idx===0) el.classList.add('cover');
-      el.dataset.page=String(idx+1);
-      el.innerHTML='<div class="page-canvas"></div>';
-      deck.appendChild(el);
-      if(pg.kind==='entry') buildEntry(el, pg, idx);
+  deck.addEventListener('mousedown', e=>{ if(!document.body.classList.contains('editing')) return; const pg=e.target.closest('.page'); if(!pg) return; current=getPages().indexOf(pg); setClasses(); });
+
+  // ===== show/hide overlays
+  function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
+  function hideToolbar(){ if(toolbar.contains(document.activeElement)) document.activeElement.blur(); toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
+  function showEditor(){ editor.el.classList.add('open'); editor.el.removeAttribute('aria-hidden'); editor.el.removeAttribute('inert'); setTimeout(()=>editor.input.focus(),0); }
+  function hideEditor(){ if(editor.el.contains(document.activeElement)) document.activeElement.blur(); editor.el.classList.remove('open'); editor.el.setAttribute('aria-hidden','true'); editor.el.setAttribute('inert',''); }
+
+  // ===== unlock by typing 123
+  const PASSCODE='123'; let keyBuf=''; let keyTimer=null;
+  function normDigit(e){ if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1')return'1'; if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2')return'2'; if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3')return'3'; return /^[0-9]$/.test(e.key)?e.key:''; }
+  addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey) return; const d=normDigit(e); if(!d) return; keyBuf+=d; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuf='',1200); if(keyBuf.endsWith(PASSCODE)){ keyBuf=''; enterEdit(); }});
+
+  function enterEdit(){ document.body.classList.add('editing'); showToolbar(); setClasses(); }
+  function exitEditMode(){ document.body.classList.remove('editing'); hideToolbar(); deselect(); }
+  exitEdit.onclick=exitEditMode; hideBar.onclick=hideToolbar;
+
+  // ===== text editor
+  addTextBtn.onclick=()=>openTextEditor();
+  editSelectedBtn.onclick=()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; openTextEditor({ text:t.textContent, size:parseInt(getComputedStyle(t).fontSize)||28, color:rgbToHex(getComputedStyle(t).color), targetBox:selectedItem }); };
+  editor.cancel.onclick=()=>hideEditor();
+  document.getElementById('textEditor').addEventListener('click',e=>{ if(e.target.id==='textEditor') hideEditor(); });
+
+  function openTextEditor({text='',size=28,color='#0d2a6b',targetBox=null}={}){
+    editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color; editor.hex.value=color; showEditor();
+  }
+
+  function normalizeHex(v){ v=(v||'').trim(); if(!v) return null; if(v[0]!=='#') v='#'+v; v=v.toLowerCase(); if(/^#[0-9a-f]{3}$/.test(v)) v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3]; if(/^#[0-9a-f]{6}$/.test(v)) return v; return null; }
+  function rgbToHex(rgb){ const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); if(!m) return '#0d2a6b'; const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0'); return '#'+r+g+b; }
+  editor.color.addEventListener('input',()=>{ editor.hex.value=editor.color.value; });
+  editor.hex.addEventListener('input',()=>{ const v=normalizeHex(editor.hex.value); if(v) editor.color.value=v; });
+
+  editor.save.onclick=()=>{
+    const text=editor.input.value; const size=Math.max(8,Math.min(200,parseInt(editor.size.value||'28',10))); const color=normalizeHex(editor.hex.value)||editor.color.value||'#0d2a6b';
+    if(editor.targetBox){ const t=editor.targetBox.querySelector('.scrap-text'); if(!t) return; t.textContent=text; t.style.fontSize=size+'px'; t.style.color=color; t.style.height='auto'; editor.targetBox.style.height=Math.max(40,t.scrollHeight)+'px'; select(editor.targetBox); }
+    else { const c=getPages()[current].querySelector('.page-canvas'); const box=document.createElement('div'); box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px'; box.innerHTML='<div class="scrap-text" contenteditable="false" style="font-size:'+size+'px;color:'+color+'"></div><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'; box.querySelector('.scrap-text').textContent=text; c.appendChild(box); makeDraggable(box); select(box); }
+    hideEditor();
+  };
+
+  // ===== photo upload → NEW bucket
+  addPhotoBtn.onclick=()=>fileInput.click();
+  fileInput.addEventListener('change',async e=>{
+    const f=e.target.files?.[0]; if(!f) return; try{ const url = await uploadToBucket(f, { page: current+1 }); const c=getPages()[current].querySelector('.page-canvas'); const box=document.createElement('div'); box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px'; box.dataset.fit='contain'; box.dataset.lock='1'; box.innerHTML='<img class="scrap-img" alt="" src="'+url+'" decoding="async"><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'; c.appendChild(box); makeDraggable(box); const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} }; if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect); fileInput.value=''; select(box); }catch(err){ alert("Upload failed: " + (err?.message || err)); console.warn(err); }});
+
+  function safeName(name){ return String(name||'photo').replace(/[\/\\?#%]+/g,'-').replace(/[^\w.\-]+/g,'_').slice(-80); }
+  function extFromMime(m){ if(!m) return ''; const t=m.split('/')[1]||''; return t.replace(/\+/g,'-'); }
+  async function uploadToBucket(file,{page}={}){
+    const ext = file.name.includes('.') ? file.name.split('.').pop() : extFromMime(file.type)||'bin';
+    const fname = `${Date.now()}_${safeName(file.name)}`.replace(/\.+/g,'.');
+    const folder = `${STATE_ID}/page_${String(page||0).padStart(2,'0')}`;
+    const path   = `${folder}/${fname}`;
+    const put = await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}?upsert=true`,{
+      method:'PUT', headers:{ apikey:SUPABASE_ANON, Authorization:'Bearer '+SUPABASE_ANON, 'Content-Type': file.type || 'application/octet-stream' }, body:file });
+    if(!put.ok){ const txt = await put.text().catch(()=>String(put.status)); throw new Error(`Storage PUT ${put.status}: ${txt}`); }
+    return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
+  }
+
+  // ===== tool buttons
+  fitToggleBtn.onclick=()=>{ if(!selectedItem) return; const fit=selectedItem.dataset.fit==='cover'?'contain':'cover'; selectedItem.dataset.fit=fit; fitToggleBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); };
+  lockToggleBtn.onclick=()=>{ if(!selectedItem) return; const lock=selectedItem.dataset.lock==='1'? '0':'1'; selectedItem.dataset.lock=lock; lockToggleBtn.textContent='Lock: '+(lock==='1'?'On':'Off'); };
+  document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
+  clearPageBtn.onclick=()=>{ const c=getPages()[current].querySelector('.page-canvas'); if(current===0){ alert('Cover is locked.'); return; } if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
+
+  // ===== selection
+  function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex=++zCounter; } updateToolbarState(); }
+  function deselect(){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
+  function updateToolbarState(){ const t=selectedItem?.querySelector('.scrap-text'); const onText=!!t; const onImg=!!selectedItem?.querySelector('.scrap-img'); fontSizeInput.disabled=!onText; fontColorInput.disabled=!onText; fontHexInput.disabled=!onText; if(onText){ const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr; const hex=rgbToHex(getComputedStyle(t).color); fontColorInput.value=hex; fontHexInput.value=hex; } else { fontHexInput.value=''; } fitToggleBtn.disabled=!onImg; lockToggleBtn.disabled=!onImg; if(onImg){ const fit=selectedItem.dataset.fit||'contain', lock=selectedItem.dataset.lock==='1'; fitToggleBtn.textContent='Fit: '+(fit==='cover'?'Fill':'Contain'); lockToggleBtn.textContent='Lock: '+(lock?'On':'Off'); } else { fitToggleBtn.textContent='Fit: Contain'; lockToggleBtn.textContent='Lock: On'; } }
+  fontSizeInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return; v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto'; const b=t.closest('.scrap-item'); if(b) b.style.height=Math.max(40,t.scrollHeight)+'px'; });
+  fontColorInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; fontHexInput.value=fontColorInput.value; t.style.color=fontColorInput.value; });
+  fontHexInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; const v=normalizeHex(fontHexInput.value); if(v){ fontColorInput.value=v; t.style.color=v; } });
+
+  function makeDraggable(el){
+    let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0; let dragging=false, dragPointerId=null; let rotating=false,startAngle=0,startPointerAngle=0;
+    const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
+    let mover=el.querySelector('.mover'); if(!mover){ mover=document.createElement('div'); mover.className='mover'; el.appendChild(mover); }
+    el.addEventListener('dragstart', e=>e.preventDefault());
+    if(res){ res.addEventListener('mousedown',e=>{ if(!document.body.classList.contains('editing')) return; e.stopPropagation(); e.preventDefault(); resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); }); }
+    function onMove(e){ if(!resizing) return; const dx=e.clientX-startX, dy=e.clientY-startY; const hasImg=!!el.querySelector('.scrap-img'); const lockOn=hasImg && el.dataset.lock==='1' && !e.shiftKey; const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight))); let w=Math.max(60,startW+dx), h=Math.max(40,startH+dy); if(lockOn && ratio>0){ if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio)); else w=Math.max(60,Math.round(h*ratio)); } el.style.width=w+'px'; el.style.height=h+'px'; const t=el.querySelector('.scrap-text'); if(t && !hasImg){ t.style.height='auto'; el.style.height=Math.max(40,t.scrollHeight)+'px'; } }
+    function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
+    rot.addEventListener('mousedown',e=>{ if(!document.body.classList.contains('editing')) return; e.stopPropagation(); e.preventDefault(); rotating=true; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2; startPointerAngle=Math.atan2(e.clientY-cy,e.clientX-cx); startAngle=getRotation(el); document.addEventListener('mousemove',onRotate); document.addEventListener('mouseup',endRotate); });
+    function onRotate(e){ if(!rotating) return; const r=el.getBoundingClientRect(), cx=r.left+r.width/2, cy=r.top+r.height/2; const a=Math.atan2(e.clientY-cy,e.clientX-cx); setRotation(el, startAngle+(a-startPointerAngle)*180/Math.PI); }
+    function endRotate(){ rotating=false; document.removeEventListener('mousemove',onRotate); document.removeEventListener('mouseup',endRotate); }
+    function startDrag(e){ dragging=true; dragPointerId=e.pointerId ?? 'mouse'; try{ if(e.pointerId!=null && el.setPointerCapture) el.setPointerCapture(e.pointerId);}catch(_){ } startX=e.clientX; startY=e.clientY; origX=el.offsetLeft; origY=el.offsetTop; window.addEventListener('pointermove',onPointerMove); window.addEventListener('pointerup',onPointerUp); window.addEventListener('pointercancel',onPointerUp); el.addEventListener('lostpointercapture',onPointerUp); }
+    function onPointerMove(e){ if(!dragging) return; const dx=e.clientX-startX, dy=e.clientY-startY; el.style.left=(origX+dx)+'px'; el.style.top=(origY+dy)+'px'; }
+    function onPointerUp(){ if(!dragging) return; try{ if(dragPointerId!=null && el.releasePointerCapture) el.releasePointerCapture(dragPointerId);}catch(_){ } dragging=false; dragPointerId=null; window.removeEventListener('pointermove',onPointerMove); window.removeEventListener('pointerup',onPointerUp); window.removeEventListener('pointercancel',onPointerUp); el.removeEventListener('lostpointercapture',onPointerUp); }
+    el.addEventListener('pointerdown', e=>{ if(!document.body.classList.contains('editing')) return; const isCtl=e.target.classList.contains('resizer')||e.target.classList.contains('rotator')||e.target.classList.contains('mover'); if(isCtl) return; e.preventDefault(); e.stopPropagation(); select(el); startDrag(e); });
+    mover.addEventListener('pointerdown', e=>{ if(!document.body.classList.contains('editing')) return; e.preventDefault(); e.stopPropagation(); select(el); startDrag(e); });
+    const tnode=el.querySelector('.scrap-text'); if(tnode) enableAutoGrow(el,tnode);
+  }
+  function enableAutoGrow(box,textEl){ const grow=()=>{ textEl.style.height='auto'; box.style.height=Math.max(40,textEl.scrollHeight)+'px'; }; textEl.addEventListener('input',grow); new ResizeObserver(grow).observe(textEl); grow(); }
+  function getRotation(el){ return parseFloat(el?.dataset.rot || '0') || 0; }
+  function setRotation(el,deg){ if(!el) return; el.dataset.rot=String(deg); el.style.transform='rotate('+deg+'deg)'; }
+
+  // ===== save/load to NEW tables
+  function gatherPageItems(pgIdx){
+    const c=getPages()[pgIdx].querySelector('.page-canvas'); const out={texts:[], photos:[]};
+    [...c.querySelectorAll('.scrap-item')].forEach(el=>{
+      const style={left:parseInt(el.style.left||'0',10), top:parseInt(el.style.top||'0',10), width:parseInt(el.style.width||'0',10), height:parseInt(el.style.height||'0',10)};
+      const rot=getRotation(el); const img=el.querySelector('.scrap-img');
+      if(img){ out.photos.push({doc_id:STATE_ID,page_no:pgIdx+1,x:style.left,y:style.top,w:style.width,h:style.height,rot,fit:el.dataset.fit||'contain',lock:(el.dataset.lock==='1'),src:img.src}); }
+      else { const t=el.querySelector('.scrap-text'); out.texts.push({doc_id:STATE_ID,page_no:pgIdx+1,x:style.left,y:style.top,w:style.width,h:style.height,rot,html:t ? t.outerHTML : ''}); }
     });
-    current = Math.min(current, state.pages.length-1);
+    return out;
+  }
+
+  async function saveCurrentPage(){
+    const p=current+1;
+    await fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&page_no=eq.${p}`,{method:'DELETE',headers:apiHeaders});
+    await fetch(`${SUPABASE_URL}/rest/v1/journal_photo?doc_id=eq.${encodeURIComponent(STATE_ID)}&page_no=eq.${p}`,{method:'DELETE',headers:apiHeaders});
+    const snap=gatherPageItems(current);
+    if(snap.texts.length){ await fetch(`${SUPABASE_URL}/rest/v1/journal_text`,{method:'POST',headers:{...apiHeaders,Prefer:'return=minimal'},body:JSON.stringify(snap.texts)}); }
+    if(snap.photos.length){ await fetch(`${SUPABASE_URL}/rest/v1/journal_photo`,{method:'POST',headers:{...apiHeaders,Prefer:'return=minimal'},body:JSON.stringify(snap.photos)}); }
+  }
+
+  saveBtn.addEventListener('click', async ()=>{ const orig=saveBtn.textContent; saveBtn.disabled=true; saveBtn.textContent='Saving…'; try{ await saveCurrentPage(); saveBtn.textContent='Saved ✓'; setTimeout(()=>{ saveBtn.textContent=orig; saveBtn.disabled=false; exitEditMode(); },600); } catch(e){ console.warn(e); saveBtn.textContent='Retry Save'; saveBtn.disabled=false; } });
+
+  async function cloudLoadAll(){
+    const [tRes,pRes]=await Promise.all([
+      fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders}),
+      fetch(`${SUPABASE_URL}/rest/v1/journal_photo?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders})
+    ]);
+    if(!tRes.ok || !pRes.ok){ setClasses(); return; }
+    const texts=await tRes.json(); const photos=await pRes.json();
+    const maxPageFromCloud = Math.max(1, ...texts.map(r=>r.page_no||1), ...photos.map(r=>r.page_no||1));
+    // ensure DOM has enough pages
+    while(getPages().length < maxPageFromCloud){ const el=document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(el); }
+
+    const byPage=new Map(); for(let i=1;i<=getPages().length;i++) byPage.set(i,{texts:[],photos:[]});
+    texts.forEach(r=>byPage.get(r.page_no)?.texts.push(r));
+    photos.forEach(r=>byPage.get(r.page_no)?.photos.push(r));
+
+    for(let i=1;i<=getPages().length;i++){
+      const c=getPages()[i-1]?.querySelector('.page-canvas'); if(!c) continue;
+      (byPage.get(i).texts||[]).forEach(it=>{ const box=document.createElement('div'); box.className='scrap-item'; box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px'; if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; } const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim(); const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false'); box.appendChild(inner); box.insertAdjacentHTML('beforeend','<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'); c.appendChild(box); makeDraggable(box); });
+      (byPage.get(i).photos||[]).forEach(it=>{ const box=document.createElement('div'); box.className='scrap-item'; box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px'; box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0'; if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; } box.innerHTML='<img class="scrap-img" alt="" src="'+it.src+'" decoding="async"><div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>'; const imgEl=box.querySelector('.scrap-img'); const setAspect=()=>{ if(imgEl.naturalWidth&&imgEl.naturalHeight){ box.dataset.aspect=(imgEl.naturalWidth/imgEl.naturalHeight).toFixed(5);} }; if(imgEl.complete) setAspect(); else imgEl.addEventListener('load',setAspect); c.appendChild(box); makeDraggable(box); });
+    }
     setClasses();
   }
 
-  function buildEntry(pageEl, pageData, pageIdx){
-    const canvas = pageEl.querySelector('.page-canvas');
-    const wrap = document.createElement('div'); wrap.className='entry';
-    wrap.innerHTML = `
-      <div class="letter-view view-only"></div>
-      <div class="editor edit-only"><div class="letter-edit" contenteditable="true" spellcheck="true"></div></div>`;
-    canvas.appendChild(wrap);
+  // ===== add page =====
+  addPageBtn.addEventListener('click', ()=>{ const newPage=document.createElement('div'); newPage.className='page'; newPage.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(newPage); current=getPages().length-1; setClasses(); });
 
-    const view = wrap.querySelector('.letter-view');
-    const ed   = wrap.querySelector('.letter-edit');
-
-    const sync = ()=>{ view.textContent = pageData.body||''; ed.textContent = pageData.body||''; };
-    sync();
-
-    // autosave on edit
-    ed.addEventListener('input', ()=>{ pageData.body = ed.textContent; save(); view.textContent = pageData.body; });
-  }
-
-  // add page (append at end)
-  addPageBtn.addEventListener('click', ()=>{
-    state.pages.push({kind:'entry', body:''});
-    current = state.pages.length-1;
-    renderAll();
-  });
-
-  // nav
-  prevBtn.onclick = ()=>{ current=Math.max(0,current-1); setClasses(); };
-  nextBtn.onclick = ()=>{ current=Math.min(state.pages.length-1,current+1); setClasses(); };
-
-  // ===== direct passcode (type 123) =====
-  let buf=''; let t=null;
-  function normalizeDigit(e){
-    if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1') return '1';
-    if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2') return '2';
-    if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3') return '3';
-    return /^[0-9]$/.test(e.key)? e.key : '';
-  }
-  addEventListener('keydown', (e)=>{
-    if(e.ctrlKey||e.metaKey||e.altKey) return; // ignore combos
-    const d = normalizeDigit(e); if(!d) return;
-    buf += d; clearTimeout(t); t = setTimeout(()=> buf='', 1200);
-    if(buf.endsWith(PASSCODE)){
-      buf=''; enterEdit();
-    }
-  });
-
-  function enterEdit(){ document.body.classList.add('editing'); }
-
-  // click on page in edit mode selects it
-  deck.addEventListener('mousedown', (e)=>{
-    if(!document.body.classList.contains('editing')) return;
-    const pg=e.target.closest('.page'); if(!pg) return; current = getPages().indexOf(pg); setClasses();
-  });
-
-  // boot
-  renderAll();
+  // ===== boot
+  (async function(){ await cloudLoadAll(); setClasses(); })();
 })();
 </script>
 </body>
