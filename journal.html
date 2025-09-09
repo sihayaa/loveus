@@ -3,14 +3,18 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Journal Book — 760×1060, passcode 123</title>
+<title>Journal Book — cover + pages</title>
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pageW:760px; --pageH:1060px;            /* scrapbook size */
+  --pageW:760px; --pageH:1060px;
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
+
+  /* USE THE RAW IMAGE URL (not the GitHub “blob” URL) */
+  --cover-img: url("https://raw.githubusercontent.com/sihayaa/loveus/main/journal-front.png?v=1");
 }
+
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
 body{
@@ -37,7 +41,7 @@ body{
 .pos-1{transform:translateX(36px) rotate(.6deg) scale(.975);z-index:2}
 .pos-2{transform:translateX(70px) rotate(1.2deg) scale(.95);z-index:1}
 
-/* === FULL-BLEED, LOCKED COVER LAYER === */
+/* === FULL-BLEED, LOCKED COVER === */
 .page.cover{
   position:relative;
   background:transparent !important;   /* no beige on cover */
@@ -49,19 +53,14 @@ body{
   background:none !important;
   pointer-events:none !important;
 }
-/* Paint the image as a page-sized layer */
+/* paint the image as its own layer so it always fills the page */
 .page.cover::before{
   content:"";
-  position:absolute;
-  inset:0;
-  border-radius:inherit;
-  background:
-    url("https://raw.githubusercontent.com/sihayaa/loveus/main/journal-bg.png")
-    center / cover no-repeat;          /* change to 100% 100% for stretch */
-  pointer-events:none;
-  z-index:0;
+  position:absolute; inset:0; border-radius:inherit;
+  background: var(--cover-img) center / cover no-repeat;  /* change to 100% 100% to stretch */
+  pointer-events:none; z-index:0;
 }
-/* Never allow content on the cover */
+/* never allow content on the cover */
 .page.cover .scrap-item{display:none!important}
 
 /* Scrap items */
@@ -173,7 +172,7 @@ body.editing .addpage{display:block}
   </div>
 </div>
 
-<!-- Big Text Editor -->
+<!-- Big text editor -->
 <div id="textEditor" aria-hidden="true" inert>
   <div class="panel">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
@@ -571,7 +570,7 @@ body.editing .addpage{display:block}
     const texts=await tRes.json(); const photos=await pRes.json();
     const maxPageFromCloud = Math.max(1, ...texts.map(r=>r.page_no||1), ...photos.map(r=>r.page_no||1));
 
-    // make sure there are enough pages (keep cover present already)
+    // ensure we have enough pages (cover already exists)
     while(getPages().length < Math.max(1, maxPageFromCloud)){
       const el=document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(el);
     }
@@ -581,7 +580,7 @@ body.editing .addpage{display:block}
     photos.forEach(r=>byPage.get(r.page_no)?.photos.push(r));
 
     for(let i=1;i<=getPages().length;i++){
-      if(i===1) continue; // cover stays clean
+      if(i===1) continue; // keep cover blank/locked
       const c=getPages()[i-1]?.querySelector('.page-canvas'); if(!c) continue;
 
       (byPage.get(i).texts||[]).forEach(it=>{
