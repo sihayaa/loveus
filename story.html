@@ -1,15 +1,17 @@
+i want the style to be same as this one. Maybe make it totally hte same
+  but i want the book itself to be wider and give me an option to add more page, like a button Add page 
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Book Journal</title>
+<title>Our Story</title>
 <link rel="icon" href="data:,">
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* Wider book: tweak this width to your liking */
-  --pageW:980px; --pageH:1060px;
+  --pageW:760px; --pageH:1060px;
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
   --cover-img:url("./lovestory_cover.png?v=8"); --cover-y:28%;
@@ -42,11 +44,6 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);disp
 .nav{position:absolute;top:50%;transform:translateY(-50%);border:0;width:56px;height:56px;border-radius:50%;cursor:pointer;z-index:10;
   background:#ffffffd8;box-shadow:0 10px 22px rgba(0,0,0,.25);font-weight:900;font-size:22px;color:#182042;display:grid;place-items:center}
 .nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45;pointer-events:none}
-
-/* Add Page button (shows only in edit mode) */
-.addpage{position:absolute;left:50%;bottom:-64px;transform:translateX(-50%);border:0;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:900;
-  background:#ffffffd8;color:#182042;box-shadow:0 10px 22px rgba(0,0,0,.25);display:none}
-body.editing .addpage{display:block}
 
 .scrap-item{position:absolute;transform-origin:center;touch-action:none;overflow:visible}
 .scrap-item.selected{box-shadow:0 0 0 3px var(--accent)}
@@ -121,7 +118,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   </div>
   <button class="nav left"  id="prev" aria-label="Previous">◀</button>
   <button class="nav right" id="next" aria-label="Next">▶</button>
-  <button class="addpage" id="addPageBtn" title="Add Page">＋ Add Page</button>
 </div>
 
 <!-- Toolbar -->
@@ -194,7 +190,8 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const BUCKET        = "scrapbook";       // <-- your Public bucket name
-  const STATE_ID      = "main";            // document id
+  const STATE_ID      = "main";
+  const N_PAGES       = 16;
 
   const apiHeaders = {
     apikey: SUPABASE_ANON,
@@ -204,12 +201,10 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   };
 
   // ========= DOM =========
-  const deck = document.getElementById('deck');
   const stage = document.getElementById('stage');
+  const pages = [...document.querySelectorAll('#deck .page')];
   const prevBtn=document.getElementById('prev');
   const nextBtn=document.getElementById('next');
-  const addPageBtn=document.getElementById('addPageBtn');
-
   const toolbar = document.getElementById('toolbar');
   const fileInput = document.getElementById('fileInput');
   const addTextBtn = document.getElementById('addTextBtn');
@@ -236,10 +231,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     targetBox: null
   };
 
-  // dynamic pages helpers
-  const getPages = ()=> Array.from(deck.querySelectorAll('.page'));
-  const getBackCover = ()=> deck.querySelector('.page.backcover');
-
   let current = 0;
   let selectedItem=null, zCounter=10;
 
@@ -253,7 +244,6 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   fitStage(); addEventListener('resize', fitStage);
 
   function setClasses(){
-    const pages = getPages();
     pages.forEach((p,i)=>{
       p.classList.remove('pos--2','pos--1','pos-1','pos-2','active');
       if(i===current)   p.classList.add('active');
@@ -265,20 +255,16 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     prevBtn.classList.toggle('disabled', current===0);
   }
   function go(delta){
-    const pages = getPages();
     const n=pages.length; let next=current+delta;
-    if(delta>0 && next>=n) next=0; // wraparound forward
-    if(delta<0 && next<0) next=0;  // clamp backward at 0
+    if(delta>0 && next>=n) next=0;
+    if(delta<0 && next<0) next=0;
     if(next!==current){ current=next; setClasses(); }
   }
   prevBtn.onclick=()=>go(-1); nextBtn.onclick=()=>go(1);
-
-  // delegation: click any page to activate while editing
-  deck.addEventListener('mousedown', (e)=>{
-    if(!document.body.classList.contains('editing')) return;
-    const pg = e.target.closest('.page'); if(!pg) return;
-    const idx = getPages().indexOf(pg); if(idx<0) return; current=idx; setClasses();
+  addEventListener('keydown',e=>{ if(document.body.classList.contains('editing')) return;
+    if(e.key==='ArrowLeft') go(-1); if(e.key==='ArrowRight') go(1);
   });
+  pages.forEach((p,i)=>p.querySelector('.page-canvas').addEventListener('mousedown',()=>{ if(!document.body.classList.contains('editing')) return; current=i; setClasses(); }));
 
   // show/hide overlays
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
@@ -344,7 +330,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
       t.textContent=text; t.style.fontSize=size+'px'; t.style.color=color; t.style.height='auto';
       editor.targetBox.style.height=Math.max(40,t.scrollHeight)+'px'; select(editor.targetBox);
     }else{
-      const c=getPages()[current].querySelector('.page-canvas');
+      const c=pages[current].querySelector('.page-canvas');
       const box=document.createElement('div'); box.className='scrap-item'; box.style.left='40px'; box.style.top='40px'; box.style.width='320px';
       box.innerHTML='<div class="scrap-text" contenteditable="false" style="font-size:'+size+'px;color:'+color+'"></div>'+
                     '<div class="mover" title="Drag"></div><div class="resizer"></div><div class="rotator"></div>';
@@ -353,13 +339,25 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     hideEditor(editor.el);
   };
 
+  function startInlineEdit(t){
+    if(!t || t.getAttribute('contenteditable')==='true') return;
+    t.setAttribute('contenteditable','true');
+    const sel=window.getSelection(), r=document.createRange(); r.selectNodeContents(t); r.collapse(false); sel.removeAllRanges(); sel.addRange(r); t.focus();
+    const onKey=e=>{ if(e.key==='Escape'){ e.preventDefault(); t.blur(); } };
+    const onBlur=()=>{ t.setAttribute('contenteditable','false'); t.removeEventListener('blur',onBlur); removeEventListener('keydown',onKey,true); };
+    t.addEventListener('blur',onBlur); addEventListener('keydown',onKey,true);
+  }
+  addEventListener('dblclick',e=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(t) startInlineEdit(t); });
+  let pressTimer=null; addEventListener('touchstart',e=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(!t) return; pressTimer=setTimeout(()=>startInlineEdit(t),500); },{passive:true});
+  addEventListener('touchend',()=>{ if(pressTimer) clearTimeout(pressTimer); },{passive:true});
+
   // ========= PHOTO UPLOAD → SUPABASE STORAGE =========
   addPhotoBtn.onclick=()=>fileInput.click();
   fileInput.addEventListener('change',async e=>{
     const f=e.target.files?.[0]; if(!f) return;
     try{
       const url = await uploadToBucket(f, { page: current+1 });
-      const c=getPages()[current].querySelector('.page-canvas');
+      const c=pages[current].querySelector('.page-canvas');
       const box=document.createElement('div'); box.className='scrap-item'; box.style.left='90px'; box.style.top='90px'; box.style.width='320px'; box.style.height='230px';
       box.dataset.fit='contain'; box.dataset.lock='1';
       box.innerHTML='<img class="scrap-img" alt="" src="'+url+'" decoding="async">'+
@@ -377,7 +375,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 
   function safeName(name){
     return String(name||'photo')
-      .replace(/[\/\\?#%]+/g,'-')
+      .replace(/[/\\?#%]+/g,'-')
       .replace(/[^\w.\-]+/g,'_')
       .slice(-80);
   }
@@ -403,7 +401,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
   }
 
-  // ==== selection / toolbar state ====
+  // toolbar state + color/hex sync for selected text
   function updateToolbarState(){
     const t=selectedItem?.querySelector('.scrap-text'); const onText=!!t; const onImg=!!selectedItem?.querySelector('.scrap-img');
     fontSizeInput.disabled=!onText; fontColorInput.disabled=!onText; fontHexInput.disabled=!onText;
@@ -455,22 +453,11 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   function setRotation(el,deg){ if(!el) return; el.dataset.rot=String(deg); el.style.transform='rotate('+deg+'deg)'; }
 
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
-  clearPageBtn.onclick=()=>{ const c=getPages()[current].querySelector('.page-canvas'); if(current===0 || current===getPages().length-1){ alert('Covers are locked.'); return; } if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
-
-  // ===== ADD PAGE =====
-  addPageBtn.addEventListener('click', ()=>{
-    const back = getBackCover();
-    const newPage = document.createElement('div');
-    newPage.className = 'page';
-    newPage.innerHTML = '<div class="page-canvas"></div>';
-    deck.insertBefore(newPage, back); // always before backcover
-    current = getPages().length - 2;  // focus new page (last before backcover)
-    setClasses();
-  });
+  clearPageBtn.onclick=()=>{ const c=pages[current].querySelector('.page-canvas'); if(current===0 || current===pages.length-1){ alert('Covers are locked.'); return; } if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
   // ===== CLOUD: save only CURRENT PAGE =====
   function gatherPageItems(pgIdx){
-    const c=getPages()[pgIdx].querySelector('.page-canvas'); const out={texts:[], photos:[]};
+    const c=pages[pgIdx].querySelector('.page-canvas'); const out={texts:[], photos:[]};
     [...c.querySelectorAll('.scrap-item')].forEach(el=>{
       const style={left:parseInt(el.style.left||'0',10), top:parseInt(el.style.top||'0',10),
                    width:parseInt(el.style.width||'0',10), height:parseInt(el.style.height||'0',10)};
@@ -515,23 +502,12 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     ]);
     if(!tRes.ok || !pRes.ok) { setClasses(); return; }
     const texts=await tRes.json(); const photos=await pRes.json();
-    const maxPageFromCloud = Math.max(1, ...texts.map(r=>r.page_no||1), ...photos.map(r=>r.page_no||1));
-
-    // ensure enough pages in DOM (always keep backcover last)
-    const need = Math.max(maxPageFromCloud, getPages().length);
-    while(getPages().length < need){
-      const back = getBackCover();
-      const el = document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>';
-      deck.insertBefore(el, back);
-    }
-
-    // build map
-    const byPage=new Map(); for(let i=1;i<=need;i++) byPage.set(i,{texts:[],photos:[]});
+    const byPage=new Map(); for(let i=1;i<=N_PAGES;i++) byPage.set(i,{texts:[],photos:[]});
     texts.forEach(r=>byPage.get(r.page_no)?.texts.push(r));
     photos.forEach(r=>byPage.get(r.page_no)?.photos.push(r));
 
-    for(let i=1;i<=need;i++){
-      const c=getPages()[i-1]?.querySelector('.page-canvas'); if(!c) continue;
+    for(let i=1;i<=N_PAGES;i++){
+      const c=pages[i-1]?.querySelector('.page-canvas'); if(!c) continue;
       (byPage.get(i).texts||[]).forEach(it=>{
         const box=document.createElement('div'); box.className='scrap-item';
         box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px';
@@ -558,8 +534,19 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
     setClasses();
   }
 
+  // ===== YouTube background music (optional) =====
+  const YT_VIDEO_ID='XNGtzfRdTtU'; const musicBtn=document.getElementById('musicPlay'); const musicVol=document.getElementById('musicVol');
+  let ytPlayer=null, ytReady=false; const ytScript=document.createElement('script'); ytScript.src="https://www.youtube.com/iframe_api"; document.head.appendChild(ytScript);
+  window.onYouTubeIframeAPIReady=function(){ ytPlayer=new YT.Player('yt-holder',{height:'0',width:'0',videoId:YT_VIDEO_ID,
+    playerVars:{autoplay:0,controls:0,disablekb:1,playsinline:1,modestbranding:1,rel:0,loop:1,playlist:YT_VIDEO_ID},
+    events:{ onReady:()=>{ytReady=true; ytPlayer.setVolume(parseInt(musicVol.value,10)||60); updateBtn(false);},
+             onStateChange:(e)=>{updateBtn(e.data===YT.PlayerState.PLAYING);} } }); };
+  function updateBtn(p){ musicBtn.textContent=p?'⏸':'▶'; }
+  musicBtn.addEventListener('click',()=>{ if(!ytReady) return; const s=ytPlayer.getPlayerState(); if(s===YT.PlayerState.PLAYING) ytPlayer.pauseVideo(); else { ytPlayer.unMute(); ytPlayer.playVideo(); } });
+  musicVol.addEventListener('input',()=>{ const v=parseInt(musicVol.value,10)||0; if(!ytReady) return; if(v<=0) ytPlayer.mute(); else { ytPlayer.unMute(); ytPlayer.setVolume(v); } });
+
   // init
-  (async function(){ await cloudLoadAll(); setClasses(); })();
+  (async function(){ await cloudLoadAll(); })();
 
 })();
 </script>
