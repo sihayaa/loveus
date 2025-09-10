@@ -17,9 +17,6 @@
 
   /* Site wallpaper (full-screen, behind book) */
   --wall-bg:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/jpurnal-bg1.jpg");
-
-  /* Extra right nudge to visually center the stack (tweak if you like) */
-  --center-nudge: 200px;
 }
 
 *{box-sizing:border-box}
@@ -42,7 +39,7 @@ body{
 #stage{
   position:relative; z-index:2; width:var(--pageW); height:var(--pageH);
   transform-origin:center; overflow:visible;
-  margin-left: 0; /* JS auto-centers by updating this */
+  margin-left: 0; /* JS precisely centers by updating this */
 }
 
 .deck{position:absolute; inset:0; perspective:1200px}
@@ -214,20 +211,45 @@ body.editing .addpage{display:block}
 
   const pages=()=>Array.from(deck.querySelectorAll('.page'));
 
-  /* --- Auto-center helpers (with extra right nudge) --- */
-  let currentScale = 1;
-  function getNudgePx(){
-    const raw=getComputedStyle(document.documentElement).getPropertyValue('--center-nudge') || '0';
-    const val=parseFloat(raw); return isNaN(val)?0:val;
-  }
+  /* --- PRECISE CENTERING: measure visible stack and center it --- */
+  let currentScale = 1, centerRAF=null;
   function centerBook() {
-    const n = pages().length;
-    const leftCount  = Math.min(current, 2);
-    const rightCount = Math.min(n - 1 - current, 2);
-    const sideSum = (count) => (count >= 1 ? 36 : 0) + (count >= 2 ? 70 : 0);
-    const diff = sideSum(rightCount) - sideSum(leftCount); // positive = more on right
-    const extra = getNudgePx();                             // constant right nudge
-    stage.style.marginLeft = ((diff / 2) * currentScale + extra) + 'px';
+    const P = pages();
+    if (!P.length) return;
+
+    // union of all transformed page rectangles
+    let minL = Infinity, maxR = -Infinity;
+    for (const el of P) {
+      const r = el.getBoundingClientRect();
+      if (r.width || r.height) {
+        minL = Math.min(minL, r.left);
+        maxR = Math.max(maxR, r.right);
+      }
+    }
+    if (!isFinite(minL) || !isFinite(maxR)) return;
+
+    const contentCenter = (minL + maxR) / 2;
+    const viewportCenter = window.innerWidth / 2;
+    const shift = viewportCenter - contentCenter;   // + = move right
+
+    stage.style.marginLeft = shift + 'px';
+
+    // one-frame refinement (accounts for layout after applying margin)
+    cancelAnimationFrame(centerRAF);
+    centerRAF = requestAnimationFrame(() => {
+      let min2 = Infinity, max2 = -Infinity;
+      for (const el of P) {
+        const r2 = el.getBoundingClientRect();
+        if (r2.width || r2.height) {
+          min2 = Math.min(min2, r2.left);
+          max2 = Math.max(max2, r2.right);
+        }
+      }
+      if (!isFinite(min2) || !isFinite(max2)) return;
+      const center2 = (min2 + max2) / 2;
+      const delta = (window.innerWidth/2) - center2;
+      if (Math.abs(delta) > 0.5) stage.style.marginLeft = (parseFloat(stage.style.marginLeft||'0') + delta) + 'px';
+    });
   }
 
   function fitStage(){
