@@ -7,7 +7,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pageW:760px; --pageH:1060px;               /* book size (unchanged) */
+  --pageW:760px; --pageH:1060px;               /* book size */
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
 
@@ -15,7 +15,7 @@
   --cover-img:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-front.png");
   --cover-y:50%;
 
-  /* wallpaper */
+  /* wallpaper (behind the book) */
   --wall-bg:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/jpurnal-bg1.jpg");
 }
 
@@ -30,17 +30,13 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
   pointer-events:none;
 }
 
-/* ===== centered book container =====
-   We center this container to the viewport with translate(-50%,-50%).
-   We scale it responsively in JS, but we NEVER change the logical size. */
+/* ===== centered book ===== */
 #stage{
   position:fixed; left:50%; top:50%;
   width:var(--pageW); height:var(--pageH);
   transform-origin:center; transform:translate(-50%,-50%) scale(1);
   z-index:2; overflow:visible;
 }
-
-/* deck sits inside stage and we shift it left/right by the fan offset delta */
 #deck{position:absolute; inset:0; perspective:1200px}
 
 /* pages */
@@ -60,7 +56,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
   background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
 }
 
-/* stack positions (same fan offsets you wanted) */
+/* stack positions (fan) */
 .page.active{opacity:1; filter:none; pointer-events:auto; z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95); z-index:1}
 .pos--1{transform:translateX(-36px) rotate(-.6deg) scale(.975); z-index:2}
@@ -79,7 +75,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .scrap-item[data-fit="cover"] .scrap-img{object-fit:cover}
 .scrap-text{width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em}
 
-/* editing gates */
+/* editing gates (same as scrapbook) */
 .page .page-canvas, .scrap-item { pointer-events:none }
 body.editing .page.active .page-canvas, body.editing .scrap-item { pointer-events:auto }
 body.editing .scrap-item{cursor:move}
@@ -104,6 +100,23 @@ body.editing .addpage{display:block}
 #toolbar button.warn{background:#ff9aa2; color:#4c0a17}
 #toolbar input[type="number"], #toolbar input[type="color"], #toolbar input[type="text"]{width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff}
 #toolbar input[type="text"]{font-family:monospace}
+
+/* BIG TEXT EDITOR (this is the bit that makes Add Text “work”) */
+#textEditor{
+  position:fixed; inset:0; background:rgba(0,0,0,.6);
+  display:none; z-index:10000; align-items:center; justify-content:center;
+}
+#textEditor.open{ display:flex; }
+#textEditor .panel{width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+#textEditor textarea{width:100%;height:320px;font:28px/1.35 var(--font);color:#0d2a6b;padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical}
+#textEditor .row{display:flex;gap:12px;margin-top:10px}
+#textEditor input[type="number"]{flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b}
+#textEditor input[type="color"]{width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6}
+#textEditor input[type="text"]{width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6;padding:0 10px;font-weight:700;color:#0d2a6b;font-family:monospace}
+#textEditor .actions{display:flex;gap:10px;justify-content:flex-end;margin-top:12px}
+#textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
+#editorCancel{background:#ff9aa2;color:#4c0a17}
+#editorSave{background:var(--mint);color:#022d2c}
 </style>
 </head>
 <body>
@@ -161,25 +174,25 @@ body.editing .addpage{display:block}
   </div>
 </div>
 
-<!-- big text editor -->
+<!-- Big Text Editor -->
 <div id="textEditor" aria-hidden="true" inert>
-  <div class="panel" style="width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)">
+  <div class="panel">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
-    <textarea id="editorInput" placeholder="type here…" style="width:100%;height:320px;font:28px/1.35 var(--font);color:#0d2a6b;padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical"></textarea>
-    <div class="row" style="display:flex;gap:12px;margin-top:10px">
+    <textarea id="editorInput" placeholder="type here…"></textarea>
+    <div class="row">
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
         Size (px)
-        <input id="editorSize" type="number" min="8" max="200" step="1" value="28" style="flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b">
+        <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
       </label>
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
         Color
-        <input id="editorColor" type="color" value="#0d2a6b" style="width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6">
-        <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB" style="width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6;padding:0 10px;font-weight:700;color:#0d2a6b;font-family:monospace">
+        <input id="editorColor" type="color" value="#0d2a6b">
+        <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB">
       </label>
     </div>
-    <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
-      <button id="editorCancel" style="background:#ff9aa2;color:#4c0a17;border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer">Cancel</button>
-      <button id="editorSave"   style="background:#67e4ca;color:#022d2c;border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer">Save</button>
+    <div class="actions">
+      <button id="editorCancel">Cancel</button>
+      <button id="editorSave">Save</button>
     </div>
   </div>
 </div>
@@ -204,13 +217,14 @@ body.editing .addpage{display:block}
   const fitToggleBtn=document.getElementById('fitToggleBtn'), lockToggleBtn=document.getElementById('lockToggleBtn');
 
   const editor={ el:document.getElementById('textEditor'), input:document.getElementById('editorInput'), size:document.getElementById('editorSize'),
-    color:document.getElementById('editorColor'), hex:document.getElementById('editorHex'), save:document.getElementById('editorSave'), cancel:document.getElementById('editorCancel'), targetBox:null };
+    color:document.getElementById('editorColor'), hex:document.getElementById('editorHex'),
+    save:document.getElementById('editorSave'), cancel:document.getElementById('editorCancel'), targetBox:null };
 
   let current=0, selectedItem=null, zCounter=10;
 
   const pages=()=>Array.from(deck.querySelectorAll('.page'));
 
-  /* ===== precise centering with fan offsets (36px, 70px) ===== */
+  /* exact centering using fan extents */
   function fanExtents(idx, total){
     const leftCount  = Math.min(idx, 2);
     const rightCount = Math.min(total-1-idx, 2);
@@ -220,11 +234,10 @@ body.editing .addpage{display:block}
   function centerDeck(){
     const P=pages(); if(!P.length) return;
     const {left, right} = fanExtents(current, P.length);
-    const shift = (right - left)/2;           // + = move deck right
-    deck.style.left = shift + 'px';
+    const shift = (right - left)/2; deck.style.left = shift + 'px';
   }
 
-  /* responsive scale, NOT size change */
+  /* responsive scale */
   function fitStage(){
     const vw=innerWidth, vh=innerHeight, mx=200, my=40;
     const pw=parseInt(getComputedStyle(stage).width), ph=parseInt(getComputedStyle(stage).height);
@@ -254,12 +267,8 @@ body.editing .addpage{display:block}
     if(next!==current){ current=next; setClasses(); }
   }
   prevBtn.onclick=()=>go(-1); nextBtn.onclick=()=>go(1);
-  deck.addEventListener('mousedown',e=>{
-    if(!document.body.classList.contains('editing')) return;
-    const pg=e.target.closest('.page'); if(pg){ current=pages().indexOf(pg); setClasses(); }
-  });
 
-  /* toolbar show/hide + edit unlock (type 123) */
+  /* unlock edit by typing 123 */
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
   function hideToolbar(){ if(toolbar.contains(document.activeElement)) document.activeElement.blur(); toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
 
@@ -274,13 +283,13 @@ body.editing .addpage{display:block}
   exitEdit.onclick=()=>{ document.body.classList.remove('editing'); hideToolbar(); deselect(); };
   hideBar.onclick=hideToolbar;
 
-  /* editor */
+  /* TEXT EDITOR FLOW (scrapbook style) */
   function showEditor(el){ el.classList.add('open'); el.removeAttribute('aria-hidden'); el.removeAttribute('inert'); setTimeout(()=>editor.input.focus(),0); }
   function hideEditor(el){ if(el.contains(document.activeElement)) document.activeElement.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
   function openTextEditor({text='',size=28,color='#0d2a6b',targetBox=null}={}){ editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color; editor.hex.value=color; showEditor(editor.el); }
   document.getElementById('textEditor').addEventListener('click',e=>{ if(e.target.id==='textEditor') hideEditor(editor.el); });
-  document.getElementById('addTextBtn').onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } openTextEditor(); };
-  editor.cancel.onclick=()=>hideEditor(editor.el);
+
+  addTextBtn.onclick=()=>{ if(current===0){ alert('Cover is locked. Go to page 2 to edit.'); return; } openTextEditor(); };
 
   function normalizeHex(v){ v=(v||'').trim(); if(!v) return null; if(v[0]!=='#') v='#'+v; v=v.toLowerCase(); if(/^#[0-9a-f]{3}$/.test(v)) v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3]; if(/^#[0-9a-f]{6}$/.test(v)) return v; return null; }
   function rgbToHex(rgb){ const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); if(!m) return '#0d2a6b'; const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0'); return '#'+r+g+b; }
@@ -292,11 +301,12 @@ body.editing .addpage{display:block}
       box.innerHTML='<div class="scrap-text" contenteditable="false" style="font-size:'+size+'px;color:'+color+'"></div><div class="mover"></div><div class="resizer"></div><div class="rotator"></div>';
       box.querySelector('.scrap-text').textContent=text; c.appendChild(box); makeDraggable(box); select(box); }
     hideEditor(editor.el); };
+
   editSelectedBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const t=selectedItem?.querySelector('.scrap-text'); if(!t) return;
     openTextEditor({ text:t.textContent, size:parseInt(getComputedStyle(t).fontSize)||28, color:rgbToHex(getComputedStyle(t).color), targetBox:selectedItem }); };
 
-  /* photo upload */
-  document.getElementById('addPhotoBtn').onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } fileInput.click(); };
+  /* PHOTO UPLOAD */
+  addPhotoBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } fileInput.click(); };
   fileInput.addEventListener('change',async e=>{
     const f=e.target.files?.[0]; if(!f) return;
     try{
@@ -358,7 +368,7 @@ body.editing .addpage{display:block}
     const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
     let mover=el.querySelector('.mover'); if(!mover){ mover=document.createElement('div'); mover.className='mover'; el.appendChild(mover); }
     el.addEventListener('dragstart', e=>e.preventDefault());
-    if(res){ res.addEventListener('mousedown',e=>{ if(!document.body.classList.contains('editing')) return; e.stopPropagation(); e.preventDefault(); resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); }); }
+    if(res){ res.addEventListener('mousedown',e=>{ if(!document.body.editing){} if(!document.body.classList.contains('editing')) return; e.stopPropagation(); e.preventDefault(); resizing=true; startX=e.clientX; startY=e.clientY; startW=el.offsetWidth; startH=el.offsetHeight; document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp); }); }
     function onMove(e){ if(!resizing) return; const dx=e.clientX-startX, dy=e.clientY-startY; el.style.width=Math.max(60,startW+dx)+'px'; el.style.height=Math.max(40,startH+dy)+'px'; }
     function onUp(){ document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); resizing=false; }
     rot.addEventListener('mousedown',e=>{ if(!document.body.classList.contains('editing')) return; e.stopPropagation(); e.preventDefault();
@@ -379,7 +389,7 @@ body.editing .addpage{display:block}
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
   clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear Page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
-  /* Add Page (both buttons) */
+  /* Add Page */
   function addPage(){
     const el=document.createElement('div');
     el.className='page';
