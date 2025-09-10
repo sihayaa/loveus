@@ -7,16 +7,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pageW:760px; --pageH:1060px; /* same size */
+  --pageW:760px; --pageH:1060px;                /* book size */
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
 
-  /* COVER image (unchanged) */
+  /* Cover image (fixed on page 1) */
   --cover-img:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-front.png");
   --cover-y:50%;
 
-  /* SITE WALLPAPER behind the book */
+  /* Site wallpaper (full-screen, behind book) */
   --wall-bg:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/jpurnal-bg1.jpg");
+
+  /* small right nudge so the stack looks centered */
+  --book-nudge: 28px;
 }
 
 *{box-sizing:border-box}
@@ -26,26 +29,54 @@ body{
   font-family:var(--font); display:flex; align-items:center; justify-content:center;
 }
 
-/* ===== FULLSCREEN WALLPAPER + RAIN (behind book) ===== */
+/* ===== WALLPAPER ===== */
 #wall{
   position:fixed; inset:0; z-index:0;
   background-image: var(--wall-bg);
   background-size: cover; background-position: center; background-repeat: no-repeat;
   pointer-events:none;
 }
-#wall::before, #wall::after{
-  content:""; position:absolute; inset:0; pointer-events:none;
-  background-image: linear-gradient(to bottom, rgba(255,255,255,.09) 2px, rgba(255,255,255,0) 2px);
-  background-size: 2px 12px; transform: skew(-15deg);
-  mix-blend-mode: soft-light; opacity:.22;
+
+/* ===== RAIN (separate overlay so it’s always visible) ===== */
+#rain{
+  position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden;
 }
-#wall::before{ animation:rainA 1.8s linear infinite; }
-#wall::after { animation:rainB 3.2s linear infinite; opacity:.16; }
-@keyframes rainA{ from{ background-position:0 -200px } to{ background-position:0 800px } }
-@keyframes rainB{ from{ background-position:0 -400px } to{ background-position:0 1200px } }
+/* two layers, different speeds/opacities */
+#rain .layer{
+  position:absolute; inset:0;
+  background-repeat:repeat;
+  transform: skew(-15deg);                /* diagonal streaks */
+  background-size: 2px 14px;              /* line width & spacing */
+  opacity:.22;                             /* overall visibility */
+  animation:rainMoveA 1.8s linear infinite;
+}
+#rain .layer.b{
+  background-size: 1px 10px;
+  opacity:.15;
+  animation:rainMoveB 3.0s linear infinite;
+}
+/* bright streaks on any wallpaper */
+#rain .layer,
+#rain .layer.b{
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255,255,255,0.35) 0 2px,
+    rgba(255,255,255,0.00) 2px 14px
+  );
+}
+
+/* motion */
+@keyframes rainMoveA { from{ background-position:0 -300px } to{ background-position:0 900px } }
+@keyframes rainMoveB { from{ background-position:0 -500px } to{ background-position:0 1200px } }
 
 /* ===== BOOK ===== */
-#stage{position:relative; z-index:1; width:var(--pageW); height:var(--pageH); transform-origin:center; overflow:visible}
+#stage{
+  position:relative; z-index:2; width:var(--pageW); height:var(--pageH);
+  transform-origin:center; overflow:visible;
+  margin-left: var(--book-nudge);
+}
+@media (max-width: 1100px){ #stage{ margin-left:0; } }
+
 .deck{position:absolute; inset:0; perspective:1200px}
 
 .page{
@@ -56,14 +87,14 @@ body{
 }
 .page .page-canvas{position:relative; width:100%; height:100%; padding:28px}
 
-/* Cover page stays a fixed background */
+/* Cover page background (fixed, not editable) */
 .page.cover .page-canvas{
   padding:0; background:#0c102c;
   background-image:var(--cover-img), radial-gradient(closest-side at 50% 40%, #1d2a55 0%, #0c102c 60%);
   background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
 }
 
-/* Stack */
+/* Stack offsets */
 .page.active{opacity:1; filter:none; pointer-events:auto; z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95); z-index:1}
 .pos--1{transform:translateX(-36px) rotate(-.6deg) scale(.975); z-index:2}
@@ -88,7 +119,7 @@ body.editing .page.active .page-canvas, body.editing .scrap-item { pointer-event
 body.editing .scrap-item{cursor:move}
 body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{display:block}
 
-/* Nav + Add Page button */
+/* Nav + Add Page */
 .nav{position:absolute; top:50%; transform:translateY(-50%); border:0; width:56px; height:56px; border-radius:50%; cursor:pointer; z-index:10;
   background:#ffffffd8; box-shadow:0 10px 22px rgba(0,0,0,.25); font-weight:900; font-size:22px; color:#182042; display:grid; place-items:center}
 .nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45; pointer-events:none}
@@ -97,7 +128,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   background:#ffffffd8; color:#182042; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; z-index:20}
 body.editing .addpage{display:block}
 
-/* Toolbar */
+/* Toolbar (unchanged) */
 #toolbar{position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column}
 #toolbar.open{display:flex}
 #toolbar .group{display:flex; gap:8px; flex-wrap:wrap}
@@ -111,8 +142,12 @@ body.editing .addpage{display:block}
 </head>
 <body>
 
-<!-- Wallpaper -->
+<!-- Wallpaper and rain (behind the book) -->
 <div id="wall" aria-hidden="true"></div>
+<div id="rain" aria-hidden="true">
+  <div class="layer"></div>
+  <div class="layer b"></div>
+</div>
 
 <!-- Book -->
 <div id="stage">
@@ -126,7 +161,6 @@ body.editing .addpage{display:block}
   </div>
   <button class="nav left"  id="prev" aria-label="Previous">◀</button>
   <button class="nav right" id="next" aria-label="Next">▶</button>
-  <!-- Floating Add Page (shows in edit mode) -->
   <button class="addpage" id="addPageBtn">＋ Add Page</button>
 </div>
 
@@ -153,12 +187,9 @@ body.editing .addpage{display:block}
     <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
     <button id="lockToggleBtn" class="secondary">Lock: On</button>
   </div>
-
-  <!-- Add Page inside toolbar too -->
   <div class="group">
     <button id="addPageToolbarBtn" class="mint">＋ Add Page</button>
   </div>
-
   <div class="group">
     <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
     <button id="clearPageBtn" class="warn">Clear Page</button>
@@ -172,18 +203,18 @@ body.editing .addpage{display:block}
 
 <!-- Big Text Editor -->
 <div id="textEditor" aria-hidden="true" inert>
-  <div class="panel">
+  <div class="panel" style="width:min(820px,90vw);background:#fff;border-radius:16px;padding:18px;border:2px solid #e8dcc6;box-shadow:0 20px 60px rgba(0,0,0,.5)">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
-    <textarea id="editorInput" placeholder="type here…"></textarea>
+    <textarea id="editorInput" placeholder="type here…" style="width:100%;height:320px;font:28px/1.35 var(--font);color:#0d2a6b;padding:12px;border:2px solid #e8dcc6;border-radius:12px;resize:vertical"></textarea>
     <div class="row" style="display:flex;gap:12px;margin-top:10px">
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
         Size (px)
-        <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
+        <input id="editorSize" type="number" min="8" max="200" step="1" value="28" style="flex:1;padding:10px;border-radius:10px;border:2px solid #e8dcc6;font-weight:700;color:#0d2a6b">
       </label>
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
         Color
-        <input id="editorColor" type="color" value="#0d2a6b">
-        <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB">
+        <input id="editorColor" type="color" value="#0d2a6b" style="width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6">
+        <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB" style="width:110px;height:44px;border-radius:10px;border:2px solid #e8dcc6;padding:0 10px;font-weight:700;color:#0d2a6b;font-family:monospace">
       </label>
     </div>
     <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
@@ -195,7 +226,7 @@ body.editing .addpage{display:block}
 
 <script>
 (function(){
-  /* ========= SUPABASE (separate from scrapbook) ========= */
+  /* ========= Supabase (separate bucket/tables) ========= */
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const BUCKET="journalbook", STATE_ID="journal_main";
@@ -247,7 +278,7 @@ body.editing .addpage{display:block}
   function openTextEditor({text='',size=28,color='#0d2a6b',targetBox=null}={}){ editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color; editor.hex.value=color; showEditor(editor.el); }
   editor.cancel.onclick=()=>hideEditor(editor.el);
   document.getElementById('textEditor').addEventListener('click',e=>{ if(e.target.id==='textEditor') hideEditor(editor.el); });
-  addTextBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } openTextEditor(); };
+  document.getElementById('addTextBtn').onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } openTextEditor(); };
 
   function normalizeHex(v){ v=(v||'').trim(); if(!v) return null; if(v[0]!=='#') v='#'+v; v=v.toLowerCase(); if(/^#[0-9a-f]{3}$/.test(v)) v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3]; if(/^#[0-9a-f]{6}$/.test(v)) return v; return null; }
   function rgbToHex(rgb){ const m=String(rgb).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); if(!m) return '#0d2a6b'; const r=(+m[1]).toString(16).padStart(2,'0'), g=(+m[2]).toString(16).padStart(2,'0'), b=(+m[3]).toString(16).padStart(2,'0'); return '#'+r+g+b; }
@@ -287,7 +318,7 @@ body.editing .addpage{display:block}
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
   }
 
-  /* Selection + toolbar state + image toggles */
+  /* Selection + toolbar toggles */
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex=++zCounter; } updateToolbarState(); }
   function deselect(){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
   function updateToolbarState(){
@@ -346,9 +377,9 @@ body.editing .addpage{display:block}
   }
 
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
-  clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
+  clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear Page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
-  /* Add Page (top button + toolbar button) */
+  /* Add Page (top & toolbar) */
   function addPage(){
     const el=document.createElement('div');
     el.className='page';
@@ -360,7 +391,7 @@ body.editing .addpage{display:block}
   addPageBtn.addEventListener('click', addPage);
   addPageToolbarBtn.addEventListener('click', addPage);
 
-  /* Save current page to Supabase (texts/photos) */
+  /* Save current page */
   async function saveCurrentPage(){
     if(current===0){ alert('Cover is locked.'); return; }
     const p=current+1;
@@ -381,7 +412,7 @@ body.editing .addpage{display:block}
     catch(e){ console.warn(e); saveBtn.textContent='Retry Save'; saveBtn.disabled=false; }
   });
 
-  /* Load existing pages content */
+  /* Load all existing content */
   async function cloudLoadAll(){
     const [tRes,pRes]=await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders}),
