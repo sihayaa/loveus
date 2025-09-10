@@ -39,6 +39,7 @@ body{
 #stage{
   position:relative; z-index:2; width:var(--pageW); height:var(--pageH);
   transform-origin:center; overflow:visible;
+  margin-left: 0; /* JS will auto-center by updating this */
 }
 
 .deck{position:absolute; inset:0; perspective:1200px}
@@ -106,7 +107,7 @@ body.editing .addpage{display:block}
 </head>
 <body>
 
-<!-- Wallpaper (no rain) -->
+<!-- Wallpaper -->
 <div id="wall" aria-hidden="true"></div>
 
 <!-- Book -->
@@ -208,18 +209,54 @@ body.editing .addpage{display:block}
 
   let current=0, selectedItem=null, zCounter=10;
 
-  function fitStage(){ const vw=innerWidth, vh=innerHeight, mx=200, my=40;
-    const s=Math.min(1, vw/(parseInt(getComputedStyle(stage).width)+mx), vh/(parseInt(getComputedStyle(stage).height)+my));
-    stage.style.transform='scale('+s+')'; }
+  const pages=()=>Array.from(deck.querySelectorAll('.page'));
+
+  /* --- Auto-center helpers --- */
+  let currentScale = 1;
+  function centerBook() {
+    const n = pages().length;
+    const leftCount  = Math.min(current, 2);
+    const rightCount = Math.min(n - 1 - current, 2);
+    const sideSum = (count) => (count >= 1 ? 36 : 0) + (count >= 2 ? 70 : 0);
+    const diff = sideSum(rightCount) - sideSum(leftCount); // positive = more on right
+    stage.style.marginLeft = (diff / 2) * currentScale + 'px';
+  }
+
+  function fitStage(){
+    const vw=innerWidth, vh=innerHeight, mx=200, my=40;
+    const s=Math.min(1, vw/(parseInt(getComputedStyle(stage).width)+mx),
+                        vh/(parseInt(getComputedStyle(stage).height)+my));
+    currentScale = s;
+    stage.style.transform='scale('+s+')';
+    centerBook();
+  }
   fitStage(); addEventListener('resize', fitStage);
 
-  const pages=()=>Array.from(deck.querySelectorAll('.page'));
-  function setClasses(){ const P=pages(); P.forEach((p,i)=>{ p.classList.remove('pos--2','pos--1','pos-1','pos-2','active');
-    if(i===current)p.classList.add('active'); if(i===current-1)p.classList.add('pos--1'); if(i===current-2)p.classList.add('pos--2'); if(i===current+1)p.classList.add('pos-1'); if(i===current+2)p.classList.add('pos-2'); });
-    prevBtn.classList.toggle('disabled', current===0); }
-  function go(d){ const n=pages().length; let next=current+d; if(d>0&&next>=n) next=0; if(d<0&&next<0) next=0; if(next!==current){ current=next; setClasses(); } }
+  function setClasses(){
+    const P=pages();
+    P.forEach((p,i)=>{
+      p.classList.remove('pos--2','pos--1','pos-1','pos-2','active');
+      if(i===current)p.classList.add('active');
+      if(i===current-1)p.classList.add('pos--1');
+      if(i===current-2)p.classList.add('pos--2');
+      if(i===current+1)p.classList.add('pos-1');
+      if(i===current+2)p.classList.add('pos-2');
+    });
+    prevBtn.classList.toggle('disabled', current===0);
+    centerBook();
+  }
+
+  function go(d){
+    const n=pages().length; let next=current+d;
+    if(d>0 && next>=n) next=0;
+    if(d<0 && next<0) next=0;
+    if(next!==current){ current=next; setClasses(); }
+  }
   prevBtn.onclick=()=>go(-1); nextBtn.onclick=()=>go(1);
-  deck.addEventListener('mousedown',e=>{ if(!document.body.classList.contains('editing')) return; const pg=e.target.closest('.page'); if(pg){ current=pages().indexOf(pg); setClasses(); } });
+  deck.addEventListener('mousedown',e=>{
+    if(!document.body.classList.contains('editing')) return;
+    const pg=e.target.closest('.page'); if(pg){ current=pages().indexOf(pg); setClasses(); }
+  });
 
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
   function hideToolbar(){ if(toolbar.contains(document.activeElement)) document.activeElement.blur(); toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
@@ -227,14 +264,18 @@ body.editing .addpage{display:block}
   /* Enter edit by typing 123 */
   const PASSCODE='123'; let keyBuf='', keyTimer=null;
   function normDigit(e){ if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1')return'1'; if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2')return'2'; if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3')return'3'; return''; }
-  addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey) return; const d=normDigit(e); if(!d) return; keyBuf+=d; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuf='',1200);
-    if(keyBuf.endsWith(PASSCODE)){ keyBuf=''; document.body.classList.add('editing'); showToolbar(); setClasses(); } });
+  addEventListener('keydown',e=>{
+    if(e.ctrlKey||e.metaKey||e.altKey) return;
+    const d=normDigit(e); if(!d) return;
+    keyBuf+=d; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuf='',1200);
+    if(keyBuf.endsWith(PASSCODE)){ keyBuf=''; document.body.classList.add('editing'); showToolbar(); setClasses(); }
+  });
   exitEdit.onclick=()=>{ document.body.classList.remove('editing'); hideToolbar(); deselect(); };
   hideBar.onclick=hideToolbar;
 
   /* Text editor */
   function showEditor(el){ el.classList.add('open'); el.removeAttribute('aria-hidden'); el.removeAttribute('inert'); setTimeout(()=>editor.input.focus(),0); }
-  function hideEditor(el){ if(el.contains(document.activeElement)) document.activeElement.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
+  function hideEditor(el){ if(el.contains(document.activeElement)) el.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
   function openTextEditor({text='',size=28,color='#0d2a6b',targetBox=null}={}){ editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color; editor.hex.value=color; showEditor(editor.el); }
   editor.cancel.onclick=()=>hideEditor(editor.el);
   document.getElementById('textEditor').addEventListener('click',e=>{ if(e.target.id==='textEditor') hideEditor(editor.el); });
