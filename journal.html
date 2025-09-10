@@ -17,19 +17,17 @@
 
   /* Site wallpaper (full-screen, behind book) */
   --wall-bg:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/jpurnal-bg1.jpg");
-
-  /* small right nudge so the stack looks centered */
-  --book-nudge: 28px;
 }
 
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
 body{
   margin:0; background:var(--bg); color:var(--ink);
-  font-family:var(--font); display:flex; align-items:center; justify-content:center;
+  font-family:var(--font);
+  display:flex; align-items:center; justify-content:center; /* true center */
 }
 
-/* ===== WALLPAPER ===== */
+/* ===== WALLPAPER (no rain) ===== */
 #wall{
   position:fixed; inset:0; z-index:0;
   background-image: var(--wall-bg);
@@ -37,45 +35,11 @@ body{
   pointer-events:none;
 }
 
-/* ===== RAIN (separate overlay so it’s always visible) ===== */
-#rain{
-  position:fixed; inset:0; z-index:1; pointer-events:none; overflow:hidden;
-}
-/* two layers, different speeds/opacities */
-#rain .layer{
-  position:absolute; inset:0;
-  background-repeat:repeat;
-  transform: skew(-15deg);                /* diagonal streaks */
-  background-size: 2px 14px;              /* line width & spacing */
-  opacity:.22;                             /* overall visibility */
-  animation:rainMoveA 1.8s linear infinite;
-}
-#rain .layer.b{
-  background-size: 1px 10px;
-  opacity:.15;
-  animation:rainMoveB 3.0s linear infinite;
-}
-/* bright streaks on any wallpaper */
-#rain .layer,
-#rain .layer.b{
-  background-image: repeating-linear-gradient(
-    to bottom,
-    rgba(255,255,255,0.35) 0 2px,
-    rgba(255,255,255,0.00) 2px 14px
-  );
-}
-
-/* motion */
-@keyframes rainMoveA { from{ background-position:0 -300px } to{ background-position:0 900px } }
-@keyframes rainMoveB { from{ background-position:0 -500px } to{ background-position:0 1200px } }
-
 /* ===== BOOK ===== */
 #stage{
   position:relative; z-index:2; width:var(--pageW); height:var(--pageH);
   transform-origin:center; overflow:visible;
-  margin-left: var(--book-nudge);
 }
-@media (max-width: 1100px){ #stage{ margin-left:0; } }
 
 .deck{position:absolute; inset:0; perspective:1200px}
 
@@ -128,7 +92,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   background:#ffffffd8; color:#182042; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; z-index:20}
 body.editing .addpage{display:block}
 
-/* Toolbar (unchanged) */
+/* Toolbar */
 #toolbar{position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column}
 #toolbar.open{display:flex}
 #toolbar .group{display:flex; gap:8px; flex-wrap:wrap}
@@ -142,12 +106,8 @@ body.editing .addpage{display:block}
 </head>
 <body>
 
-<!-- Wallpaper and rain (behind the book) -->
+<!-- Wallpaper (no rain) -->
 <div id="wall" aria-hidden="true"></div>
-<div id="rain" aria-hidden="true">
-  <div class="layer"></div>
-  <div class="layer b"></div>
-</div>
 
 <!-- Book -->
 <div id="stage">
