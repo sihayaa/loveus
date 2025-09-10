@@ -17,6 +17,9 @@
 
   /* Site wallpaper (full-screen, behind book) */
   --wall-bg:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/jpurnal-bg1.jpg");
+
+  /* Extra right nudge to visually center the stack (tweak if you like) */
+  --center-nudge: 40px;
 }
 
 *{box-sizing:border-box}
@@ -24,10 +27,10 @@ html,body{height:100%;overflow:hidden}
 body{
   margin:0; background:var(--bg); color:var(--ink);
   font-family:var(--font);
-  display:flex; align-items:center; justify-content:center; /* true center */
+  display:flex; align-items:center; justify-content:center; /* center container */
 }
 
-/* ===== WALLPAPER (no rain) ===== */
+/* ===== WALLPAPER ===== */
 #wall{
   position:fixed; inset:0; z-index:0;
   background-image: var(--wall-bg);
@@ -39,7 +42,7 @@ body{
 #stage{
   position:relative; z-index:2; width:var(--pageW); height:var(--pageH);
   transform-origin:center; overflow:visible;
-  margin-left: 0; /* JS will auto-center by updating this */
+  margin-left: 0; /* JS auto-centers by updating this */
 }
 
 .deck{position:absolute; inset:0; perspective:1200px}
@@ -211,15 +214,20 @@ body.editing .addpage{display:block}
 
   const pages=()=>Array.from(deck.querySelectorAll('.page'));
 
-  /* --- Auto-center helpers --- */
+  /* --- Auto-center helpers (with extra right nudge) --- */
   let currentScale = 1;
+  function getNudgePx(){
+    const raw=getComputedStyle(document.documentElement).getPropertyValue('--center-nudge') || '0';
+    const val=parseFloat(raw); return isNaN(val)?0:val;
+  }
   function centerBook() {
     const n = pages().length;
     const leftCount  = Math.min(current, 2);
     const rightCount = Math.min(n - 1 - current, 2);
     const sideSum = (count) => (count >= 1 ? 36 : 0) + (count >= 2 ? 70 : 0);
     const diff = sideSum(rightCount) - sideSum(leftCount); // positive = more on right
-    stage.style.marginLeft = (diff / 2) * currentScale + 'px';
+    const extra = getNudgePx();                             // constant right nudge
+    stage.style.marginLeft = ((diff / 2) * currentScale + extra) + 'px';
   }
 
   function fitStage(){
@@ -275,7 +283,7 @@ body.editing .addpage{display:block}
 
   /* Text editor */
   function showEditor(el){ el.classList.add('open'); el.removeAttribute('aria-hidden'); el.removeAttribute('inert'); setTimeout(()=>editor.input.focus(),0); }
-  function hideEditor(el){ if(el.contains(document.activeElement)) el.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
+  function hideEditor(el){ if(el.contains(document.activeElement)) document.activeElement.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
   function openTextEditor({text='',size=28,color='#0d2a6b',targetBox=null}={}){ editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color; editor.hex.value=color; showEditor(editor.el); }
   editor.cancel.onclick=()=>hideEditor(editor.el);
   document.getElementById('textEditor').addEventListener('click',e=>{ if(e.target.id==='textEditor') hideEditor(editor.el); });
