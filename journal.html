@@ -7,15 +7,15 @@
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet">
 <style>
 :root{
-  --pageW:760px; --pageH:1060px; /* same as scrapbook */
+  --pageW:760px; --pageH:1060px; /* same size */
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
 
-  /* COVER (unchanged) */
+  /* COVER image (unchanged) */
   --cover-img:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-front.png");
   --cover-y:50%;
 
-  /* SITE WALLPAPER (BEHIND the book) */
+  /* SITE WALLPAPER behind the book */
   --wall-bg:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/jpurnal-bg1.jpg");
 }
 
@@ -26,14 +26,13 @@ body{
   font-family:var(--font); display:flex; align-items:center; justify-content:center;
 }
 
-/* ------------ FULLSCREEN WALLPAPER BEHIND BOOK ------------ */
+/* ===== FULLSCREEN WALLPAPER + RAIN (behind book) ===== */
 #wall{
   position:fixed; inset:0; z-index:0;
   background-image: var(--wall-bg);
   background-size: cover; background-position: center; background-repeat: no-repeat;
-  pointer-events:none;  /* don’t block clicks */
+  pointer-events:none;
 }
-/* Rain overlay on the wall */
 #wall::before, #wall::after{
   content:""; position:absolute; inset:0; pointer-events:none;
   background-image: linear-gradient(to bottom, rgba(255,255,255,.09) 2px, rgba(255,255,255,0) 2px);
@@ -42,15 +41,13 @@ body{
 }
 #wall::before{ animation:rainA 1.8s linear infinite; }
 #wall::after { animation:rainB 3.2s linear infinite; opacity:.16; }
-
 @keyframes rainA{ from{ background-position:0 -200px } to{ background-position:0 800px } }
 @keyframes rainB{ from{ background-position:0 -400px } to{ background-position:0 1200px } }
 
-/* ------------ BOOK ------------ */
+/* ===== BOOK ===== */
 #stage{position:relative; z-index:1; width:var(--pageW); height:var(--pageH); transform-origin:center; overflow:visible}
 .deck{position:absolute; inset:0; perspective:1200px}
 
-/* page card */
 .page{
   position:absolute; inset:0; background:var(--paper); border-radius:20px; border:2px solid #efe6d5;
   box-shadow:inset 0 0 60px rgba(0,0,0,.22), 0 18px 40px rgba(0,0,0,.35);
@@ -59,14 +56,14 @@ body{
 }
 .page .page-canvas{position:relative; width:100%; height:100%; padding:28px}
 
-/* COVER PAGE (unchanged) */
+/* Cover page stays a fixed background */
 .page.cover .page-canvas{
   padding:0; background:#0c102c;
   background-image:var(--cover-img), radial-gradient(closest-side at 50% 40%, #1d2a55 0%, #0c102c 60%);
   background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
 }
 
-/* stack positions */
+/* Stack */
 .page.active{opacity:1; filter:none; pointer-events:auto; z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95); z-index:1}
 .pos--1{transform:translateX(-36px) rotate(-.6deg) scale(.975); z-index:2}
@@ -74,7 +71,7 @@ body{
 .pos-1{transform:translateX(36px) rotate(.6deg) scale(.975); z-index:2}
 .pos-2{transform:translateX(70px) rotate(1.2deg) scale(.95); z-index:1}
 
-/* scrap items */
+/* Scrap items */
 .scrap-item{position:absolute; transform-origin:center; touch-action:none; overflow:visible; z-index:1}
 .scrap-item.selected{box-shadow:0 0 0 3px var(--accent)}
 .rotator,.mover,.resizer{display:none}
@@ -85,13 +82,22 @@ body{
 .scrap-item[data-fit="cover"] .scrap-img{object-fit:cover}
 .scrap-text{width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em}
 
-/* editability */
+/* Editability */
 .page .page-canvas, .scrap-item { pointer-events:none }
 body.editing .page.active .page-canvas, body.editing .scrap-item { pointer-events:auto }
 body.editing .scrap-item{cursor:move}
 body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{display:block}
 
-/* toolbar & controls */
+/* Nav + Add Page button */
+.nav{position:absolute; top:50%; transform:translateY(-50%); border:0; width:56px; height:56px; border-radius:50%; cursor:pointer; z-index:10;
+  background:#ffffffd8; box-shadow:0 10px 22px rgba(0,0,0,.25); font-weight:900; font-size:22px; color:#182042; display:grid; place-items:center}
+.nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45; pointer-events:none}
+
+.addpage{position:absolute; left:50%; top:-56px; transform:translateX(-50%); border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:900;
+  background:#ffffffd8; color:#182042; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; z-index:20}
+body.editing .addpage{display:block}
+
+/* Toolbar */
 #toolbar{position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column}
 #toolbar.open{display:flex}
 #toolbar .group{display:flex; gap:8px; flex-wrap:wrap}
@@ -101,33 +107,11 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
 #toolbar button.warn{background:#ff9aa2; color:#4c0a17}
 #toolbar input[type="number"], #toolbar input[type="color"], #toolbar input[type="text"]{width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff}
 #toolbar input[type="text"]{font-family:monospace}
-
-#textEditor{position:fixed; inset:0; background:rgba(0,0,0,.6); display:none; z-index:10000; align-items:center; justify-content:center}
-#textEditor.open{display:flex}
-#textEditor .panel{width:min(820px,90vw); background:#fff; border-radius:16px; padding:18px; border:2px solid #e8dcc6; box-shadow:0 20px 60px rgba(0,0,0,.5)}
-#textEditor textarea{width:100%; height:320px; font:28px/1.35 var(--font); color:#0d2a6b; padding:12px; border:2px solid #e8dcc6; border-radius:12px; resize:vertical}
-#textEditor .row{display:flex; gap:12px; margin-top:10px}
-#textEditor input[type="number"]{flex:1; padding:10px; border-radius:10px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b}
-#textEditor input[type="color"]{width:110px; height:44px; border-radius:10px; border:2px solid #e8dcc6}
-#textEditor input[type="text"]{width:110px; height:44px; border-radius:10px; border:2px solid #e8dcc6; padding:0 10px; font-weight:700; color:#0d2a6b; font-family:monospace}
-#textEditor .actions{display:flex; gap:10px; justify-content:flex-end; margin-top:12px}
-#textEditor button{border:0; padding:10px 14px; border-radius:10px; font-weight:800; cursor:pointer}
-#editorCancel{background:#ff9aa2; color:#4c0a17}
-#editorSave{background:var(--mint); color:#022d2c}
-
-/* nav + Add Page */
-.nav{position:absolute; top:50%; transform:translateY(-50%); border:0; width:56px; height:56px; border-radius:50%; cursor:pointer; z-index:10;
-  background:#ffffffd8; box-shadow:0 10px 22px rgba(0,0,0,.25); font-weight:900; font-size:22px; color:#182042; display:grid; place-items:center}
-.nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45; pointer-events:none}
-
-.addpage{position:absolute; left:50%; bottom:-64px; transform:translateX(-50%); border:0; padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:900;
-  background:#ffffffd8; color:#182042; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none}
-body.editing .addpage{display:block}
 </style>
 </head>
 <body>
 
-<!-- Wallpaper + rain -->
+<!-- Wallpaper -->
 <div id="wall" aria-hidden="true"></div>
 
 <!-- Book -->
@@ -142,6 +126,7 @@ body.editing .addpage{display:block}
   </div>
   <button class="nav left"  id="prev" aria-label="Previous">◀</button>
   <button class="nav right" id="next" aria-label="Next">▶</button>
+  <!-- Floating Add Page (shows in edit mode) -->
   <button class="addpage" id="addPageBtn">＋ Add Page</button>
 </div>
 
@@ -168,6 +153,12 @@ body.editing .addpage{display:block}
     <button id="fitToggleBtn"  class="secondary">Fit: Contain</button>
     <button id="lockToggleBtn" class="secondary">Lock: On</button>
   </div>
+
+  <!-- Add Page inside toolbar too -->
+  <div class="group">
+    <button id="addPageToolbarBtn" class="mint">＋ Add Page</button>
+  </div>
+
   <div class="group">
     <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
     <button id="clearPageBtn" class="warn">Clear Page</button>
@@ -184,7 +175,7 @@ body.editing .addpage{display:block}
   <div class="panel">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
     <textarea id="editorInput" placeholder="type here…"></textarea>
-    <div class="row">
+    <div class="row" style="display:flex;gap:12px;margin-top:10px">
       <label style="font-weight:700;color:#0d2a6b;display:flex;align-items:center;gap:8px;">
         Size (px)
         <input id="editorSize" type="number" min="8" max="200" step="1" value="28">
@@ -195,27 +186,31 @@ body.editing .addpage{display:block}
         <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB">
       </label>
     </div>
-    <div class="actions">
-      <button id="editorCancel">Cancel</button>
-      <button id="editorSave">Save</button>
+    <div class="actions" style="display:flex;gap:10px;justify-content:flex-end;margin-top:12px">
+      <button id="editorCancel" style="background:#ff9aa2;color:#4c0a17;border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer">Cancel</button>
+      <button id="editorSave"   style="background:#67e4ca;color:#022d2c;border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer">Save</button>
     </div>
   </div>
 </div>
 
 <script>
 (function(){
+  /* ========= SUPABASE (separate from scrapbook) ========= */
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const BUCKET="journalbook", STATE_ID="journal_main";
   const apiHeaders={apikey:SUPABASE_ANON, Authorization:"Bearer "+SUPABASE_ANON, "Content-Type":"application/json", Accept:"application/json"};
 
   const stage=document.getElementById('stage'), deck=document.getElementById('deck');
-  const prevBtn=document.getElementById('prev'), nextBtn=document.getElementById('next'), addPageBtn=document.getElementById('addPageBtn');
+  const prevBtn=document.getElementById('prev'), nextBtn=document.getElementById('next');
+  const addPageBtn=document.getElementById('addPageBtn'), addPageToolbarBtn=document.getElementById('addPageToolbarBtn');
+
   const toolbar=document.getElementById('toolbar'), fileInput=document.getElementById('fileInput');
   const addTextBtn=document.getElementById('addTextBtn'), editSelectedBtn=document.getElementById('editSelectedBtn');
   const addPhotoBtn=document.getElementById('addPhotoBtn'), clearPageBtn=document.getElementById('clearPageBtn'), saveBtn=document.getElementById('saveBtn');
   const hideBar=document.getElementById('hideBar'), exitEdit=document.getElementById('exitEdit');
   const fontSizeInput=document.getElementById('fontSizeInput'), fontColorInput=document.getElementById('fontColorInput'), fontHexInput=document.getElementById('fontHexInput');
+  const fitToggleBtn=document.getElementById('fitToggleBtn'), lockToggleBtn=document.getElementById('lockToggleBtn');
 
   const editor={ el:document.getElementById('textEditor'), input:document.getElementById('editorInput'), size:document.getElementById('editorSize'),
     color:document.getElementById('editorColor'), hex:document.getElementById('editorHex'), save:document.getElementById('editorSave'), cancel:document.getElementById('editorCancel'), targetBox:null };
@@ -238,13 +233,15 @@ body.editing .addpage{display:block}
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
   function hideToolbar(){ if(toolbar.contains(document.activeElement)) document.activeElement.blur(); toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
 
+  /* Enter edit by typing 123 */
   const PASSCODE='123'; let keyBuf='', keyTimer=null;
   function normDigit(e){ if(e.key==='1'||e.code==='Digit1'||e.code==='Numpad1')return'1'; if(e.key==='2'||e.code==='Digit2'||e.code==='Numpad2')return'2'; if(e.key==='3'||e.code==='Digit3'||e.code==='Numpad3')return'3'; return''; }
-  addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey) return; const d=normDigit(e); if(!d) return; keyBuf+=d; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuf='',1200); if(keyBuf.endsWith(PASSCODE)){ keyBuf=''; document.body.classList.add('editing'); showToolbar(); setClasses(); } });
+  addEventListener('keydown',e=>{ if(e.ctrlKey||e.metaKey||e.altKey) return; const d=normDigit(e); if(!d) return; keyBuf+=d; clearTimeout(keyTimer); keyTimer=setTimeout(()=>keyBuf='',1200);
+    if(keyBuf.endsWith(PASSCODE)){ keyBuf=''; document.body.classList.add('editing'); showToolbar(); setClasses(); } });
   exitEdit.onclick=()=>{ document.body.classList.remove('editing'); hideToolbar(); deselect(); };
   hideBar.onclick=hideToolbar;
 
-  /* text editor modal */
+  /* Text editor */
   function showEditor(el){ el.classList.add('open'); el.removeAttribute('aria-hidden'); el.removeAttribute('inert'); setTimeout(()=>editor.input.focus(),0); }
   function hideEditor(el){ if(el.contains(document.activeElement)) document.activeElement.blur(); el.classList.remove('open'); el.setAttribute('aria-hidden','true'); el.setAttribute('inert',''); }
   function openTextEditor({text='',size=28,color='#0d2a6b',targetBox=null}={}){ editor.targetBox=targetBox; editor.input.value=text; editor.size.value=size; editor.color.value=color; editor.hex.value=color; showEditor(editor.el); }
@@ -262,9 +259,10 @@ body.editing .addpage{display:block}
       box.innerHTML='<div class="scrap-text" contenteditable="false" style="font-size:'+size+'px;color:'+color+'"></div><div class="mover"></div><div class="resizer"></div><div class="rotator"></div>';
       box.querySelector('.scrap-text').textContent=text; c.appendChild(box); makeDraggable(box); select(box); }
     hideEditor(editor.el); };
-  editSelectedBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; openTextEditor({ text:t.textContent, size:parseInt(getComputedStyle(t).fontSize)||28, color:rgbToHex(getComputedStyle(t).color), targetBox:selectedItem }); };
+  editSelectedBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const t=selectedItem?.querySelector('.scrap-text'); if(!t) return;
+    openTextEditor({ text:t.textContent, size:parseInt(getComputedStyle(t).fontSize)||28, color:rgbToHex(getComputedStyle(t).color), targetBox:selectedItem }); };
 
-  /* photo upload */
+  /* Photo upload */
   addPhotoBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } fileInput.click(); };
   fileInput.addEventListener('change',async e=>{
     const f=e.target.files?.[0]; if(!f) return;
@@ -289,17 +287,40 @@ body.editing .addpage{display:block}
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
   }
 
-  /* selection + drag/resize/rotate */
+  /* Selection + toolbar state + image toggles */
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex=++zCounter; } updateToolbarState(); }
   function deselect(){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
-  function updateToolbarState(){ const t=selectedItem?.querySelector('.scrap-text'); const onText=!!t;
+  function updateToolbarState(){
+    const t=selectedItem?.querySelector('.scrap-text'); const img=selectedItem?.querySelector('.scrap-img');
+    const onText=!!t, onImg=!!img;
     fontSizeInput.disabled=!onText; fontColorInput.disabled=!onText; fontHexInput.disabled=!onText;
-    if(onText){ const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr;
-      const m=String(getComputedStyle(t).color).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i); const hex=m?('#'+(+m[1]).toString(16).padStart(2,'0')+(+m[2]).toString(16).padStart(2,'0')+(+m[3]).toString(16).padStart(2,'0')):'#0d2a6b';
-      fontColorInput.value=hex; fontHexInput.value=hex; } else { fontHexInput.value=''; } }
+
+    if(onText){
+      const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr;
+      const m=String(getComputedStyle(t).color).match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/i);
+      const hex=m?('#'+(+m[1]).toString(16).padStart(2,'0')+(+m[2]).toString(16).padStart(2,'0')+(+m[3]).toString(16).padStart(2,'0')):'#0d2a6b';
+      fontColorInput.value=hex; fontHexInput.value=hex;
+    }else{ fontHexInput.value=''; }
+
+    fitToggleBtn.disabled=!onImg; lockToggleBtn.disabled=!onImg;
+    if(onImg){
+      const fit=selectedItem.dataset.fit||'contain';
+      fitToggleBtn.textContent='Fit: ' + (fit==='cover'?'Fill':'Contain');
+      const lock=selectedItem.dataset.lock==='1';
+      lockToggleBtn.textContent='Lock: ' + (lock?'On':'Off');
+      if(img){ img.style.objectFit=(fit==='cover'?'cover':'contain'); }
+    }else{
+      fitToggleBtn.textContent='Fit: Contain'; lockToggleBtn.textContent='Lock: On';
+    }
+  }
   fontSizeInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; let v=parseInt(fontSizeInput.value,10); if(isNaN(v)) return; v=Math.max(8,Math.min(200,v)); t.style.fontSize=v+'px'; t.style.height='auto'; const b=t.closest('.scrap-item'); if(b) b.style.height=Math.max(40,t.scrollHeight)+'px'; });
   fontColorInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; fontHexInput.value=fontColorInput.value; t.style.color=fontColorInput.value; });
   fontHexInput.addEventListener('input',()=>{ const t=selectedItem?.querySelector('.scrap-text'); if(!t) return; const v=normalizeHex(fontHexInput.value); if(v){ fontColorInput.value=v; t.style.color=v; } });
+
+  fitToggleBtn.addEventListener('click',()=>{ if(!selectedItem) return; if(!selectedItem.querySelector('.scrap-img')) return;
+    selectedItem.dataset.fit = (selectedItem.dataset.fit==='cover'?'contain':'cover'); updateToolbarState(); });
+  lockToggleBtn.addEventListener('click',()=>{ if(!selectedItem) return; if(!selectedItem.querySelector('.scrap-img')) return;
+    selectedItem.dataset.lock = (selectedItem.dataset.lock==='1'?'0':'1'); updateToolbarState(); });
 
   function makeDraggable(el){
     let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0; let dragging=false, dragPointerId=null; let rotating=false,startAngle=0,startPointerAngle=0;
@@ -326,8 +347,20 @@ body.editing .addpage{display:block}
 
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
   clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear this page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
-  addPageBtn.addEventListener('click', ()=>{ const el=document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(el); current=pages().length-1; setClasses(); });
 
+  /* Add Page (top button + toolbar button) */
+  function addPage(){
+    const el=document.createElement('div');
+    el.className='page';
+    el.innerHTML='<div class="page-canvas"></div>';
+    deck.appendChild(el);
+    current=pages().length-1;
+    setClasses();
+  }
+  addPageBtn.addEventListener('click', addPage);
+  addPageToolbarBtn.addEventListener('click', addPage);
+
+  /* Save current page to Supabase (texts/photos) */
   async function saveCurrentPage(){
     if(current===0){ alert('Cover is locked.'); return; }
     const p=current+1;
@@ -348,6 +381,7 @@ body.editing .addpage{display:block}
     catch(e){ console.warn(e); saveBtn.textContent='Retry Save'; saveBtn.disabled=false; }
   });
 
+  /* Load existing pages content */
   async function cloudLoadAll(){
     const [tRes,pRes]=await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders}),
