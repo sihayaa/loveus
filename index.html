@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Love Space</title>
-  <!-- Make it mobile-friendly -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="icon" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/icon.png?v=2" type="image/png" sizes="32x32">
@@ -65,7 +64,30 @@
       color: white;
       text-shadow: 2px 2px 8px #8e5dd2;
       margin-bottom: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px; 
     }
+
+    .start-heart{
+      padding: 0 !important;            
+      width: 40px; height: 40px;
+      border-radius: 999px;
+      border: 2px solid rgba(255,255,255,0.6);
+      background: #4fa981;             
+      color: #fff;
+      font-size: 20px;
+      line-height: 1;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 0 10px rgba(79,169,129,0.55);
+      transition: transform .2s ease, box-shadow .2s ease, opacity .2s ease;
+      user-select: none;
+    }
+    .start-heart:hover{ transform: scale(1.07); box-shadow: 0 0 14px rgba(79,169,129,0.85); }
+    .start-heart:active{ transform: scale(0.97); }
 
     #duration-block {
       background: rgba(255, 255, 255, 0.65);
@@ -127,7 +149,6 @@
       box-shadow: 0 0 15px #fff;
     }
 
-    /* Wrapper for icons so we can turn them into a bottom tray on phones */
     #icon-area { }
 
     .album-icon {
@@ -544,6 +565,7 @@
 </head>
 <body>
   <h1>
+    <button class="start-heart" id="startHeartBtn" title="Open Journal" aria-label="Open Journal">💚</button>
     Started Dating: October 13, 2024
     <span id="title-heart" class="title-heart">💜</span>
   </h1>
@@ -1096,6 +1118,17 @@
 
       heartEl.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); });
       heartEl.addEventListener('click', (e) => e.stopPropagation());
+    })();
+  </script>
+
+  <script>
+    (() => {
+      const startBtn = document.getElementById('startHeartBtn');
+      if (!startBtn) return;
+      startBtn.addEventListener('click', (e) => {
+        e.stopPropagation();           
+        window.location.href = 'journal.html';
+      });
     })();
   </script>
 </body>
