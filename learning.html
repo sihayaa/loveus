@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Learning — Useful Mandarin Words</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f7f4ec;        
+      --ink:#1e2430;     
+      --accent:#7a5af8;      
+      --accent-2:#67e4ca;    
+      --card:#ffffff;
+      --line:#e6e0d3;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; background:radial-gradient(1200px 800px at 20% -10%, #ffffff 0%, #faf7f0 45%, var(--bg) 100%); color:var(--ink);
+      font:16px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      padding:26px;
+    }
+    .wrap{max-width:980px;margin:0 auto}
+    .card{position:relative; background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.06); padding:22px 22px 18px}
+    .card:before{content:""; position:absolute; inset:-14px; border-radius:32px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); z-index:-1; filter:saturate(112%) drop-shadow(0 0 16px rgba(122,90,248,.28)) drop-shadow(0 0 26px rgba(103,228,202,.22));}
+
+    h1{margin:4px 0 8px; display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap}
+    h1 .script{font-weight:900; font-size:36px; letter-spacing:.2px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent}
+    h1 .tag{font-weight:800; font-size:28px; padding:2px 10px; border-radius:14px; color:#2a3040}
+    h1 small{display:block; font-weight:600; font-size:14px; color:#6a7082; margin-top:-2px}
+
+    .sub{margin:0 0 16px;color:#5b6170}
+
+    form#entry-form{display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:12px; align-items:end}
+    label span{display:block; font-size:12px; color:#5b6170; margin:0 0 6px 6px}
+    input[type="text"]{
+      width:100%; padding:12px 12px; border:1px solid var(--line); border-radius:14px; outline:none; background:#fff;
+      transition:box-shadow .16s ease, border .16s ease, transform .06s ease
+    }
+    input[type="text"]::placeholder{ color:#a8aebe; opacity:.75; font-style:italic }
+    input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(122,90,248,.14)}
+    button.add{height:46px; padding:0 18px; border:0; border-radius:14px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; font-weight:800; cursor:pointer; letter-spacing:.3px}
+    button.add:active{transform:translateY(1px)}
+
+    .toolbar{display:flex; align-items:center; gap:10px; margin:14px 0 6px}
+    .pill{border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:999px; font-size:13px; color:#3c4353}
+    .pill strong{color:var(--accent)}
+    .right{margin-left:auto}
+    .toggle{cursor:pointer}
+
+    .table-wrap{margin-top:8px}
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    thead th{position:sticky; top:0; background:#fff; z-index:1}
+    th, td{border-bottom:1px solid var(--line); padding:14px 10px; text-align:left}
+    th{font-size:13px; color:#5b6170; font-weight:700; letter-spacing:.3px}
+    tbody tr{transition:background .12s ease}
+    tbody tr:hover td{background:#fcfbff}
+    td{vertical-align:middle}
+    .num{width:56px; text-align:center; color:#7c8296}
+    .hanzi{font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-style:normal; font-weight:700}
+    .actions{width:88px; text-align:right}
+
+    .icon-btn{border:0; background:transparent; cursor:pointer; font-size:16px; padding:6px 8px; border-radius:10px; color:#3b3f50}
+    .icon-btn svg{width:18px; height:18px; display:block}
+    .icon-btn:hover{background:#f3f1ff}
+    tr.editing td{background:#faf8ff}
+
+    tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
+    .sample td{color:rgba(30,36,48,.32); opacity:1; font-style:italic; font-weight:500}
+
+
+    @media (max-width:860px){
+      form#entry-form{grid-template-columns:1fr;}
+      .actions{width:76px}
+    }
+
+    [data-theme="mint"]{--accent: var(--accent-2);}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>
+        <span class="script">Learning</span>
+        <span class="tag">Mandarin words that are useful</span>
+        <small>quick study list • pinyin → meaning → 汉字</small>
+      </h1>
+      <p class="sub">Type the three fields below. Press <strong>Enter</strong> (or click Add) to append to the list. To change a row later, click <strong>Edit</strong> — cells are locked by default.</p>
+
+      <form id="entry-form" autocomplete="off">
+        <label>
+          <span>Pronunciation (Pinyin)</span>
+          <input id="pinyin" type="text" placeholder="nĭ hăo" required>
+        </label>
+        <label>
+          <span>Meaning (English)</span>
+          <input id="meaning" type="text" placeholder="Hello" required>
+        </label>
+        <label>
+          <span>Mandarin (汉字)</span>
+          <input id="hanzi" type="text" placeholder="你好" required>
+        </label>
+        <button class="add" type="submit">Add</button>
+      </form>
+
+      <div class="toolbar">
+        <span class="pill">Total: <strong id="count">0</strong></span>
+        <span class="right pill toggle" id="themeToggle">Switch accent 💜/💚</span>
+      </div>
+
+      <div class="table-wrap">
+        <table aria-label="Useful Mandarin words list">
+          <thead>
+            <tr>
+              <th class="num">#</th>
+              <th>Pronunciation</th>
+              <th>Meaning</th>
+              <th>Mandarin</th>
+              <th class="actions"> </th>
+            </tr>
+          </thead>
+          <tbody id="list"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function(){
+      const STORAGE_KEY = "mandarin_words_v1";
+      const THEME_KEY = "mandarin_words_theme";
+      const form = document.getElementById('entry-form');
+      const pinyinEl = document.getElementById('pinyin');
+      const meaningEl = document.getElementById('meaning');
+      const hanziEl = document.getElementById('hanzi');
+      const listEl = document.getElementById('list');
+      const countEl = document.getElementById('count');
+      const themeToggle = document.getElementById('themeToggle');
+
+      const savedTheme = localStorage.getItem(THEME_KEY);
+      if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
+      themeToggle?.addEventListener('click', ()=>{
+        const now = document.documentElement.getAttribute('data-theme') === 'mint' ? '' : 'mint';
+        if(now){ document.documentElement.setAttribute('data-theme','mint'); }
+        else{ document.documentElement.removeAttribute('data-theme'); }
+        localStorage.setItem(THEME_KEY, now);
+      });
+
+      let hintMode = false; 
+      let rows = load();
+      if(rows.length===0){
+        hintMode = true;
+        rows = [{pinyin:"nĭ hăo", meaning:"Hello", hanzi:"你好"}];
+      }
+      render();
+
+      form.addEventListener('submit', (e)=>{
+        e.preventDefault();
+        const p = pinyinEl.value.trim();
+        const m = meaningEl.value.trim();
+        const h = hanziEl.value.trim();
+        if(!p || !m || !h){
+          [pinyinEl,meaningEl,hanziEl].forEach(el=>{
+            if(!el.value.trim()){
+              el.style.boxShadow = '0 0 0 3px rgba(255,0,0,.12)';
+              el.style.borderColor = '#ffb4b4';
+              setTimeout(()=>{el.style.boxShadow=''; el.style.borderColor='';}, 900);
+            }
+          });
+          return;
+        }
+        if(hintMode){ rows = []; hintMode = false; }
+        rows.push({pinyin:p, meaning:m, hanzi:h});
+        save();
+        render();
+        form.reset();
+        pinyinEl.focus();
+      });
+
+      function render(){
+        listEl.innerHTML = '';
+        rows.forEach((row, idx)=>{
+          const tr = document.createElement('tr');
+          if(hintMode) tr.classList.add('sample');
+          const num = document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
+          tr.appendChild(makeCell(row.pinyin));
+          tr.appendChild(makeCell(row.meaning));
+          const hanziTd = makeCell(row.hanzi); hanziTd.classList.add('hanzi'); tr.appendChild(hanziTd);
+
+          const actions = document.createElement('td'); actions.className = 'actions';
+          // Edit toggle
+          const edit = document.createElement('button');
+          edit.className = 'icon-btn'; edit.title = 'Edit'; edit.innerHTML = pencil(); edit.dataset.mode = 'edit';
+          edit.addEventListener('click', ()=>{
+            const cells = Array.from(tr.querySelectorAll('td')).slice(1,4);
+            if(edit.dataset.mode === 'edit'){
+              if(hintMode){ hintMode = false; }
+              cells.forEach((td,i)=>{ td.contentEditable = true; td.spellcheck = false; td.addEventListener('keydown', handleEnterToSave); if(i===0) td.focus(); });
+              tr.classList.add('editing'); edit.dataset.mode = 'save'; edit.innerHTML = check();
+            }else{
+              const [pCell, mCell, hCell] = cells;
+              rows[idx] = {pinyin:pCell.textContent.trim(), meaning:mCell.textContent.trim(), hanzi:hCell.textContent.trim()};
+              cells.forEach(td=>{ td.contentEditable = false; td.removeEventListener('keydown', handleEnterToSave); });
+              tr.classList.remove('editing'); save(); render();
+            }
+          });
+          actions.appendChild(edit);
+
+          const del = document.createElement('button');
+          del.className = 'icon-btn'; del.title = 'Delete'; del.innerHTML = trash();
+          del.addEventListener('click', ()=>{ remove(idx); });
+          actions.appendChild(del);
+
+          tr.appendChild(actions);
+          listEl.appendChild(tr);
+        });
+        countEl.textContent = hintMode ? 0 : rows.length;
+      }
+
+      function handleEnterToSave(e){ if(e.key === 'Enter'){ e.preventDefault(); e.currentTarget.closest('tr').querySelector('.icon-btn').click(); } }
+      function makeCell(text){ const td=document.createElement('td'); td.textContent=text; td.contentEditable=false; td.spellcheck=false; return td; }
+      function remove(i){
+        rows.splice(i,1);
+        if(rows.length===0){ hintMode = true; rows = [{pinyin:"nĭ hăo", meaning:"Hello", hanzi:"你好"}]; }
+        save(); render();
+      }
+      function save(){ if(hintMode) return; localStorage.setItem(STORAGE_KEY, JSON.stringify(rows)); }
+      function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch{ return []; } }
+
+      function pencil(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>'}
+      function check(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'}
+      function trash(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>'}
+    })();
+  </script>
+</body>
+</html>
