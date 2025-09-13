@@ -5,23 +5,27 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Journal</title>
 
+<!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Patrick+Hand&family=Dancing+Script:wght@600&family=Press+Start+2P&family=Lobster&display=swap" rel="stylesheet">
 
 <style>
 :root{
-  --pageW:760px; --pageH:1060px;           
+  --pageW:760px; --pageH:1060px;               /* book size */
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
 
+  /* fixed cover image */
   --cover-img:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-front.png");
   --cover-y:50%;
 
+  /* wallpaper (behind the book) */
   --wall-bg:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/jpurnal-bg1.jpg");
 }
 
 *{box-sizing:border-box}
 html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--ink);font-family:var(--font)}
 
+/* wallpaper */
 #wall{
   position:fixed; inset:0; z-index:0;
   background-image: var(--wall-bg);
@@ -29,6 +33,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
   pointer-events:none;
 }
 
+/* ===== centered book ===== */
 #stage{
   position:fixed; left:50%; top:50%;
   width:var(--pageW); height:var(--pageH);
@@ -37,6 +42,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 }
 #deck{position:absolute; inset:0; perspective:1200px}
 
+/* pages */
 .page{
   position:absolute; inset:0; background:var(--paper); border-radius:20px; border:2px solid #efe6d5;
   box-shadow:inset 0 0 60px rgba(0,0,0,.22), 0 18px 40px rgba(0,0,0,.35);
@@ -46,12 +52,14 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 }
 .page .page-canvas{position:relative; width:100%; height:100%; padding:28px}
 
+/* fixed cover (not editable) */
 .page.cover .page-canvas{
   padding:0; background:#0c102c;
   background-image:var(--cover-img), radial-gradient(closest-side at 50% 40%, #1d2a55 0%, #0c102c 60%);
   background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
 }
 
+/* stack positions (fan) */
 .page.active{opacity:1; filter:none; pointer-events:auto; z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95); z-index:1}
 .pos--1{transform:translateX(-36px) rotate(-.6deg) scale(.975); z-index:2}
@@ -59,6 +67,7 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .pos-1{transform:translateX(36px) rotate(.6deg) scale(.975); z-index:2}
 .pos-2{transform:translateX(70px) rotate(1.2deg) scale(.95); z-index:1}
 
+/* scrap items */
 .scrap-item{position:absolute; transform-origin:center; touch-action:none; overflow:visible; z-index:1}
 .scrap-item.selected{box-shadow:0 0 0 3px var(--accent)}
 .rotator,.mover,.resizer{display:none}
@@ -69,13 +78,16 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .scrap-item[data-fit="cover"] .scrap-img{object-fit:cover}
 .scrap-text{width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em}
 
+/* inline editing outline (same as scrapbook) */
 .scrap-text[contenteditable="true"]{outline:2px dashed #7a5af888; outline-offset:4px}
 
+/* editing gates (same as scrapbook) */
 .page .page-canvas, .scrap-item { pointer-events:none }
 body.editing .page.active .page-canvas, body.editing .scrap-item { pointer-events:auto }
 body.editing .scrap-item{cursor:move}
 body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing .scrap-item .resizer{display:block}
 
+/* nav + add page */
 .nav{position:absolute; top:50%; transform:translateY(-50%); border:0; width:56px; height:56px; border-radius:50%; cursor:pointer; z-index:10;
   background:#ffffffd8; box-shadow:0 10px 22px rgba(0,0,0,.25); font-weight:900; font-size:22px; color:#182042; display:grid; place-items:center}
 .nav.left{left:-72px} .nav.right{right:-72px} .nav:active{transform:translateY(-50%) scale(.96)} .nav.disabled{opacity:.45; pointer-events:none}
@@ -84,6 +96,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   background:#ffffffd8; color:#182042; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; z-index:20}
 body.editing .addpage{display:block}
 
+/* toolbar */
 #toolbar{position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column}
 #toolbar.open{display:flex}
 #toolbar .group{display:flex; gap:8px; flex-wrap:wrap}
@@ -94,6 +107,7 @@ body.editing .addpage{display:block}
 #toolbar input[type="number"], #toolbar input[type="color"], #toolbar input[type="text"], #toolbar select{width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff}
 #toolbar input[type="text"]{font-family:monospace}
 
+/* BIG TEXT EDITOR */
 #textEditor{
   position:fixed; inset:0; background:rgba(0,0,0,.6);
   display:none; z-index:10000; align-items:center; justify-content:center;
@@ -130,6 +144,7 @@ body.editing .addpage{display:block}
   <button class="addpage" id="addPageBtn">＋ Add Page</button>
 </div>
 
+<!-- toolbar -->
 <div id="toolbar" aria-hidden="true" inert>
   <div class="group">
     <button id="addTextBtn" class="mint">Add Text</button>
@@ -152,6 +167,7 @@ body.editing .addpage{display:block}
     <input id="fontHexInput" type="text" placeholder="#RRGGBB" value="#0d2a6b" disabled>
   </div>
 
+  <!-- Font controls -->
   <div class="group">
     <label>Font</label>
     <select id="fontSelect">
@@ -182,7 +198,6 @@ body.editing .addpage{display:block}
     <button id="deleteSelectedBtn" class="warn">Delete Selected</button>
     <button id="clearPageBtn" class="warn">Clear Page</button>
     <button id="saveBtn" class="mint">Save Page</button>
-
     <button id="saveAllBtn" class="mint">Save All Pages</button>
   </div>
 
@@ -192,6 +207,7 @@ body.editing .addpage{display:block}
   </div>
 </div>
 
+<!-- Big Text Editor -->
 <div id="textEditor" aria-hidden="true" inert>
   <div class="panel">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
@@ -206,7 +222,6 @@ body.editing .addpage{display:block}
         <input id="editorColor" type="color" value="#0d2a6b">
         <input id="editorHex" type="text" value="#0d2a6b" placeholder="#RRGGBB">
       </label>
-
       <select id="editorFont">
         <option value="lobster">Journal Default (Lobster)</option>
         <option value="inter">Inter (Sans)</option>
@@ -227,11 +242,13 @@ body.editing .addpage{display:block}
 
 <script>
 (function(){
+  /* Supabase (separate bucket/tables) */
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const BUCKET="journalbook", STATE_ID="journal_main";
   const apiHeaders={apikey:SUPABASE_ANON, Authorization:"Bearer "+SUPABASE_ANON, "Content-Type":"application/json", Accept:"application/json"};
 
+  /* FONT MAP */
   const FONT_MAP = {
     "lobster": '"Lobster", cursive',
     "inter": '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif',
@@ -265,6 +282,7 @@ body.editing .addpage{display:block}
   const fontSizeInput=document.getElementById('fontSizeInput'), fontColorInput=document.getElementById('fontColorInput'), fontHexInput=document.getElementById('fontHexInput');
   const fitToggleBtn=document.getElementById('fitToggleBtn'), lockToggleBtn=document.getElementById('lockToggleBtn');
 
+  /* Font controls */
   const fontSelect=document.getElementById('fontSelect');
   const applyFontSelected=document.getElementById('applyFontSelected');
   const applyFontPage=document.getElementById('applyFontPage');
@@ -279,6 +297,7 @@ body.editing .addpage{display:block}
   let current=0, selectedItem=null, zCounter=10;
   const pages=()=>Array.from(deck.querySelectorAll('.page'));
 
+  /* exact centering using fan extents */
   function fanExtents(idx, total){
     const leftCount  = Math.min(idx, 2);
     const rightCount = Math.min(total-1-idx, 2);
@@ -291,6 +310,7 @@ body.editing .addpage{display:block}
     const shift = (right - left)/2; deck.style.left = shift + 'px';
   }
 
+  /* responsive scale */
   function fitStage(){
     const vw=innerWidth, vh=innerHeight, mx=200, my=40;
     const pw=parseInt(getComputedStyle(stage).width), ph=parseInt(getComputedStyle(stage).height);
@@ -299,6 +319,7 @@ body.editing .addpage{display:block}
   }
   fitStage(); addEventListener('resize', fitStage);
 
+  /* page class positions and nav */
   function setClasses(){
     const P=pages();
     P.forEach((p,i)=>{
@@ -320,6 +341,7 @@ body.editing .addpage{display:block}
   }
   prevBtn.onclick=()=>go(-1); nextBtn.onclick=()=>go(1);
 
+  /* clicking a page selects it when editing */
   function bindCanvasClicks(){
     pages().forEach((p,i)=>{
       p.querySelector('.page-canvas').addEventListener('mousedown',()=>{
@@ -330,6 +352,7 @@ body.editing .addpage{display:block}
   }
   bindCanvasClicks();
 
+  /* unlock / overlays */
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
   function hideToolbar(){ if(toolbar.contains(document.activeElement)) document.activeElement.blur(); toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
 
@@ -394,6 +417,7 @@ body.editing .addpage{display:block}
     hideEditor(editor.el);
   };
 
+  /* inline editing */
   function startInlineEdit(t){
     if(!t || t.getAttribute('contenteditable')==='true') return;
     t.setAttribute('contenteditable','true');
@@ -406,7 +430,7 @@ body.editing .addpage{display:block}
   let pressTimer=null; addEventListener('touchstart',e=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(!t) return; pressTimer=setTimeout(()=>startInlineEdit(t),500); },{passive:true});
   addEventListener('touchend',()=>{ if(pressTimer) clearTimeout(pressTimer); },{passive:true});
 
-  const addPhotoBtn=document.getElementById('addPhotoBtn');
+  /* PHOTO UPLOAD (use existing addPhotoBtn; removed duplicate const) */
   addPhotoBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } fileInput.click(); };
   fileInput.addEventListener('change',async e=>{
     const f=e.target.files?.[0]; if(!f) return;
@@ -431,6 +455,7 @@ body.editing .addpage{display:block}
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
   }
 
+  /* selection & toolbar state */
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex=++zCounter; } updateToolbarState(); }
   function deselect(){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
   function updateToolbarState(){
@@ -441,7 +466,7 @@ body.editing .addpage{display:block}
       const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr;
       const hex=rgbToHex(getComputedStyle(t).color);
       fontColorInput.value=hex; fontHexInput.value=hex;
- 
+      /* set font dropdown to current */
       const key = detectSelectValueFromComputed(getComputedStyle(t).fontFamily);
       fontSelect.value = key;
     }else{ fontHexInput.value=''; }
@@ -465,6 +490,7 @@ body.editing .addpage{display:block}
   lockToggleBtn.addEventListener('click',()=>{ if(!selectedItem) return; if(!selectedItem.querySelector('.scrap-img')) return;
     selectedItem.dataset.lock = (selectedItem.dataset.lock==='1'?'0':'1'); updateToolbarState(); });
 
+  /* drag/resize/rotate */
   function makeDraggable(el){
     let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0; let dragging=false, dragPointerId=null; let rotating=false,startAngle=0,startPointerAngle=0;
     const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
@@ -483,7 +509,7 @@ body.editing .addpage{display:block}
       const dx=e.clientX-startX, dy=e.clientY-startY;
       const hasImg=!!el.querySelector('.scrap-img');
       const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight)));
-      const lockOn = hasImg && el.dataset.lock==='1' && !e.shiftKey; 
+      const lockOn = hasImg && el.dataset.lock==='1' && !e.shiftKey; /* hold Shift to free-scale */
       let w=Math.max(60,startW+dx), h=Math.max(40,startH+dy);
       if(lockOn && ratio>0){
         if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio));
@@ -532,6 +558,7 @@ body.editing .addpage{display:block}
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
   clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear Page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
+  /* Add Page */
   function addPage(){
     const el=document.createElement('div');
     el.className='page';
@@ -544,6 +571,7 @@ body.editing .addpage{display:block}
   addPageBtn.addEventListener('click', addPage);
   addPageToolbarBtn.addEventListener('click', addPage);
 
+  /* Save helpers */
   function gatherPageItems(pgIdx){
     const c=pages()[pgIdx].querySelector('.page-canvas'); const out={texts:[], photos:[]};
     [...c.querySelectorAll('.scrap-item')].forEach(el=>{
@@ -568,6 +596,7 @@ body.editing .addpage{display:block}
     catch(e){ console.warn(e); saveBtn.textContent='Retry Save'; saveBtn.disabled=false; }
   });
 
+  /* Save all pages */
   saveAllBtn.addEventListener('click', async ()=>{
     const orig=saveAllBtn.textContent; saveAllBtn.disabled=true; saveAllBtn.textContent='Saving…';
     const keep=current;
@@ -586,6 +615,7 @@ body.editing .addpage{display:block}
     }
   });
 
+  /* Load all pages content */
   async function cloudLoadAll(){
     const [tRes,pRes]=await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders}),
@@ -594,6 +624,7 @@ body.editing .addpage{display:block}
     if(!tRes.ok||!pRes.ok){ setClasses(); return; }
     const texts=await tRes.json(), photos=await pRes.json();
 
+    /* ensure pages exist */
     const need=Math.max(6, ...texts.map(r=>r.page_no||1), ...photos.map(r=>r.page_no||1));
     while(pages().length<need){
       const el=document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(el);
@@ -627,22 +658,24 @@ body.editing .addpage{display:block}
     setClasses();
   }
 
+  /* Font application helpers */
   function applyFontToElement(tEl, fontKey){
     if(!tEl) return;
     tEl.style.fontFamily = familyFromValue(fontKey);
   }
-  applyFontSelected.addEventListener('click', ()=>{
+  document.getElementById('applyFontSelected').addEventListener('click', ()=>{
     const t=selectedItem?.querySelector('.scrap-text'); if(!t) return;
     applyFontToElement(t, fontSelect.value);
   });
-  applyFontPage.addEventListener('click', ()=>{
+  document.getElementById('applyFontPage').addEventListener('click', ()=>{
     const c=pages()[current].querySelector('.page-canvas');
     c.querySelectorAll('.scrap-text').forEach(t=>applyFontToElement(t, fontSelect.value));
   });
-  applyFontAll.addEventListener('click', ()=>{
+  document.getElementById('applyFontAll').addEventListener('click', ()=>{
     document.querySelectorAll('.scrap-text').forEach(t=>applyFontToElement(t, fontSelect.value));
   });
 
+  // init
   (async function(){ await cloudLoadAll(); setClasses(); fitStage(); })();
 })();
 </script>
