@@ -3,31 +3,65 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Learning — Useful Mandarin Words</title>
+  <title>Learning Mandarin</title> 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
       --bg:#f7f4ec;      
       --ink:#1e2430;        
-      --accent:#7a5af8;       
-      --accent-2:#67e4ca;   
+      --accent:#7a5af8;        /* solid purple */
+      --accent-2:#67e4ca;      /* mint */
       --card:#ffffff;
       --line:#e6e0d3;
+      --glow1: rgba(122,90,248,.28);
+      --glow2: rgba(122,90,248,.18);
+      --focusRing: rgba(122,90,248,.14);
     }
+    [data-theme="mint"]{
+      --accent: var(--accent-2);
+      --glow1: rgba(103,228,202,.28);
+      --glow2: rgba(103,228,202,.18);
+      --focusRing: rgba(103,228,202,.18);
+    }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; background:radial-gradient(1200px 800px at 20% -10%, #ffffff 0%, #faf7f0 45%, var(--bg) 100%); color:var(--ink);
+      margin:0; 
+      /* --- page background image (no overlay/gradient) --- */
+      background-color: var(--bg);
+      background-image: url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg");
+      background-repeat: no-repeat;
+      background-size: cover;
+      background-position: center top;
+      background-attachment: fixed; /* parallax on desktop */
+      /* --------------------------------------------------- */
+      color:var(--ink);
       font:16px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
       padding:26px;
+      min-height: 100dvh;
     }
+    /* mobile: avoid janky fixed backgrounds */
+    @media (max-width: 860px){
+      body{ background-attachment: scroll; background-position:center top; }
+    }
+
     .wrap{max-width:980px;margin:0 auto}
-    .card{position:relative; background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.06); padding:22px 22px 18px}
-    .card:before{content:""; position:absolute; inset:-14px; border-radius:32px; background:linear-gradient(135deg,var(--accent),var(--accent-2)); z-index:-1; filter:saturate(112%) drop-shadow(0 0 16px rgba(122,90,248,.28)) drop-shadow(0 0 26px rgba(103,228,202,.22));}
+    .card{
+      position:relative; background:var(--card); border:1px solid var(--line);
+      border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.06); padding:22px 22px 18px
+    }
+    /* solid accent halo (no ombre) */
+    .card:before{
+      content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1;
+      background: var(--accent);
+      box-shadow: 0 0 16px var(--glow1), 0 0 26px var(--glow2);
+    }
 
     h1{margin:4px 0 8px; display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap}
-    h1 .script{font-weight:900; font-size:36px; letter-spacing:.2px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); -webkit-background-clip:text; background-clip:text; color:transparent}
+    /* solid color for the title accent */
+    h1 .script{font-weight:900; font-size:36px; letter-spacing:.2px; color:var(--accent)}
     h1 .tag{font-weight:800; font-size:28px; padding:2px 10px; border-radius:14px; color:#2a3040}
     h1 small{display:block; font-weight:600; font-size:14px; color:#6a7082; margin-top:-2px}
 
@@ -40,8 +74,10 @@
       transition:box-shadow .16s ease, border .16s ease, transform .06s ease
     }
     input[type="text"]::placeholder{ color:#a8aebe; opacity:.75; font-style:italic }
-    input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px rgba(122,90,248,.14)}
-    button.add{height:46px; padding:0 18px; border:0; border-radius:14px; background:linear-gradient(90deg,var(--accent),var(--accent-2)); color:white; font-weight:800; cursor:pointer; letter-spacing:.3px}
+    /* focus ring uses current accent */
+    input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing)}
+    /* button uses solid accent */
+    button.add{height:46px; padding:0 18px; border:0; border-radius:14px; background:var(--accent); color:white; font-weight:800; cursor:pointer; letter-spacing:.3px}
     button.add:active{transform:translateY(1px)}
 
     .toolbar{display:flex; align-items:center; gap:10px; margin:14px 0 6px}
@@ -70,13 +106,10 @@
     tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
     .sample td{color:rgba(30,36,48,.32); opacity:1; font-style:italic; font-weight:500}
 
-
     @media (max-width:860px){
       form#entry-form{grid-template-columns:1fr;}
       .actions{width:76px}
     }
-
-    [data-theme="mint"]{--accent: var(--accent-2);}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -85,7 +118,7 @@
     <div class="card">
       <h1>
         <span class="script">Learning</span>
-        <span class="tag">Mandarin words that are useful</span>
+        <span class="tag">Mandarin words that are COOL</span> 
         <small>quick study list • pinyin → meaning → 汉字</small>
       </h1>
       <p class="sub">Type the three fields below. Press <strong>Enter</strong> (or click Add) to append to the list. To change a row later, click <strong>Edit</strong> — cells are locked by default.</p>
@@ -119,7 +152,7 @@
               <th>Pronunciation</th>
               <th>Meaning</th>
               <th>Mandarin</th>
-              <th class="actions"> </th>
+              <th class="actions">&nbsp;</th>
             </tr>
           </thead>
           <tbody id="list"></tbody>
@@ -131,7 +164,7 @@
   <script>
   (function(){
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
-    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI"; // paste anon key
+    const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const TABLE = 'learning_words';
 
@@ -157,20 +190,17 @@
     let hintMode = false; 
 
     function sortRows(){
-      rows.sort((a,b)=> (a.position??0) - (b.position??0) || new Date(a.created_at) - new Date(b.created_at));
-    }
-    function shake(inputs){
-      inputs.forEach(el=>{
-        if(!el.value.trim()){
-          el.style.boxShadow='0 0 0 3px rgba(255,0,0,.12)';
-          el.style.borderColor='#ffb4b4';
-          setTimeout(()=>{el.style.boxShadow=''; el.style.borderColor='';},900);
-        }
-      });
+      try{
+        rows.sort((a,b)=> ((a?.position??0) - (b?.position??0)) || (new Date(a?.created_at||0) - new Date(b?.created_at||0)));
+      }catch(e){ console.warn('sortRows fallback', e); }
     }
 
     async function loadInitial(){
-      const { data, error } = await supabase.from(TABLE).select('*').order('position', {ascending: true}).order('created_at', {ascending: true});
+      const { data, error } = await supabase
+        .from(TABLE)
+        .select('*')
+        .order('position', {ascending: true})
+        .order('created_at', {ascending: true});
       if(error){ console.error(error); }
       if(!data || data.length === 0){
         hintMode = true;
@@ -179,11 +209,6 @@
         rows = data; sortRows();
       }
       render();
-    }
-
-    function sortRows(){
-      try{ rows.sort((a,b)=> ( (a?.position??0) - (b?.position??0) ) || (new Date(a?.created_at||0) - new Date(b?.created_at||0)) ); }
-      catch(e){ console.warn('sortRows fallback', e); }
     }
 
     function startRealtime(){
@@ -229,9 +254,21 @@
       countEl.textContent = hintMode ? 0 : rows.length;
     }
 
-    function makeCell(text){ const td=document.createElement('td'); td.textContent=text ?? ''; td.contentEditable=false; td.spellcheck=false; return td; }
+    function makeCell(text){
+      const td=document.createElement('td');
+      td.textContent=text ?? '';
+      td.contentEditable=false; td.spellcheck=false;
+      return td;
+    }
 
-    function handleEnterToSave(e){ if(e.key === 'Enter'){ e.preventDefault(); const tr=e.currentTarget.closest('tr'); const btn=tr.querySelector('.icon-btn'); btn && btn.click(); } }
+    function handleEnterToSave(e){
+      if(e.key === 'Enter'){
+        e.preventDefault();
+        const tr=e.currentTarget.closest('tr');
+        const btn=tr.querySelector('.icon-btn');
+        btn && btn.click();
+      }
+    }
 
     function toggleEdit(tr, editBtn){
       if(editBtn.dataset.mode === 'edit'){
@@ -265,11 +302,24 @@
       const p = pinyinEl.value.trim();
       const m = meaningEl.value.trim();
       const h = hanziEl.value.trim();
-      if(!p || !m || !h){ return shake([pinyinEl, meaningEl, hanziEl]); }
+      if(!p || !m || !h){
+        [pinyinEl, meaningEl, hanziEl].forEach(el=>{
+          if(!el.value.trim()){
+            el.style.boxShadow='0 0 0 3px rgba(255,0,0,.12)';
+            el.style.borderColor='#ffb4b4';
+            setTimeout(()=>{el.style.boxShadow=''; el.style.borderColor='';},900);
+          }
+        });
+        return;
+      }
 
       if(hintMode){ rows = []; hintMode = false; }
       const nextPos = rows.length;
-      const { data, error } = await supabase.from(TABLE).insert({ pinyin:p, meaning:m, hanzi:h, position: nextPos }).select().single();
+      const { data, error } = await supabase
+        .from(TABLE)
+        .insert({ pinyin:p, meaning:m, hanzi:h, position: nextPos })
+        .select()
+        .single();
       if(error){ console.error(error); return; }
       addOrUpdate(data); 
       form.reset(); pinyinEl.focus();
@@ -282,6 +332,6 @@
     loadInitial();
     startRealtime();
   })();
-</script>
+  </script>
 </body>
 </html>
