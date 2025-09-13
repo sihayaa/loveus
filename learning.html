@@ -114,17 +114,8 @@
     tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
     .sample td{color:rgba(30,36,48,.32); opacity:1; font-style:italic; font-weight:500}
 
-    /* phonetics tooltip on pronunciation cell */
-    .pinyin[data-phon]{ position:relative; cursor:help; }
-    .pinyin[data-phon]:hover::after{
-      content: attr(data-phon);
-      position:absolute; left:0; top:100%;
-      transform: translateY(6px);
-      background:#111; color:#fff; font-size:12px;
-      padding:6px 8px; border-radius:8px; white-space:nowrap;
-      box-shadow:0 6px 18px rgba(0,0,0,.25);
-      z-index:10;
-    }
+    /* keep only native small tooltip via title */
+    .pinyin{ cursor: help; }
 
     @media (max-width:860px){
       form#entry-form{grid-template-columns:1fr;}
@@ -267,7 +258,7 @@
       render();
     }
 
-    /* ---------- phonetics helpers (no Supabase needed) ---------- */
+    /* ---------- phonetics helpers (pure front-end) ---------- */
     const deTone = s => {
       const map = {
         'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A',
@@ -347,10 +338,12 @@
     function applyPhonetics(scope=document){
       scope.querySelectorAll('.pinyin').forEach(td=>{
         const raw = (td.textContent || '').trim();
-        if(!raw){ td.removeAttribute('data-phon'); td.removeAttribute('title'); return; }
+        if(!raw){
+          td.removeAttribute('title');
+          return;
+        }
         const phon = pinyinToEasyEnglish(raw);
-        td.setAttribute('data-phon', phon);
-        td.title = phon; // native tooltip fallback
+        td.title = phon; // native small tooltip only
       });
     }
     /* ---------- /phonetics helpers ---------- */
@@ -363,7 +356,7 @@
         tr.dataset.id = row.id;
 
         const num = document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
-        tr.appendChild(makeCell(row.pinyin, 'pinyin'));       // <-- pronunciation cell with class
+        tr.appendChild(makeCell(row.pinyin, 'pinyin'));       // pronunciation cell with class
         tr.appendChild(makeCell(row.meaning));
         const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd);
 
@@ -416,8 +409,7 @@
         tr.classList.remove('editing'); editBtn.dataset.mode='edit'; editBtn.innerHTML=pencil();
 
         // refresh phonetics for this row immediately
-        const pinCell = tr.querySelector('.pinyin');
-        if (pinCell) applyPhonetics(tr);
+        applyPhonetics(tr);
 
         if(id && id !== 'sample'){
           supabase.from(TABLE).update(updated).eq('id', id).then(({error})=>{ if(error) console.error(error); });
