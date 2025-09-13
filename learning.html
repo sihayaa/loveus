@@ -8,9 +8,9 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#f7f4ec;          
-      --ink:#1e2430;     
-      --accent:#7a5af8;     
+      --bg:#f7f4ec;      
+      --ink:#1e2430;        
+      --accent:#7a5af8;       
       --accent-2:#67e4ca;   
       --card:#ffffff;
       --line:#e6e0d3;
@@ -155,7 +155,7 @@
 
     let rows = [];        
     let hintMode = false; 
--
+
     function sortRows(){
       rows.sort((a,b)=> (a.position??0) - (b.position??0) || new Date(a.created_at) - new Date(b.created_at));
     }
@@ -179,6 +179,11 @@
         rows = data; sortRows();
       }
       render();
+    }
+
+    function sortRows(){
+      try{ rows.sort((a,b)=> ( (a?.position??0) - (b?.position??0) ) || (new Date(a?.created_at||0) - new Date(b?.created_at||0)) ); }
+      catch(e){ console.warn('sortRows fallback', e); }
     }
 
     function startRealtime(){
@@ -266,7 +271,7 @@
       const nextPos = rows.length;
       const { data, error } = await supabase.from(TABLE).insert({ pinyin:p, meaning:m, hanzi:h, position: nextPos }).select().single();
       if(error){ console.error(error); return; }
-      addOrUpdate(data); // immediate
+      addOrUpdate(data); 
       form.reset(); pinyinEl.focus();
     });
 
