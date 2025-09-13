@@ -114,6 +114,18 @@
     tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
     .sample td{color:rgba(30,36,48,.32); opacity:1; font-style:italic; font-weight:500}
 
+    /* phonetics tooltip on pronunciation cell */
+    .pinyin[data-phon]{ position:relative; cursor:help; }
+    .pinyin[data-phon]:hover::after{
+      content: attr(data-phon);
+      position:absolute; left:0; top:100%;
+      transform: translateY(6px);
+      background:#111; color:#fff; font-size:12px;
+      padding:6px 8px; border-radius:8px; white-space:nowrap;
+      box-shadow:0 6px 18px rgba(0,0,0,.25);
+      z-index:10;
+    }
+
     @media (max-width:860px){
       form#entry-form{grid-template-columns:1fr;}
       .actions{width:76px}
@@ -255,6 +267,94 @@
       render();
     }
 
+    /* ---------- phonetics helpers (no Supabase needed) ---------- */
+    const deTone = s => {
+      const map = {
+        'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A',
+        'ē':'e','é':'e','ě':'e','è':'e','Ē':'E','É':'E','Ě':'E','È':'E',
+        'ī':'i','í':'i','ǐ':'i','ì':'i','Ī':'I','Í':'I','Ǐ':'I','Ì':'I',
+        'ō':'o','ó':'o','ǒ':'o','ò':'o','Ō':'O','Ó':'O','Ǒ':'O','Ò':'O',
+        'ū':'u','ú':'u','ǔ':'u','ù':'u','Ū':'U','Ú':'U','Ǔ':'U','Ù':'U',
+        'ǖ':'ü','ǘ':'ü','ǚ':'ü','ǜ':'ü','Ü':'Ü','Ǖ':'Ü','Ǘ':'Ü','Ǚ':'Ü','Ǜ':'Ü',
+        'ń':'n','ň':'n','ǹ':'n','ḿ':'m'
+      };
+      return s.replace(/./g, ch => map[ch] ?? ch)
+              .replace(/[’'·]/g,' ')
+              .toLowerCase();
+    };
+
+    const splitInitialFinal = syl => {
+      const two = ['zh','ch','sh'];
+      for (const t of two) if (syl.startsWith(t)) return [t, syl.slice(2)];
+      const one = syl[0];
+      if (/[bpmfdtnlgkhjqxrzcswy]/.test(one)) return [one, syl.slice(1)];
+      return ['', syl];
+    };
+
+    const initialEng = ini => ({
+      'zh':'j',  'ch':'ch', 'sh':'sh',
+      'z':'dz',  'c':'ts',  's':'s',
+      'x':'shy', 'q':'chy', 'j':'jy',
+      'r':'r',   'y':'y',   'w':'w',
+      'b':'b','p':'p','m':'m','f':'f',
+      'd':'d','t':'t','n':'n','l':'l',
+      'g':'g','k':'k','h':'h','':''
+    }[ini] ?? ini);
+
+    function finalEng(ini, fin){
+      if (['zh','ch','sh','r','z','c','s'].includes(ini) && fin === 'i'){
+        return 'rr'; // syllabic-ish sound
+      }
+      if ((ini==='j'||ini==='q'||ini==='x'||ini==='y') && fin.startsWith('ue')) fin = 'weh';
+      if (fin === 'ü')  fin = 'yoo';
+      if (fin === 'ün') fin = 'yun';
+      if (fin === 'üe') fin = 'weh';
+      const repl = [
+        ['iang','yahng'], ['iong','yong'], ['uang','wahng'],
+        ['uan','wahn'],   ['ang','ahng'],   ['ong','ohng'],
+        ['iao','yow'],    ['ian','yen'],    ['uai','why'],
+        ['ui','way'],     ['iu','yoe'],     ['ie','yeh'],
+        ['ia','yah'],     ['uo','woh'],     ['ou','oe'],
+        ['ei','ay'],      ['ai','eye'],     ['eng','uhng'],
+        ['en','uhn'],     ['an','ahn'],     ['er','ar'],
+        ['e','uh'],       ['o','oh'],       ['a','ah'],
+        ['u','oo'],       ['i','ee']
+      ];
+      for (const [pat, to] of repl){
+        if (fin === pat) return to;
+        if (fin.endsWith(pat)) return fin.replace(pat, to);
+      }
+      return fin;
+    }
+
+    function pinyinToEasyEnglish(pinyin){
+      const clean = deTone(pinyin).trim();
+      if (!clean) return '';
+      const syls = clean.split(/\s+/);
+      const out = [];
+      for (let syl of syls){
+        const [ini, finRaw] = splitInitialFinal(syl);
+        let joined = (initialEng(ini) + finalEng(ini, finRaw))
+          .replace(/^shyweh$/,'shweh')
+          .replace(/^jyweh$/,'jweh')
+          .replace(/^chyweh$/,'chweh')
+          .replace(/^you$/,'yoe');
+        out.push(joined);
+      }
+      return out.join(' ');
+    }
+
+    function applyPhonetics(scope=document){
+      scope.querySelectorAll('.pinyin').forEach(td=>{
+        const raw = (td.textContent || '').trim();
+        if(!raw){ td.removeAttribute('data-phon'); td.removeAttribute('title'); return; }
+        const phon = pinyinToEasyEnglish(raw);
+        td.setAttribute('data-phon', phon);
+        td.title = phon; // native tooltip fallback
+      });
+    }
+    /* ---------- /phonetics helpers ---------- */
+
     function render(){
       listEl.innerHTML = '';
       rows.forEach((row, idx)=>{
@@ -263,9 +363,9 @@
         tr.dataset.id = row.id;
 
         const num = document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
-        tr.appendChild(makeCell(row.pinyin));
+        tr.appendChild(makeCell(row.pinyin, 'pinyin'));       // <-- pronunciation cell with class
         tr.appendChild(makeCell(row.meaning));
-        const hanziTd = makeCell(row.hanzi); hanziTd.classList.add('hanzi'); tr.appendChild(hanziTd);
+        const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd);
 
         const actions = document.createElement('td'); actions.className = 'actions';
         const edit = document.createElement('button'); edit.className='icon-btn'; edit.title='Edit'; edit.innerHTML=pencil(); edit.dataset.mode='edit';
@@ -280,11 +380,15 @@
         listEl.appendChild(tr);
       });
       countEl.textContent = hintMode ? 0 : rows.length;
+
+      // compute tooltips after rows exist
+      applyPhonetics(listEl);
     }
 
-    function makeCell(text){
+    function makeCell(text, cls){
       const td=document.createElement('td');
       td.textContent=text ?? '';
+      if (cls) td.classList.add(cls);
       td.contentEditable=false; td.spellcheck=false;
       return td;
     }
@@ -310,6 +414,11 @@
         const updated = { pinyin: cells[0].textContent.trim(), meaning: cells[1].textContent.trim(), hanzi: cells[2].textContent.trim() };
         cells.forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown', handleEnterToSave); });
         tr.classList.remove('editing'); editBtn.dataset.mode='edit'; editBtn.innerHTML=pencil();
+
+        // refresh phonetics for this row immediately
+        const pinCell = tr.querySelector('.pinyin');
+        if (pinCell) applyPhonetics(tr);
+
         if(id && id !== 'sample'){
           supabase.from(TABLE).update(updated).eq('id', id).then(({error})=>{ if(error) console.error(error); });
         }
