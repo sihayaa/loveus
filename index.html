@@ -3,7 +3,6 @@
 <head>
   <meta charset="UTF-8">
   <title>Our Love Space</title>
-  <!-- Make it mobile-friendly -->
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="icon" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/icon.png?v=2" type="image/png" sizes="32x32">
@@ -127,7 +126,6 @@
       box-shadow: 0 0 15px #fff;
     }
 
-    /* Wrapper for icons so we can turn them into a bottom tray on phones */
     #icon-area { }
 
     .album-icon {
@@ -483,7 +481,6 @@
       vertical-align: baseline;
     }
 
-    /* first (green) heart spacing + focus ring */
     #startHeart { margin-left: 0; margin-right: 6px; cursor: pointer; }
     #startHeart:focus { outline: 2px solid #67e4ca55; outline-offset: 2px; border-radius: 6px; }
 
@@ -593,7 +590,14 @@
         alt="Love Letters Icon"
         onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
-    
+
+    <div class="album-icon" style="top: 500px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png"
+        alt="Learning Icon"
+        onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
+    </div>
+
     <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/dateplan_bg.png" alt="Date Plans Icon">
     </div>
@@ -645,6 +649,14 @@
   </template>
   <template id="letters-label-template">
     <div class="icon-label">💌<br>Letters</div>
+  </template>
+  <!-- NEW: fallback label for Learning -->
+  <template id="learning-label-template">
+    <div class="icon-label">✏️<br>Learning</div>
+  </template>
+  <!-- optional fallback if mem image fails -->
+  <template id="mem-label-template">
+    <div class="icon-label">🗺️<br>Middle-Earth</div>
   </template>
 
   <div class="secret-heart" id="secretHeart" title=" ">
@@ -1104,7 +1116,6 @@
     })();
   </script>
 
-  <!-- click handler for the green heart -->
   <script>
     (() => {
       const start = document.getElementById('startHeart');
