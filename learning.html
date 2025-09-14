@@ -97,9 +97,7 @@
     #lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:99999 }
     #lightbox .lb-inner{ position:relative; max-width:92vw; max-height:92vh }
     #lightbox img{ max-width:92vw; max-height:92vh; transform-origin:center; transition:transform .08s linear }
-    .lb-controls{ position:absolute; right:6px; top:6px; display:flex; gap:8px }
-    .lb-btn{ background:#111; color:#fff; border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:8px 10px; font-weight:800; cursor:pointer }
-    .lb-close{ background:var(--danger) }
+    /* (controls removed) */
 
     @media (max-width:1200px){ col.col-pron{width:30%} col.col-details{width:38%} col.col-meaning{width:20%} col.col-hanzi{width:12%} }
     @media (max-width:860px){ form#entry-form{ grid-template-columns:1fr } .actions{ width:120px } }
@@ -157,15 +155,10 @@
     </div>
   </div>
 
-  <!-- Lightbox -->
+  <!-- Lightbox (controls removed) -->
   <div id="lightbox" hidden>
     <div class="lb-inner">
       <img id="lbImg" src="" alt="">
-      <div class="lb-controls">
-        <button class="lb-btn" id="zoomIn">＋</button>
-        <button class="lb-btn" id="zoomOut">－</button>
-        <button class="lb-btn lb-close" id="lbClose">✕</button>
-      </div>
     </div>
   </div>
 
@@ -273,14 +266,12 @@
     }
 
     function sanitizeWys(html){
-      // very light sanitizer for what we allow
       // keep only <img src alt>, <strong>, <em>, <mark>, <code>, <br>
       html = html.replace(/<\/?(?!img|strong|em|mark|code|br)\w+[^>]*>/gi, '');
-      // strip all attributes except src/alt on img
       html = html.replace(/<img\b([^>]*)>/gi, (m,attrs)=>{
         const src=(attrs.match(/\bsrc\s*=\s*"(.*?)"/i)||[])[1]||'';
         const alt=(attrs.match(/\balt\s*=\s*"(.*?)"/i)||[])[1]||'';
-        if(!/^https?:\/\//i.test(src)) return ''; // drop data:, javascript:, etc
+        if(!/^https?:\/\//i.test(src)) return '';
         return `<img src="${src}" alt="${alt.replace(/"/g,'&quot;')}">`;
       });
       return html;
@@ -376,7 +367,6 @@
         fileInput.addEventListener('change', async ()=>{
           const f=fileInput.files?.[0]; if(!f) return;
           const url=await uploadToBucket(f); if(!url){ fileInput.value=''; return; }
-          // insert image at end (simple)
           const img=document.createElement('img'); img.src=url; img.alt=''; img.className='zoomable';
           wys.appendChild(img);
           fileInput.value='';
@@ -394,12 +384,11 @@
           const newMeaning=mean.textContent.trim();
           const newHanzi=han.textContent.trim();
           const safeHtml = sanitizeWys(wys.innerHTML);
-          const newRaw = safeHtml; // store as safe HTML
+          const newRaw = safeHtml;
 
           det.dataset.raw=newRaw;
           det.innerHTML=renderDetails(newRaw);
 
-          // back to view mode
           [pron,mean,han].forEach(td=>{ td.contentEditable=false; });
           btnRow.innerHTML=''; const edit2=iconBtn('Edit',pencil()); const del2=iconBtn('Delete',trash());
           edit2.dataset.mode='edit'; btnRow.appendChild(edit2); btnRow.appendChild(del2);
@@ -418,7 +407,6 @@
         });
 
         cancel.addEventListener('click', ()=>{
-          // revert
           det.dataset.raw = det._oldRaw || '';
           det.innerHTML = det._oldHTML || '';
           [pron,mean,han].forEach(td=>{ td.contentEditable=false; });
@@ -465,16 +453,35 @@
     const trash =()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
     const xmark=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
-    // Lightbox
-    const lightbox=document.getElementById('lightbox'), lbImg=document.getElementById('lbImg'), lbClose=document.getElementById('lbClose'), zoomIn=document.getElementById('zoomIn'), zoomOut=document.getElementById('zoomOut');
-    let scale=1; function openLightbox(src){ lbImg.src=src; scale=1; lbImg.style.transform='scale(1)'; lightbox.hidden=false; }
+    // Lightbox (controls removed; scroll to zoom, click outside/ESC to close)
+    const lightbox=document.getElementById('lightbox');
+    const lbImg=document.getElementById('lbImg');
+    let scale=1;
+
+    function openLightbox(src){
+      lbImg.src=src;
+      scale=1;
+      lbImg.style.transform='scale(1)';
+      lightbox.hidden=false;
+    }
     function closeLightbox(){ lightbox.hidden=true; }
-    zoomIn.addEventListener('click',()=>{ scale=Math.min(scale*1.2,8); lbImg.style.transform=`scale(${scale})`; });
-    zoomOut.addEventListener('click',()=>{ scale=Math.max(scale/1.2,.5); lbImg.style.transform=`scale(${scale})`; });
-    lbClose.addEventListener('click',closeLightbox);
+
+    // Wheel zoom (no buttons)
+    lbImg.addEventListener('wheel',(e)=>{
+      e.preventDefault();
+      if(e.deltaY<0){ // zoom in
+        scale=Math.min(scale*1.2,8);
+      }else{          // zoom out
+        scale=Math.max(scale/1.2,.5);
+      }
+      lbImg.style.transform=`scale(${scale})`;
+    },{passive:false});
+
+    // Close on overlay click / ESC
     lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
     window.addEventListener('keydown',(e)=>{ if(!lightbox.hidden && e.key==='Escape') closeLightbox(); });
-    lbImg.addEventListener('wheel',(e)=>{ e.preventDefault(); if(e.deltaY<0) zoomIn.click(); else zoomOut.click(); },{passive:false});
+
+    // Open on any zoomable image click
     document.addEventListener('click',(e)=>{ const img=e.target.closest('.details img.zoomable'); if(img) openLightbox(img.src); });
 
     loadInitial(); startRealtime();
