@@ -8,18 +8,19 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#0b0f2f;               
-      --ink:#e8ecf8;              
-      --muted:#a6afc6;          
-      --accent:#7a5af8;            
-      --accent-2:#67e4ca;         
-      --card:#0f152b;             
-      --field:#0c1326;            
+      /* DARK THEME */
+      --bg:#0b0f2f;
+      --ink:#e8ecf8;
+      --muted:#a6afc6;
+      --accent:#7a5af8;
+      --accent-2:#67e4ca;
+      --card:#0f152b;
+      --field:#0c1326;
       --line:rgba(255,255,255,.10);
       --glow1: rgba(122,90,248,.25);
       --glow2: rgba(122,90,248,.18);
       --focusRing: rgba(122,90,248,.28);
-      --hover:#141c36;            
+      --hover:#141c36;
     }
     [data-theme="mint"]{
       --accent: var(--accent-2);
@@ -62,15 +63,19 @@
     .back-btn:active{ transform:translateY(0); }
     .back-btn svg{ width:18px; height:18px; display:block }
 
-    .wrap{max-width:980px;margin:0 auto}
+    /* WIDER LAYOUT */
+    .wrap{
+      /* grows up to 1400px but keeps nice margins on smaller screens */
+      max-width: clamp(1000px, 92vw, 1400px);
+      margin:0 auto;
+    }
     .card{
       position:relative; background:var(--card); border:1px solid var(--line);
       border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:22px 22px 18px
     }
     .card:before{
       content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1;
-      background: var(--accent);
-      opacity:.16;
+      background: var(--accent); opacity:.16;
       box-shadow: 0 0 18px var(--glow1), 0 0 28px var(--glow2);
       filter: blur(14px);
     }
@@ -82,8 +87,9 @@
 
     .sub{margin:0 0 16px;color:var(--muted)}
 
+    /* make the Details field wider in the form */
     form#entry-form{
-      display:grid; grid-template-columns: 1.1fr .9fr 1fr 1fr auto; 
+      display:grid; grid-template-columns: 1.1fr 2fr 1.1fr 1fr auto; 
       gap:12px; align-items:end
     }
     label span{display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px}
@@ -103,17 +109,23 @@
     .right{margin-left:auto}
     .toggle{cursor:pointer}
 
-    .table-wrap{margin-top:8px}
+    .table-wrap{margin-top:8px; overflow:auto} /* allow horizontal scroll just in case */
     table{width:100%; border-collapse:separate; border-spacing:0}
     thead th{position:sticky; top:0; background:var(--card); z-index:1}
     th, td{border-bottom:1px solid var(--line); padding:14px 10px; text-align:left}
     th{font-size:13px; color:#bac4e4; font-weight:700; letter-spacing:.3px}
     tbody tr{transition:background .12s ease}
     tbody tr:hover td{background:var(--hover)}
-    td{vertical-align:middle; color:var(--ink)}
+    td{vertical-align:middle; color:var(--ink); overflow-wrap:anywhere;}
     .num{width:56px; text-align:center; color:#98a3c9}
     .hanzi{font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-style:normal; font-weight:700}
     .actions{width:88px; text-align:right}
+
+    /* column sizing: give DETAILS the space */
+    col.col-pron   { width:20%; }
+    col.col-details{ width:42%; }
+    col.col-meaning{ width:20%; }
+    col.col-hanzi  { width:12%; }
 
     .icon-btn{border:0; background:transparent; cursor:pointer; font-size:16px; padding:6px 8px; border-radius:10px; color:#cfd6f1}
     .icon-btn svg{width:18px; height:18px; display:block}
@@ -123,9 +135,13 @@
     tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
     .sample td{color:rgba(255,255,255,.45); opacity:1; font-style:italic; font-weight:500}
 
-    /* keep only native small tooltip via title */
+    /* native small tooltip on pronunciation */
     .pinyin{ cursor: help; }
 
+    @media (max-width:1200px){
+      /* shrink nicely on tablets */
+      col.col-pron{width:24%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
+    }
     @media (max-width:860px){
       form#entry-form{grid-template-columns:1fr;}
       .actions{width:76px}
@@ -159,7 +175,7 @@
         </label>
         <label>
           <span>Details (usage / note)</span>
-          <input id="details" type="text" placeholder="greeting; casual" >
+          <input id="details" type="text" placeholder="greeting; casual">
         </label>
         <label>
           <span>Meaning (English)</span>
@@ -179,6 +195,15 @@
 
       <div class="table-wrap">
         <table aria-label="Useful Mandarin words list">
+          <!-- Set column widths -->
+          <colgroup>
+            <col style="width:56px">
+            <col class="col-pron">
+            <col class="col-details">
+            <col class="col-meaning">
+            <col class="col-hanzi">
+            <col style="width:88px">
+          </colgroup>
           <thead>
             <tr>
               <th class="num">#</th>
@@ -273,6 +298,7 @@
       render();
     }
 
+    /* ---------- simplified phonetics (no double 'y') ---------- */
     const deTone = s => {
       const map = {
         'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A',
@@ -299,10 +325,8 @@
     const initialEng = ini => ({
       'zh':'j',  'ch':'ch', 'sh':'sh',
       'z':'dz',  'c':'ts',  's':'s',
-      'x':'sh',  
-      'q':'ch',  
-      'j':'j',   
-      'r':'r',   'y':'y',   'w':'w',
+      'x':'sh', 'q':'ch', 'j':'j',
+      'r':'r', 'y':'y', 'w':'w',
       'b':'b','p':'p','m':'m','f':'f',
       'd':'d','t':'t','n':'n','l':'l',
       'g':'g','k':'k','h':'h','':''
@@ -310,7 +334,7 @@
 
     function finalEng(ini, fin){
       if (['zh','ch','sh','r','z','c','s'].includes(ini) && fin === 'i'){
-        return 'rr'; 
+        return 'rr';
       }
       if ((ini==='j'||ini==='q'||ini==='x'||ini==='y') && fin.startsWith('ue')) fin = 'weh';
       if (fin === 'ü')  fin = 'yoo';
@@ -342,7 +366,7 @@
       for (let syl of syls){
         const [ini, finRaw] = splitInitialFinal(syl);
         let joined = (initialEng(ini) + finalEng(ini, finRaw))
-          .replace(/^you$/,'yoe'); // stylistic
+          .replace(/^you$/,'yoe');
         out.push(joined);
       }
       return out.join(' ');
@@ -352,10 +376,10 @@
       scope.querySelectorAll('.pinyin').forEach(td=>{
         const raw = (td.textContent || '').trim();
         if(!raw){ td.removeAttribute('title'); return; }
-        td.title = pinyinToEasyEnglish(raw); 
+        td.title = pinyinToEasyEnglish(raw);
       });
     }
-
+    /* ---------- /phonetics ---------- */
 
     function render(){
       listEl.innerHTML = '';
@@ -365,10 +389,10 @@
         tr.dataset.id = row.id;
 
         const num = document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
-        tr.appendChild(makeCell(row.pinyin, 'pinyin'));          
-        tr.appendChild(makeCell(row.details ?? ''));               
-        tr.appendChild(makeCell(row.meaning));                     
-        const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd); 
+        tr.appendChild(makeCell(row.pinyin, 'pinyin'));   // Pronunciation
+        tr.appendChild(makeCell(row.details ?? '', 'details')); // Details (wide)
+        tr.appendChild(makeCell(row.meaning));
+        const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd);
 
         const actions = document.createElement('td'); actions.className = 'actions';
         const edit = document.createElement('button'); edit.className='icon-btn'; edit.title='Edit'; edit.innerHTML=pencil(); edit.dataset.mode='edit';
@@ -383,7 +407,6 @@
         listEl.appendChild(tr);
       });
       countEl.textContent = hintMode ? 0 : rows.length;
-
       applyPhonetics(listEl);
     }
 
@@ -407,7 +430,7 @@
     function toggleEdit(tr, editBtn){
       if(editBtn.dataset.mode === 'edit'){
         if(hintMode){ hintMode=false; }
-        const cells = Array.from(tr.querySelectorAll('td')).slice(1,5); 
+        const cells = Array.from(tr.querySelectorAll('td')).slice(1,5);
         cells.forEach((td,i)=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown', handleEnterToSave); if(i===0) td.focus(); });
         tr.classList.add('editing'); editBtn.dataset.mode='save'; editBtn.innerHTML=check();
       }else{
@@ -427,7 +450,7 @@
         if(id && id !== 'sample'){
           supabase.from(TABLE).update(updated).eq('id', id).then(({error})=>{
             if(error){
-              console.warn('Update with details failed; trying without details. To enable details, add a column:\nALTER TABLE public.learning_words ADD COLUMN details text;');
+              console.warn('Update with details failed; add column:\nALTER TABLE public.learning_words ADD COLUMN details text;');
               const { details, ...noDetails } = updated;
               supabase.from(TABLE).update(noDetails).eq('id', id).then(({error:e2})=>{ if(e2) console.error(e2); });
             }
@@ -465,7 +488,6 @@
       if(hintMode){ rows = []; hintMode = false; }
       const nextPos = rows.length;
 
-      // Try insert with details; if the column doesn't exist, retry without it.
       let { data, error } = await supabase
         .from(TABLE)
         .insert({ pinyin:p, details:d, meaning:m, hanzi:h, position: nextPos })
