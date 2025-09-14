@@ -14,44 +14,43 @@
       --glow1: rgba(122,90,248,.25); --glow2: rgba(122,90,248,.18);
       --focusRing: rgba(122,90,248,.28); --hover:#141c36; --danger:#ff6b6b;
     }
-    [data-theme="mint"]{
-      --accent: var(--accent-2);
-      --glow1: rgba(103,228,202,.25);
-      --glow2: rgba(103,228,202,.18);
-      --focusRing: rgba(103,228,202,.28);
-    }
+    [data-theme="mint"]{ --accent:var(--accent-2); --glow1:rgba(103,228,202,.25); --glow2:rgba(103,228,202,.18); --focusRing:rgba(103,228,202,.28) }
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
       margin:0; background:var(--bg) url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg") center top/cover no-repeat fixed;
-      color:var(--ink); font:16px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-      padding:26px; min-height:100dvh;
+      color:var(--ink); font:16px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; padding:26px; min-height:100dvh;
     }
     @media (max-width:860px){ body{ background-attachment:scroll } }
+
     .back-btn{ position:fixed; top:26px; left:26px; z-index:9999; display:inline-flex; gap:8px; align-items:center;
       padding:10px 14px; border-radius:14px; background:var(--accent); color:#fff; text-decoration:none; font-weight:800;
-      border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s; -webkit-tap-highlight-color:transparent}
+      border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s }
     .back-btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
+
     .wrap{ max-width:clamp(1000px,92vw,1400px); margin:0 auto }
     .card{ position:relative; background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:22px 22px 18px }
     .card:before{ content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1; background:var(--accent); opacity:.16; box-shadow:0 0 18px var(--glow1),0 0 28px var(--glow2); filter:blur(14px) }
+
     h1{margin:4px 0 8px; display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap}
     h1 .script{font-weight:900; font-size:36px; letter-spacing:.2px; color:var(--accent)}
     h1 .tag{font-weight:800; font-size:28px; padding:2px 10px; border-radius:14px; color:#cdd6f2}
     h1 small{display:block; font-weight:600; font-size:14px; color:var(--muted); margin-top:-2px}
     .sub{margin:0 0 16px; color:var(--muted)}
 
-    form#entry-form{ display:grid; grid-template-columns:1.1fr 2fr auto 1.1fr 1fr auto; gap:12px; align-items:end }
-    label span{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px }
-    input[type="text"], textarea{
-      width:100%; padding:12px; border:1px solid var(--line); border-radius:14px; outline:none;
-      background:var(--field); color:var(--ink); transition:box-shadow .16s, border .16s; resize:none
+    /* simpler form (no Details or Photo) */
+    form#entry-form{
+      display:grid; grid-template-columns: 1.2fr 1.2fr 1fr auto;
+      gap:12px; align-items:end;
     }
-    textarea::placeholder, input[type="text"]::placeholder{ color:#8fa0c4; opacity:.9; font-style:italic }
-    textarea:focus, input[type="text"]:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing) }
-    button.add,.btn{ height:46px; padding:0 16px; border:0; border-radius:14px; background:var(--accent); color:#fff; font-weight:800; letter-spacing:.3px; cursor:pointer }
-    .btn.secondary{ background:transparent; border:1px solid var(--line); color:#d6dbef }
-    .btn.secondary:hover{ background:rgba(255,255,255,.06) }
+    label span{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px }
+    input[type="text"]{
+      width:100%; padding:12px; border:1px solid var(--line); border-radius:14px; outline:none;
+      background:var(--field); color:var(--ink); transition:box-shadow .16s, border .16s;
+    }
+    input[type="text"]::placeholder{ color:#8fa0c4; opacity:.9; font-style:italic }
+    input[type="text"]:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing) }
+    button.add{ height:46px; padding:0 16px; border:0; border-radius:14px; background:var(--accent); color:#fff; font-weight:800; letter-spacing:.3px; cursor:pointer }
 
     .toolbar{ display:flex; align-items:center; gap:10px; margin:14px 0 6px }
     .pill{ border:1px solid var(--line); background:var(--field); padding:8px 12px; border-radius:999px; font-size:13px; color:#d6dbef }
@@ -67,21 +66,27 @@
     .num{ width:56px; text-align:center; color:#98a3c9 }
     .hanzi{ font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-weight:700 }
     .actions{ width:88px; text-align:right }
-    col.col-pron{width:20%} col.col-details{width:42%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
+
+    /* column widths */
+    col.col-pron{width:28%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
+
     .icon-btn{ border:0; background:transparent; cursor:pointer; padding:6px 8px; border-radius:10px; color:#cfd6f1 }
     .icon-btn:hover{ background:rgba(255,255,255,.06) } tr.editing td{ background:rgba(122,90,248,.07) }
     tbody td{ font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px }
     .sample td{ color:rgba(255,255,255,.45) }
     .pinyin{ cursor:help }
 
+    /* Details rendering */
     .details mark{ background:rgba(255,248,115,.3); color:#fff; padding:0 .25em; border-radius:.25em }
     .details img.zoomable{ max-width:100%; max-height:140px; border-radius:12px; display:block; margin:6px 0; box-shadow:0 8px 24px rgba(0,0,0,.25); cursor:zoom-in }
     .details code{ background:rgba(255,255,255,.06); padding:.1em .35em; border-radius:.35em }
 
+    /* Edit-mode tools (for Details in-row editor) */
     .edit-tools{ display:flex; gap:8px; align-items:center; margin-top:8px }
     .edit-tools .mini{ height:34px; padding:0 12px; border-radius:10px }
     .edit-preview{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px }
 
+    /* Lightbox */
     #lightbox[hidden]{ display:none }
     #lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:99999 }
     #lightbox .lb-inner{ position:relative; max-width:92vw; max-height:92vh }
@@ -90,7 +95,7 @@
     .lb-btn{ background:#111; color:#fff; border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:8px 10px; font-weight:800; cursor:pointer }
     .lb-close{ background:var(--danger) }
 
-    @media (max-width:1200px){ col.col-pron{width:24%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%} }
+    @media (max-width:1200px){ col.col-pron{width:30%} col.col-details{width:38%} col.col-meaning{width:20%} col.col-hanzi{width:12%} }
     @media (max-width:860px){ form#entry-form{ grid-template-columns:1fr } .actions{ width:76px } }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
@@ -100,17 +105,16 @@
 
   <div class="wrap">
     <div class="card">
-      <h1><span class="script">Learning</span><span class="tag">Mandarin words that are COOL</span><small>quick study list • pinyin → details → meaning → 汉字</small></h1>
-      <p class="sub">Shift+Enter for new lines in <em>Details</em>. Use <code>**bold**</code>, <code>*italics*</code>, <code>==highlight==</code>. Upload images in the form or while editing—thumbnails are clickable to zoom.</p>
+      <h1>
+        <span class="script">Learning</span>
+        <span class="tag">Mandarin words that are COOL</span>
+        <small>quick study list • pinyin → meaning → 汉字 • add notes/images later via <em>Edit</em></small>
+      </h1>
+      <p class="sub">Hover Pronunciation for a simple English-y sound guide. You can add rich <em>Details</em> (notes, highlights, photos) when you click <strong>Edit</strong> on any row.</p>
 
+      <!-- simplified form -->
       <form id="entry-form" autocomplete="off">
         <label><span>Pronunciation (Pinyin)</span><input id="pinyin" type="text" placeholder="nĭ hăo" required></label>
-        <label><span>Details (notes / highlight / image)</span><textarea id="details" rows="2" placeholder="nǐ → like 'nee'…  ==tone tip=="></textarea></label>
-        <div>
-          <span style="display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px">Photo</span>
-          <button id="addPhoto" type="button" class="btn secondary">📷 Add Photo</button>
-          <input id="photoInput" type="file" accept="image/*" hidden>
-        </div>
         <label><span>Meaning (English)</span><input id="meaning" type="text" placeholder="Hello" required></label>
         <label><span>Mandarin (汉字)</span><input id="hanzi" type="text" placeholder="你好" required></label>
         <button class="add" type="submit">Add</button>
@@ -124,15 +128,30 @@
       <div class="table-wrap">
         <table aria-label="Useful Mandarin words list">
           <colgroup>
-            <col style="width:56px"><col class="col-pron"><col class="col-details"><col class="col-meaning"><col class="col-hanzi"><col style="width:88px">
+            <col style="width:56px">
+            <col class="col-pron">
+            <col class="col-details">
+            <col class="col-meaning">
+            <col class="col-hanzi">
+            <col style="width:88px">
           </colgroup>
-          <thead><tr><th class="num">#</th><th>Pronunciation</th><th>Details</th><th>Meaning</th><th>Mandarin</th><th class="actions">&nbsp;</th></tr></thead>
+          <thead>
+            <tr>
+              <th class="num">#</th>
+              <th>Pronunciation</th>
+              <th>Details</th>
+              <th>Meaning</th>
+              <th>Mandarin</th>
+              <th class="actions">Actions</th>
+            </tr>
+          </thead>
           <tbody id="list"></tbody>
         </table>
       </div>
     </div>
   </div>
 
+  <!-- Lightbox -->
   <div id="lightbox" hidden>
     <div class="lb-inner">
       <img id="lbImg" src="" alt="">
@@ -147,7 +166,7 @@
   <script>
   (function(){
     const back = document.getElementById('backBtn');
-    back?.addEventListener('click', (e)=>{ e.preventDefault(); if (document.referrer && document.referrer !== location.href){ history.back(); } else { window.location.href = 'index.html'; } });
+    back?.addEventListener('click',(e)=>{ e.preventDefault(); if(document.referrer && document.referrer!==location.href){ history.back(); } else { location.href='index.html'; } });
 
     // Supabase
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
@@ -157,66 +176,35 @@
     const BUCKET = 'learning_media';
 
     // Elements
-    const form = document.getElementById('entry-form');
     const pinyinEl = document.getElementById('pinyin');
-    const detailsEl = document.getElementById('details');
-    const photoBtn = document.getElementById('addPhoto');
-    const photoInput = document.getElementById('photoInput');
     const meaningEl = document.getElementById('meaning');
-    const hanziEl = document.getElementById('hanzi');
+    const hanziEl  = document.getElementById('hanzi');
+    const form = document.getElementById('entry-form');
+    const themeToggle = document.getElementById('themeToggle');
     const listEl = document.getElementById('list');
     const countEl = document.getElementById('count');
-    const themeToggle = document.getElementById('themeToggle');
 
-    // Theme
-    const THEME_KEY = 'mandarin_words_theme';
-    const savedTheme = localStorage.getItem(THEME_KEY);
+    // Theme toggle
+    const THEME_KEY='mandarin_words_theme';
+    const savedTheme=localStorage.getItem(THEME_KEY);
     if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
     themeToggle?.addEventListener('click', ()=>{
-      const now = document.documentElement.getAttribute('data-theme') === 'mint' ? '' : 'mint';
+      const now=document.documentElement.getAttribute('data-theme')==='mint'?'':'mint';
       if(now){ document.documentElement.setAttribute('data-theme','mint'); } else { document.documentElement.removeAttribute('data-theme'); }
       localStorage.setItem(THEME_KEY, now);
     });
 
-    // Auto-grow textarea
-    const autoGrow = el => { el.style.height='auto'; el.style.height = Math.min(el.scrollHeight, 420) + 'px'; };
-    ['input','keyup','change'].forEach(evt=> detailsEl.addEventListener(evt, ()=>autoGrow(detailsEl)));
-    autoGrow(detailsEl);
-
-    // Upload helper
-    async function uploadToBucket(file){
-      if (file.size > 6 * 1024 * 1024){ alert('Please choose an image under 6 MB.'); return null; }
-      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `details/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert:false, cacheControl:'3600' });
-      if(error){ console.warn('Upload failed', error); alert('Upload failed. Check bucket + policies.'); return null; }
-      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-      return data?.publicUrl || null;
-    }
-
-    // Add form photo → insert only if we have a real URL
-    photoBtn.addEventListener('click', ()=> photoInput.click());
-    photoInput.addEventListener('change', async ()=>{
-      const file = photoInput.files?.[0]; if(!file) return;
-      const url = await uploadToBucket(file);
-      if(!url){ photoInput.value=''; return; }
-      const insert = (detailsEl.value && !/\s$/.test(detailsEl.value)) ? `\n![img](${url})` : `![img](${url})`;
-      const start = detailsEl.selectionStart ?? detailsEl.value.length;
-      const end   = detailsEl.selectionEnd   ?? detailsEl.value.length;
-      detailsEl.value = detailsEl.value.slice(0,start) + insert + detailsEl.value.slice(end);
-      autoGrow(detailsEl); detailsEl.focus();
-      photoInput.value='';
-    });
-
     // Data
-    let rows = []; let hintMode = false;
-    function sortRows(){ try{ rows.sort((a,b)=> ((a?.position??0)-(b?.position??0)) || (new Date(a?.created_at||0)-new Date(b?.created_at||0))); }catch{} }
+    let rows=[]; let hintMode=false;
+    function sortRows(){ try{ rows.sort((a,b)=>((a?.position??0)-(b?.position??0))||(new Date(a?.created_at||0)-new Date(b?.created_at||0))); }catch{} }
 
     async function loadInitial(){
       const { data, error } = await supabase.from(TABLE).select('*').order('position',{ascending:true}).order('created_at',{ascending:true});
       if(error) console.error(error);
-      if(!data || data.length===0){ hintMode=true; rows=[{ id:'sample', pinyin:'nĭ hăo', details:'**greeting**; ==tone tip==', meaning:'Hello', hanzi:'你好', position:0 }]; }
-      else{ rows=data; sortRows(); }
+      if(!data || data.length===0){
+        hintMode=true;
+        rows=[{ id:'sample', pinyin:'nĭ hăo', details:'', meaning:'Hello', hanzi:'你好', position:0 }];
+      }else{ rows=data; sortRows(); }
       render();
     }
 
@@ -227,13 +215,12 @@
         .on('postgres_changes',{event:'DELETE',schema:'public',table:TABLE},p=>removeById(p.old.id,true))
         .subscribe();
     }
-
     function addOrUpdate(rec){ if(hintMode){ hintMode=false; rows=[]; } const i=rows.findIndex(r=>r.id===rec.id); if(i===-1) rows.push(rec); else rows[i]=rec; sortRows(); render(); }
 
-    // Phonetics (simplified)
-    const deTone = s => s.replace(/./g,ch=>({'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A','ē':'e','é':'e','ě':'e','è':'e','Ē':'E','É':'E','Ě':'E','È':'E','ī':'i','í':'i','ǐ':'i','ì':'i','Ī':'I','Í':'I','Ǐ':'I','Ì':'I','ō':'o','ó':'o','ǒ':'o','ò':'o','Ō':'O','Ó':'O','Ǒ':'O','Ò':'O','ū':'u','ú':'u','ǔ':'u','ù':'u','Ū':'U','Ú':'U','Ǔ':'U','Ù':'U','ǖ':'ü','ǘ':'ü','ǚ':'ü','ǜ':'ü','Ü':'Ü','Ǖ':'Ü','Ǘ':'Ü','Ǚ':'Ü','Ǜ':'Ü','ń':'n','ň':'n','ǹ':'n','ḿ':'m'}[ch]??ch)).replace(/[’'·]/g,' ').toLowerCase();
-    const splitInitialFinal = syl => { const two=['zh','ch','sh']; for(const t of two) if(syl.startsWith(t)) return [t,syl.slice(2)]; const one=syl[0]; if(/[bpmfdtnlgkhjqxrzcswy]/.test(one)) return [one,syl.slice(1)]; return ['',syl]; };
-    const initialEng = i => ({'zh':'j','ch':'ch','sh':'sh','z':'dz','c':'ts','s':'s','x':'sh','q':'ch','j':'j','r':'r','y':'y','w':'w','b':'b','p':'p','m':'m','f':'f','d':'d','t':'t','n':'n','l':'l','g':'g','k':'k','h':'h','':''}[i]??i);
+    /* --- phonetics (simplified) --- */
+    const deTone=s=>s.replace(/./g,ch=>({'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A','ē':'e','é':'e','ě':'e','è':'e','Ē':'E','É':'E','Ě':'E','È':'E','ī':'i','í':'i','ǐ':'i','ì':'i','Ī':'I','Í':'I','Ǐ':'I','Ì':'I','ō':'o','ó':'o','ǒ':'o','ò':'o','Ō':'O','Ó':'O','Ǒ':'O','Ò':'O','ū':'u','ú':'u','ǔ':'u','ù':'u','Ū':'U','Ú':'U','Ǔ':'U','Ù':'U','ǖ':'ü','ǘ':'ü','ǚ':'ü','ǜ':'ü','Ü':'Ü','Ǖ':'Ü','Ǘ':'Ü','Ǚ':'Ü','Ǜ':'Ü','ń':'n','ň':'n','ǹ':'n','ḿ':'m'}[ch]??ch)).replace(/[’'·]/g,' ').toLowerCase();
+    const splitInitialFinal=s=>{ const two=['zh','ch','sh']; for(const t of two) if(s.startsWith(t)) return [t,s.slice(2)]; const o=s[0]; if(/[bpmfdtnlgkhjqxrzcswy]/.test(o)) return [o,s.slice(1)]; return ['',s]; };
+    const initialEng=i=>({'zh':'j','ch':'ch','sh':'sh','z':'dz','c':'ts','s':'s','x':'sh','q':'ch','j':'j','r':'r','y':'y','w':'w','b':'b','p':'p','m':'m','f':'f','d':'d','t':'t','n':'n','l':'l','g':'g','k':'k','h':'h','':''}[i]??i);
     function finalEng(i,f){ if(['zh','ch','sh','r','z','c','s'].includes(i)&&f==='i') return 'rr';
       if((i==='j'||i==='q'||i==='x'||i==='y')&&f.startsWith('ue')) f='weh';
       if(f==='ü') f='yoo'; if(f==='ün') f='yun'; if(f==='üe') f='weh';
@@ -242,37 +229,24 @@
     function pinyinToEasyEnglish(p){ const clean=deTone(p).trim(); if(!clean) return ''; return clean.split(/\s+/).map(s=>{const [i,f]=splitInitialFinal(s); return (initialEng(i)+finalEng(i,f)).replace(/^you$/,'yoe');}).join(' '); }
     function applyPhonetics(scope=document){ scope.querySelectorAll('.pinyin').forEach(td=>{ const raw=(td.textContent||'').trim(); td.title = raw ? pinyinToEasyEnglish(raw) : ''; }); }
 
-    // Robust details renderer
+    /* --- details renderer (robust) --- */
     function renderDetails(raw=''){
-      let s = (raw || '').replace(/\r\n?/g,'\n').trim();
-      const tokens = [];
-      s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_,alt,url)=>{
-        const u=(url||'').trim(); if(!u) return _;
-        const id=tokens.push(`<img class="zoomable" src="${u}" alt="${(alt||'').replace(/"/g,'&quot;')}" />`)-1;
-        return `\u0000IMG${id}\u0000`;
-      });
-      s = s.replace(/(https?:\/\/[^\s<]+?\.(?:png|jpe?g|gif|webp))(?![^<]*>)/gi, m=>{
-        const id=tokens.push(`<img class="zoomable" src="${m}" alt="" />`)-1;
-        return `\u0000IMG${id}\u0000`;
-      });
-      s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      s = s.replace(/==(.+?)==/g,'<mark>$1</mark>')
-           .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
-           .replace(/\*(.+?)\*/g,'<em>$1</em>')
-           .replace(/`(.+?)`/g,'<code>$1</code>')
-           .replace(/\n/g,'<br>');
-      s = s.replace(/\u0000IMG(\d+)\u0000/g,(_,i)=>tokens[+i]);
+      let s=(raw||'').replace(/\r\n?/g,'\n').trim();
+      const tokens=[];
+      s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,(_,alt,url)=>{ const u=(url||'').trim(); if(!u) return _; const id=tokens.push(`<img class="zoomable" src="${u}" alt="${(alt||'').replace(/"/g,'&quot;')}" />`)-1; return `\u0000IMG${id}\u0000`; });
+      s=s.replace(/(https?:\/\/[^\s<]+?\.(?:png|jpe?g|gif|webp))(?![^<]*>)/gi,m=>{ const id=tokens.push(`<img class="zoomable" src="${m}" alt="" />`)-1; return `\u0000IMG${id}\u0000`; });
+      s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      s=s.replace(/==(.+?)==/g,'<mark>$1</mark>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/\n/g,'<br>');
+      s=s.replace(/\u0000IMG(\d+)\u0000/g,(_,i)=>tokens[+i]);
       return s;
     }
 
     function render(){
       listEl.innerHTML='';
       rows.forEach((row,idx)=>{
-        const tr=document.createElement('tr');
-        if(hintMode) tr.classList.add('sample');
-        tr.dataset.id=row.id;
+        const tr=document.createElement('tr'); if(hintMode) tr.classList.add('sample'); tr.dataset.id=row.id;
 
-        const num=document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
+        const num=document.createElement('td'); num.className='num'; num.textContent=hintMode?'':(idx+1); tr.appendChild(num);
         tr.appendChild(makeCell(row.pinyin,'pinyin'));
 
         const det=document.createElement('td'); det.className='details'; det.dataset.raw=row.details??''; det.innerHTML=renderDetails(row.details??''); tr.appendChild(det);
@@ -287,15 +261,26 @@
 
         listEl.appendChild(tr);
       });
-      countEl.textContent = hintMode ? 0 : rows.length;
+      countEl.textContent=hintMode?0:rows.length;
       applyPhonetics(listEl);
     }
 
     function makeCell(text,cls){ const td=document.createElement('td'); td.textContent=text??''; if(cls) td.classList.add(cls); td.contentEditable=false; td.spellcheck=false; return td; }
-    function btn(title,icon){ const b=document.createElement('button'); b.className='icon-btn'; b.title=title; b.innerHTML=icon; return b; }
+    function btn(title,svg){ const b=document.createElement('button'); b.className='icon-btn'; b.title=title; b.innerHTML=svg; return b; }
     function handleEnterToSave(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); e.currentTarget.closest('tr').querySelector('.icon-btn')?.click(); } }
 
-    function toggleEdit(tr,editBtn){
+    // Edit mode with photo upload (to BUCKET)
+    async function uploadToBucket(file){
+      if(file.size>6*1024*1024){ alert('Please choose an image under 6 MB.'); return null; }
+      const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
+      const path=`details/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert:false, cacheControl:'3600' });
+      if(error){ console.warn('Upload failed', error); alert('Upload failed. Check bucket + policies.'); return null; }
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      return data?.publicUrl || null;
+    }
+
+    function toggleEdit(tr, editBtn){
       const id=tr.dataset.id;
       const [ , pron, det, mean, han ] = tr.querySelectorAll('td');
 
@@ -305,10 +290,12 @@
         [pron,mean,han].forEach(td=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown',handleEnterToSave); });
         pron.focus();
 
-        const raw = det.dataset.raw || det.textContent || '';
-        det.dataset.raw = raw; det._oldHTML = det.innerHTML; det.innerHTML='';
+        const raw=det.dataset.raw||det.textContent||'';
+        det.dataset.raw=raw; det._oldHTML=det.innerHTML; det.innerHTML='';
+
         const ta=document.createElement('textarea');
-        ta.className='edit-details'; ta.value=raw; Object.assign(ta.style,{minHeight:'120px',width:'100%',background:'var(--field)',color:'var(--ink)',border:'1px solid var(--line)',borderRadius:'10px',padding:'10px 12px',fontFamily:'"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif',fontStyle:'italic',fontWeight:'600'});
+        ta.className='edit-details'; ta.value=raw;
+        Object.assign(ta.style,{minHeight:'120px',width:'100%',background:'var(--field)',color:'var(--ink)',border:'1px solid var(--line)',borderRadius:'10px',padding:'10px 12px',fontFamily:'"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif',fontStyle:'italic',fontWeight:'600'});
         det.appendChild(ta);
 
         const tools=document.createElement('div'); tools.className='edit-tools'; tools.innerHTML=`<button type="button" class="btn secondary mini">📷 Add Photo</button><input type="file" accept="image/*" hidden>`; det.appendChild(tools);
@@ -321,18 +308,19 @@
         addBtn.addEventListener('click',()=>fileInput.click());
         fileInput.addEventListener('change', async ()=>{
           const file=fileInput.files?.[0]; if(!file) return;
-          const url=await uploadToBucket(file);
-          if(!url){ alert('Upload failed. Bucket/policies?'); fileInput.value=''; return; }
+          const url=await uploadToBucket(file); if(!url){ fileInput.value=''; return; }
           const insert=(ta.value && !/\s$/.test(ta.value)) ? `\n![img](${url})` : `![img](${url})`;
           const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
-          ta.value=ta.value.slice(0,start)+insert+ta.value.slice(end);
-          grow(); ta.focus(); fileInput.value='';
+          ta.value=ta.value.slice(0,start)+insert+ta.value.slice(end); grow(); ta.focus(); fileInput.value='';
         });
 
         tr.classList.add('editing'); editBtn.dataset.mode='save'; editBtn.innerHTML=check();
       }else{
-        const newPinyin=pron.textContent.trim(), newMeaning=mean.textContent.trim(), newHanzi=han.textContent.trim();
-        const ta=tr.querySelector('textarea.edit-details'); const newDetails=ta ? ta.value.trim() : (det.dataset.raw||'');
+        const newPinyin=pron.textContent.trim();
+        const newMeaning=mean.textContent.trim();
+        const newHanzi=han.textContent.trim();
+        const ta=tr.querySelector('textarea.edit-details');
+        const newDetails=ta ? ta.value.trim() : (det.dataset.raw||'');
 
         [pron,mean,han].forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown',handleEnterToSave); });
         tr.classList.remove('editing'); editBtn.dataset.mode='edit'; editBtn.innerHTML=pencil();
@@ -351,16 +339,16 @@
       }
     }
 
-    async function removeById(id,silent){
+    async function removeById(id, silent){
       if(!id || id==='sample') return;
       if(!silent){ const i=rows.findIndex(r=>r.id===id); if(i>-1){ rows.splice(i,1); render(); } }
-      const { error } = await supabase.from(TABLE).delete().eq('id',id);
+      const { error } = await supabase.from(TABLE).delete().eq('id', id);
       if(error) console.error(error);
     }
 
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const p=pinyinEl.value.trim(), d=detailsEl.value.trim(), m=meaningEl.value.trim(), h=hanziEl.value.trim();
+      const p=pinyinEl.value.trim(), m=meaningEl.value.trim(), h=hanziEl.value.trim();
       if(!p || !m || !h){
         [pinyinEl,meaningEl,hanziEl].forEach(el=>{ if(!el.value?.trim()){ el.style.boxShadow='0 0 0 3px rgba(255,0,0,.18)'; el.style.borderColor='#ff9494'; setTimeout(()=>{el.style.boxShadow=''; el.style.borderColor='';},900); } });
         return;
@@ -368,15 +356,14 @@
       if(hintMode){ rows=[]; hintMode=false; }
       const nextPos=rows.length;
 
-      let { data, error } = await supabase.from(TABLE).insert({ pinyin:p, details:d, meaning:m, hanzi:h, position:nextPos }).select().single();
-      if(error){
-        console.warn('Insert with details failed; retrying without details. To enable: ALTER TABLE public.learning_words ADD COLUMN details text;');
-        const res2 = await supabase.from(TABLE).insert({ pinyin:p, meaning:m, hanzi:h, position:nextPos }).select().single();
-        data=res2.data; error=res2.error;
-      }
+      const { data, error } = await supabase
+        .from(TABLE)
+        .insert({ pinyin:p, details:'', meaning:m, hanzi:h, position:nextPos })
+        .select().single();
+
       if(error){ console.error(error); return; }
       addOrUpdate(data);
-      form.reset(); pinyinEl.focus(); detailsEl.value='';
+      form.reset(); pinyinEl.focus();
     });
 
     const pencil=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
