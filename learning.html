@@ -3,25 +3,16 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Learning Mandarin</title> 
+  <title>Learning Mandarin</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      /* DARK THEME */
-      --bg:#0b0f2f;
-      --ink:#e8ecf8;
-      --muted:#a6afc6;
-      --accent:#7a5af8;
-      --accent-2:#67e4ca;
-      --card:#0f152b;
-      --field:#0c1326;
-      --line:rgba(255,255,255,.10);
-      --glow1: rgba(122,90,248,.25);
-      --glow2: rgba(122,90,248,.18);
-      --focusRing: rgba(122,90,248,.28);
-      --hover:#141c36;
-      --danger:#ff6b6b;
+      --bg:#0b0f2f; --ink:#e8ecf8; --muted:#a6afc6;
+      --accent:#7a5af8; --accent-2:#67e4ca;
+      --card:#0f152b; --field:#0c1326; --line:rgba(255,255,255,.10);
+      --glow1: rgba(122,90,248,.25); --glow2: rgba(122,90,248,.18);
+      --focusRing: rgba(122,90,248,.28); --hover:#141c36; --danger:#ff6b6b;
     }
     [data-theme="mint"]{
       --accent: var(--accent-2);
@@ -29,205 +20,99 @@
       --glow2: rgba(103,228,202,.18);
       --focusRing: rgba(103,228,202,.28);
     }
-
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; 
-      background-color: var(--bg);
-      background-image: url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg");
-      background-repeat: no-repeat;
-      background-size: cover;
-      background-position: center top;
-      background-attachment: fixed;
-      color:var(--ink);
-      font:16px/1.5 "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      padding:26px;
-      min-height: 100dvh;
+      margin:0; background:var(--bg) url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg") center top/cover no-repeat fixed;
+      color:var(--ink); font:16px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      padding:26px; min-height:100dvh;
     }
-    @media (max-width: 860px){
-      body{ background-attachment: scroll; background-position:center top; }
-    }
-
-    .back-btn{
-      position: fixed; top:26px; left:26px; z-index: 9999;
-      display:inline-flex; align-items:center; gap:8px;
-      padding:10px 14px; border-radius:14px;
-      background: var(--accent); color:#fff; text-decoration:none; 
-      font-weight:800; letter-spacing:.2px;
-      border:1px solid rgba(0,0,0,.06);
-      box-shadow:0 6px 16px rgba(0,0,0,.24);
-      transition: transform .08s ease, filter .12s ease;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .back-btn:hover{ filter:brightness(1.05); transform:translateY(-1px); }
-    .back-btn:active{ transform:translateY(0); }
-    .back-btn svg{ width:18px; height:18px; display:block }
-
-    /* WIDER LAYOUT */
-    .wrap{
-      max-width: clamp(1000px, 92vw, 1400px);
-      margin:0 auto;
-    }
-    .card{
-      position:relative; background:var(--card); border:1px solid var(--line);
-      border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:22px 22px 18px
-    }
-    .card:before{
-      content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1;
-      background: var(--accent); opacity:.16;
-      box-shadow: 0 0 18px var(--glow1), 0 0 28px var(--glow2);
-      filter: blur(14px);
-    }
-
-    h1{margin:4px 0 8px; display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap}
+    @media (max-width:860px){ body{ background-attachment:scroll } }
+    .back-btn{ position:fixed; top:26px; left:26px; z-index:9999; display:inline-flex; gap:8px; align-items:center;
+      padding:10px 14px; border-radius:14px; background:var(--accent); color:#fff; text-decoration:none; font-weight:800;
+      border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s; -webkit-tap-highlight-color:transparent}
+    .back-btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
+    .wrap{ max-width:clamp(1000px,92vw,1400px); margin:0 auto }
+    .card{ position:relative; background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:22px 22px 18px }
+    .card:before{ content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1; background:var(--accent); opacity:.16; box-shadow:0 0 18px var(--glow1),0 0 28px var(--glow2); filter:blur(14px) }
+    h1{margin:4px 0 8px; display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap}
     h1 .script{font-weight:900; font-size:36px; letter-spacing:.2px; color:var(--accent)}
     h1 .tag{font-weight:800; font-size:28px; padding:2px 10px; border-radius:14px; color:#cdd6f2}
     h1 small{display:block; font-weight:600; font-size:14px; color:var(--muted); margin-top:-2px}
+    .sub{margin:0 0 16px; color:var(--muted)}
 
-    .sub{margin:0 0 16px;color:var(--muted)}
-
-    /* form: Details is a textarea + photo button */
-    form#entry-form{
-      display:grid; grid-template-columns: 1.1fr 2fr auto 1.1fr 1fr auto; 
-      gap:12px; align-items:end
-    }
-    label span{display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px}
+    form#entry-form{ display:grid; grid-template-columns:1.1fr 2fr auto 1.1fr 1fr auto; gap:12px; align-items:end }
+    label span{ display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px }
     input[type="text"], textarea{
-      width:100%; padding:12px 12px; border:1px solid var(--line); border-radius:14px; outline:none;
-      background:var(--field); color:var(--ink);
-      transition:box-shadow .16s ease, border .16s ease, transform .06s ease;
-      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-      resize: none;
+      width:100%; padding:12px; border:1px solid var(--line); border-radius:14px; outline:none;
+      background:var(--field); color:var(--ink); transition:box-shadow .16s, border .16s; resize:none
     }
-    textarea::placeholder{ color:#8fa0c4; opacity:.9; font-style:italic }
-    input[type="text"]::placeholder{ color:#8fa0c4; opacity:.9; font-style:italic }
-    textarea:focus, input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing)}
-    button.add, .btn{
-      height:46px; padding:0 16px; border:0; border-radius:14px; background:var(--accent); color:white; font-weight:800; cursor:pointer; letter-spacing:.3px
-    }
-    button.add:active, .btn:active{transform:translateY(1px)}
-    .btn.secondary{ background:transparent; border:1px solid var(--line); color:#d6dbef; }
-    .btn.secondary:hover{ background:rgba(255,255,255,.06); }
+    textarea::placeholder, input[type="text"]::placeholder{ color:#8fa0c4; opacity:.9; font-style:italic }
+    textarea:focus, input[type="text"]:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing) }
+    button.add,.btn{ height:46px; padding:0 16px; border:0; border-radius:14px; background:var(--accent); color:#fff; font-weight:800; letter-spacing:.3px; cursor:pointer }
+    .btn.secondary{ background:transparent; border:1px solid var(--line); color:#d6dbef }
+    .btn.secondary:hover{ background:rgba(255,255,255,.06) }
 
-    .toolbar{display:flex; align-items:center; gap:10px; margin:14px 0 6px}
-    .pill{border:1px solid var(--line); background:var(--field); padding:8px 12px; border-radius:999px; font-size:13px; color:#d6dbef}
-    .pill strong{color:#fff}
-    .right{margin-left:auto}
-    .toggle{cursor:pointer}
+    .toolbar{ display:flex; align-items:center; gap:10px; margin:14px 0 6px }
+    .pill{ border:1px solid var(--line); background:var(--field); padding:8px 12px; border-radius:999px; font-size:13px; color:#d6dbef }
+    .pill strong{ color:#fff } .right{ margin-left:auto } .toggle{ cursor:pointer }
 
-    .table-wrap{margin-top:8px; overflow:auto}
-    table{width:100%; border-collapse:separate; border-spacing:0}
-    thead th{position:sticky; top:0; background:var(--card); z-index:1}
-    th, td{border-bottom:1px solid var(--line); padding:14px 10px; text-align:left}
-    th{font-size:13px; color:#bac4e4; font-weight:700; letter-spacing:.3px}
-    tbody tr{transition:background .12s ease}
-    tbody tr:hover td{background:var(--hover)}
-    td{vertical-align:middle; color:var(--ink); overflow-wrap:anywhere;}
-    .num{width:56px; text-align:center; color:#98a3c9}
-    .hanzi{font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-style:normal; font-weight:700}
-    .actions{width:88px; text-align:right}
+    .table-wrap{ margin-top:8px; overflow:auto }
+    table{ width:100%; border-collapse:separate; border-spacing:0 }
+    thead th{ position:sticky; top:0; background:var(--card); z-index:1 }
+    th,td{ border-bottom:1px solid var(--line); padding:14px 10px; text-align:left }
+    th{ font-size:13px; color:#bac4e4; font-weight:700; letter-spacing:.3px }
+    tbody tr{ transition:background .12s } tbody tr:hover td{ background:var(--hover) }
+    td{ vertical-align:middle; color:var(--ink); overflow-wrap:anywhere }
+    .num{ width:56px; text-align:center; color:#98a3c9 }
+    .hanzi{ font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-weight:700 }
+    .actions{ width:88px; text-align:right }
+    col.col-pron{width:20%} col.col-details{width:42%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
+    .icon-btn{ border:0; background:transparent; cursor:pointer; padding:6px 8px; border-radius:10px; color:#cfd6f1 }
+    .icon-btn:hover{ background:rgba(255,255,255,.06) } tr.editing td{ background:rgba(122,90,248,.07) }
+    tbody td{ font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px }
+    .sample td{ color:rgba(255,255,255,.45) }
+    .pinyin{ cursor:help }
 
-    /* column widths */
-    col.col-pron   { width:20%; }
-    col.col-details{ width:42%; }
-    col.col-meaning{ width:20%; }
-    col.col-hanzi  { width:12%; }
+    .details mark{ background:rgba(255,248,115,.3); color:#fff; padding:0 .25em; border-radius:.25em }
+    .details img.zoomable{ max-width:100%; max-height:140px; border-radius:12px; display:block; margin:6px 0; box-shadow:0 8px 24px rgba(0,0,0,.25); cursor:zoom-in }
+    .details code{ background:rgba(255,255,255,.06); padding:.1em .35em; border-radius:.35em }
 
-    .icon-btn{border:0; background:transparent; cursor:pointer; font-size:16px; padding:6px 8px; border-radius:10px; color:#cfd6f1}
-    .icon-btn svg{width:18px; height:18px; display:block}
-    .icon-btn:hover{background:rgba(255,255,255,.06)}
-    tr.editing td{background:rgba(122,90,248,.07)}
+    .edit-tools{ display:flex; gap:8px; align-items:center; margin-top:8px }
+    .edit-tools .mini{ height:34px; padding:0 12px; border-radius:10px }
+    .edit-preview{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px }
 
-    tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
-    .sample td{color:rgba(255,255,255,.45); opacity:1; font-style:italic; font-weight:500}
-    .pinyin{ cursor: help; }
+    #lightbox[hidden]{ display:none }
+    #lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:99999 }
+    #lightbox .lb-inner{ position:relative; max-width:92vw; max-height:92vh }
+    #lightbox img{ max-width:92vw; max-height:92vh; transform-origin:center; transition:transform .08s linear }
+    .lb-controls{ position:absolute; right:6px; top:6px; display:flex; gap:8px }
+    .lb-btn{ background:#111; color:#fff; border:1px solid rgba(255,255,255,.2); border-radius:10px; padding:8px 10px; font-weight:800; cursor:pointer }
+    .lb-close{ background:var(--danger) }
 
-    /* Details renderer styles */
-    .details mark{ background: rgba(255, 248, 115, .3); color:#fff; padding:0 .25em; border-radius:.25em; }
-    .details img.zoomable{
-      max-width:100%; max-height:140px; border-radius:12px; display:block; margin:6px 0;
-      box-shadow:0 8px 24px rgba(0,0,0,.25); cursor: zoom-in;
-    }
-    .details code{ background:rgba(255,255,255,.06); padding:.1em .35em; border-radius:.35em; }
-
-    /* Edit-mode details toolbar + preview */
-    .edit-tools{ display:flex; gap:8px; align-items:center; margin-top:8px; }
-    .edit-tools .mini{ height:34px; padding:0 12px; border-radius:10px; }
-    .edit-preview{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px; }
-
-    /* Lightbox */
-    #lightbox[hidden]{ display:none; }
-    #lightbox{
-      position: fixed; inset:0; background:rgba(0,0,0,.8);
-      display:flex; align-items:center; justify-content:center; z-index:99999;
-    }
-    #lightbox .lb-inner{ position:relative; max-width:92vw; max-height:92vh; }
-    #lightbox img{ max-width:92vw; max-height:92vh; transform-origin:center; transition:transform .08s linear; }
-    .lb-controls{
-      position:absolute; right:6px; top:6px; display:flex; gap:8px;
-    }
-    .lb-btn{
-      background:#111; color:#fff; border:1px solid rgba(255,255,255,.2);
-      border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:800;
-    }
-    .lb-btn:hover{ filter:brightness(1.1); }
-    .lb-close{ background:var(--danger); }
-
-    @media (max-width:1200px){
-      col.col-pron{width:24%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
-    }
-    @media (max-width:860px){
-      form#entry-form{grid-template-columns:1fr;}
-      .actions{width:76px}
-    }
+    @media (max-width:1200px){ col.col-pron{width:24%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%} }
+    @media (max-width:860px){ form#entry-form{ grid-template-columns:1fr } .actions{ width:76px } }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-
-  <a id="backBtn" class="back-btn" href="#" aria-label="Go back">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-         stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <polyline points="15 18 9 12 15 6"></polyline>
-    </svg>
-    <span>Back/返回</span>
-  </a>
+  <a id="backBtn" class="back-btn" href="#"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg><span>Back/返回</span></a>
 
   <div class="wrap">
     <div class="card">
-      <h1>
-        <span class="script">Learning</span>
-        <span class="tag">Mandarin words that are COOL</span> 
-        <small>quick study list • pinyin → details → meaning → 汉字</small>
-      </h1>
-      <p class="sub">Shift+Enter makes a new line in <em>Details</em>. Use <code>**bold**</code>, <code>*italics*</code>, <code>==highlight==</code>. Upload images in the form or while editing—thumbnails are clickable to zoom.</p>
+      <h1><span class="script">Learning</span><span class="tag">Mandarin words that are COOL</span><small>quick study list • pinyin → details → meaning → 汉字</small></h1>
+      <p class="sub">Shift+Enter for new lines in <em>Details</em>. Use <code>**bold**</code>, <code>*italics*</code>, <code>==highlight==</code>. Upload images in the form or while editing—thumbnails are clickable to zoom.</p>
 
       <form id="entry-form" autocomplete="off">
-        <label>
-          <span>Pronunciation (Pinyin)</span>
-          <input id="pinyin" type="text" placeholder="nĭ hăo" required>
-        </label>
-
-        <label>
-          <span>Details (notes / highlight / image)</span>
-          <textarea id="details" rows="2" placeholder="nǐ → like 'nee'…  ==tone tip=="></textarea>
-        </label>
-
+        <label><span>Pronunciation (Pinyin)</span><input id="pinyin" type="text" placeholder="nĭ hăo" required></label>
+        <label><span>Details (notes / highlight / image)</span><textarea id="details" rows="2" placeholder="nǐ → like 'nee'…  ==tone tip=="></textarea></label>
         <div>
           <span style="display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px">Photo</span>
           <button id="addPhoto" type="button" class="btn secondary">📷 Add Photo</button>
           <input id="photoInput" type="file" accept="image/*" hidden>
         </div>
-
-        <label>
-          <span>Meaning (English)</span>
-          <input id="meaning" type="text" placeholder="Hello" required>
-        </label>
-        <label>
-          <span>Mandarin (汉字)</span>
-          <input id="hanzi" type="text" placeholder="你好" required>
-        </label>
+        <label><span>Meaning (English)</span><input id="meaning" type="text" placeholder="Hello" required></label>
+        <label><span>Mandarin (汉字)</span><input id="hanzi" type="text" placeholder="你好" required></label>
         <button class="add" type="submit">Add</button>
       </form>
 
@@ -239,30 +124,15 @@
       <div class="table-wrap">
         <table aria-label="Useful Mandarin words list">
           <colgroup>
-            <col style="width:56px">
-            <col class="col-pron">
-            <col class="col-details">
-            <col class="col-meaning">
-            <col class="col-hanzi">
-            <col style="width:88px">
+            <col style="width:56px"><col class="col-pron"><col class="col-details"><col class="col-meaning"><col class="col-hanzi"><col style="width:88px">
           </colgroup>
-          <thead>
-            <tr>
-              <th class="num">#</th>
-              <th>Pronunciation</th>
-              <th>Details</th>
-              <th>Meaning</th>
-              <th>Mandarin</th>
-              <th class="actions">&nbsp;</th>
-            </tr>
-          </thead>
+          <thead><tr><th class="num">#</th><th>Pronunciation</th><th>Details</th><th>Meaning</th><th>Mandarin</th><th class="actions">&nbsp;</th></tr></thead>
           <tbody id="list"></tbody>
         </table>
       </div>
     </div>
   </div>
 
-  <!-- Lightbox -->
   <div id="lightbox" hidden>
     <div class="lb-inner">
       <img id="lbImg" src="" alt="">
@@ -276,25 +146,17 @@
 
   <script>
   (function(){
-
     const back = document.getElementById('backBtn');
-    back?.addEventListener('click', (e)=>{
-      e.preventDefault();
-      if (document.referrer && document.referrer !== location.href){
-        history.back();
-      } else {
-        window.location.href = 'index.html'; 
-      }
-    });
+    back?.addEventListener('click', (e)=>{ e.preventDefault(); if (document.referrer && document.referrer !== location.href){ history.back(); } else { window.location.href = 'index.html'; } });
 
-    /* === Supabase config === */
+    // Supabase
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const TABLE = 'learning_words';
-    const BUCKET = 'learning_media'; // created via SQL (public)
+    const BUCKET = 'learning_media';
 
-    // form elements
+    // Elements
     const form = document.getElementById('entry-form');
     const pinyinEl = document.getElementById('pinyin');
     const detailsEl = document.getElementById('details');
@@ -306,415 +168,234 @@
     const countEl = document.getElementById('count');
     const themeToggle = document.getElementById('themeToggle');
 
-    // theme
+    // Theme
     const THEME_KEY = 'mandarin_words_theme';
     const savedTheme = localStorage.getItem(THEME_KEY);
     if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
     themeToggle?.addEventListener('click', ()=>{
       const now = document.documentElement.getAttribute('data-theme') === 'mint' ? '' : 'mint';
-      if(now){ document.documentElement.setAttribute('data-theme','mint'); }
-      else{ document.documentElement.removeAttribute('data-theme'); }
+      if(now){ document.documentElement.setAttribute('data-theme','mint'); } else { document.documentElement.removeAttribute('data-theme'); }
       localStorage.setItem(THEME_KEY, now);
     });
 
-    // auto-resize Details textarea
+    // Auto-grow textarea
     const autoGrow = el => { el.style.height='auto'; el.style.height = Math.min(el.scrollHeight, 420) + 'px'; };
     ['input','keyup','change'].forEach(evt=> detailsEl.addEventListener(evt, ()=>autoGrow(detailsEl)));
     autoGrow(detailsEl);
 
-    // upload (Add form) → insert image tag into Details
-    photoBtn.addEventListener('click', ()=> photoInput.click());
-    photoInput.addEventListener('change', async ()=>{
-      const file = photoInput.files?.[0];
-      if(!file) return;
-      const url = await uploadToBucket(file);
-      if(url){
-        const insert = (detailsEl.value && !/\s$/.test(detailsEl.value)) ? `\n![img](${url})` : `![img](${url})`;
-        const start = detailsEl.selectionStart ?? detailsEl.value.length;
-        const end = detailsEl.selectionEnd ?? detailsEl.value.length;
-        detailsEl.value = detailsEl.value.slice(0,start) + insert + detailsEl.value.slice(end);
-        autoGrow(detailsEl);
-        detailsEl.focus();
-      }
-      photoInput.value = '';
-    });
-
+    // Upload helper
     async function uploadToBucket(file){
-      if (file.size > 6 * 1024 * 1024) { // 6 MB cap
-        alert('Please choose an image under 6 MB.');
-        return null;
-      }
+      if (file.size > 6 * 1024 * 1024){ alert('Please choose an image under 6 MB.'); return null; }
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
       const path = `details/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-      const { error } = await supabase
-        .storage
-        .from(BUCKET)
-        .upload(path, file, { upsert: false, cacheControl: '3600' });
-      if(error){
-        console.warn('Upload failed. Make sure bucket "learning_media" exists and policies allow anon insert.', error);
-        alert('Upload failed. Check the bucket + policies.');
-        return null;
-      }
+      const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert:false, cacheControl:'3600' });
+      if(error){ console.warn('Upload failed', error); alert('Upload failed. Check bucket + policies.'); return null; }
       const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
       return data?.publicUrl || null;
     }
 
-    // data
-    let rows = [];        
-    let hintMode = false; 
+    // Add form photo → insert only if we have a real URL
+    photoBtn.addEventListener('click', ()=> photoInput.click());
+    photoInput.addEventListener('change', async ()=>{
+      const file = photoInput.files?.[0]; if(!file) return;
+      const url = await uploadToBucket(file);
+      if(!url){ photoInput.value=''; return; }
+      const insert = (detailsEl.value && !/\s$/.test(detailsEl.value)) ? `\n![img](${url})` : `![img](${url})`;
+      const start = detailsEl.selectionStart ?? detailsEl.value.length;
+      const end   = detailsEl.selectionEnd   ?? detailsEl.value.length;
+      detailsEl.value = detailsEl.value.slice(0,start) + insert + detailsEl.value.slice(end);
+      autoGrow(detailsEl); detailsEl.focus();
+      photoInput.value='';
+    });
 
-    function sortRows(){
-      try{
-        rows.sort((a,b)=> ((a?.position??0) - (b?.position??0)) || (new Date(a?.created_at||0) - new Date(b?.created_at||0)));
-      }catch(e){ console.warn('sortRows fallback', e); }
-    }
+    // Data
+    let rows = []; let hintMode = false;
+    function sortRows(){ try{ rows.sort((a,b)=> ((a?.position??0)-(b?.position??0)) || (new Date(a?.created_at||0)-new Date(b?.created_at||0))); }catch{} }
 
     async function loadInitial(){
-      const { data, error } = await supabase
-        .from(TABLE)
-        .select('*')
-        .order('position', {ascending: true})
-        .order('created_at', {ascending: true});
-      if(error){ console.error(error); }
-      if(!data || data.length === 0){
-        hintMode = true;
-        rows = [{ id:'sample', pinyin:'nĭ hăo', details:'**greeting**; ==tone tip==', meaning:'Hello', hanzi:'你好', position:0 }];
-      }else{
-        rows = data; sortRows();
-      }
+      const { data, error } = await supabase.from(TABLE).select('*').order('position',{ascending:true}).order('created_at',{ascending:true});
+      if(error) console.error(error);
+      if(!data || data.length===0){ hintMode=true; rows=[{ id:'sample', pinyin:'nĭ hăo', details:'**greeting**; ==tone tip==', meaning:'Hello', hanzi:'你好', position:0 }]; }
+      else{ rows=data; sortRows(); }
       render();
     }
 
     function startRealtime(){
       supabase.channel('rt-learning-words')
-        .on('postgres_changes', { event:'INSERT', schema:'public', table:TABLE }, payload => { addOrUpdate(payload.new); })
-        .on('postgres_changes', { event:'UPDATE', schema:'public', table:TABLE }, payload => { addOrUpdate(payload.new); })
-        .on('postgres_changes', { event:'DELETE', schema:'public', table:TABLE }, payload => { removeById(payload.old.id, /*silent*/ true); })
+        .on('postgres_changes',{event:'INSERT',schema:'public',table:TABLE},p=>addOrUpdate(p.new))
+        .on('postgres_changes',{event:'UPDATE',schema:'public',table:TABLE},p=>addOrUpdate(p.new))
+        .on('postgres_changes',{event:'DELETE',schema:'public',table:TABLE},p=>removeById(p.old.id,true))
         .subscribe();
     }
 
-    function addOrUpdate(rec){
-      if(hintMode){ hintMode = false; rows = []; }
-      const i = rows.findIndex(r => r.id === rec.id);
-      if(i === -1){ rows.push(rec); } else { rows[i] = rec; }
-      sortRows();
-      render();
-    }
+    function addOrUpdate(rec){ if(hintMode){ hintMode=false; rows=[]; } const i=rows.findIndex(r=>r.id===rec.id); if(i===-1) rows.push(rec); else rows[i]=rec; sortRows(); render(); }
 
-    /* ---------- simplified phonetics (no double 'y') ---------- */
-    const deTone = s => {
-      const map = {
-        'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A',
-        'ē':'e','é':'e','ě':'e','è':'e','Ē':'E','É':'E','Ě':'E','È':'E',
-        'ī':'i','í':'i','ǐ':'i','ì':'i','Ī':'I','Í':'I','Ǐ':'I','Ì':'I',
-        'ō':'o','ó':'o','ǒ':'o','ò':'o','Ō':'O','Ó':'O','Ǒ':'O','Ò':'O',
-        'ū':'u','ú':'u','ǔ':'u','ù':'u','Ū':'U','Ú':'U','Ǔ':'U','Ù':'U',
-        'ǖ':'ü','ǘ':'ü','ǚ':'ü','ǜ':'ü','Ü':'Ü','Ǖ':'Ü','Ǘ':'Ü','Ǚ':'Ü','Ǜ':'Ü',
-        'ń':'n','ň':'n','ǹ':'n','ḿ':'m'
-      };
-      return s.replace(/./g, ch => map[ch] ?? ch)
-              .replace(/[’'·]/g,' ')
-              .toLowerCase();
-    };
+    // Phonetics (simplified)
+    const deTone = s => s.replace(/./g,ch=>({'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A','ē':'e','é':'e','ě':'e','è':'e','Ē':'E','É':'E','Ě':'E','È':'E','ī':'i','í':'i','ǐ':'i','ì':'i','Ī':'I','Í':'I','Ǐ':'I','Ì':'I','ō':'o','ó':'o','ǒ':'o','ò':'o','Ō':'O','Ó':'O','Ǒ':'O','Ò':'O','ū':'u','ú':'u','ǔ':'u','ù':'u','Ū':'U','Ú':'U','Ǔ':'U','Ù':'U','ǖ':'ü','ǘ':'ü','ǚ':'ü','ǜ':'ü','Ü':'Ü','Ǖ':'Ü','Ǘ':'Ü','Ǚ':'Ü','Ǜ':'Ü','ń':'n','ň':'n','ǹ':'n','ḿ':'m'}[ch]??ch)).replace(/[’'·]/g,' ').toLowerCase();
+    const splitInitialFinal = syl => { const two=['zh','ch','sh']; for(const t of two) if(syl.startsWith(t)) return [t,syl.slice(2)]; const one=syl[0]; if(/[bpmfdtnlgkhjqxrzcswy]/.test(one)) return [one,syl.slice(1)]; return ['',syl]; };
+    const initialEng = i => ({'zh':'j','ch':'ch','sh':'sh','z':'dz','c':'ts','s':'s','x':'sh','q':'ch','j':'j','r':'r','y':'y','w':'w','b':'b','p':'p','m':'m','f':'f','d':'d','t':'t','n':'n','l':'l','g':'g','k':'k','h':'h','':''}[i]??i);
+    function finalEng(i,f){ if(['zh','ch','sh','r','z','c','s'].includes(i)&&f==='i') return 'rr';
+      if((i==='j'||i==='q'||i==='x'||i==='y')&&f.startsWith('ue')) f='weh';
+      if(f==='ü') f='yoo'; if(f==='ün') f='yun'; if(f==='üe') f='weh';
+      const map=[['iang','yahng'],['iong','yong'],['uang','wahng'],['uan','wahn'],['ang','ahng'],['ong','ohng'],['iao','yow'],['ian','yen'],['uai','why'],['ui','way'],['iu','yoe'],['ie','yeh'],['ia','yah'],['uo','woh'],['ou','oe'],['ei','ay'],['ai','eye'],['eng','uhng'],['en','uhn'],['an','ahn'],['er','ar'],['e','uh'],['o','oh'],['a','ah'],['u','oo'],['i','ee']];
+      for(const [pat,to] of map){ if(f===pat) return to; if(f.endsWith(pat)) return f.replace(pat,to); } return f; }
+    function pinyinToEasyEnglish(p){ const clean=deTone(p).trim(); if(!clean) return ''; return clean.split(/\s+/).map(s=>{const [i,f]=splitInitialFinal(s); return (initialEng(i)+finalEng(i,f)).replace(/^you$/,'yoe');}).join(' '); }
+    function applyPhonetics(scope=document){ scope.querySelectorAll('.pinyin').forEach(td=>{ const raw=(td.textContent||'').trim(); td.title = raw ? pinyinToEasyEnglish(raw) : ''; }); }
 
-    const splitInitialFinal = syl => {
-      const two = ['zh','ch','sh'];
-      for (const t of two) if (syl.startsWith(t)) return [t, syl.slice(2)];
-      const one = syl[0];
-      if (/[bpmfdtnlgkhjqxrzcswy]/.test(one)) return [one, syl.slice(1)];
-      return ['', syl];
-    };
-
-    const initialEng = ini => ({
-      'zh':'j',  'ch':'ch', 'sh':'sh',
-      'z':'dz',  'c':'ts',  's':'s',
-      'x':'sh', 'q':'ch', 'j':'j',
-      'r':'r', 'y':'y', 'w':'w',
-      'b':'b','p':'p','m':'m','f':'f',
-      'd':'d','t':'t','n':'n','l':'l',
-      'g':'g','k':'k','h':'h','':''
-    }[ini] ?? ini);
-
-    function finalEng(ini, fin){
-      if (['zh','ch','sh','r','z','c','s'].includes(ini) && fin === 'i'){
-        return 'rr'; // syllabic-ish
-      }
-      if ((ini==='j'||ini==='q'||ini==='x'||ini==='y') && fin.startsWith('ue')) fin = 'weh';
-      if (fin === 'ü')  fin = 'yoo';
-      if (fin === 'ün') fin = 'yun';
-      if (fin === 'üe') fin = 'weh';
-      const repl = [
-        ['iang','yahng'], ['iong','yong'], ['uang','wahng'],
-        ['uan','wahn'],   ['ang','ahng'],   ['ong','ohng'],
-        ['iao','yow'],    ['ian','yen'],    ['uai','why'],
-        ['ui','way'],     ['iu','yoe'],     ['ie','yeh'],
-        ['ia','yah'],     ['uo','woh'],     ['ou','oe'],
-        ['ei','ay'],      ['ai','eye'],     ['eng','uhng'],
-        ['en','uhn'],     ['an','ahn'],     ['er','ar'],
-        ['e','uh'],       ['o','oh'],       ['a','ah'],
-        ['u','oo'],       ['i','ee']
-      ];
-      for (const [pat, to] of repl){
-        if (fin === pat) return to;
-        if (fin.endsWith(pat)) return fin.replace(pat, to);
-      }
-      return fin;
-    }
-
-    function pinyinToEasyEnglish(pinyin){
-      const clean = deTone(pinyin).trim();
-      if (!clean) return '';
-      const syls = clean.split(/\s+/);
-      const out = [];
-      for (let syl of syls){
-        const [ini, finRaw] = splitInitialFinal(syl);
-        let joined = (initialEng(ini) + finalEng(ini, finRaw))
-          .replace(/^you$/,'yoe');
-        out.push(joined);
-      }
-      return out.join(' ');
-    }
-
-    function applyPhonetics(scope=document){
-      scope.querySelectorAll('.pinyin').forEach(td=>{
-        const raw = (td.textContent || '').trim();
-        if(!raw){ td.removeAttribute('title'); return; }
-        td.title = pinyinToEasyEnglish(raw);
-      });
-    }
-    /* ---------- /phonetics ---------- */
-
-    /* ---------- Details renderer (mini-markdown) ---------- */
-    function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+    // Robust details renderer
     function renderDetails(raw=''){
-      let s = escapeHtml(raw);
-      s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_,a,u)=>`<img class="zoomable" src="${u}" alt="${a||''}">`);
-      s = s.replace(/(https?:\/\/[^\s]+?\.(?:png|jpe?g|gif|webp))/gi, u=>`<img class="zoomable" src="${u}" alt="">`);
-      s = s.replace(/(https?:\/\/[^\s<]+)(?![^<>]*>)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
-      s = s.replace(/==(.+?)==/g, '<mark>$1</mark>');
-      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-      s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
-      s = s.replace(/`(.+?)`/g, '<code>$1</code>');
-      s = s.replace(/\n/g, '<br>');
+      let s = (raw || '').replace(/\r\n?/g,'\n').trim();
+      const tokens = [];
+      s = s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (_,alt,url)=>{
+        const u=(url||'').trim(); if(!u) return _;
+        const id=tokens.push(`<img class="zoomable" src="${u}" alt="${(alt||'').replace(/"/g,'&quot;')}" />`)-1;
+        return `\u0000IMG${id}\u0000`;
+      });
+      s = s.replace(/(https?:\/\/[^\s<]+?\.(?:png|jpe?g|gif|webp))(?![^<]*>)/gi, m=>{
+        const id=tokens.push(`<img class="zoomable" src="${m}" alt="" />`)-1;
+        return `\u0000IMG${id}\u0000`;
+      });
+      s = s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      s = s.replace(/==(.+?)==/g,'<mark>$1</mark>')
+           .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+           .replace(/\*(.+?)\*/g,'<em>$1</em>')
+           .replace(/`(.+?)`/g,'<code>$1</code>')
+           .replace(/\n/g,'<br>');
+      s = s.replace(/\u0000IMG(\d+)\u0000/g,(_,i)=>tokens[+i]);
       return s;
     }
-    /* ---------- /renderer ---------- */
 
     function render(){
-      listEl.innerHTML = '';
-      rows.forEach((row, idx)=>{
-        const tr = document.createElement('tr');
+      listEl.innerHTML='';
+      rows.forEach((row,idx)=>{
+        const tr=document.createElement('tr');
         if(hintMode) tr.classList.add('sample');
-        tr.dataset.id = row.id;
+        tr.dataset.id=row.id;
 
-        const num = document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
-        tr.appendChild(makeCell(row.pinyin, 'pinyin'));
-        const det = document.createElement('td'); det.className='details'; det.dataset.raw = row.details ?? ''; det.innerHTML = renderDetails(row.details ?? ''); tr.appendChild(det);
+        const num=document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
+        tr.appendChild(makeCell(row.pinyin,'pinyin'));
+
+        const det=document.createElement('td'); det.className='details'; det.dataset.raw=row.details??''; det.innerHTML=renderDetails(row.details??''); tr.appendChild(det);
+
         tr.appendChild(makeCell(row.meaning));
-        const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd);
+        tr.appendChild(makeCell(row.hanzi,'hanzi'));
 
-        const actions = document.createElement('td'); actions.className = 'actions';
-        const edit = document.createElement('button'); edit.className='icon-btn'; edit.title='Edit'; edit.innerHTML=pencil(); edit.dataset.mode='edit';
-        edit.addEventListener('click', ()=> toggleEdit(tr, edit));
-        actions.appendChild(edit);
-        const del = document.createElement('button'); del.className='icon-btn'; del.title='Delete'; del.innerHTML=trash();
-        del.addEventListener('click', ()=> removeById(row.id));
-        actions.appendChild(del);
-
+        const actions=document.createElement('td'); actions.className='actions';
+        const edit=btn('Edit',pencil()); edit.dataset.mode='edit'; edit.addEventListener('click',()=>toggleEdit(tr,edit)); actions.appendChild(edit);
+        const del=btn('Delete',trash()); del.addEventListener('click',()=>removeById(row.id)); actions.appendChild(del);
         tr.appendChild(actions);
+
         listEl.appendChild(tr);
       });
       countEl.textContent = hintMode ? 0 : rows.length;
       applyPhonetics(listEl);
     }
 
-    function makeCell(text, cls){
-      const td=document.createElement('td');
-      td.textContent=text ?? '';
-      if (cls) td.classList.add(cls);
-      td.contentEditable=false; td.spellcheck=false;
-      return td;
-    }
+    function makeCell(text,cls){ const td=document.createElement('td'); td.textContent=text??''; if(cls) td.classList.add(cls); td.contentEditable=false; td.spellcheck=false; return td; }
+    function btn(title,icon){ const b=document.createElement('button'); b.className='icon-btn'; b.title=title; b.innerHTML=icon; return b; }
+    function handleEnterToSave(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); e.currentTarget.closest('tr').querySelector('.icon-btn')?.click(); } }
 
-    function handleEnterToSave(e){
-      if(e.key === 'Enter' && !e.shiftKey){
-        e.preventDefault();
-        const tr=e.currentTarget.closest('tr');
-        const btn=tr.querySelector('.icon-btn');
-        btn && btn.click();
-      }
-    }
+    function toggleEdit(tr,editBtn){
+      const id=tr.dataset.id;
+      const [ , pron, det, mean, han ] = tr.querySelectorAll('td');
 
-    function toggleEdit(tr, editBtn){
-      const id = tr.dataset.id;
-      const tds = Array.from(tr.querySelectorAll('td'));
-      const pron = tds[1], det = tds[2], mean = tds[3], han = tds[4];
-
-      if(editBtn.dataset.mode === 'edit'){
+      if(editBtn.dataset.mode==='edit'){
         if(hintMode){ hintMode=false; }
 
-        [pron, mean, han].forEach(td=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown', handleEnterToSave); });
+        [pron,mean,han].forEach(td=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown',handleEnterToSave); });
         pron.focus();
 
-        // replace details cell with textarea + upload button + live preview
         const raw = det.dataset.raw || det.textContent || '';
-        det.dataset.raw = raw;
-        det._oldHTML = det.innerHTML;
-        det.innerHTML = '';
-
-        const ta = document.createElement('textarea');
-        ta.className = 'edit-details';
-        ta.value = raw;
-        ta.style.minHeight = '120px';
-        ta.style.width = '100%';
-        ta.style.background = 'var(--field)';
-        ta.style.color = 'var(--ink)';
-        ta.style.border = '1px solid var(--line)';
-        ta.style.borderRadius = '10px';
-        ta.style.padding = '10px 12px';
-        ta.style.fontFamily = '"Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
-        ta.style.fontStyle = 'italic';
-        ta.style.fontWeight = '600';
+        det.dataset.raw = raw; det._oldHTML = det.innerHTML; det.innerHTML='';
+        const ta=document.createElement('textarea');
+        ta.className='edit-details'; ta.value=raw; Object.assign(ta.style,{minHeight:'120px',width:'100%',background:'var(--field)',color:'var(--ink)',border:'1px solid var(--line)',borderRadius:'10px',padding:'10px 12px',fontFamily:'"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif',fontStyle:'italic',fontWeight:'600'});
         det.appendChild(ta);
 
-        const tools = document.createElement('div');
-        tools.className = 'edit-tools';
-        tools.innerHTML = `<button type="button" class="btn secondary mini">📷 Add Photo</button><input type="file" accept="image/*" hidden>`;
-        det.appendChild(tools);
+        const tools=document.createElement('div'); tools.className='edit-tools'; tools.innerHTML=`<button type="button" class="btn secondary mini">📷 Add Photo</button><input type="file" accept="image/*" hidden>`; det.appendChild(tools);
+        const preview=document.createElement('div'); preview.className='edit-preview'; preview.innerHTML=renderDetails(raw); det.appendChild(preview);
 
-        const preview = document.createElement('div');
-        preview.className = 'edit-preview';
-        preview.innerHTML = renderDetails(raw);
-        det.appendChild(preview);
+        const fileInput=tools.querySelector('input[type="file"]'); const addBtn=tools.querySelector('button');
+        const grow=()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,600)+'px'; preview.innerHTML=renderDetails(ta.value); };
+        ['input','keyup','change'].forEach(evt=>ta.addEventListener(evt,grow)); grow();
 
-        const fileInput = tools.querySelector('input[type="file"]');
-        const addBtn = tools.querySelector('button');
-
-        const grow = ()=>{ ta.style.height='auto'; ta.style.height = Math.min(ta.scrollHeight, 600) + 'px'; preview.innerHTML = renderDetails(ta.value); };
-        ['input','keyup','change'].forEach(evt=> ta.addEventListener(evt, grow));
-        grow();
-
-        addBtn.addEventListener('click', ()=> fileInput.click());
+        addBtn.addEventListener('click',()=>fileInput.click());
         fileInput.addEventListener('change', async ()=>{
-          const file = fileInput.files?.[0];
-          if(!file) return;
-          const url = await uploadToBucket(file);
-          if(url){
-            const insert = (ta.value && !/\s$/.test(ta.value)) ? `\n![img](${url})` : `![img](${url})`;
-            const start = ta.selectionStart ?? ta.value.length;
-            const end = ta.selectionEnd ?? ta.value.length;
-            ta.value = ta.value.slice(0,start) + insert + ta.value.slice(end);
-            grow();
-            ta.focus();
-          }
-          fileInput.value = '';
+          const file=fileInput.files?.[0]; if(!file) return;
+          const url=await uploadToBucket(file);
+          if(!url){ alert('Upload failed. Bucket/policies?'); fileInput.value=''; return; }
+          const insert=(ta.value && !/\s$/.test(ta.value)) ? `\n![img](${url})` : `![img](${url})`;
+          const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
+          ta.value=ta.value.slice(0,start)+insert+ta.value.slice(end);
+          grow(); ta.focus(); fileInput.value='';
         });
 
         tr.classList.add('editing'); editBtn.dataset.mode='save'; editBtn.innerHTML=check();
       }else{
-        const newPinyin = pron.textContent.trim();
-        const newMeaning= mean.textContent.trim();
-        const newHanzi  = han.textContent.trim();
-        const ta = tr.querySelector('textarea.edit-details');
-        const newDetails = ta ? ta.value.trim() : (det.dataset.raw || '');
+        const newPinyin=pron.textContent.trim(), newMeaning=mean.textContent.trim(), newHanzi=han.textContent.trim();
+        const ta=tr.querySelector('textarea.edit-details'); const newDetails=ta ? ta.value.trim() : (det.dataset.raw||'');
 
-        [pron, mean, han].forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown', handleEnterToSave); });
+        [pron,mean,han].forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown',handleEnterToSave); });
         tr.classList.remove('editing'); editBtn.dataset.mode='edit'; editBtn.innerHTML=pencil();
 
-        det.dataset.raw = newDetails;
-        det.innerHTML = renderDetails(newDetails);
-
+        det.dataset.raw=newDetails; det.innerHTML=renderDetails(newDetails);
         applyPhonetics(tr);
 
-        if(id && id !== 'sample'){
-          supabase.from(TABLE).update({ pinyin:newPinyin, details:newDetails, meaning:newMeaning, hanzi:newHanzi }).eq('id', id).then(({error})=>{
+        if(id && id!=='sample'){
+          supabase.from(TABLE).update({ pinyin:newPinyin, details:newDetails, meaning:newMeaning, hanzi:newHanzi }).eq('id',id).then(({error})=>{
             if(error){
               console.warn('Update failed (maybe details column missing). Add once:\nALTER TABLE public.learning_words ADD COLUMN details text;', error);
-              supabase.from(TABLE).update({ pinyin:newPinyin, meaning:newMeaning, hanzi:newHanzi }).eq('id', id).then(({error:e2})=>{ if(e2) console.error(e2); });
+              supabase.from(TABLE).update({ pinyin:newPinyin, meaning:newMeaning, hanzi:newHanzi }).eq('id',id);
             }
           });
         }
       }
     }
 
-    async function removeById(id, silent){
+    async function removeById(id,silent){
       if(!id || id==='sample') return;
-      if(!silent){
-        const i = rows.findIndex(r=>r.id===id); if(i>-1){ rows.splice(i,1); render(); }
-      }
-      const { error } = await supabase.from(TABLE).delete().eq('id', id);
+      if(!silent){ const i=rows.findIndex(r=>r.id===id); if(i>-1){ rows.splice(i,1); render(); } }
+      const { error } = await supabase.from(TABLE).delete().eq('id',id);
       if(error) console.error(error);
     }
 
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const p = pinyinEl.value.trim();
-      const d = detailsEl.value.trim();
-      const m = meaningEl.value.trim();
-      const h = hanziEl.value.trim();
+      const p=pinyinEl.value.trim(), d=detailsEl.value.trim(), m=meaningEl.value.trim(), h=hanziEl.value.trim();
       if(!p || !m || !h){
-        [pinyinEl, meaningEl, hanziEl].forEach(el=>{
-          if(!el.value?.trim()){
-            el.style.boxShadow='0 0 0 3px rgba(255,0,0,.18)';
-            el.style.borderColor='#ff9494';
-            setTimeout(()=>{el.style.boxShadow=''; el.style.borderColor='';},900);
-          }
-        });
+        [pinyinEl,meaningEl,hanziEl].forEach(el=>{ if(!el.value?.trim()){ el.style.boxShadow='0 0 0 3px rgba(255,0,0,.18)'; el.style.borderColor='#ff9494'; setTimeout(()=>{el.style.boxShadow=''; el.style.borderColor='';},900); } });
         return;
       }
+      if(hintMode){ rows=[]; hintMode=false; }
+      const nextPos=rows.length;
 
-      if(hintMode){ rows = []; hintMode = false; }
-      const nextPos = rows.length;
-
-      let { data, error } = await supabase
-        .from(TABLE)
-        .insert({ pinyin:p, details:d, meaning:m, hanzi:h, position: nextPos })
-        .select()
-        .single();
+      let { data, error } = await supabase.from(TABLE).insert({ pinyin:p, details:d, meaning:m, hanzi:h, position:nextPos }).select().single();
       if(error){
         console.warn('Insert with details failed; retrying without details. To enable: ALTER TABLE public.learning_words ADD COLUMN details text;');
-        const res2 = await supabase
-          .from(TABLE)
-          .insert({ pinyin:p, meaning:m, hanzi:h, position: nextPos })
-          .select()
-          .single();
-        data = res2.data; error = res2.error;
+        const res2 = await supabase.from(TABLE).insert({ pinyin:p, meaning:m, hanzi:h, position:nextPos }).select().single();
+        data=res2.data; error=res2.error;
       }
       if(error){ console.error(error); return; }
-      addOrUpdate(data); 
-      form.reset(); pinyinEl.focus();
-      detailsEl.value = '';
+      addOrUpdate(data);
+      form.reset(); pinyinEl.focus(); detailsEl.value='';
     });
 
-    function pencil(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>'}
-    function check(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'}
-    function trash(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>'}
+    const pencil=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
+    const check =()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    const trash =()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
 
-    // Lightbox logic
-    const lightbox = document.getElementById('lightbox');
-    const lbImg = document.getElementById('lbImg');
-    const lbClose = document.getElementById('lbClose');
-    const zoomIn = document.getElementById('zoomIn');
-    const zoomOut = document.getElementById('zoomOut');
-    let scale = 1;
+    // Lightbox
+    const lightbox=document.getElementById('lightbox'), lbImg=document.getElementById('lbImg'), lbClose=document.getElementById('lbClose'), zoomIn=document.getElementById('zoomIn'), zoomOut=document.getElementById('zoomOut');
+    let scale=1; function openLightbox(src){ lbImg.src=src; scale=1; lbImg.style.transform='scale(1)'; lightbox.hidden=false; }
+    function closeLightbox(){ lightbox.hidden=true; }
+    zoomIn.addEventListener('click',()=>{ scale=Math.min(scale*1.2,8); lbImg.style.transform=`scale(${scale})`; });
+    zoomOut.addEventListener('click',()=>{ scale=Math.max(scale/1.2,.5); lbImg.style.transform=`scale(${scale})`; });
+    lbClose.addEventListener('click',closeLightbox);
+    lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
+    window.addEventListener('keydown',(e)=>{ if(!lightbox.hidden && e.key==='Escape') closeLightbox(); });
+    lbImg.addEventListener('wheel',(e)=>{ e.preventDefault(); if(e.deltaY<0) zoomIn.click(); else zoomOut.click(); },{passive:false});
+    document.addEventListener('click',(e)=>{ const img=e.target.closest('.details img.zoomable'); if(img) openLightbox(img.src); });
 
-    function openLightbox(src){ lbImg.src = src; scale = 1; lbImg.style.transform = 'scale(1)'; lightbox.hidden = false; }
-    function closeLightbox(){ lightbox.hidden = true; }
-    zoomIn.addEventListener('click', ()=>{ scale = Math.min(scale*1.2, 8); lbImg.style.transform = `scale(${scale})`; });
-    zoomOut.addEventListener('click', ()=>{ scale = Math.max(scale/1.2, .5); lbImg.style.transform = `scale(${scale})`; });
-    lbClose.addEventListener('click', closeLightbox);
-    lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) closeLightbox(); });
-    window.addEventListener('keydown', (e)=>{ if(!lightbox.hidden && e.key==='Escape') closeLightbox(); });
-    lbImg.addEventListener('wheel', (e)=>{ e.preventDefault(); if(e.deltaY<0) zoomIn.click(); else zoomOut.click(); }, { passive:false });
-
-    // delegate clicks on details images
-    document.addEventListener('click', (e)=>{
-      const img = e.target.closest('.details img.zoomable');
-      if(img){ openLightbox(img.src); }
-    });
-
-    loadInitial();
-    startRealtime();
+    loadInitial(); startRealtime();
   })();
   </script>
 </body>
