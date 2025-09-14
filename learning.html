@@ -28,7 +28,7 @@
       border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s }
     .back-btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
 
-    .wrap{ max-width:clamp(1000px,92vw,1400px); margin:0 auto }
+    .wrap{ max-width:clamp(1100px,95vw,1500px); margin:0 auto }
     .card{ position:relative; background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:22px 22px 18px }
     .card:before{ content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1; background:var(--accent); opacity:.16; box-shadow:0 0 18px var(--glow1),0 0 28px var(--glow2); filter:blur(14px) }
 
@@ -38,7 +38,7 @@
     h1 small{display:block; font-weight:600; font-size:14px; color:var(--muted); margin-top:-2px}
     .sub{margin:0 0 16px; color:var(--muted)}
 
-    /* simpler form (no Details or Photo) */
+    /* compact add form (no Details here) */
     form#entry-form{
       display:grid; grid-template-columns: 1.2fr 1.2fr 1fr auto;
       gap:12px; align-items:end;
@@ -65,13 +65,14 @@
     td{ vertical-align:middle; color:var(--ink); overflow-wrap:anywhere }
     .num{ width:56px; text-align:center; color:#98a3c9 }
     .hanzi{ font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-weight:700 }
-    .actions{ width:88px; text-align:right }
-
-    /* column widths */
+    .actions{ width:140px; text-align:right; white-space:nowrap }
+    .actions .btnrow{ display:flex; gap:8px; justify-content:flex-end }
     col.col-pron{width:28%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
 
-    .icon-btn{ border:0; background:transparent; cursor:pointer; padding:6px 8px; border-radius:10px; color:#cfd6f1 }
-    .icon-btn:hover{ background:rgba(255,255,255,.06) } tr.editing td{ background:rgba(122,90,248,.07) }
+    .icon-btn{ border:0; background:transparent; cursor:pointer; padding:6px 8px; border-radius:10px; color:#cfd6f1; display:inline-flex; align-items:center; justify-content:center }
+    .icon-btn:hover{ background:rgba(255,255,255,.06) }
+    .icon-btn svg{ width:18px; height:18px; display:block }
+    tr.editing td{ background:rgba(122,90,248,.07) }
     tbody td{ font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px }
     .sample td{ color:rgba(255,255,255,.45) }
     .pinyin{ cursor:help }
@@ -81,10 +82,15 @@
     .details img.zoomable{ max-width:100%; max-height:140px; border-radius:12px; display:block; margin:6px 0; box-shadow:0 8px 24px rgba(0,0,0,.25); cursor:zoom-in }
     .details code{ background:rgba(255,255,255,.06); padding:.1em .35em; border-radius:.35em }
 
-    /* Edit-mode tools (for Details in-row editor) */
+    /* In-row editor (visual/WYSIWYG) */
+    .wys{
+      min-height:120px; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+      background:var(--field); color:var(--ink); font-style:italic; font-weight:600;
+    }
+    .wys:focus{ outline: none; box-shadow:0 0 0 3px var(--focusRing); border-color:var(--accent) }
     .edit-tools{ display:flex; gap:8px; align-items:center; margin-top:8px }
-    .edit-tools .mini{ height:34px; padding:0 12px; border-radius:10px }
-    .edit-preview{ margin-top:10px; border-top:1px dashed var(--line); padding-top:10px }
+    .mini{ height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:transparent; color:#d6dbef; font-weight:800; cursor:pointer }
+    .mini:hover{ background:rgba(255,255,255,.06) }
 
     /* Lightbox */
     #lightbox[hidden]{ display:none }
@@ -96,7 +102,7 @@
     .lb-close{ background:var(--danger) }
 
     @media (max-width:1200px){ col.col-pron{width:30%} col.col-details{width:38%} col.col-meaning{width:20%} col.col-hanzi{width:12%} }
-    @media (max-width:860px){ form#entry-form{ grid-template-columns:1fr } .actions{ width:76px } }
+    @media (max-width:860px){ form#entry-form{ grid-template-columns:1fr } .actions{ width:120px } }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -110,9 +116,9 @@
         <span class="tag">Mandarin words that are COOL</span>
         <small>quick study list • pinyin → meaning → 汉字 • add notes/images later via <em>Edit</em></small>
       </h1>
-      <p class="sub">Hover Pronunciation for a simple English-y sound guide. You can add rich <em>Details</em> (notes, highlights, photos) when you click <strong>Edit</strong> on any row.</p>
+      <p class="sub">Hover Pronunciation for a simple English-y sound guide. Click <strong>Edit</strong> on any row to add <em>Details</em> with text highlighting and real images (no links).</p>
 
-      <!-- simplified form -->
+      <!-- compact add form -->
       <form id="entry-form" autocomplete="off">
         <label><span>Pronunciation (Pinyin)</span><input id="pinyin" type="text" placeholder="nĭ hăo" required></label>
         <label><span>Meaning (English)</span><input id="meaning" type="text" placeholder="Hello" required></label>
@@ -133,7 +139,7 @@
             <col class="col-details">
             <col class="col-meaning">
             <col class="col-hanzi">
-            <col style="width:88px">
+            <col style="width:140px">
           </colgroup>
           <thead>
             <tr>
@@ -176,10 +182,10 @@
     const BUCKET = 'learning_media';
 
     // Elements
+    const form = document.getElementById('entry-form');
     const pinyinEl = document.getElementById('pinyin');
     const meaningEl = document.getElementById('meaning');
     const hanziEl  = document.getElementById('hanzi');
-    const form = document.getElementById('entry-form');
     const themeToggle = document.getElementById('themeToggle');
     const listEl = document.getElementById('list');
     const countEl = document.getElementById('count');
@@ -229,16 +235,55 @@
     function pinyinToEasyEnglish(p){ const clean=deTone(p).trim(); if(!clean) return ''; return clean.split(/\s+/).map(s=>{const [i,f]=splitInitialFinal(s); return (initialEng(i)+finalEng(i,f)).replace(/^you$/,'yoe');}).join(' '); }
     function applyPhonetics(scope=document){ scope.querySelectorAll('.pinyin').forEach(td=>{ const raw=(td.textContent||'').trim(); td.title = raw ? pinyinToEasyEnglish(raw) : ''; }); }
 
-    /* --- details renderer (robust) --- */
+    /* --- Details renderer: allows <img>, <strong>, <em>, <mark>, <code>, <br> --- */
     function renderDetails(raw=''){
       let s=(raw||'').replace(/\r\n?/g,'\n').trim();
+
+      // keep <img ...> tags (sanitize attributes) by tokenizing them
       const tokens=[];
-      s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,(_,alt,url)=>{ const u=(url||'').trim(); if(!u) return _; const id=tokens.push(`<img class="zoomable" src="${u}" alt="${(alt||'').replace(/"/g,'&quot;')}" />`)-1; return `\u0000IMG${id}\u0000`; });
-      s=s.replace(/(https?:\/\/[^\s<]+?\.(?:png|jpe?g|gif|webp))(?![^<]*>)/gi,m=>{ const id=tokens.push(`<img class="zoomable" src="${m}" alt="" />`)-1; return `\u0000IMG${id}\u0000`; });
+      s=s.replace(/<img\b[^>]*>/gi, tag=>{
+        const src=(tag.match(/\bsrc\s*=\s*"(.*?)"/i)||[])[1] || '';
+        const alt=(tag.match(/\balt\s*=\s*"(.*?)"/i)||[])[1] || '';
+        if(!/^https?:\/\//i.test(src)) return ''; // drop non-http
+        const id=tokens.push(`<img class="zoomable" src="${src}" alt="${alt.replace(/"/g,'&quot;')}">`) - 1;
+        return `\u0000IMG${id}\u0000`;
+      });
+
+      // markdown images ![alt](url)
+      s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,(_,alt,url)=>{
+        const u=(url||'').trim(); if(!u) return _;
+        const id=tokens.push(`<img class="zoomable" src="${u}" alt="${(alt||'').replace(/"/g,'&quot;')}">`) - 1;
+        return `\u0000IMG${id}\u0000`;
+      });
+
+      // escape everything else
       s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-      s=s.replace(/==(.+?)==/g,'<mark>$1</mark>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>').replace(/`(.+?)`/g,'<code>$1</code>').replace(/\n/g,'<br>');
+
+      // light formatting
+      s=s.replace(/==(.+?)==/g,'<mark>$1</mark>')
+         .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
+         .replace(/\*(.+?)\*/g,'<em>$1</em>')
+         .replace(/`(.+?)`/g,'<code>$1</code>')
+         .replace(/\n/g,'<br>');
+
+      // restore images
       s=s.replace(/\u0000IMG(\d+)\u0000/g,(_,i)=>tokens[+i]);
+
       return s;
+    }
+
+    function sanitizeWys(html){
+      // very light sanitizer for what we allow
+      // keep only <img src alt>, <strong>, <em>, <mark>, <code>, <br>
+      html = html.replace(/<\/?(?!img|strong|em|mark|code|br)\w+[^>]*>/gi, '');
+      // strip all attributes except src/alt on img
+      html = html.replace(/<img\b([^>]*)>/gi, (m,attrs)=>{
+        const src=(attrs.match(/\bsrc\s*=\s*"(.*?)"/i)||[])[1]||'';
+        const alt=(attrs.match(/\balt\s*=\s*"(.*?)"/i)||[])[1]||'';
+        if(!/^https?:\/\//i.test(src)) return ''; // drop data:, javascript:, etc
+        return `<img src="${src}" alt="${alt.replace(/"/g,'&quot;')}">`;
+      });
+      return html;
     }
 
     function render(){
@@ -255,9 +300,14 @@
         tr.appendChild(makeCell(row.hanzi,'hanzi'));
 
         const actions=document.createElement('td'); actions.className='actions';
-        const edit=btn('Edit',pencil()); edit.dataset.mode='edit'; edit.addEventListener('click',()=>toggleEdit(tr,edit)); actions.appendChild(edit);
-        const del=btn('Delete',trash()); del.addEventListener('click',()=>removeById(row.id)); actions.appendChild(del);
+        const rowBtns=document.createElement('div'); rowBtns.className='btnrow';
+        const edit=iconBtn('Edit',pencil()); edit.dataset.mode='edit';
+        const del =iconBtn('Delete',trash());
+        rowBtns.appendChild(edit); rowBtns.appendChild(del); actions.appendChild(rowBtns);
         tr.appendChild(actions);
+
+        edit.addEventListener('click',()=>toggleEdit(tr, edit, rowBtns));
+        del.addEventListener('click',()=>removeById(row.id));
 
         listEl.appendChild(tr);
       });
@@ -266,10 +316,8 @@
     }
 
     function makeCell(text,cls){ const td=document.createElement('td'); td.textContent=text??''; if(cls) td.classList.add(cls); td.contentEditable=false; td.spellcheck=false; return td; }
-    function btn(title,svg){ const b=document.createElement('button'); b.className='icon-btn'; b.title=title; b.innerHTML=svg; return b; }
-    function handleEnterToSave(e){ if(e.key==='Enter' && !e.shiftKey){ e.preventDefault(); e.currentTarget.closest('tr').querySelector('.icon-btn')?.click(); } }
+    function iconBtn(title,svg){ const b=document.createElement('button'); b.className='icon-btn'; b.title=title; b.innerHTML=svg; return b; }
 
-    // Edit mode with photo upload (to BUCKET)
     async function uploadToBucket(file){
       if(file.size>6*1024*1024){ alert('Please choose an image under 6 MB.'); return null; }
       const ext=(file.name.split('.').pop()||'jpg').toLowerCase();
@@ -280,62 +328,108 @@
       return data?.publicUrl || null;
     }
 
-    function toggleEdit(tr, editBtn){
+    function toggleEdit(tr, editBtn, btnRow){
       const id=tr.dataset.id;
       const [ , pron, det, mean, han ] = tr.querySelectorAll('td');
 
       if(editBtn.dataset.mode==='edit'){
         if(hintMode){ hintMode=false; }
 
-        [pron,mean,han].forEach(td=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown',handleEnterToSave); });
+        // make text cells editable
+        [pron,mean,han].forEach(td=>{ td.contentEditable=true; td.spellcheck=false; });
         pron.focus();
 
-        const raw=det.dataset.raw||det.textContent||'';
-        det.dataset.raw=raw; det._oldHTML=det.innerHTML; det.innerHTML='';
+        // swap details into WYSIWYG editor
+        const currentHTML = renderDetails(det.dataset.raw || det.textContent || '');
+        det._oldRaw = det.dataset.raw || '';
+        det._oldHTML = det.innerHTML;
+        det.innerHTML='';
+        const wys=document.createElement('div'); wys.className='wys'; wys.contentEditable='true'; wys.innerHTML=currentHTML;
+        det.appendChild(wys);
 
-        const ta=document.createElement('textarea');
-        ta.className='edit-details'; ta.value=raw;
-        Object.assign(ta.style,{minHeight:'120px',width:'100%',background:'var(--field)',color:'var(--ink)',border:'1px solid var(--line)',borderRadius:'10px',padding:'10px 12px',fontFamily:'"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif',fontStyle:'italic',fontWeight:'600'});
-        det.appendChild(ta);
+        const tools=document.createElement('div'); tools.className='edit-tools';
+        tools.innerHTML = `
+          <button type="button" class="mini" data-a="bold">**B**</button>
+          <button type="button" class="mini" data-a="italic"><em>i</em></button>
+          <button type="button" class="mini" data-a="highlight">==HL==</button>
+          <button type="button" class="mini" data-a="photo">📷 Add Photo</button>
+          <input type="file" accept="image/*" hidden>
+        `;
+        det.appendChild(tools);
 
-        const tools=document.createElement('div'); tools.className='edit-tools'; tools.innerHTML=`<button type="button" class="btn secondary mini">📷 Add Photo</button><input type="file" accept="image/*" hidden>`; det.appendChild(tools);
-        const preview=document.createElement('div'); preview.className='edit-preview'; preview.innerHTML=renderDetails(raw); det.appendChild(preview);
-
-        const fileInput=tools.querySelector('input[type="file"]'); const addBtn=tools.querySelector('button');
-        const grow=()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,600)+'px'; preview.innerHTML=renderDetails(ta.value); };
-        ['input','keyup','change'].forEach(evt=>ta.addEventListener(evt,grow)); grow();
-
-        addBtn.addEventListener('click',()=>fileInput.click());
+        const fileInput = tools.querySelector('input[type="file"]');
+        tools.addEventListener('click', async (e)=>{
+          const a = e.target.closest('button')?.dataset.a;
+          if(!a) return;
+          if(a==='photo'){ fileInput.click(); return; }
+          if(a==='bold') document.execCommand('bold');
+          if(a==='italic') document.execCommand('italic');
+          if(a==='highlight'){
+            const sel=window.getSelection();
+            if(sel && sel.rangeCount){
+              const span=document.createElement('mark');
+              sel.getRangeAt(0).surroundContents(span);
+            }
+          }
+          wys.focus();
+        });
         fileInput.addEventListener('change', async ()=>{
-          const file=fileInput.files?.[0]; if(!file) return;
-          const url=await uploadToBucket(file); if(!url){ fileInput.value=''; return; }
-          const insert=(ta.value && !/\s$/.test(ta.value)) ? `\n![img](${url})` : `![img](${url})`;
-          const start=ta.selectionStart ?? ta.value.length, end=ta.selectionEnd ?? ta.value.length;
-          ta.value=ta.value.slice(0,start)+insert+ta.value.slice(end); grow(); ta.focus(); fileInput.value='';
+          const f=fileInput.files?.[0]; if(!f) return;
+          const url=await uploadToBucket(f); if(!url){ fileInput.value=''; return; }
+          // insert image at end (simple)
+          const img=document.createElement('img'); img.src=url; img.alt=''; img.className='zoomable';
+          wys.appendChild(img);
+          fileInput.value='';
+          wys.focus();
         });
 
-        tr.classList.add('editing'); editBtn.dataset.mode='save'; editBtn.innerHTML=check();
-      }else{
-        const newPinyin=pron.textContent.trim();
-        const newMeaning=mean.textContent.trim();
-        const newHanzi=han.textContent.trim();
-        const ta=tr.querySelector('textarea.edit-details');
-        const newDetails=ta ? ta.value.trim() : (det.dataset.raw||'');
+        // replace row buttons with Save/Cancel
+        btnRow.innerHTML='';
+        const save=iconBtn('Save',check());
+        const cancel=iconBtn('Cancel',xmark());
+        btnRow.appendChild(save); btnRow.appendChild(cancel);
 
-        [pron,mean,han].forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown',handleEnterToSave); });
-        tr.classList.remove('editing'); editBtn.dataset.mode='edit'; editBtn.innerHTML=pencil();
+        save.addEventListener('click', async ()=>{
+          const newPinyin=pron.textContent.trim();
+          const newMeaning=mean.textContent.trim();
+          const newHanzi=han.textContent.trim();
+          const safeHtml = sanitizeWys(wys.innerHTML);
+          const newRaw = safeHtml; // store as safe HTML
 
-        det.dataset.raw=newDetails; det.innerHTML=renderDetails(newDetails);
-        applyPhonetics(tr);
+          det.dataset.raw=newRaw;
+          det.innerHTML=renderDetails(newRaw);
 
-        if(id && id!=='sample'){
-          supabase.from(TABLE).update({ pinyin:newPinyin, details:newDetails, meaning:newMeaning, hanzi:newHanzi }).eq('id',id).then(({error})=>{
+          // back to view mode
+          [pron,mean,han].forEach(td=>{ td.contentEditable=false; });
+          btnRow.innerHTML=''; const edit2=iconBtn('Edit',pencil()); const del2=iconBtn('Delete',trash());
+          edit2.dataset.mode='edit'; btnRow.appendChild(edit2); btnRow.appendChild(del2);
+          edit2.addEventListener('click',()=>toggleEdit(tr, edit2, btnRow));
+          del2.addEventListener('click',()=>removeById(id));
+
+          if(id && id!=='sample'){
+            const { error } = await supabase.from(TABLE).update({ pinyin:newPinyin, details:newRaw, meaning:newMeaning, hanzi:newHanzi }).eq('id',id);
             if(error){
-              console.warn('Update failed (maybe details column missing). Add once:\nALTER TABLE public.learning_words ADD COLUMN details text;', error);
-              supabase.from(TABLE).update({ pinyin:newPinyin, meaning:newMeaning, hanzi:newHanzi }).eq('id',id);
+              console.warn('Update failed (maybe details column missing). Run once:\nALTER TABLE public.learning_words ADD COLUMN details text;', error);
+              await supabase.from(TABLE).update({ pinyin:newPinyin, meaning:newMeaning, hanzi:newHanzi }).eq('id',id);
             }
-          });
-        }
+          }
+          tr.classList.remove('editing');
+          applyPhonetics(tr);
+        });
+
+        cancel.addEventListener('click', ()=>{
+          // revert
+          det.dataset.raw = det._oldRaw || '';
+          det.innerHTML = det._oldHTML || '';
+          [pron,mean,han].forEach(td=>{ td.contentEditable=false; });
+          btnRow.innerHTML=''; const edit2=iconBtn('Edit',pencil()); const del2=iconBtn('Delete',trash());
+          edit2.dataset.mode='edit'; btnRow.appendChild(edit2); btnRow.appendChild(del2);
+          edit2.addEventListener('click',()=>toggleEdit(tr, edit2, btnRow));
+          del2.addEventListener('click',()=>removeById(id));
+          tr.classList.remove('editing');
+        });
+
+        tr.classList.add('editing');
       }
     }
 
@@ -369,6 +463,7 @@
     const pencil=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>';
     const check =()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
     const trash =()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
+    const xmark=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
     // Lightbox
     const lightbox=document.getElementById('lightbox'), lbImg=document.getElementById('lbImg'), lbClose=document.getElementById('lbClose'), zoomIn=document.getElementById('zoomIn'), zoomOut=document.getElementById('zoomOut');
