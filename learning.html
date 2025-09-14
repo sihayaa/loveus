@@ -21,6 +21,7 @@
       --glow2: rgba(122,90,248,.18);
       --focusRing: rgba(122,90,248,.28);
       --hover:#141c36;
+      --danger:#ff6b6b;
     }
     [data-theme="mint"]{
       --accent: var(--accent-2);
@@ -65,7 +66,6 @@
 
     /* WIDER LAYOUT */
     .wrap{
-      /* grows up to 1400px but keeps nice margins on smaller screens */
       max-width: clamp(1000px, 92vw, 1400px);
       margin:0 auto;
     }
@@ -87,21 +87,28 @@
 
     .sub{margin:0 0 16px;color:var(--muted)}
 
-    /* make the Details field wider in the form */
+    /* form: Details is a textarea + photo button */
     form#entry-form{
-      display:grid; grid-template-columns: 1.1fr 2fr 1.1fr 1fr auto; 
+      display:grid; grid-template-columns: 1.1fr 2fr auto 1.1fr 1fr auto; 
       gap:12px; align-items:end
     }
     label span{display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px}
-    input[type="text"]{
+    input[type="text"], textarea{
       width:100%; padding:12px 12px; border:1px solid var(--line); border-radius:14px; outline:none;
       background:var(--field); color:var(--ink);
-      transition:box-shadow .16s ease, border .16s ease, transform .06s ease
+      transition:box-shadow .16s ease, border .16s ease, transform .06s ease;
+      font-family: "Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      resize: none; /* we auto-grow */
     }
-    input[type="text"]::placeholder{ color:#8fa0c4; opacity:.85; font-style:italic }
-    input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing)}
-    button.add{height:46px; padding:0 18px; border:0; border-radius:14px; background:var(--accent); color:white; font-weight:800; cursor:pointer; letter-spacing:.3px}
-    button.add:active{transform:translateY(1px)}
+    textarea::placeholder{ color:#8fa0c4; opacity:.9; font-style:italic }
+    input[type="text"]::placeholder{ color:#8fa0c4; opacity:.9; font-style:italic }
+    textarea:focus, input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing)}
+    button.add, .btn{
+      height:46px; padding:0 16px; border:0; border-radius:14px; background:var(--accent); color:white; font-weight:800; cursor:pointer; letter-spacing:.3px
+    }
+    button.add:active, .btn:active{transform:translateY(1px)}
+    .btn.secondary{ background:transparent; border:1px solid var(--line); color:#d6dbef; }
+    .btn.secondary:hover{ background:rgba(255,255,255,.06); }
 
     .toolbar{display:flex; align-items:center; gap:10px; margin:14px 0 6px}
     .pill{border:1px solid var(--line); background:var(--field); padding:8px 12px; border-radius:999px; font-size:13px; color:#d6dbef}
@@ -109,7 +116,7 @@
     .right{margin-left:auto}
     .toggle{cursor:pointer}
 
-    .table-wrap{margin-top:8px; overflow:auto} /* allow horizontal scroll just in case */
+    .table-wrap{margin-top:8px; overflow:auto}
     table{width:100%; border-collapse:separate; border-spacing:0}
     thead th{position:sticky; top:0; background:var(--card); z-index:1}
     th, td{border-bottom:1px solid var(--line); padding:14px 10px; text-align:left}
@@ -121,7 +128,7 @@
     .hanzi{font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-style:normal; font-weight:700}
     .actions{width:88px; text-align:right}
 
-    /* column sizing: give DETAILS the space */
+    /* column widths */
     col.col-pron   { width:20%; }
     col.col-details{ width:42%; }
     col.col-meaning{ width:20%; }
@@ -134,12 +141,35 @@
 
     tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
     .sample td{color:rgba(255,255,255,.45); opacity:1; font-style:italic; font-weight:500}
-
-    /* native small tooltip on pronunciation */
     .pinyin{ cursor: help; }
 
+    /* Details renderer styles */
+    .details mark{ background: rgba(255, 248, 115, .3); color:#fff; padding:0 .25em; border-radius:.25em; }
+    .details img.zoomable{
+      max-width:100%; max-height:140px; border-radius:12px; display:block; margin:6px 0;
+      box-shadow:0 8px 24px rgba(0,0,0,.25); cursor: zoom-in;
+    }
+    .details code{ background:rgba(255,255,255,.06); padding:.1em .35em; border-radius:.35em; }
+
+    /* Lightbox */
+    #lightbox[hidden]{ display:none; }
+    #lightbox{
+      position: fixed; inset:0; background:rgba(0,0,0,.8);
+      display:flex; align-items:center; justify-content:center; z-index:99999;
+    }
+    #lightbox .lb-inner{ position:relative; max-width:92vw; max-height:92vh; }
+    #lightbox img{ max-width:92vw; max-height:92vh; transform-origin:center; transition:transform .08s linear; }
+    .lb-controls{
+      position:absolute; right:6px; top:6px; display:flex; gap:8px;
+    }
+    .lb-btn{
+      background:#111; color:#fff; border:1px solid rgba(255,255,255,.2);
+      border-radius:10px; padding:8px 10px; cursor:pointer; font-weight:800;
+    }
+    .lb-btn:hover{ filter:brightness(1.1); }
+    .lb-close{ background:var(--danger); }
+
     @media (max-width:1200px){
-      /* shrink nicely on tablets */
       col.col-pron{width:24%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
     }
     @media (max-width:860px){
@@ -166,17 +196,25 @@
         <span class="tag">Mandarin words that are COOL</span> 
         <small>quick study list • pinyin → details → meaning → 汉字</small>
       </h1>
-      <p class="sub">Type the four fields below. Press <strong>Enter</strong> (or click Add) to append to the list. To change a row later, click <strong>Edit</strong>.</p>
+      <p class="sub">Type the fields below. <strong>Shift+Enter</strong> makes a new line in <em>Details</em>. Use <code>**bold**</code>, <code>*italics*</code>, <code>==highlight==</code>. Paste an image link or click <em>Add Photo</em> to upload.</p>
 
       <form id="entry-form" autocomplete="off">
         <label>
           <span>Pronunciation (Pinyin)</span>
           <input id="pinyin" type="text" placeholder="nĭ hăo" required>
         </label>
+
         <label>
-          <span>Details (usage / note)</span>
-          <input id="details" type="text" placeholder="greeting; casual">
+          <span>Details (notes / highlight / image)</span>
+          <textarea id="details" rows="2" placeholder="nǐ → like 'nee'…  ==tone tip==  https://.../pic.jpg"></textarea>
         </label>
+
+        <div>
+          <span style="display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px">Photo</span>
+          <button id="addPhoto" type="button" class="btn secondary">📷 Add Photo</button>
+          <input id="photoInput" type="file" accept="image/*" hidden>
+        </div>
+
         <label>
           <span>Meaning (English)</span>
           <input id="meaning" type="text" placeholder="Hello" required>
@@ -195,7 +233,6 @@
 
       <div class="table-wrap">
         <table aria-label="Useful Mandarin words list">
-          <!-- Set column widths -->
           <colgroup>
             <col style="width:56px">
             <col class="col-pron">
@@ -220,6 +257,18 @@
     </div>
   </div>
 
+  <!-- Lightbox -->
+  <div id="lightbox" hidden>
+    <div class="lb-inner">
+      <img id="lbImg" src="" alt="">
+      <div class="lb-controls">
+        <button class="lb-btn" id="zoomIn">＋</button>
+        <button class="lb-btn" id="zoomOut">－</button>
+        <button class="lb-btn lb-close" id="lbClose">✕</button>
+      </div>
+    </div>
+  </div>
+
   <script>
   (function(){
 
@@ -237,16 +286,21 @@
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
     const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const TABLE = 'learning_words';
+    const BUCKET = 'learning_media'; // create once in Supabase → Storage (public)
 
+    // form elements
     const form = document.getElementById('entry-form');
     const pinyinEl = document.getElementById('pinyin');
     const detailsEl = document.getElementById('details');
+    const photoBtn = document.getElementById('addPhoto');
+    const photoInput = document.getElementById('photoInput');
     const meaningEl = document.getElementById('meaning');
     const hanziEl = document.getElementById('hanzi');
     const listEl = document.getElementById('list');
     const countEl = document.getElementById('count');
     const themeToggle = document.getElementById('themeToggle');
 
+    // theme
     const THEME_KEY = 'mandarin_words_theme';
     const savedTheme = localStorage.getItem(THEME_KEY);
     if(savedTheme){ document.documentElement.setAttribute('data-theme', savedTheme); }
@@ -257,6 +311,39 @@
       localStorage.setItem(THEME_KEY, now);
     });
 
+    // auto-resize Details textarea
+    const autoGrow = el => { el.style.height='auto'; el.style.height = Math.min(el.scrollHeight, 420) + 'px'; };
+    ['input','keyup','change'].forEach(evt=> detailsEl.addEventListener(evt, ()=>autoGrow(detailsEl)));
+    autoGrow(detailsEl);
+
+    // upload photo → insert URL into Details
+    photoBtn.addEventListener('click', ()=> photoInput.click());
+    photoInput.addEventListener('change', async ()=>{
+      const file = photoInput.files?.[0];
+      if(!file) return;
+      const ext = file.name.split('.').pop();
+      const path = `details/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const { error } = await supabase.storage.from(BUCKET).upload(path, file, { upsert: true, cacheControl: '3600' });
+      if(error){
+        console.warn('Upload failed. Make sure bucket "learning_media" exists and is public.', error);
+        alert('Upload failed. Please create a public bucket named "learning_media" in Supabase Storage.');
+        return;
+      }
+      const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
+      const url = data?.publicUrl || '';
+      if(url){
+        // insert a markdown-like image line
+        const insert = (detailsEl.value && !/\s$/.test(detailsEl.value)) ? `\n${url}` : url;
+        const start = detailsEl.selectionStart ?? detailsEl.value.length;
+        const end = detailsEl.selectionEnd ?? detailsEl.value.length;
+        detailsEl.value = detailsEl.value.slice(0,start) + insert + detailsEl.value.slice(end);
+        autoGrow(detailsEl);
+        detailsEl.focus();
+      }
+      photoInput.value = '';
+    });
+
+    // data
     let rows = [];        
     let hintMode = false; 
 
@@ -275,7 +362,7 @@
       if(error){ console.error(error); }
       if(!data || data.length === 0){
         hintMode = true;
-        rows = [{ id:'sample', pinyin:'nĭ hăo', details:'greeting', meaning:'Hello', hanzi:'你好', position:0 }];
+        rows = [{ id:'sample', pinyin:'nĭ hăo', details:'greeting; ==tone tip==\nhttps://example.com/hello.jpg', meaning:'Hello', hanzi:'你好', position:0 }];
       }else{
         rows = data; sortRows();
       }
@@ -298,7 +385,7 @@
       render();
     }
 
-    /* ---------- simplified phonetics (no double 'y') ---------- */
+    /* ---------- phonetics (simplified: no double 'y') ---------- */
     const deTone = s => {
       const map = {
         'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A',
@@ -381,6 +468,32 @@
     }
     /* ---------- /phonetics ---------- */
 
+    /* ---------- Details renderer (mini-markdown) ---------- */
+    function escapeHtml(s){
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+    function renderDetails(raw=''){
+      let s = escapeHtml(raw);
+
+      // images: markdown ![alt](url)
+      s = s.replace(/!\[([^\]]*)\]\((https?:\/\/[^\s)]+)\)/g, (_,alt,url)=>`<img class="zoomable" src="${url}" alt="${alt||''}">`);
+      // images: bare .png/.jpg/.jpeg/.gif/.webp URLs
+      s = s.replace(/(https?:\/\/[^\s]+?\.(?:png|jpe?g|gif|webp))/gi, url=>`<img class="zoomable" src="${url}" alt="">`);
+      // links (non-image)
+      s = s.replace(/(https?:\/\/[^\s<]+)(?![^<>]*>)/g, '<a href="$1" target="_blank" rel="noopener">$1</a>');
+
+      // highlight / bold / italics / code
+      s = s.replace(/==(.+?)==/g, '<mark>$1</mark>');
+      s = s.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+      s = s.replace(/\*(.+?)\*/g, '<em>$1</em>');
+      s = s.replace(/`(.+?)`/g, '<code>$1</code>');
+
+      // line breaks
+      s = s.replace(/\n/g, '<br>');
+      return s;
+    }
+    /* ---------- /renderer ---------- */
+
     function render(){
       listEl.innerHTML = '';
       rows.forEach((row, idx)=>{
@@ -388,12 +501,21 @@
         if(hintMode) tr.classList.add('sample');
         tr.dataset.id = row.id;
 
+        // number
         const num = document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
-        tr.appendChild(makeCell(row.pinyin, 'pinyin'));   // Pronunciation
-        tr.appendChild(makeCell(row.details ?? '', 'details')); // Details (wide)
+        // pronunciation
+        tr.appendChild(makeCell(row.pinyin, 'pinyin'));
+        // details (rich)
+        const det = document.createElement('td'); det.className='details';
+        det.dataset.raw = row.details ?? '';
+        det.innerHTML = renderDetails(row.details ?? '');
+        tr.appendChild(det);
+        // meaning
         tr.appendChild(makeCell(row.meaning));
+        // hanzi
         const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd);
 
+        // actions
         const actions = document.createElement('td'); actions.className = 'actions';
         const edit = document.createElement('button'); edit.className='icon-btn'; edit.title='Edit'; edit.innerHTML=pencil(); edit.dataset.mode='edit';
         edit.addEventListener('click', ()=> toggleEdit(tr, edit));
@@ -418,8 +540,9 @@
       return td;
     }
 
+    // Enter to save on normal cells; Shift+Enter ignored (line break) only applies to textarea we create for Details
     function handleEnterToSave(e){
-      if(e.key === 'Enter'){
+      if(e.key === 'Enter' && !e.shiftKey){
         e.preventDefault();
         const tr=e.currentTarget.closest('tr');
         const btn=tr.querySelector('.icon-btn');
@@ -428,31 +551,71 @@
     }
 
     function toggleEdit(tr, editBtn){
+      const id = tr.dataset.id;
+      const tds = Array.from(tr.querySelectorAll('td'));
+      const pron = tds[1];        // pinyin cell
+      const det  = tds[2];        // details cell (rich)
+      const mean = tds[3];        // meaning
+      const han  = tds[4];        // hanzi
+
       if(editBtn.dataset.mode === 'edit'){
         if(hintMode){ hintMode=false; }
-        const cells = Array.from(tr.querySelectorAll('td')).slice(1,5);
-        cells.forEach((td,i)=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown', handleEnterToSave); if(i===0) td.focus(); });
+
+        // make simple cells editable
+        [pron, mean, han].forEach((td,i)=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown', handleEnterToSave); });
+        pron.focus();
+
+        // swap Details cell with a textarea that holds RAW text
+        const raw = det.dataset.raw || det.textContent || '';
+        det.dataset.raw = raw;
+        det._oldHTML = det.innerHTML;
+        det.innerHTML = '';
+        const ta = document.createElement('textarea');
+        ta.className = 'edit-details';
+        ta.value = raw;
+        ta.style.minHeight = '120px';
+        ta.style.width = '100%';
+        ta.style.background = 'var(--field)';
+        ta.style.color = 'var(--ink)';
+        ta.style.border = '1px solid var(--line)';
+        ta.style.borderRadius = '10px';
+        ta.style.padding = '10px 12px';
+        ta.style.fontFamily = '"Inter", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif';
+        ta.style.fontStyle = 'italic';
+        ta.style.fontWeight = '600';
+        det.appendChild(ta);
+
+        // auto-grow while typing
+        const grow = ()=>{ ta.style.height='auto'; ta.style.height = Math.min(ta.scrollHeight, 600) + 'px'; };
+        ['input','keyup','change'].forEach(evt=> ta.addEventListener(evt, grow));
+        grow();
+
         tr.classList.add('editing'); editBtn.dataset.mode='save'; editBtn.innerHTML=check();
       }else{
-        const id = tr.dataset.id;
-        const cells = Array.from(tr.querySelectorAll('td')).slice(1,5);
-        const updated = { 
-          pinyin: cells[0].textContent.trim(), 
-          details: cells[1].textContent.trim(), 
-          meaning: cells[2].textContent.trim(), 
-          hanzi: cells[3].textContent.trim() 
-        };
-        cells.forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown', handleEnterToSave); });
+        // collect values
+        const newPinyin = pron.textContent.trim();
+        const newMeaning= mean.textContent.trim();
+        const newHanzi  = han.textContent.trim();
+        const ta = tr.querySelector('textarea.edit-details');
+        const newDetails = ta ? ta.value.trim() : (det.dataset.raw || '');
+
+        // lock cells
+        [pron, mean, han].forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown', handleEnterToSave); });
         tr.classList.remove('editing'); editBtn.dataset.mode='edit'; editBtn.innerHTML=pencil();
 
+        // restore rendered Details
+        det.dataset.raw = newDetails;
+        det.innerHTML = renderDetails(newDetails);
+
+        // refresh phonetics for this row immediately
         applyPhonetics(tr);
 
         if(id && id !== 'sample'){
-          supabase.from(TABLE).update(updated).eq('id', id).then(({error})=>{
+          supabase.from(TABLE).update({ pinyin:newPinyin, details:newDetails, meaning:newMeaning, hanzi:newHanzi }).eq('id', id).then(({error})=>{
             if(error){
-              console.warn('Update with details failed; add column:\nALTER TABLE public.learning_words ADD COLUMN details text;');
-              const { details, ...noDetails } = updated;
-              supabase.from(TABLE).update(noDetails).eq('id', id).then(({error:e2})=>{ if(e2) console.error(e2); });
+              console.warn('Update failed (maybe details column missing). Add it once:\nALTER TABLE public.learning_words ADD COLUMN details text;', error);
+              // retry without details
+              supabase.from(TABLE).update({ pinyin:newPinyin, meaning:newMeaning, hanzi:newHanzi }).eq('id', id).then(({error:e2})=>{ if(e2) console.error(e2); });
             }
           });
         }
@@ -505,11 +668,40 @@
       if(error){ console.error(error); return; }
       addOrUpdate(data); 
       form.reset(); pinyinEl.focus();
+      detailsEl.value = ''; // clear textarea height
     });
 
     function pencil(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/></svg>'}
     function check(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>'}
     function trash(){return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>'}
+
+    // Lightbox logic
+    const lightbox = document.getElementById('lightbox');
+    const lbImg = document.getElementById('lbImg');
+    const lbClose = document.getElementById('lbClose');
+    const zoomIn = document.getElementById('zoomIn');
+    const zoomOut = document.getElementById('zoomOut');
+    let scale = 1;
+
+    function openLightbox(src){
+      lbImg.src = src;
+      scale = 1;
+      lbImg.style.transform = 'scale(1)';
+      lightbox.hidden = false;
+    }
+    function closeLightbox(){ lightbox.hidden = true; }
+    zoomIn.addEventListener('click', ()=>{ scale = Math.min(scale*1.2, 8); lbImg.style.transform = `scale(${scale})`; });
+    zoomOut.addEventListener('click', ()=>{ scale = Math.max(scale/1.2, .5); lbImg.style.transform = `scale(${scale})`; });
+    lbClose.addEventListener('click', closeLightbox);
+    lightbox.addEventListener('click', (e)=>{ if(e.target === lightbox) closeLightbox(); });
+    window.addEventListener('keydown', (e)=>{ if(!lightbox.hidden && e.key==='Escape') closeLightbox(); });
+    lbImg.addEventListener('wheel', (e)=>{ e.preventDefault(); if(e.deltaY<0) zoomIn.click(); else zoomOut.click(); }, { passive:false });
+
+    // delegate clicks on details images
+    document.addEventListener('click', (e)=>{
+      const img = e.target.closest('.details img.zoomable');
+      if(img){ openLightbox(img.src); }
+    });
 
     loadInitial();
     startRealtime();
