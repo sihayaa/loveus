@@ -8,21 +8,24 @@
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,400;0,600;1,400;1,600&family=Noto+Serif+SC:wght@500;700&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#f7f4ec;      
-      --ink:#1e2430;        
-      --accent:#7a5af8;       
-      --accent-2:#67e4ca;      
-      --card:#ffffff;
-      --line:#e6e0d3;
-      --glow1: rgba(122,90,248,.28);
+      --bg:#0b0f2f;               
+      --ink:#e8ecf8;              
+      --muted:#a6afc6;          
+      --accent:#7a5af8;            
+      --accent-2:#67e4ca;         
+      --card:#0f152b;             
+      --field:#0c1326;            
+      --line:rgba(255,255,255,.10);
+      --glow1: rgba(122,90,248,.25);
       --glow2: rgba(122,90,248,.18);
-      --focusRing: rgba(122,90,248,.14);
+      --focusRing: rgba(122,90,248,.28);
+      --hover:#141c36;            
     }
     [data-theme="mint"]{
       --accent: var(--accent-2);
-      --glow1: rgba(103,228,202,.28);
+      --glow1: rgba(103,228,202,.25);
       --glow2: rgba(103,228,202,.18);
-      --focusRing: rgba(103,228,202,.18);
+      --focusRing: rgba(103,228,202,.28);
     }
 
     *{box-sizing:border-box}
@@ -51,7 +54,7 @@
       background: var(--accent); color:#fff; text-decoration:none; 
       font-weight:800; letter-spacing:.2px;
       border:1px solid rgba(0,0,0,.06);
-      box-shadow:0 6px 16px rgba(0,0,0,.12);
+      box-shadow:0 6px 16px rgba(0,0,0,.24);
       transition: transform .08s ease, filter .12s ease;
       -webkit-tap-highlight-color: transparent;
     }
@@ -62,57 +65,63 @@
     .wrap{max-width:980px;margin:0 auto}
     .card{
       position:relative; background:var(--card); border:1px solid var(--line);
-      border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.06); padding:22px 22px 18px
+      border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:22px 22px 18px
     }
     .card:before{
       content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1;
       background: var(--accent);
-      box-shadow: 0 0 16px var(--glow1), 0 0 26px var(--glow2);
+      opacity:.16;
+      box-shadow: 0 0 18px var(--glow1), 0 0 28px var(--glow2);
+      filter: blur(14px);
     }
 
     h1{margin:4px 0 8px; display:flex; align-items:flex-end; gap:10px; flex-wrap:wrap}
     h1 .script{font-weight:900; font-size:36px; letter-spacing:.2px; color:var(--accent)}
-    h1 .tag{font-weight:800; font-size:28px; padding:2px 10px; border-radius:14px; color:#2a3040}
-    h1 small{display:block; font-weight:600; font-size:14px; color:#6a7082; margin-top:-2px}
+    h1 .tag{font-weight:800; font-size:28px; padding:2px 10px; border-radius:14px; color:#cdd6f2}
+    h1 small{display:block; font-weight:600; font-size:14px; color:var(--muted); margin-top:-2px}
 
-    .sub{margin:0 0 16px;color:#5b6170}
+    .sub{margin:0 0 16px;color:var(--muted)}
 
-    form#entry-form{display:grid; grid-template-columns: 1fr 1fr 1fr auto; gap:12px; align-items:end}
-    label span{display:block; font-size:12px; color:#5b6170; margin:0 0 6px 6px}
+    form#entry-form{
+      display:grid; grid-template-columns: 1.1fr .9fr 1fr 1fr auto; 
+      gap:12px; align-items:end
+    }
+    label span{display:block; font-size:12px; color:var(--muted); margin:0 0 6px 6px}
     input[type="text"]{
-      width:100%; padding:12px 12px; border:1px solid var(--line); border-radius:14px; outline:none; background:#fff;
+      width:100%; padding:12px 12px; border:1px solid var(--line); border-radius:14px; outline:none;
+      background:var(--field); color:var(--ink);
       transition:box-shadow .16s ease, border .16s ease, transform .06s ease
     }
-    input[type="text"]::placeholder{ color:#a8aebe; opacity:.75; font-style:italic }
+    input[type="text"]::placeholder{ color:#8fa0c4; opacity:.85; font-style:italic }
     input[type="text"]:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--focusRing)}
     button.add{height:46px; padding:0 18px; border:0; border-radius:14px; background:var(--accent); color:white; font-weight:800; cursor:pointer; letter-spacing:.3px}
     button.add:active{transform:translateY(1px)}
 
     .toolbar{display:flex; align-items:center; gap:10px; margin:14px 0 6px}
-    .pill{border:1px solid var(--line); background:#fff; padding:8px 12px; border-radius:999px; font-size:13px; color:#3c4353}
-    .pill strong{color:var(--accent)}
+    .pill{border:1px solid var(--line); background:var(--field); padding:8px 12px; border-radius:999px; font-size:13px; color:#d6dbef}
+    .pill strong{color:#fff}
     .right{margin-left:auto}
     .toggle{cursor:pointer}
 
     .table-wrap{margin-top:8px}
     table{width:100%; border-collapse:separate; border-spacing:0}
-    thead th{position:sticky; top:0; background:#fff; z-index:1}
+    thead th{position:sticky; top:0; background:var(--card); z-index:1}
     th, td{border-bottom:1px solid var(--line); padding:14px 10px; text-align:left}
-    th{font-size:13px; color:#5b6170; font-weight:700; letter-spacing:.3px}
+    th{font-size:13px; color:#bac4e4; font-weight:700; letter-spacing:.3px}
     tbody tr{transition:background .12s ease}
-    tbody tr:hover td{background:#fcfbff}
-    td{vertical-align:middle}
-    .num{width:56px; text-align:center; color:#7c8296}
+    tbody tr:hover td{background:var(--hover)}
+    td{vertical-align:middle; color:var(--ink)}
+    .num{width:56px; text-align:center; color:#98a3c9}
     .hanzi{font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-style:normal; font-weight:700}
     .actions{width:88px; text-align:right}
 
-    .icon-btn{border:0; background:transparent; cursor:pointer; font-size:16px; padding:6px 8px; border-radius:10px; color:#3b3f50}
+    .icon-btn{border:0; background:transparent; cursor:pointer; font-size:16px; padding:6px 8px; border-radius:10px; color:#cfd6f1}
     .icon-btn svg{width:18px; height:18px; display:block}
-    .icon-btn:hover{background:#f3f1ff}
-    tr.editing td{background:#faf8ff}
+    .icon-btn:hover{background:rgba(255,255,255,.06)}
+    tr.editing td{background:rgba(122,90,248,.07)}
 
     tbody td{font-family:"JetBrains Mono","Poppins","Inter",sans-serif; font-weight:600; font-style:italic; letter-spacing:.2px}
-    .sample td{color:rgba(30,36,48,.32); opacity:1; font-style:italic; font-weight:500}
+    .sample td{color:rgba(255,255,255,.45); opacity:1; font-style:italic; font-weight:500}
 
     /* keep only native small tooltip via title */
     .pinyin{ cursor: help; }
@@ -139,14 +148,18 @@
       <h1>
         <span class="script">Learning</span>
         <span class="tag">Mandarin words that are COOL</span> 
-        <small>quick study list • pinyin → meaning → 汉字</small>
+        <small>quick study list • pinyin → details → meaning → 汉字</small>
       </h1>
-      <p class="sub">Type the three fields below. Press <strong>Enter</strong> (or click Add) to append to the list. To change a row later, click <strong>Edit</strong> — cells are locked by default.</p>
+      <p class="sub">Type the four fields below. Press <strong>Enter</strong> (or click Add) to append to the list. To change a row later, click <strong>Edit</strong>.</p>
 
       <form id="entry-form" autocomplete="off">
         <label>
           <span>Pronunciation (Pinyin)</span>
           <input id="pinyin" type="text" placeholder="nĭ hăo" required>
+        </label>
+        <label>
+          <span>Details (usage / note)</span>
+          <input id="details" type="text" placeholder="greeting; casual" >
         </label>
         <label>
           <span>Meaning (English)</span>
@@ -170,6 +183,7 @@
             <tr>
               <th class="num">#</th>
               <th>Pronunciation</th>
+              <th>Details</th>
               <th>Meaning</th>
               <th>Mandarin</th>
               <th class="actions">&nbsp;</th>
@@ -201,6 +215,7 @@
 
     const form = document.getElementById('entry-form');
     const pinyinEl = document.getElementById('pinyin');
+    const detailsEl = document.getElementById('details');
     const meaningEl = document.getElementById('meaning');
     const hanziEl = document.getElementById('hanzi');
     const listEl = document.getElementById('list');
@@ -235,7 +250,7 @@
       if(error){ console.error(error); }
       if(!data || data.length === 0){
         hintMode = true;
-        rows = [{ id:'sample', pinyin:'nĭ hăo', meaning:'Hello', hanzi:'你好', position:0 }];
+        rows = [{ id:'sample', pinyin:'nĭ hăo', details:'greeting', meaning:'Hello', hanzi:'你好', position:0 }];
       }else{
         rows = data; sortRows();
       }
@@ -258,7 +273,6 @@
       render();
     }
 
-    /* ---------- phonetics helpers (pure front-end) ---------- */
     const deTone = s => {
       const map = {
         'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A',
@@ -285,7 +299,9 @@
     const initialEng = ini => ({
       'zh':'j',  'ch':'ch', 'sh':'sh',
       'z':'dz',  'c':'ts',  's':'s',
-      'x':'shy', 'q':'chy', 'j':'jy',
+      'x':'sh',  
+      'q':'ch',  
+      'j':'j',   
       'r':'r',   'y':'y',   'w':'w',
       'b':'b','p':'p','m':'m','f':'f',
       'd':'d','t':'t','n':'n','l':'l',
@@ -294,7 +310,7 @@
 
     function finalEng(ini, fin){
       if (['zh','ch','sh','r','z','c','s'].includes(ini) && fin === 'i'){
-        return 'rr'; // syllabic-ish sound
+        return 'rr'; 
       }
       if ((ini==='j'||ini==='q'||ini==='x'||ini==='y') && fin.startsWith('ue')) fin = 'weh';
       if (fin === 'ü')  fin = 'yoo';
@@ -326,10 +342,7 @@
       for (let syl of syls){
         const [ini, finRaw] = splitInitialFinal(syl);
         let joined = (initialEng(ini) + finalEng(ini, finRaw))
-          .replace(/^shyweh$/,'shweh')
-          .replace(/^jyweh$/,'jweh')
-          .replace(/^chyweh$/,'chweh')
-          .replace(/^you$/,'yoe');
+          .replace(/^you$/,'yoe'); // stylistic
         out.push(joined);
       }
       return out.join(' ');
@@ -338,15 +351,11 @@
     function applyPhonetics(scope=document){
       scope.querySelectorAll('.pinyin').forEach(td=>{
         const raw = (td.textContent || '').trim();
-        if(!raw){
-          td.removeAttribute('title');
-          return;
-        }
-        const phon = pinyinToEasyEnglish(raw);
-        td.title = phon; // native small tooltip only
+        if(!raw){ td.removeAttribute('title'); return; }
+        td.title = pinyinToEasyEnglish(raw); 
       });
     }
-    /* ---------- /phonetics helpers ---------- */
+
 
     function render(){
       listEl.innerHTML = '';
@@ -356,9 +365,10 @@
         tr.dataset.id = row.id;
 
         const num = document.createElement('td'); num.className='num'; num.textContent = hintMode ? '' : (idx+1); tr.appendChild(num);
-        tr.appendChild(makeCell(row.pinyin, 'pinyin'));       // pronunciation cell with class
-        tr.appendChild(makeCell(row.meaning));
-        const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd);
+        tr.appendChild(makeCell(row.pinyin, 'pinyin'));          
+        tr.appendChild(makeCell(row.details ?? ''));               
+        tr.appendChild(makeCell(row.meaning));                     
+        const hanziTd = makeCell(row.hanzi, 'hanzi'); tr.appendChild(hanziTd); 
 
         const actions = document.createElement('td'); actions.className = 'actions';
         const edit = document.createElement('button'); edit.className='icon-btn'; edit.title='Edit'; edit.innerHTML=pencil(); edit.dataset.mode='edit';
@@ -374,7 +384,6 @@
       });
       countEl.textContent = hintMode ? 0 : rows.length;
 
-      // compute tooltips after rows exist
       applyPhonetics(listEl);
     }
 
@@ -398,21 +407,31 @@
     function toggleEdit(tr, editBtn){
       if(editBtn.dataset.mode === 'edit'){
         if(hintMode){ hintMode=false; }
-        const cells = Array.from(tr.querySelectorAll('td')).slice(1,4);
+        const cells = Array.from(tr.querySelectorAll('td')).slice(1,5); 
         cells.forEach((td,i)=>{ td.contentEditable=true; td.spellcheck=false; td.addEventListener('keydown', handleEnterToSave); if(i===0) td.focus(); });
         tr.classList.add('editing'); editBtn.dataset.mode='save'; editBtn.innerHTML=check();
       }else{
         const id = tr.dataset.id;
-        const cells = Array.from(tr.querySelectorAll('td')).slice(1,4);
-        const updated = { pinyin: cells[0].textContent.trim(), meaning: cells[1].textContent.trim(), hanzi: cells[2].textContent.trim() };
+        const cells = Array.from(tr.querySelectorAll('td')).slice(1,5);
+        const updated = { 
+          pinyin: cells[0].textContent.trim(), 
+          details: cells[1].textContent.trim(), 
+          meaning: cells[2].textContent.trim(), 
+          hanzi: cells[3].textContent.trim() 
+        };
         cells.forEach(td=>{ td.contentEditable=false; td.removeEventListener('keydown', handleEnterToSave); });
         tr.classList.remove('editing'); editBtn.dataset.mode='edit'; editBtn.innerHTML=pencil();
 
-        // refresh phonetics for this row immediately
         applyPhonetics(tr);
 
         if(id && id !== 'sample'){
-          supabase.from(TABLE).update(updated).eq('id', id).then(({error})=>{ if(error) console.error(error); });
+          supabase.from(TABLE).update(updated).eq('id', id).then(({error})=>{
+            if(error){
+              console.warn('Update with details failed; trying without details. To enable details, add a column:\nALTER TABLE public.learning_words ADD COLUMN details text;');
+              const { details, ...noDetails } = updated;
+              supabase.from(TABLE).update(noDetails).eq('id', id).then(({error:e2})=>{ if(e2) console.error(e2); });
+            }
+          });
         }
       }
     }
@@ -429,13 +448,14 @@
     form.addEventListener('submit', async (e)=>{
       e.preventDefault();
       const p = pinyinEl.value.trim();
+      const d = detailsEl.value.trim();
       const m = meaningEl.value.trim();
       const h = hanziEl.value.trim();
       if(!p || !m || !h){
         [pinyinEl, meaningEl, hanziEl].forEach(el=>{
-          if(!el.value.trim()){
-            el.style.boxShadow='0 0 0 3px rgba(255,0,0,.12)';
-            el.style.borderColor='#ffb4b4';
+          if(!el.value?.trim()){
+            el.style.boxShadow='0 0 0 3px rgba(255,0,0,.18)';
+            el.style.borderColor='#ff9494';
             setTimeout(()=>{el.style.boxShadow=''; el.style.borderColor='';},900);
           }
         });
@@ -444,11 +464,22 @@
 
       if(hintMode){ rows = []; hintMode = false; }
       const nextPos = rows.length;
-      const { data, error } = await supabase
+
+      // Try insert with details; if the column doesn't exist, retry without it.
+      let { data, error } = await supabase
         .from(TABLE)
-        .insert({ pinyin:p, meaning:m, hanzi:h, position: nextPos })
+        .insert({ pinyin:p, details:d, meaning:m, hanzi:h, position: nextPos })
         .select()
         .single();
+      if(error){
+        console.warn('Insert with details failed; retrying without details. To enable: ALTER TABLE public.learning_words ADD COLUMN details text;');
+        const res2 = await supabase
+          .from(TABLE)
+          .insert({ pinyin:p, meaning:m, hanzi:h, position: nextPos })
+          .select()
+          .single();
+        data = res2.data; error = res2.error;
+      }
       if(error){ console.error(error); return; }
       addOrUpdate(data); 
       form.reset(); pinyinEl.focus();
