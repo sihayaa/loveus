@@ -13,6 +13,7 @@
       --card:#0f152b; --field:#0c1326; --line:rgba(255,255,255,.10);
       --glow1: rgba(122,90,248,.25); --glow2: rgba(122,90,248,.18);
       --focusRing: rgba(122,90,248,.28); --hover:#141c36; --danger:#ff6b6b;
+      --col-gap-hair: rgba(255,255,255,.06);
     }
     [data-theme="mint"]{ --accent:var(--accent-2); --glow1:rgba(103,228,202,.25); --glow2:rgba(103,228,202,.18); --focusRing:rgba(103,228,202,.28) }
     *{box-sizing:border-box}
@@ -29,8 +30,25 @@
     .back-btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
 
     .wrap{ max-width:clamp(1100px,95vw,1500px); margin:0 auto }
-    .card{ position:relative; background:var(--card); border:1px solid var(--line); border-radius:22px; box-shadow:0 10px 30px rgba(0,0,0,.35); padding:22px 22px 18px }
-    .card:before{ content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1; background:var(--accent); opacity:.16; box-shadow:0 0 18px var(--glow1),0 0 28px var(--glow2); filter:blur(14px) }
+
+    /* Card with glow + light ring */
+    .card{
+      position:relative; background:var(--card);
+      border:1px solid var(--line); border-radius:22px;
+      box-shadow:0 10px 30px rgba(0,0,0,.35);
+      padding:22px 22px 18px;
+    }
+    .card:before{ /* soft colored glow */
+      content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1;
+      background:var(--accent); opacity:.16;
+      box-shadow:0 0 18px var(--glow1),0 0 28px var(--glow2); filter:blur(14px);
+    }
+    .card::after{ /* crisp light ring (inner + hairline outer) */
+      content:""; position:absolute; inset:0; border-radius:22px; pointer-events:none;
+      box-shadow:
+        inset 0 0 0 1.5px rgba(255,255,255,.16),  /* inner bright rim */
+        0 0 0 1px rgba(255,255,255,.08);         /* outer hairline */
+    }
 
     h1{margin:4px 0 8px; display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap}
     h1 .script{font-weight:900; font-size:36px; letter-spacing:.2px; color:var(--accent)}
@@ -67,7 +85,12 @@
     .hanzi{ font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-weight:700 }
     .actions{ width:140px; text-align:right; white-space:nowrap }
     .actions .btnrow{ display:flex; gap:8px; justify-content:flex-end }
-    col.col-pron{width:28%} col.col-details{width:40%} col.col-meaning{width:20%} col.col-hanzi{width:12%}
+
+    /* column widths (rebalance) */
+    col.col-pron{width:26%}
+    col.col-details{width:38%}
+    col.col-meaning{width:24%}
+    col.col-hanzi{width:12%}
 
     .icon-btn{ border:0; background:transparent; cursor:pointer; padding:6px 8px; border-radius:10px; color:#cfd6f1; display:inline-flex; align-items:center; justify-content:center }
     .icon-btn:hover{ background:rgba(255,255,255,.06) }
@@ -92,15 +115,41 @@
     .mini{ height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:transparent; color:#d6dbef; font-weight:800; cursor:pointer }
     .mini:hover{ background:rgba(255,255,255,.06) }
 
-    /* Lightbox */
+    /* Lightbox (no buttons) */
     #lightbox[hidden]{ display:none }
     #lightbox{ position:fixed; inset:0; background:rgba(0,0,0,.8); display:flex; align-items:center; justify-content:center; z-index:99999 }
     #lightbox .lb-inner{ position:relative; max-width:92vw; max-height:92vh }
     #lightbox img{ max-width:92vw; max-height:92vh; transform-origin:center; transition:transform .08s linear }
-    /* (controls removed) */
 
-    @media (max-width:1200px){ col.col-pron{width:30%} col.col-details{width:38%} col.col-meaning{width:20%} col.col-hanzi{width:12%} }
-    @media (max-width:860px){ form#entry-form{ grid-template-columns:1fr } .actions{ width:120px } }
+    /* ======= column spacing polish ======= */
+    /* tighten Pronunciation ↔ Details a touch */
+    tbody td:nth-child(2){ padding-right:12px; }
+    thead th:nth-child(2){ padding-right:12px; }
+
+    /* give breathing room between Details ↔ Meaning */
+    tbody td:nth-child(3){ padding-right:22px; }
+    thead th:nth-child(3){ padding-right:22px; }
+    tbody td:nth-child(4){ padding-left:22px; }
+    thead th:nth-child(4){ padding-left:22px; }
+
+    /* subtle vertical separators to make it read cleaner */
+    thead th:nth-child(3), tbody td:nth-child(3),
+    thead th:nth-child(4), tbody td:nth-child(4){
+      border-left:1px solid var(--col-gap-hair);
+    }
+
+    @media (max-width:1200px){
+      col.col-pron{width:28%} col.col-details{width:38%} col.col-meaning{width:22%} col.col-hanzi{width:12%}
+    }
+    @media (max-width:860px){
+      form#entry-form{ grid-template-columns:1fr }
+      .actions{ width:120px }
+      /* drop separators on narrow screens for space */
+      thead th:nth-child(3), tbody td:nth-child(3),
+      thead th:nth-child(4), tbody td:nth-child(4){ border-left:0 }
+      tbody td:nth-child(3){ padding-right:16px }
+      tbody td:nth-child(4){ padding-left:16px }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -453,7 +502,7 @@
     const trash =()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2"/></svg>';
     const xmark=()=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
 
-    // Lightbox (controls removed; scroll to zoom, click outside/ESC to close)
+    // Lightbox (scroll to zoom, click outside/ESC to close)
     const lightbox=document.getElementById('lightbox');
     const lbImg=document.getElementById('lbImg');
     let scale=1;
@@ -466,22 +515,16 @@
     }
     function closeLightbox(){ lightbox.hidden=true; }
 
-    // Wheel zoom (no buttons)
     lbImg.addEventListener('wheel',(e)=>{
       e.preventDefault();
-      if(e.deltaY<0){ // zoom in
-        scale=Math.min(scale*1.2,8);
-      }else{          // zoom out
-        scale=Math.max(scale/1.2,.5);
-      }
+      if(e.deltaY<0){ scale=Math.min(scale*1.2,8); }
+      else{ scale=Math.max(scale/1.2,.5); }
       lbImg.style.transform=`scale(${scale})`;
     },{passive:false});
 
-    // Close on overlay click / ESC
     lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
     window.addEventListener('keydown',(e)=>{ if(!lightbox.hidden && e.key==='Escape') closeLightbox(); });
 
-    // Open on any zoomable image click
     document.addEventListener('click',(e)=>{ const img=e.target.closest('.details img.zoomable'); if(img) openLightbox(img.src); });
 
     loadInitial(); startRealtime();
