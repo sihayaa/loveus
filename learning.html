@@ -13,41 +13,58 @@
       --card:#0f152b; --field:#0c1326; --line:rgba(255,255,255,.10);
       --glow1: rgba(122,90,248,.25); --glow2: rgba(122,90,248,.18);
       --focusRing: rgba(122,90,248,.28); --hover:#141c36; --danger:#ff6b6b;
+      /* new ring color (changes with theme) */
+      --accentRing: rgba(122,90,248,.55);
       --col-gap-hair: rgba(255,255,255,.06);
     }
-    [data-theme="mint"]{ --accent:var(--accent-2); --glow1:rgba(103,228,202,.25); --glow2:rgba(103,228,202,.18); --focusRing:rgba(103,228,202,.28) }
+    [data-theme="mint"]{
+      --accent:var(--accent-2);
+      --glow1:rgba(103,228,202,.25);
+      --glow2:rgba(103,228,202,.18);
+      --focusRing:rgba(103,228,202,.28);
+      --accentRing:rgba(103,228,202,.55); /* mint ring */
+    }
+
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0; background:var(--bg) url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg") center top/cover no-repeat fixed;
-      color:var(--ink); font:16px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; padding:26px; min-height:100dvh;
+      margin:0;
+      background:var(--bg) url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg") center top/cover no-repeat fixed;
+      color:var(--ink);
+      font:16px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      padding:26px; min-height:100dvh;
     }
     @media (max-width:860px){ body{ background-attachment:scroll } }
 
-    .back-btn{ position:fixed; top:26px; left:26px; z-index:9999; display:inline-flex; gap:8px; align-items:center;
+    .back-btn{
+      position:fixed; top:26px; left:26px; z-index:9999; display:inline-flex; gap:8px; align-items:center;
       padding:10px 14px; border-radius:14px; background:var(--accent); color:#fff; text-decoration:none; font-weight:800;
-      border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s }
+      border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s
+    }
     .back-btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
 
     .wrap{ max-width:clamp(1100px,95vw,1500px); margin:0 auto }
 
-    /* Card with glow + light ring */
+    /* ===== Card with glow + accent ring box ===== */
     .card{
       position:relative; background:var(--card);
       border:1px solid var(--line); border-radius:22px;
       box-shadow:0 10px 30px rgba(0,0,0,.35);
       padding:22px 22px 18px;
     }
-    .card:before{ /* soft colored glow */
+    /* soft glow behind */
+    .card::before{
       content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1;
       background:var(--accent); opacity:.16;
       box-shadow:0 0 18px var(--glow1),0 0 28px var(--glow2); filter:blur(14px);
     }
-    .card::after{ /* crisp light ring (inner + hairline outer) */
-      content:""; position:absolute; inset:0; border-radius:22px; pointer-events:none;
+    /* visible light box ring (follows 💜/💚) */
+    .card::after{
+      content:""; position:absolute; inset:-2px; /* push outside so it's obvious */
+      border-radius:24px; pointer-events:none;
       box-shadow:
-        inset 0 0 0 1.5px rgba(255,255,255,.16),  /* inner bright rim */
-        0 0 0 1px rgba(255,255,255,.08);         /* outer hairline */
+        0 0 0 2px var(--accentRing),              /* outer accent ring */
+        inset 0 0 0 1.3px rgba(255,255,255,.18);  /* crisp inner white rim */
     }
 
     h1{margin:4px 0 8px; display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap}
@@ -56,7 +73,7 @@
     h1 small{display:block; font-weight:600; font-size:14px; color:var(--muted); margin-top:-2px}
     .sub{margin:0 0 16px; color:var(--muted)}
 
-    /* compact add form (no Details here) */
+    /* compact add form */
     form#entry-form{
       display:grid; grid-template-columns: 1.2fr 1.2fr 1fr auto;
       gap:12px; align-items:end;
@@ -86,7 +103,7 @@
     .actions{ width:140px; text-align:right; white-space:nowrap }
     .actions .btnrow{ display:flex; gap:8px; justify-content:flex-end }
 
-    /* column widths (rebalance) */
+    /* balanced column widths */
     col.col-pron{width:26%}
     col.col-details{width:38%}
     col.col-meaning{width:24%}
@@ -105,12 +122,12 @@
     .details img.zoomable{ max-width:100%; max-height:140px; border-radius:12px; display:block; margin:6px 0; box-shadow:0 8px 24px rgba(0,0,0,.25); cursor:zoom-in }
     .details code{ background:rgba(255,255,255,.06); padding:.1em .35em; border-radius:.35em }
 
-    /* In-row editor (visual/WYSIWYG) */
+    /* WYS editor */
     .wys{
       min-height:120px; padding:10px 12px; border:1px solid var(--line); border-radius:10px;
       background:var(--field); color:var(--ink); font-style:italic; font-weight:600;
     }
-    .wys:focus{ outline: none; box-shadow:0 0 0 3px var(--focusRing); border-color:var(--accent) }
+    .wys:focus{ outline:none; box-shadow:0 0 0 3px var(--focusRing); border-color:var(--accent) }
     .edit-tools{ display:flex; gap:8px; align-items:center; margin-top:8px }
     .mini{ height:34px; padding:0 12px; border-radius:10px; border:1px solid var(--line); background:transparent; color:#d6dbef; font-weight:800; cursor:pointer }
     .mini:hover{ background:rgba(255,255,255,.06) }
@@ -121,22 +138,15 @@
     #lightbox .lb-inner{ position:relative; max-width:92vw; max-height:92vh }
     #lightbox img{ max-width:92vw; max-height:92vh; transform-origin:center; transition:transform .08s linear }
 
-    /* ======= column spacing polish ======= */
-    /* tighten Pronunciation ↔ Details a touch */
-    tbody td:nth-child(2){ padding-right:12px; }
-    thead th:nth-child(2){ padding-right:12px; }
-
-    /* give breathing room between Details ↔ Meaning */
-    tbody td:nth-child(3){ padding-right:22px; }
-    thead th:nth-child(3){ padding-right:22px; }
-    tbody td:nth-child(4){ padding-left:22px; }
-    thead th:nth-child(4){ padding-left:22px; }
-
-    /* subtle vertical separators to make it read cleaner */
+    /* spacing polish */
+    tbody td:nth-child(2){ padding-right:12px } /* Pronunciation → */
+    thead th:nth-child(2){ padding-right:12px }
+    tbody td:nth-child(3){ padding-right:22px } /* Details → */
+    thead th:nth-child(3){ padding-right:22px }
+    tbody td:nth-child(4){ padding-left:22px }  /* ← Meaning */
+    thead th:nth-child(4){ padding-left:22px }
     thead th:nth-child(3), tbody td:nth-child(3),
-    thead th:nth-child(4), tbody td:nth-child(4){
-      border-left:1px solid var(--col-gap-hair);
-    }
+    thead th:nth-child(4), tbody td:nth-child(4){ border-left:1px solid var(--col-gap-hair) }
 
     @media (max-width:1200px){
       col.col-pron{width:28%} col.col-details{width:38%} col.col-meaning{width:22%} col.col-hanzi{width:12%}
@@ -144,7 +154,6 @@
     @media (max-width:860px){
       form#entry-form{ grid-template-columns:1fr }
       .actions{ width:120px }
-      /* drop separators on narrow screens for space */
       thead th:nth-child(3), tbody td:nth-child(3),
       thead th:nth-child(4), tbody td:nth-child(4){ border-left:0 }
       tbody td:nth-child(3){ padding-right:16px }
@@ -165,7 +174,7 @@
       </h1>
       <p class="sub">Hover Pronunciation for a simple English-y sound guide. Click <strong>Edit</strong> on any row to add <em>Details</em> with text highlighting and real images (no links).</p>
 
-      <!-- compact add form -->
+      <!-- Add form -->
       <form id="entry-form" autocomplete="off">
         <label><span>Pronunciation (Pinyin)</span><input id="pinyin" type="text" placeholder="nĭ hăo" required></label>
         <label><span>Meaning (English)</span><input id="meaning" type="text" placeholder="Hello" required></label>
@@ -204,7 +213,7 @@
     </div>
   </div>
 
-  <!-- Lightbox (controls removed) -->
+  <!-- Lightbox -->
   <div id="lightbox" hidden>
     <div class="lb-inner">
       <img id="lbImg" src="" alt="">
@@ -265,7 +274,7 @@
     }
     function addOrUpdate(rec){ if(hintMode){ hintMode=false; rows=[]; } const i=rows.findIndex(r=>r.id===rec.id); if(i===-1) rows.push(rec); else rows[i]=rec; sortRows(); render(); }
 
-    /* --- phonetics (simplified) --- */
+    /* phonetics */
     const deTone=s=>s.replace(/./g,ch=>({'ā':'a','á':'a','ǎ':'a','à':'a','Ā':'A','Á':'A','Ǎ':'A','À':'A','ē':'e','é':'e','ě':'e','è':'e','Ē':'E','É':'E','Ě':'E','È':'E','ī':'i','í':'i','ǐ':'i','ì':'i','Ī':'I','Í':'I','Ǐ':'I','Ì':'I','ō':'o','ó':'o','ǒ':'o','ò':'o','Ō':'O','Ó':'O','Ǒ':'O','Ò':'O','ū':'u','ú':'u','ǔ':'u','ù':'u','Ū':'U','Ú':'U','Ǔ':'U','Ù':'U','ǖ':'ü','ǘ':'ü','ǚ':'ü','ǜ':'ü','Ü':'Ü','Ǖ':'Ü','Ǘ':'Ü','Ǚ':'Ü','Ǜ':'Ü','ń':'n','ň':'n','ǹ':'n','ḿ':'m'}[ch]??ch)).replace(/[’'·]/g,' ').toLowerCase();
     const splitInitialFinal=s=>{ const two=['zh','ch','sh']; for(const t of two) if(s.startsWith(t)) return [t,s.slice(2)]; const o=s[0]; if(/[bpmfdtnlgkhjqxrzcswy]/.test(o)) return [o,s.slice(1)]; return ['',s]; };
     const initialEng=i=>({'zh':'j','ch':'ch','sh':'sh','z':'dz','c':'ts','s':'s','x':'sh','q':'ch','j':'j','r':'r','y':'y','w':'w','b':'b','p':'p','m':'m','f':'f','d':'d','t':'t','n':'n','l':'l','g':'g','k':'k','h':'h','':''}[i]??i);
@@ -277,45 +286,33 @@
     function pinyinToEasyEnglish(p){ const clean=deTone(p).trim(); if(!clean) return ''; return clean.split(/\s+/).map(s=>{const [i,f]=splitInitialFinal(s); return (initialEng(i)+finalEng(i,f)).replace(/^you$/,'yoe');}).join(' '); }
     function applyPhonetics(scope=document){ scope.querySelectorAll('.pinyin').forEach(td=>{ const raw=(td.textContent||'').trim(); td.title = raw ? pinyinToEasyEnglish(raw) : ''; }); }
 
-    /* --- Details renderer: allows <img>, <strong>, <em>, <mark>, <code>, <br> --- */
+    /* Details renderer */
     function renderDetails(raw=''){
       let s=(raw||'').replace(/\r\n?/g,'\n').trim();
-
-      // keep <img ...> tags (sanitize attributes) by tokenizing them
       const tokens=[];
       s=s.replace(/<img\b[^>]*>/gi, tag=>{
         const src=(tag.match(/\bsrc\s*=\s*"(.*?)"/i)||[])[1] || '';
         const alt=(tag.match(/\balt\s*=\s*"(.*?)"/i)||[])[1] || '';
-        if(!/^https?:\/\//i.test(src)) return ''; // drop non-http
+        if(!/^https?:\/\//i.test(src)) return '';
         const id=tokens.push(`<img class="zoomable" src="${src}" alt="${alt.replace(/"/g,'&quot;')}">`) - 1;
         return `\u0000IMG${id}\u0000`;
       });
-
-      // markdown images ![alt](url)
       s=s.replace(/!\[([^\]]*)\]\(([^)]+)\)/g,(_,alt,url)=>{
         const u=(url||'').trim(); if(!u) return _;
         const id=tokens.push(`<img class="zoomable" src="${u}" alt="${(alt||'').replace(/"/g,'&quot;')}">`) - 1;
         return `\u0000IMG${id}\u0000`;
       });
-
-      // escape everything else
       s=s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
-      // light formatting
       s=s.replace(/==(.+?)==/g,'<mark>$1</mark>')
          .replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>')
          .replace(/\*(.+?)\*/g,'<em>$1</em>')
          .replace(/`(.+?)`/g,'<code>$1</code>')
          .replace(/\n/g,'<br>');
-
-      // restore images
       s=s.replace(/\u0000IMG(\d+)\u0000/g,(_,i)=>tokens[+i]);
-
       return s;
     }
 
     function sanitizeWys(html){
-      // keep only <img src alt>, <strong>, <em>, <mark>, <code>, <br>
       html = html.replace(/<\/?(?!img|strong|em|mark|code|br)\w+[^>]*>/gi, '');
       html = html.replace(/<img\b([^>]*)>/gi, (m,attrs)=>{
         const src=(attrs.match(/\bsrc\s*=\s*"(.*?)"/i)||[])[1]||'';
@@ -375,11 +372,9 @@
       if(editBtn.dataset.mode==='edit'){
         if(hintMode){ hintMode=false; }
 
-        // make text cells editable
         [pron,mean,han].forEach(td=>{ td.contentEditable=true; td.spellcheck=false; });
         pron.focus();
 
-        // swap details into WYSIWYG editor
         const currentHTML = renderDetails(det.dataset.raw || det.textContent || '');
         det._oldRaw = det.dataset.raw || '';
         det._oldHTML = det.innerHTML;
@@ -422,7 +417,6 @@
           wys.focus();
         });
 
-        // replace row buttons with Save/Cancel
         btnRow.innerHTML='';
         const save=iconBtn('Save',check());
         const cancel=iconBtn('Cancel',xmark());
@@ -506,25 +500,15 @@
     const lightbox=document.getElementById('lightbox');
     const lbImg=document.getElementById('lbImg');
     let scale=1;
-
-    function openLightbox(src){
-      lbImg.src=src;
-      scale=1;
-      lbImg.style.transform='scale(1)';
-      lightbox.hidden=false;
-    }
+    function openLightbox(src){ lbImg.src=src; scale=1; lbImg.style.transform='scale(1)'; lightbox.hidden=false; }
     function closeLightbox(){ lightbox.hidden=true; }
-
     lbImg.addEventListener('wheel',(e)=>{
       e.preventDefault();
-      if(e.deltaY<0){ scale=Math.min(scale*1.2,8); }
-      else{ scale=Math.max(scale/1.2,.5); }
+      scale = e.deltaY<0 ? Math.min(scale*1.2,8) : Math.max(scale/1.2,.5);
       lbImg.style.transform=`scale(${scale})`;
     },{passive:false});
-
     lightbox.addEventListener('click',(e)=>{ if(e.target===lightbox) closeLightbox(); });
     window.addEventListener('keydown',(e)=>{ if(!lightbox.hidden && e.key==='Escape') closeLightbox(); });
-
     document.addEventListener('click',(e)=>{ const img=e.target.closest('.details img.zoomable'); if(img) openLightbox(img.src); });
 
     loadInitial(); startRealtime();
