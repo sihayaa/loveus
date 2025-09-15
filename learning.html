@@ -13,7 +13,8 @@
       --card:#0f152b; --field:#0c1326; --line:rgba(255,255,255,.10);
       --glow1: rgba(122,90,248,.25); --glow2: rgba(122,90,248,.18);
       --focusRing: rgba(122,90,248,.28); --hover:#141c36; --danger:#ff6b6b;
-      /* new ring color (changes with theme) */
+
+      /* ring around whole card (tints with theme) */
       --accentRing: rgba(122,90,248,.55);
       --col-gap-hair: rgba(255,255,255,.06);
     }
@@ -22,25 +23,21 @@
       --glow1:rgba(103,228,202,.25);
       --glow2:rgba(103,228,202,.18);
       --focusRing:rgba(103,228,202,.28);
-      --accentRing:rgba(103,228,202,.55); /* mint ring */
+      --accentRing:rgba(103,228,202,.55);
     }
 
     *{box-sizing:border-box}
     html,body{height:100%}
     body{
-      margin:0;
-      background:var(--bg) url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg") center top/cover no-repeat fixed;
-      color:var(--ink);
-      font:16px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      margin:0; background:var(--bg) url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learn-bg.jpg") center top/cover no-repeat fixed;
+      color:var(--ink); font:16px/1.5 "Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       padding:26px; min-height:100dvh;
     }
     @media (max-width:860px){ body{ background-attachment:scroll } }
 
-    .back-btn{
-      position:fixed; top:26px; left:26px; z-index:9999; display:inline-flex; gap:8px; align-items:center;
+    .back-btn{ position:fixed; top:26px; left:26px; z-index:9999; display:inline-flex; gap:8px; align-items:center;
       padding:10px 14px; border-radius:14px; background:var(--accent); color:#fff; text-decoration:none; font-weight:800;
-      border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s
-    }
+      border:1px solid rgba(0,0,0,.06); box-shadow:0 6px 16px rgba(0,0,0,.24); transition:.08s }
     .back-btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
 
     .wrap{ max-width:clamp(1100px,95vw,1500px); margin:0 auto }
@@ -52,19 +49,16 @@
       box-shadow:0 10px 30px rgba(0,0,0,.35);
       padding:22px 22px 18px;
     }
-    /* soft glow behind */
-    .card::before{
+    .card::before{ /* soft glow behind */
       content:""; position:absolute; inset:-14px; border-radius:32px; z-index:-1;
       background:var(--accent); opacity:.16;
       box-shadow:0 0 18px var(--glow1),0 0 28px var(--glow2); filter:blur(14px);
     }
-    /* visible light box ring (follows 💜/💚) */
-    .card::after{
-      content:""; position:absolute; inset:-2px; /* push outside so it's obvious */
-      border-radius:24px; pointer-events:none;
+    .card::after{ /* visible ring around whole thing */
+      content:""; position:absolute; inset:-2px; border-radius:24px; pointer-events:none;
       box-shadow:
         0 0 0 2px var(--accentRing),              /* outer accent ring */
-        inset 0 0 0 1.3px rgba(255,255,255,.18);  /* crisp inner white rim */
+        inset 0 0 0 1.3px rgba(255,255,255,.18);  /* crisp inner rim */
     }
 
     h1{margin:4px 0 8px; display:flex; gap:10px; align-items:flex-end; flex-wrap:wrap}
@@ -98,7 +92,6 @@
     th{ font-size:13px; color:#bac4e4; font-weight:700; letter-spacing:.3px }
     tbody tr{ transition:background .12s } tbody tr:hover td{ background:var(--hover) }
     td{ vertical-align:middle; color:var(--ink); overflow-wrap:anywhere }
-    .num{ width:56px; text-align:center; color:#98a3c9 }
     .hanzi{ font-size:20px; font-family:"Noto Serif SC","Noto Sans SC",system-ui,sans-serif; font-weight:700 }
     .actions{ width:140px; text-align:right; white-space:nowrap }
     .actions .btnrow{ display:flex; gap:8px; justify-content:flex-end }
@@ -148,6 +141,15 @@
     thead th:nth-child(3), tbody td:nth-child(3),
     thead th:nth-child(4), tbody td:nth-child(4){ border-left:1px solid var(--col-gap-hair) }
 
+    /* ===== Number column fix: no wrapping, normal font, tabular digits ===== */
+    th.num, td.num{
+      width:56px; text-align:center; color:#98a3c9;
+      white-space:nowrap; overflow-wrap:normal; word-break:keep-all;
+      font-family:"Inter",system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-style:normal; letter-spacing:0;
+      font-variant-numeric: tabular-nums; font-feature-settings:"tnum" 1, "lnum" 1;
+    }
+
     @media (max-width:1200px){
       col.col-pron{width:28%} col.col-details{width:38%} col.col-meaning{width:22%} col.col-hanzi{width:12%}
     }
@@ -174,7 +176,7 @@
       </h1>
       <p class="sub">Hover Pronunciation for a simple English-y sound guide. Click <strong>Edit</strong> on any row to add <em>Details</em> with text highlighting and real images (no links).</p>
 
-      <!-- Add form -->
+      <!-- compact add form -->
       <form id="entry-form" autocomplete="off">
         <label><span>Pronunciation (Pinyin)</span><input id="pinyin" type="text" placeholder="nĭ hăo" required></label>
         <label><span>Meaning (English)</span><input id="meaning" type="text" placeholder="Hello" required></label>
