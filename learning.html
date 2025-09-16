@@ -161,6 +161,34 @@
       tbody td:nth-child(3){ padding-right:16px }
       tbody td:nth-child(4){ padding-left:16px }
     }
+
+    /* ===== Hidden YouTube holder ===== */
+    #yt-holder{ position:absolute; width:1px; height:1px; left:-9999px; top:auto; opacity:0; pointer-events:none }
+
+    /* ===== Bottom-left music controls ===== */
+    .bg-audio{
+      position:fixed; bottom:20px; left:20px; z-index:9999;
+      display:flex; align-items:center; gap:10px;
+      padding:10px 12px; border-radius:14px;
+      background:rgba(15,21,43,.85); border:1px solid var(--line);
+      box-shadow:0 10px 24px rgba(0,0,0,.35);
+      backdrop-filter: blur(6px);
+    }
+    .bg-audio::after{
+      content:""; position:absolute; inset:-2px; border-radius:16px; pointer-events:none;
+      box-shadow:0 0 0 2px var(--accentRing), inset 0 0 0 1px rgba(255,255,255,.15);
+    }
+    .music-btn{
+      width:38px; height:38px; border:0; border-radius:999px; cursor:pointer;
+      background:var(--accent); color:#fff; display:grid; place-items:center;
+      box-shadow:0 6px 16px rgba(0,0,0,.25); transition:.12s;
+    }
+    .music-btn:hover{ filter:brightness(1.05); transform:translateY(-1px) }
+    .music-volume{ width:140px }
+    .music-vol-label{ font-size:12px; color:var(--muted); min-width:34px; text-align:right }
+    @media (max-width:540px){
+      .music-volume{ width:110px }
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
 </head>
@@ -220,6 +248,16 @@
     <div class="lb-inner">
       <img id="lbImg" src="" alt="">
     </div>
+  </div>
+
+  <!-- Hidden YouTube player container -->
+  <div id="yt-holder" aria-hidden="true"></div>
+
+  <!-- Bottom-left music controls -->
+  <div class="bg-audio" role="group" aria-label="Background music player">
+    <button id="musicToggle" class="music-btn" aria-pressed="false" aria-label="Play music" title="Play/Pause"></button>
+    <input id="musicVolume" class="music-volume" type="range" min="0" max="100" value="60" aria-label="Volume">
+    <span id="musicVolLabel" class="music-vol-label">60%</span>
   </div>
 
   <script>
@@ -513,6 +551,89 @@
     window.addEventListener('keydown',(e)=>{ if(!lightbox.hidden && e.key==='Escape') closeLightbox(); });
     document.addEventListener('click',(e)=>{ const img=e.target.closest('.details img.zoomable'); if(img) openLightbox(img.src); });
 
+    /* ========== Background music (YouTube) ========== */
+    const YT_VIDEO_ID = 'WR8C7qwmurA'; // your song
+    const volSlider = document.getElementById('musicVolume');
+    const volLabel  = document.getElementById('musicVolLabel');
+    const toggleBtn = document.getElementById('musicToggle');
+    const PLAY_KEY = 'bg_music_play';
+    const VOL_KEY  = 'bg_music_vol';
+
+    const playIcon  = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
+    const pauseIcon = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>';
+
+    let ytPlayer = null;
+
+    function setBtn(isPlaying){
+      toggleBtn.innerHTML = isPlaying ? pauseIcon : playIcon;
+      toggleBtn.setAttribute('aria-pressed', isPlaying ? 'true' : 'false');
+      toggleBtn.setAttribute('aria-label', isPlaying ? 'Pause music' : 'Play music');
+    }
+
+    function setVolUI(v){
+      volSlider.value = v;
+      volLabel.textContent = v + '%';
+    }
+
+    // Load saved volume
+    const savedVol = Math.min(100, Math.max(0, parseInt(localStorage.getItem(VOL_KEY) || '60', 10)));
+    setVolUI(savedVol);
+    setBtn(false);
+
+    // Inject YT IFrame API
+    (function injectYT(){
+      if(document.getElementById('yt-iframe-api')) return;
+      const s=document.createElement('script');
+      s.id='yt-iframe-api';
+      s.src='https://www.youtube.com/iframe_api';
+      document.head.appendChild(s);
+    })();
+
+    // YT global callback
+    window.onYouTubeIframeAPIReady = function(){
+      ytPlayer = new YT.Player('yt-holder', {
+        height:'1', width:'1', videoId: YT_VIDEO_ID,
+        playerVars:{
+          controls:0, disablekb:1, fs:0, rel:0, modestbranding:1, playsinline:1,
+          loop:1, playlist: YT_VIDEO_ID
+        },
+        events:{
+          onReady: (e)=>{
+            ytPlayer.setVolume(parseInt(volSlider.value,10));
+            ytPlayer.pauseVideo(); // wait for user gesture
+            setBtn(false);
+          },
+          onStateChange: (e)=>{
+            if(e.data === YT.PlayerState.ENDED){ ytPlayer.playVideo(); }
+            // Update button icon live
+            setBtn(e.data === YT.PlayerState.PLAYING);
+          }
+        }
+      });
+    };
+
+    // UI events
+    toggleBtn.addEventListener('click', ()=>{
+      if(!ytPlayer) return;
+      const state = ytPlayer.getPlayerState();
+      if(state === YT.PlayerState.PLAYING){
+        ytPlayer.pauseVideo();
+        localStorage.setItem(PLAY_KEY, '0');
+      }else{
+        ytPlayer.unMute();
+        ytPlayer.playVideo();
+        localStorage.setItem(PLAY_KEY, '1');
+      }
+    });
+
+    volSlider.addEventListener('input', ()=>{
+      const v = parseInt(volSlider.value,10);
+      volLabel.textContent = v + '%';
+      if(ytPlayer) ytPlayer.setVolume(v);
+      localStorage.setItem(VOL_KEY, String(v));
+    });
+
+    // Init data + realtime
     loadInitial(); startRealtime();
   })();
   </script>
