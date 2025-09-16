@@ -124,6 +124,29 @@ body.editing .addpage{display:block}
 #textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
 #editorCancel{background:#ff9aa2;color:#4c0a17}
 #editorSave{background:var(--mint);color:#022d2c}
+
+/* ===== Background Music Widget (bottom-left) ===== */
+#audioDock{
+  position:fixed; left:16px; bottom:16px; z-index:12000;
+  display:flex; align-items:center; gap:10px;
+  background:#ffffffd8; color:#182042;
+  border:2px solid #e8dcc6; border-radius:12px; padding:8px 12px;
+  box-shadow:0 10px 22px rgba(0,0,0,.25);
+}
+#audioDock button{
+  border:0; width:36px; height:36px; border-radius:50%;
+  display:grid; place-items:center; font-weight:900; cursor:pointer;
+  background:#fff; color:#182042;
+}
+#audioDock input[type="range"]{
+  width:140px; accent-color:var(--accent);
+}
+#yt-player{
+  position:fixed; left:-9999px; width:1px; height:1px; opacity:0; pointer-events:none;
+}
+@media (max-width: 480px){
+  #audioDock input[type="range"]{ width:100px; }
+}
 </style>
 </head>
 <body>
@@ -239,6 +262,13 @@ body.editing .addpage{display:block}
     </div>
   </div>
 </div>
+
+<!-- Background Music Controls -->
+<div id="audioDock" role="group" aria-label="Background music controls">
+  <button id="audioToggle" aria-pressed="false" title="Play/Pause">▶</button>
+  <input id="audioVol" type="range" min="0" max="100" step="1" value="45" aria-label="Volume">
+</div>
+<div id="yt-player" aria-hidden="true"></div>
 
 <script>
 (function(){
@@ -417,7 +447,6 @@ body.editing .addpage{display:block}
     hideEditor(editor.el);
   };
 
-  /* inline editing */
   function startInlineEdit(t){
     if(!t || t.getAttribute('contenteditable')==='true') return;
     t.setAttribute('contenteditable','true');
@@ -430,7 +459,6 @@ body.editing .addpage{display:block}
   let pressTimer=null; addEventListener('touchstart',e=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(!t) return; pressTimer=setTimeout(()=>startInlineEdit(t),500); },{passive:true});
   addEventListener('touchend',()=>{ if(pressTimer) clearTimeout(pressTimer); },{passive:true});
 
-  /* PHOTO UPLOAD (use existing addPhotoBtn; removed duplicate const) */
   addPhotoBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } fileInput.click(); };
   fileInput.addEventListener('change',async e=>{
     const f=e.target.files?.[0]; if(!f) return;
@@ -455,7 +483,6 @@ body.editing .addpage{display:block}
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
   }
 
-  /* selection & toolbar state */
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex=++zCounter; } updateToolbarState(); }
   function deselect(){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
   function updateToolbarState(){
@@ -466,7 +493,6 @@ body.editing .addpage{display:block}
       const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr;
       const hex=rgbToHex(getComputedStyle(t).color);
       fontColorInput.value=hex; fontHexInput.value=hex;
-      /* set font dropdown to current */
       const key = detectSelectValueFromComputed(getComputedStyle(t).fontFamily);
       fontSelect.value = key;
     }else{ fontHexInput.value=''; }
@@ -490,7 +516,6 @@ body.editing .addpage{display:block}
   lockToggleBtn.addEventListener('click',()=>{ if(!selectedItem) return; if(!selectedItem.querySelector('.scrap-img')) return;
     selectedItem.dataset.lock = (selectedItem.dataset.lock==='1'?'0':'1'); updateToolbarState(); });
 
-  /* drag/resize/rotate */
   function makeDraggable(el){
     let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0; let dragging=false, dragPointerId=null; let rotating=false,startAngle=0,startPointerAngle=0;
     const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
@@ -509,7 +534,7 @@ body.editing .addpage{display:block}
       const dx=e.clientX-startX, dy=e.clientY-startY;
       const hasImg=!!el.querySelector('.scrap-img');
       const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight)));
-      const lockOn = hasImg && el.dataset.lock==='1' && !e.shiftKey; /* hold Shift to free-scale */
+      const lockOn = hasImg && el.dataset.lock==='1' && !e.shiftKey;
       let w=Math.max(60,startW+dx), h=Math.max(40,startH+dy);
       if(lockOn && ratio>0){
         if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio));
@@ -558,7 +583,6 @@ body.editing .addpage{display:block}
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
   clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear Page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
-  /* Add Page */
   function addPage(){
     const el=document.createElement('div');
     el.className='page';
@@ -571,7 +595,6 @@ body.editing .addpage{display:block}
   addPageBtn.addEventListener('click', addPage);
   addPageToolbarBtn.addEventListener('click', addPage);
 
-  /* Save helpers */
   function gatherPageItems(pgIdx){
     const c=pages()[pgIdx].querySelector('.page-canvas'); const out={texts:[], photos:[]};
     [...c.querySelectorAll('.scrap-item')].forEach(el=>{
@@ -596,7 +619,6 @@ body.editing .addpage{display:block}
     catch(e){ console.warn(e); saveBtn.textContent='Retry Save'; saveBtn.disabled=false; }
   });
 
-  /* Save all pages */
   saveAllBtn.addEventListener('click', async ()=>{
     const orig=saveAllBtn.textContent; saveAllBtn.disabled=true; saveAllBtn.textContent='Saving…';
     const keep=current;
@@ -615,7 +637,6 @@ body.editing .addpage{display:block}
     }
   });
 
-  /* Load all pages content */
   async function cloudLoadAll(){
     const [tRes,pRes]=await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders}),
@@ -624,7 +645,6 @@ body.editing .addpage{display:block}
     if(!tRes.ok||!pRes.ok){ setClasses(); return; }
     const texts=await tRes.json(), photos=await pRes.json();
 
-    /* ensure pages exist */
     const need=Math.max(6, ...texts.map(r=>r.page_no||1), ...photos.map(r=>r.page_no||1));
     while(pages().length<need){
       const el=document.createElement('div'); el.className='page'; el.innerHTML='<div class="page-canvas"></div>'; deck.appendChild(el);
@@ -658,7 +678,6 @@ body.editing .addpage{display:block}
     setClasses();
   }
 
-  /* Font application helpers */
   function applyFontToElement(tEl, fontKey){
     if(!tEl) return;
     tEl.style.fontFamily = familyFromValue(fontKey);
@@ -675,9 +694,64 @@ body.editing .addpage{display:block}
     document.querySelectorAll('.scrap-text').forEach(t=>applyFontToElement(t, fontSelect.value));
   });
 
-  // init
   (async function(){ await cloudLoadAll(); setClasses(); fitStage(); })();
 })();
 </script>
+
+<script>
+  const volSlider = document.getElementById('audioVol');
+  const toggleBtn = document.getElementById('audioToggle');
+  let ytPlayer = null;
+  let ytReady = false;
+
+  function onYouTubeIframeAPIReady(){
+    ytPlayer = new YT.Player('yt-player', {
+      height: '0',
+      width: '0',
+      videoId: 'WR8C7qwmurA', 
+      playerVars: {
+        autoplay: 0, controls: 0, playsinline: 1, rel: 0, modestbranding: 1,
+        loop: 1,
+        listType: 'playlist',
+        list: 'RDWR8C7qwmurA' 
+      },
+      events: {
+        onReady: (e) => {
+          ytReady = true;
+          const saved = Math.min(100, Math.max(0, parseInt(localStorage.getItem('journal_bgm_vol') || '45', 10)));
+          volSlider.value = String(saved);
+          e.target.setVolume(saved);
+        },
+        onStateChange: (e) => {
+          if(e.data === YT.PlayerState.PLAYING){
+            toggleBtn.textContent = '⏸';
+            toggleBtn.setAttribute('aria-pressed','true');
+          } else {
+            toggleBtn.textContent = '▶';
+            toggleBtn.setAttribute('aria-pressed','false');
+          }
+        }
+      }
+    });
+  }
+  window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+  toggleBtn.addEventListener('click', () => {
+    if(!ytReady) return;
+    const st = ytPlayer.getPlayerState();
+    if(st !== YT.PlayerState.PLAYING){
+      ytPlayer.playVideo();
+    }else{
+      ytPlayer.pauseVideo();
+    }
+  });
+
+  volSlider.addEventListener('input', () => {
+    const v = Math.min(100, Math.max(0, parseInt(volSlider.value || '0', 10)));
+    if(ytReady) ytPlayer.setVolume(v);
+    localStorage.setItem('journal_bgm_vol', String(v));
+  });
+</script>
+<script src="https://www.youtube.com/iframe_api" async></script>
 </body>
 </html>
