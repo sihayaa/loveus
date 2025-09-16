@@ -1,6 +1,3 @@
-This is my script , I want to add music in the background. and there will be a play/pause button+volume adjustment on the buttom left this is the music i want - https://www.youtube.com/watch?v=WR8C7qwmurA&list=RDWR8C7qwmurA&start_radio=1
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +7,9 @@ This is my script , I want to add music in the background. and there will be a p
 
 <!-- Fonts -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Patrick+Hand&family=Dancing+Script:wght@600&family=Press+Start+2P&family=Lobster&display=swap" rel="stylesheet">
+
+<!-- Optional: tiny transparent favicon to avoid 404 in console -->
+<link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAucB9b0m1qYAAAAASUVORK5CYII=">
 
 <style>
 :root{
@@ -55,13 +55,14 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 }
 .page .page-canvas{position:relative; width:100%; height:100%; padding:28px}
 
+/* fixed cover (not editable) */
 .page.cover .page-canvas{
   padding:0; background:#0c102c;
   background-image:var(--cover-img), radial-gradient(closest-side at 50% 40%, #1d2a55 0%, #0c102c 60%);
   background-size:cover, auto; background-position:50% var(--cover-y), center; background-repeat:no-repeat;
 }
 
-
+/* stack positions (fan) */
 .page.active{opacity:1; filter:none; pointer-events:auto; z-index:3}
 .pos--2{transform:translateX(-70px) rotate(-1.2deg) scale(.95); z-index:1}
 .pos--1{transform:translateX(-36px) rotate(-.6deg) scale(.975); z-index:2}
@@ -98,6 +99,7 @@ body.editing .scrap-item .rotator, body.editing .scrap-item .mover, body.editing
   background:#ffffffd8; color:#182042; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; z-index:20}
 body.editing .addpage{display:block}
 
+/* toolbar */
 #toolbar{position:fixed; right:16px; top:50%; transform:translateY(-50%); z-index:100; background:#fff; border:2px solid #e8dcc6; border-radius:14px; padding:12px; width:260px; gap:10px; box-shadow:0 10px 22px rgba(0,0,0,.25); display:none; flex-direction:column}
 #toolbar.open{display:flex}
 #toolbar .group{display:flex; gap:8px; flex-wrap:wrap}
@@ -108,7 +110,7 @@ body.editing .addpage{display:block}
 #toolbar input[type="number"], #toolbar input[type="color"], #toolbar input[type="text"], #toolbar select{width:100%; padding:8px; border-radius:8px; border:2px solid #e8dcc6; font-weight:700; color:#0d2a6b; background:#fff}
 #toolbar input[type="text"]{font-family:monospace}
 
-
+/* BIG TEXT EDITOR */
 #textEditor{
   position:fixed; inset:0; background:rgba(0,0,0,.6);
   display:none; z-index:10000; align-items:center; justify-content:center;
@@ -125,6 +127,23 @@ body.editing .addpage{display:block}
 #textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
 #editorCancel{background:#ff9aa2;color:#4c0a17}
 #editorSave{background:var(--mint);color:#022d2c}
+
+/* ===== Background Music (bottom-left, your IDs) ===== */
+#audioCtrl{
+  position:fixed; left:16px; bottom:16px; z-index:12000;
+  display:flex; align-items:center; gap:10px;
+  background:#ffffffd8; color:#182042;
+  border:2px solid #e8dcc6; border-radius:12px; padding:8px 12px;
+  box-shadow:0 10px 22px rgba(0,0,0,.25);
+}
+#musicPlay{
+  border:0; width:36px; height:36px; border-radius:50%;
+  display:grid; place-items:center; font-weight:900; cursor:pointer;
+  background:#fff; color:#182042;
+}
+#musicVol{ width:140px; accent-color:var(--accent); }
+#yt-holder{ position:fixed; left:-9999px; width:1px; height:1px; opacity:0; pointer-events:none; }
+@media (max-width:480px){ #musicVol{ width:100px; } }
 </style>
 </head>
 <body>
@@ -145,6 +164,7 @@ body.editing .addpage{display:block}
   <button class="addpage" id="addPageBtn">＋ Add Page</button>
 </div>
 
+<!-- toolbar -->
 <div id="toolbar" aria-hidden="true" inert>
   <div class="group">
     <button id="addTextBtn" class="mint">Add Text</button>
@@ -167,6 +187,7 @@ body.editing .addpage{display:block}
     <input id="fontHexInput" type="text" placeholder="#RRGGBB" value="#0d2a6b" disabled>
   </div>
 
+  <!-- Font controls -->
   <div class="group">
     <label>Font</label>
     <select id="fontSelect">
@@ -206,6 +227,7 @@ body.editing .addpage{display:block}
   </div>
 </div>
 
+<!-- Big Text Editor -->
 <div id="textEditor" aria-hidden="true" inert>
   <div class="panel">
     <h3 style="margin:0 0 8px;color:#0d2a6b">Edit Text</h3>
@@ -238,14 +260,22 @@ body.editing .addpage{display:block}
   </div>
 </div>
 
+<!-- ===== Background Music Controls (your IDs) ===== -->
+<div id="audioCtrl" aria-label="Music controls">
+  <button id="musicPlay" title="Play/Pause">▶</button>
+  <input id="musicVol" type="range" min="0" max="100" value="60" title="Volume">
+</div>
+<div id="yt-holder" aria-hidden="true"></div>
+
 <script>
 (function(){
-
+  /* Supabase (separate bucket/tables) */
   const SUPABASE_URL  = "https://tmjozxcjylcxgemffnoc.supabase.co";
   const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
   const BUCKET="journalbook", STATE_ID="journal_main";
   const apiHeaders={apikey:SUPABASE_ANON, Authorization:"Bearer "+SUPABASE_ANON, "Content-Type":"application/json", Accept:"application/json"};
 
+  /* FONT MAP */
   const FONT_MAP = {
     "lobster": '"Lobster", cursive',
     "inter": '"Inter", system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", sans-serif',
@@ -279,6 +309,7 @@ body.editing .addpage{display:block}
   const fontSizeInput=document.getElementById('fontSizeInput'), fontColorInput=document.getElementById('fontColorInput'), fontHexInput=document.getElementById('fontHexInput');
   const fitToggleBtn=document.getElementById('fitToggleBtn'), lockToggleBtn=document.getElementById('lockToggleBtn');
 
+  /* Font controls */
   const fontSelect=document.getElementById('fontSelect');
   const applyFontSelected=document.getElementById('applyFontSelected');
   const applyFontPage=document.getElementById('applyFontPage');
@@ -293,6 +324,7 @@ body.editing .addpage{display:block}
   let current=0, selectedItem=null, zCounter=10;
   const pages=()=>Array.from(deck.querySelectorAll('.page'));
 
+  /* exact centering using fan extents */
   function fanExtents(idx, total){
     const leftCount  = Math.min(idx, 2);
     const rightCount = Math.min(total-1-idx, 2);
@@ -305,6 +337,7 @@ body.editing .addpage{display:block}
     const shift = (right - left)/2; deck.style.left = shift + 'px';
   }
 
+  /* responsive scale */
   function fitStage(){
     const vw=innerWidth, vh=innerHeight, mx=200, my=40;
     const pw=parseInt(getComputedStyle(stage).width), ph=parseInt(getComputedStyle(stage).height);
@@ -313,6 +346,7 @@ body.editing .addpage{display:block}
   }
   fitStage(); addEventListener('resize', fitStage);
 
+  /* page class positions and nav */
   function setClasses(){
     const P=pages();
     P.forEach((p,i)=>{
@@ -334,6 +368,7 @@ body.editing .addpage{display:block}
   }
   prevBtn.onclick=()=>go(-1); nextBtn.onclick=()=>go(1);
 
+  /* clicking a page selects it when editing */
   function bindCanvasClicks(){
     pages().forEach((p,i)=>{
       p.querySelector('.page-canvas').addEventListener('mousedown',()=>{
@@ -344,6 +379,7 @@ body.editing .addpage{display:block}
   }
   bindCanvasClicks();
 
+  /* unlock / overlays */
   function showToolbar(){ toolbar.classList.add('open'); toolbar.removeAttribute('aria-hidden'); toolbar.removeAttribute('inert'); }
   function hideToolbar(){ if(toolbar.contains(document.activeElement)) document.activeElement.blur(); toolbar.classList.remove('open'); toolbar.setAttribute('aria-hidden','true'); toolbar.setAttribute('inert',''); }
 
@@ -363,6 +399,7 @@ body.editing .addpage{display:block}
   });
   exitEdit.onclick=exitEditMode; hideBar.onclick=hideToolbar;
 
+  /* TEXT EDITOR FLOW */
   function openTextEditor({text='',size=28,color='#0d2a6b',fontKey='inter',targetBox=null}={}){
     editor.targetBox=targetBox;
     editor.input.value=text;
@@ -407,6 +444,7 @@ body.editing .addpage{display:block}
     hideEditor(editor.el);
   };
 
+  /* inline editing */
   function startInlineEdit(t){
     if(!t || t.getAttribute('contenteditable')==='true') return;
     t.setAttribute('contenteditable','true');
@@ -419,7 +457,7 @@ body.editing .addpage{display:block}
   let pressTimer=null; addEventListener('touchstart',e=>{ if(!document.body.classList.contains('editing')) return; const t=e.target.closest?.('.scrap-text'); if(!t) return; pressTimer=setTimeout(()=>startInlineEdit(t),500); },{passive:true});
   addEventListener('touchend',()=>{ if(pressTimer) clearTimeout(pressTimer); },{passive:true});
 
-  /* PHOTO UPLOAD (use existing addPhotoBtn; removed duplicate const) */
+  /* PHOTO UPLOAD */
   addPhotoBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } fileInput.click(); };
   fileInput.addEventListener('change',async e=>{
     const f=e.target.files?.[0]; if(!f) return;
@@ -444,6 +482,7 @@ body.editing .addpage{display:block}
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
   }
 
+  /* selection & toolbar state */
   function select(el){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=el; if(selectedItem){ selectedItem.classList.add('selected'); selectedItem.style.zIndex=++zCounter; } updateToolbarState(); }
   function deselect(){ if(selectedItem) selectedItem.classList.remove('selected'); selectedItem=null; updateToolbarState(); }
   function updateToolbarState(){
@@ -454,7 +493,6 @@ body.editing .addpage{display:block}
       const curr=Math.round(parseFloat(getComputedStyle(t).fontSize)||22); fontSizeInput.value=curr;
       const hex=rgbToHex(getComputedStyle(t).color);
       fontColorInput.value=hex; fontHexInput.value=hex;
-      /* set font dropdown to current */
       const key = detectSelectValueFromComputed(getComputedStyle(t).fontFamily);
       fontSelect.value = key;
     }else{ fontHexInput.value=''; }
@@ -478,6 +516,7 @@ body.editing .addpage{display:block}
   lockToggleBtn.addEventListener('click',()=>{ if(!selectedItem) return; if(!selectedItem.querySelector('.scrap-img')) return;
     selectedItem.dataset.lock = (selectedItem.dataset.lock==='1'?'0':'1'); updateToolbarState(); });
 
+  /* drag/resize/rotate */
   function makeDraggable(el){
     let startX=0,startY=0,origX=0,origY=0,resizing=false,startW=0,startH=0; let dragging=false, dragPointerId=null; let rotating=false,startAngle=0,startPointerAngle=0;
     const res=el.querySelector('.resizer'); let rot=el.querySelector('.rotator'); if(!rot){ rot=document.createElement('div'); rot.className='rotator'; el.appendChild(rot); }
@@ -545,6 +584,7 @@ body.editing .addpage{display:block}
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
   clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear Page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
+  /* Add Page */
   function addPage(){
     const el=document.createElement('div');
     el.className='page';
@@ -557,6 +597,7 @@ body.editing .addpage{display:block}
   addPageBtn.addEventListener('click', addPage);
   addPageToolbarBtn.addEventListener('click', addPage);
 
+  /* Save helpers */
   function gatherPageItems(pgIdx){
     const c=pages()[pgIdx].querySelector('.page-canvas'); const out={texts:[], photos:[]};
     [...c.querySelectorAll('.scrap-item')].forEach(el=>{
@@ -581,6 +622,7 @@ body.editing .addpage{display:block}
     catch(e){ console.warn(e); saveBtn.textContent='Retry Save'; saveBtn.disabled=false; }
   });
 
+  /* Save all pages */
   saveAllBtn.addEventListener('click', async ()=>{
     const orig=saveAllBtn.textContent; saveAllBtn.disabled=true; saveAllBtn.textContent='Saving…';
     const keep=current;
@@ -599,6 +641,7 @@ body.editing .addpage{display:block}
     }
   });
 
+  /* Load all pages content */
   async function cloudLoadAll(){
     const [tRes,pRes]=await Promise.all([
       fetch(`${SUPABASE_URL}/rest/v1/journal_text?doc_id=eq.${encodeURIComponent(STATE_ID)}&select=*`,{headers:apiHeaders}),
@@ -640,6 +683,7 @@ body.editing .addpage{display:block}
     setClasses();
   }
 
+  /* Font application helpers */
   function applyFontToElement(tEl, fontKey){
     if(!tEl) return;
     tEl.style.fontFamily = familyFromValue(fontKey);
@@ -656,8 +700,114 @@ body.editing .addpage{display:block}
     document.querySelectorAll('.scrap-text').forEach(t=>applyFontToElement(t, fontSelect.value));
   });
 
+  // init
   (async function(){ await cloudLoadAll(); setClasses(); fitStage(); })();
 })();
 </script>
+
+<!-- ===== YouTube Background Audio (auto-play + first-gesture unmute) ===== -->
+<script>
+(function(){
+  const VIDEO_ID = 'WR8C7qwmurA';
+  const PLAYLIST = 'RDWR8C7qwmurA';
+
+  const btn = document.getElementById('musicPlay');
+  const vol = document.getElementById('musicVol');
+
+  let player, ready = false;
+
+  function clamp(n,a,b){ n = isNaN(n)?a:n; return Math.max(a, Math.min(b, n)); }
+
+  // unmute+play on first gesture if browser blocked audible autoplay
+  function armUnlock(){
+    const unlock = () => {
+      if(ready){
+        const v = clamp(parseInt(vol.value||'60',10),0,100);
+        try{
+          player.setVolume(v);
+          if(v>0) player.unMute();
+          player.playVideo();
+        }catch(_){}
+      }
+      window.removeEventListener('pointerdown', unlock);
+      window.removeEventListener('keydown', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('pointerdown', unlock, {once:true});
+    window.addEventListener('keydown', unlock, {once:true});
+    window.addEventListener('touchstart', unlock, {once:true, passive:true});
+  }
+
+  // YT API callback must be global
+  window.onYouTubeIframeAPIReady = function(){
+    player = new YT.Player('yt-holder', {
+      width:'0', height:'0',
+      videoId: VIDEO_ID,
+      playerVars: {
+        autoplay: 1,          // request immediate autoplay
+        mute: 1,              // allowed to autoplay
+        controls: 0, rel: 0, playsinline: 1, modestbranding: 1,
+        loop: 1,
+        listType: 'playlist',
+        list: PLAYLIST,
+        origin: location.origin // fixes postMessage origin mismatch
+      },
+      events: {
+        onReady: (e) => {
+          ready = true;
+          // ensure autoplay permission attribute
+          try { e.target.getIframe().setAttribute('allow','autoplay; encrypted-media'); } catch(_){}
+
+          const saved = clamp(parseInt(localStorage.getItem('music_vol') || vol.value, 10), 0, 100);
+          vol.value = String(saved);
+
+          try{
+            e.target.setVolume(saved);
+            if(saved>0) e.target.unMute(); else e.target.mute();
+            e.target.playVideo();      // if blocked, it will play muted
+          }catch(_){}
+
+          armUnlock();
+        },
+        onStateChange: (ev) => {
+          const playing = ev.data === YT.PlayerState.PLAYING;
+          btn.textContent = playing ? '⏸' : '▶';
+          btn.setAttribute('aria-pressed', playing ? 'true' : 'false');
+        }
+      }
+    });
+  };
+
+  // UI
+  btn.addEventListener('click', () => {
+    if(!ready) return;
+    const st = player.getPlayerState();
+    if(st === YT.PlayerState.PLAYING) player.pauseVideo();
+    else {
+      const v = clamp(parseInt(vol.value||'60',10),0,100);
+      if(v>0) player.unMute(); else player.mute();
+      player.playVideo();
+    }
+  });
+
+  vol.addEventListener('input', () => {
+    const v = clamp(parseInt(vol.value||'0',10),0,100);
+    if(ready){
+      try{
+        player.setVolume(v);
+        if(v>0) player.unMute(); else player.mute();
+      }catch(_){}
+    }
+    localStorage.setItem('music_vol', String(v));
+  });
+
+  // try to resume when returning to the tab
+  document.addEventListener('visibilitychange', () => {
+    if(!ready) return;
+    if(!document.hidden){ try{ player.playVideo(); }catch(_){ } }
+  });
+})();
+</script>
+<script src="https://www.youtube.com/iframe_api" async></script>
 </body>
 </html>
