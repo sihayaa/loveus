@@ -22,7 +22,7 @@ input,select,textarea{background:#0e1440;color:var(--ink);border:1px solid #3240
 input::placeholder,textarea::placeholder{color:#9fb0ff}
 .small{font-size:.9rem;opacity:.9}
 
-/* center the whole app */
+/* center + responsive width */
 .wrap{width:min(1100px, calc(100% - 32px));margin:24px auto}
 .header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .h1{font-weight:800;font-size:1.3rem;letter-spacing:.4px}
@@ -36,6 +36,7 @@ input::placeholder,textarea::placeholder{color:#9fb0ff}
 .heart.green{color:var(--mint)}
 .heart.purple{color:var(--purple)}
 
+/* targets row */
 .targets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
 .target-card{padding:12px;border-radius:14px;border:1px solid #2a3574;background:linear-gradient(180deg,#141b4a,#0f1646);position:relative;box-shadow:0 0 18px rgba(103,228,202,.08)}
 .target-card label{font-size:.8rem;opacity:.8}
@@ -44,11 +45,13 @@ input::placeholder,textarea::placeholder{color:#9fb0ff}
 .ring .lbl{font-size:.75rem;opacity:.8}
 .ring .val{font-weight:800}
 
-/* responsive grid that wraps and centers */
+/* grid wraps and centers */
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px;align-items:start}
 
-/* day cards (we later override to your blue) */
+/* day cards with accent stripe */
 .day{border:1px solid #2a3574;border-radius:16px;background:linear-gradient(180deg,#141b4a,#0f1646);padding:12px;box-shadow:0 0 18px rgba(122,90,248,.08)}
+.day.alt{border-color:#246d5a;background:linear-gradient(180deg,#0e1f2a,#0c2030);box-shadow:0 0 18px rgba(103,228,202,.12)}
+.day::before{content:"";display:block;height:4px;margin:-12px -12px 8px;border-top-left-radius:16px;border-top-right-radius:16px;background:linear-gradient(90deg,var(--accent),transparent)}
 .dayhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .dayname{font-weight:700}
 .tot{font-size:.85rem;opacity:.9}
@@ -75,6 +78,7 @@ input::placeholder,textarea::placeholder{color:#9fb0ff}
 .btn.mini{padding:.28rem .5rem;font-size:.82rem}
 .btn.muted{opacity:.85}
 
+/* weekly summary */
 .summary{margin:18px 0;padding:14px;border-radius:16px;border:1px solid #2a3574;background:linear-gradient(180deg,#141b4a,#0f1646)}
 .summary h3{margin:0 0 8px}
 .kv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
@@ -82,27 +86,38 @@ input::placeholder,textarea::placeholder{color:#9fb0ff}
 .kv .cell .lbl{font-size:.75rem;opacity:.8}
 .kv .cell .val{font-size:1.05rem;font-weight:800}
 
-/* collapse toggle */
+.admin{display:none;margin:12px 0;padding:10px;border:1px dashed #4960cb;border-radius:12px}
+.admin.show{display:block}
+textarea.note{width:100%;min-height:66px;border-radius:12px;background:#0c153f;border:1px solid #3a4ac4}
+
+.footer{display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;margin:18px 0}
+.footer .pill{opacity:.9}
+
+.mint{color:var(--mint)} .purple{color:var(--purple)}
+.soft{color:var(--soft)}
+hr.sep{border:0;border-top:1px dashed #2a3574;margin:10px 0}
+
+/* collapse controls */
 .toggle{background:transparent;border:1px solid #2a3574;border-radius:10px;padding:.2rem .45rem;line-height:1;font-weight:800;color:var(--ink);opacity:.9}
 .toggle:hover{filter:brightness(1.1)}
 .day.collapsed .daybody{display:none}
 .day.collapsed .toggle{transform:rotate(-90deg)}
 
-/* ----- COLOR OVERRIDES (your picks) ----- */
-/* 1) Goals/day row = green #057D3A with white text */
+/* ----- color overrides (your request) ----- */
+/* 1) goals/day row = #057D3A with white text */
 .targets .target-card{background:#057D3A;border-color:#046b33;color:#fff}
 .targets .target-card label{color:#fff;opacity:1}
 .targets .target-card .ring{background:#046b33;border-color:#03582a;color:#fff}
 .targets .target-card input{background:rgba(0,0,0,.2);border-color:#03582a;color:#fff}
 .targets .target-card .btn{background:#046b33;border-color:#03582a;color:#fff}
 
-/* 2) Week day boxes = blue #2681AB with white text (buttons inside same blue) */
-.day{background:#2681AB;border-color:#1f6c8f;color:#fff;box-shadow:none}
+/* 2) week boxes (Mon–Sun) = #2681AB with white text; buttons same color */
+.day,.day.alt{background:#2681AB;border-color:#1f6c8f;color:#fff;box-shadow:none}
 .day input,.day select,.day textarea{background:rgba(0,0,0,.18);border-color:#1c6280;color:#fff}
 .day .btn,.day .addline .save{background:#2681AB;border-color:#1f6c8f;color:#fff}
 .day .badge{background:rgba(0,0,0,.18);border-color:#1c6280;color:#fff}
 
-/* 3) Weekly summary = purple #6928A6 with white text */
+/* 3) weekly summary = #6928A6 with white text */
 .summary{background:#6928A6;border-color:#4e1f7d;color:#fff}
 .summary .kv .cell{background:rgba(0,0,0,.18);border-color:#4e1f7d;color:#fff}
 </style>
@@ -225,4 +240,342 @@ function getIsoWeek(d){
   const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
   return {year:d.getUTCFullYear(), week:weekNo};
 }
-function weekStartFromYW(y,w
+function weekStartFromYW(y,w){
+  const simple = new Date(Date.UTC(y,0,1 + (w-1)*7));
+  const dow = simple.getUTCDay();
+  const ISOweekStart = simple;
+  if (dow <= 4) ISOweekStart.setUTCDate(simple.getUTCDate() - simple.getUTCDay() + 1);
+  else ISOweekStart.setUTCDate(simple.getUTCDate() + 8 - simple.getUTCDay());
+  return ISOweekStart; // Monday UTC
+}
+function formatRange(y,w){
+  const start = weekStartFromYW(y,w);
+  const end = new Date(start); end.setUTCDate(start.getUTCDate()+6);
+  const fmt = d=> d.toLocaleDateString(undefined,{month:'short',day:'numeric'});
+  return `${fmt(start)} – ${fmt(end)} ${end.getUTCFullYear()}`;
+}
+function ywwKey(y,w){return `${y}-W${String(w).padStart(2,'0')}`;}
+function dayISO(y,w,idx){ // idx=0..6 Mon..Sun
+  const s = weekStartFromYW(y,w); const d = new Date(s); d.setUTCDate(s.getUTCDate()+idx);
+  return d.toISOString().slice(0,10);
+}
+
+/* ---------- state ---------- */
+const url = new URL(location.href);
+const now = new Date();
+const nowYW = getIsoWeek(now);
+const state = {
+  year: Number(url.searchParams.get('y') || nowYW.year),
+  week: Number(url.searchParams.get('w') || nowYW.week),
+  user: 'you',               // 'you' | 'him'
+  admin: false,
+};
+
+/* ---------- UI build ---------- */
+const grid = document.getElementById('grid');
+const weekRange = document.getElementById('weekRange');
+
+function render(){
+  // header
+  weekRange.textContent = `Week ${state.week}, ${state.year} • ${formatRange(state.year,state.week)}`;
+
+  // hearts + accent color by user
+  document.getElementById('youBtn').classList.toggle('active', state.user==='you');
+  document.getElementById('himBtn').classList.toggle('active', state.user==='him');
+  const rootStyle = document.documentElement.style;
+  rootStyle.setProperty('--accent', state.user==='you'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--mint')
+    : getComputedStyle(document.documentElement).getPropertyValue('--purple'));
+
+  // load data
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+
+  // goals
+  document.getElementById('goalCal').value = data.goals.cal ?? '';
+  document.getElementById('goalSugar').value = data.goals.sugar ?? '';
+  document.getElementById('goalWater').value = data.goals.water ?? '';
+  document.getElementById('goalEx').value = data.goals.ex ?? '';
+
+  // build days
+  grid.innerHTML = '';
+  let sumCal=0, sumSugar=0, sumWater=0, sumEx=0;
+
+  for(let i=0;i<7;i++){
+    const date = dayISO(state.year,state.week,i);
+    const dayData = data.days[date] || {meals:[], water:0, exMins:0, exNote:''};
+    const calToday = dayData.meals.reduce((a,m)=>a+(+m.cal||0),0);
+    const sugarToday = dayData.meals.reduce((a,m)=>a+(+m.sugar||0),0);
+
+    sumCal += calToday; sumSugar += sugarToday; sumWater += (dayData.water||0); sumEx += (dayData.exMins||0);
+
+    const dayName = new Date(date).toLocaleDateString(undefined,{weekday:'short'});
+    const wrap = document.createElement('div');
+    const collapsed = !!(data.days[date] && data.days[date].collapsed);
+    wrap.className = 'day' + (i % 2 ? ' alt' : '') + (collapsed ? ' collapsed' : '');
+    wrap.innerHTML = `
+      <div class="dayhead">
+        <div class="dayname">${dayName}</div>
+        <div class="row-flex">
+          <div class="tot small">Kcal <b>${calToday||0}</b> • Sugar <b>${sugarToday||0}g</b> • Water <b>${dayData.water||0}ml</b></div>
+          <button class="toggle" onclick="toggleDay('${date}')">▾</button>
+        </div>
+      </div>
+      <div class="daybody">
+
+      <div class="section">
+        <div class="small" style="margin-bottom:6px">Meals</div>
+        <div id="ml-${date}">
+          ${dayData.meals.map((m,idx)=>mealRow(date, m, idx)).join('')}
+        </div>
+        <div class="addline">
+          <input id="name-${date}" placeholder="Food name (e.g., oats)" />
+          <input id="cal-${date}" type="number" min="0" placeholder="kcal" />
+          <input id="sug-${date}" type="number" min="0" placeholder="g sugar" />
+          <div class="row-flex">
+            <select id="tag-${date}">
+              <option>breakfast</option>
+              <option>lunch</option>
+              <option>dinner</option>
+              <option>snack</option>
+            </select>
+            <button class="save" onclick="addMeal('${date}')">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="row-flex">
+          <span class="small">Water</span>
+          <button class="btn mini alt" onclick="addWater('${date}',250)">+250ml</button>
+          <button class="btn mini alt" onclick="addWater('${date}',500)">+500ml</button>
+          <button class="btn mini muted" onclick="setWater('${date}')">Set…</button>
+          <span class="small">= <b id="water-${date}">${dayData.water||0}</b> ml</span>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="small" style="margin-bottom:6px">Exercise</div>
+        <div class="row-flex" style="margin-bottom:6px">
+          <input id="exNote-${date}" placeholder="what you did (e.g., walk, yoga)" value="${esc(dayData.exNote||'')}" />
+          <input id="exMin-${date}" type="number" min="0" placeholder="minutes" value="${dayData.exMins||0}" />
+          <button class="btn mini" onclick="saveExercise('${date}')">Save</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="small">Daily Notes</div>
+        <textarea class="note" id="note-${date}" placeholder="anything to remember…">${esc(dayData.note||'')}</textarea>
+        <div class="row-flex" style="margin-top:6px">
+          <button class="btn mini" onclick="saveNote('${date}')">Save Note</button>
+          <button class="btn mini danger" onclick="clearDay('${date}')">Clear Day</button>
+        </div>
+      </div>
+
+      </div>
+    `;
+    grid.appendChild(wrap);
+
+    // rings for today's date (leftovers/so far)
+    const todayISO = new Date().toISOString().slice(0,10);
+    if (date === todayISO){
+      const leftCal = Math.max(0,(data.goals.cal||0) - calToday);
+      const leftSug = Math.max(0,(data.goals.sugar||0) - sugarToday);
+      document.getElementById('ringCal').textContent = `${leftCal} kcal`;
+      document.getElementById('ringSugar').textContent = `${leftSug} g`;
+      document.getElementById('ringWater').textContent = `${dayData.water||0} ml`;
+      document.getElementById('ringEx').textContent = `${dayData.exMins||0} min`;
+    }
+  }
+
+  // weekly summary
+  document.getElementById('sumCal').textContent = sumCal;
+  document.getElementById('sumSugar').textContent = sumSugar;
+  document.getElementById('sumWater').textContent = sumWater;
+  document.getElementById('sumEx').textContent = sumEx;
+}
+
+function mealRow(date, m, idx){
+  return `
+  <div class="meal-row">
+    <div><b>${esc(m.name)}</b> <span class="badge ${m.tag}" onclick="cycleTag('${date}',${idx})">${m.tag}</span></div>
+    <div>${m.cal||0}</div>
+    <div>${m.sugar||0}g</div>
+    <div class="row-flex">
+      <button class="btn mini muted" onclick="editMeal('${date}',${idx})">Edit</button>
+      <button class="btn mini danger" onclick="delMeal('${date}',${idx})">Del</button>
+    </div>
+  </div>`;
+}
+
+/* ---------- CRUD actions ---------- */
+function saveGoals(){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  data.goals.cal = +document.getElementById('goalCal').value || 0;
+  data.goals.sugar = +document.getElementById('goalSugar').value || 0;
+  data.goals.water = +document.getElementById('goalWater').value || 0;
+  data.goals.ex = +document.getElementById('goalEx').value || 0;
+  writeWeek(uid, wkKey, data); render();
+}
+function addMeal(date){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const name = val(`name-${date}`).trim();
+  const cal = +val(`cal-${date}`)||0;
+  const sugar = +val(`sug-${date}`)||0;
+  const tag = val(`tag-${date}`);
+  if(!name){ flash(`name-${date}`); return; }
+  const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
+  d.meals.push({name,cal,sugar,tag});
+  writeWeek(uid, wkKey, data);
+  clearInputs(`name-${date}`,`cal-${date}`,`sug-${date}`);
+  render();
+}
+function editMeal(date, idx){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const m = (data.days[date]||{meals:[]}).meals[idx]; if(!m) return;
+  const name = prompt("Food name:", m.name); if(name===null) return;
+  const cal = Number(prompt("Calories (kcal):", m.cal)); if(Number.isNaN(cal)) return;
+  const sugar = Number(prompt("Sugar (g):", m.sugar)); if(Number.isNaN(sugar)) return;
+  m.name = name; m.cal = cal; m.sugar = sugar;
+  writeWeek(uid, wkKey, data); render();
+}
+function cycleTag(date, idx){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const m = (data.days[date]||{meals:[]}).meals[idx]; if(!m) return;
+  const order = ['breakfast','lunch','dinner','snack'];
+  m.tag = order[(order.indexOf(m.tag)+1)%order.length];
+  writeWeek(uid, wkKey, data); render();
+}
+function delMeal(date, idx){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  (data.days[date]||{meals:[]}).meals.splice(idx,1);
+  writeWeek(uid, wkKey, data); render();
+}
+
+function addWater(date, ml){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
+  d.water = (d.water||0) + ml;
+  writeWeek(uid, wkKey, data); render();
+}
+function setWater(date){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
+  const v = Number(prompt("Set water (ml):", d.water||0)); if(Number.isNaN(v)) return;
+  d.water = v; writeWeek(uid, wkKey, data); render();
+}
+
+function saveExercise(date){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
+  d.exNote = val(`exNote-${date}`);
+  d.exMins = +val(`exMin-${date}`)||0;
+  writeWeek(uid, wkKey, data); render();
+}
+function saveNote(date){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
+  d.note = val(`note-${date}`);
+  writeWeek(uid, wkKey, data); render();
+}
+function clearDay(date){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  data.days[date] = {meals:[], water:0, exMins:0, exNote:'', note:''};
+  writeWeek(uid, wkKey, data); render();
+}
+
+/* ---------- collapse helpers ---------- */
+function toggleDay(date){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
+  d.collapsed = !d.collapsed;
+  writeWeek(uid, wkKey, data); render();
+}
+function collapseAll(){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  for(let i=0;i<7;i++){ const dt = dayISO(state.year,state.week,i); const d = data.days[dt] ||= {meals:[], water:0, exMins:0, exNote:''}; d.collapsed = true; }
+  writeWeek(uid, wkKey, data); render();
+}
+function expandAll(){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  for(let i=0;i<7;i++){ const dt = dayISO(state.year,state.week,i); const d = data.days[dt] ||= {meals:[], water:0, exMins:0, exNote:''}; d.collapsed = false; }
+  writeWeek(uid, wkKey, data); render();
+}
+
+/* ---------- admin (export/import/clear) ---------- */
+function exportJSON(){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  const blob = new Blob([JSON.stringify({uid,wkKey,data},null,2)],{type:'application/json'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `diet-${uid}-${wkKey}.json`; a.click();
+}
+function clearWeek(){
+  if(!confirm('Clear all data for this week (current user only)?')) return;
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  writeWeek(uid, wkKey, {goals:{cal:1600,sugar:45,water:2000,ex:30},days:{}});
+  render();
+}
+
+/* ---------- helpers ---------- */
+function val(id){return document.getElementById(id).value}
+function clearInputs(...ids){ids.forEach(id=>document.getElementById(id).value='')}
+function flash(id){const el=document.getElementById(id);el.style.outline='2px solid var(--warn)';setTimeout(()=>el.style.outline='none',700)}
+function esc(s){return String(s).replace(/[&<>\"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+/* ---------- events ---------- */
+document.getElementById('prevWeek').onclick=()=>{ state.week--; if(state.week<1){state.year--; state.week=53} updateURL(); render(); };
+document.getElementById('nextWeek').onclick=()=>{ state.week++; if(state.week>53){state.year++; state.week=1} updateURL(); render(); };
+document.getElementById('youBtn').onclick=()=>{ state.user='you'; render(); };
+document.getElementById('himBtn').onclick=()=>{ state.user='him'; render(); };
+
+document.addEventListener('keydown', (e)=>{
+  if(e.key==='ArrowLeft'){ e.preventDefault(); document.getElementById('prevWeek').click(); }
+  if(e.key==='ArrowRight'){ e.preventDefault(); document.getElementById('nextWeek').click(); }
+  // secret '123'
+  window.__secret = (window.__secret||'') + (/\d/.test(e.key)?e.key:'');
+  if(window.__secret.endsWith('123')){
+    window.__secret='';
+    state.admin = !state.admin;
+    document.getElementById('adminBar').classList.toggle('show', state.admin);
+  }
+});
+
+document.getElementById('imp').addEventListener('change', async (e)=>{
+  const file = e.target.files?.[0]; if(!file) return;
+  const text = await file.text();
+  try{
+    const obj = JSON.parse(text);
+    if(!obj || !obj.data) throw new Error('Invalid file');
+    const {uid,wkKey,data} = obj;
+    writeWeek(uid||getUID(), wkKey||ywwKey(state.year,state.week), data);
+    alert('Imported!');
+    render();
+  }catch(err){ alert('Import failed: '+err.message); }
+});
+
+function updateURL(){
+  const u = new URL(location.href);
+  u.searchParams.set('y', String(state.year));
+  u.searchParams.set('w', String(state.week));
+  history.replaceState(null,'',u);
+}
+
+/* ---------- init ---------- */
+render();
+</script>
+</body>
+</html>
