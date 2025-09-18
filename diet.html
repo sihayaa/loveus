@@ -22,8 +22,8 @@ input,select,textarea{background:#0e1440;color:var(--ink);border:1px solid #3240
 input::placeholder,textarea::placeholder{color:#9fb0ff}
 .small{font-size:.9rem;opacity:.9}
 
-/* center + responsive width */
-.wrap{width:min(1100px, calc(100% - 32px));margin:24px auto}
+/* center the whole app and avoid pushing to the right */
+.wrap{width:min(1600px, calc(100% - 32px));margin:24px auto}
 .header{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .h1{font-weight:800;font-size:1.3rem;letter-spacing:.4px}
 .range{opacity:.85}
@@ -36,21 +36,22 @@ input::placeholder,textarea::placeholder{color:#9fb0ff}
 .heart.green{color:var(--mint)}
 .heart.purple{color:var(--purple)}
 
-/* targets row */
 .targets{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
 .target-card{padding:12px;border-radius:14px;border:1px solid #2a3574;background:linear-gradient(180deg,#141b4a,#0f1646);position:relative;box-shadow:0 0 18px rgba(103,228,202,.08)}
 .target-card label{font-size:.8rem;opacity:.8}
+.target-card .big{font-size:1.1rem;font-weight:700;margin-top:4px}
 .ringrow{display:flex;gap:10px;margin:8px 0}
 .ring{flex:1;padding:10px 12px;border:1px solid #2a3574;border-radius:12px;background:#0f1646}
 .ring .lbl{font-size:.75rem;opacity:.8}
 .ring .val{font-weight:800}
 
-/* grid wraps and centers */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:12px;margin-top:12px;align-items:start}
+/* responsive grid that wraps and centers — no horizontal scroll */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:12px;align-items:start}
 
-/* day cards with accent stripe */
+/* day cards with alternating contrast */
 .day{border:1px solid #2a3574;border-radius:16px;background:linear-gradient(180deg,#141b4a,#0f1646);padding:12px;box-shadow:0 0 18px rgba(122,90,248,.08)}
 .day.alt{border-color:#246d5a;background:linear-gradient(180deg,#0e1f2a,#0c2030);box-shadow:0 0 18px rgba(103,228,202,.12)}
+/* subtle accent stripe at the top for readability */
 .day::before{content:"";display:block;height:4px;margin:-12px -12px 8px;border-top-left-radius:16px;border-top-right-radius:16px;background:linear-gradient(90deg,var(--accent),transparent)}
 .dayhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .dayname{font-weight:700}
@@ -78,7 +79,6 @@ input::placeholder,textarea::placeholder{color:#9fb0ff}
 .btn.mini{padding:.28rem .5rem;font-size:.82rem}
 .btn.muted{opacity:.85}
 
-/* weekly summary */
 .summary{margin:18px 0;padding:14px;border-radius:16px;border:1px solid #2a3574;background:linear-gradient(180deg,#141b4a,#0f1646)}
 .summary h3{margin:0 0 8px}
 .kv{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
@@ -96,30 +96,31 @@ textarea.note{width:100%;min-height:66px;border-radius:12px;background:#0c153f;b
 .mint{color:var(--mint)} .purple{color:var(--purple)}
 .soft{color:var(--soft)}
 hr.sep{border:0;border-top:1px dashed #2a3574;margin:10px 0}
-
-/* collapse controls */
 .toggle{background:transparent;border:1px solid #2a3574;border-radius:10px;padding:.2rem .45rem;line-height:1;font-weight:800;color:var(--ink);opacity:.9}
 .toggle:hover{filter:brightness(1.1)}
 .day.collapsed .daybody{display:none}
 .day.collapsed .toggle{transform:rotate(-90deg)}
-
-/* ----- color overrides (your request) ----- */
-/* 1) goals/day row = #057D3A with white text */
+/* ----- color overrides (requested) ----- */
+/* 1) Goals/day row = green #057D3A with white text */
 .targets .target-card{background:#057D3A;border-color:#046b33;color:#fff}
 .targets .target-card label{color:#fff;opacity:1}
 .targets .target-card .ring{background:#046b33;border-color:#03582a;color:#fff}
 .targets .target-card input{background:rgba(0,0,0,.2);border-color:#03582a;color:#fff}
 .targets .target-card .btn{background:#046b33;border-color:#03582a;color:#fff}
 
-/* 2) week boxes (Mon–Sun) = #2681AB with white text; buttons same color */
+/* 2) Week boxes (Mon–Sun) = blue #2681AB with white text, buttons same color */
 .day,.day.alt{background:#2681AB;border-color:#1f6c8f;color:#fff;box-shadow:none}
 .day input,.day select,.day textarea{background:rgba(0,0,0,.18);border-color:#1c6280;color:#fff}
 .day .btn,.day .addline .save{background:#2681AB;border-color:#1f6c8f;color:#fff}
 .day .badge{background:rgba(0,0,0,.18);border-color:#1c6280;color:#fff}
 
-/* 3) weekly summary = #6928A6 with white text */
+/* 3) Weekly summary = purple #6928A6 with white text */
 .summary{background:#6928A6;border-color:#4e1f7d;color:#fff}
 .summary .kv .cell{background:rgba(0,0,0,.18);border-color:#4e1f7d;color:#fff}
+
+/* dropdown menu readability */
+.day select{background:#fff!important;color:#000!important;border-color:#1c6280}
+.day select option{background:#fff!important;color:#000!important}
 </style>
 </head>
 <body>
@@ -136,9 +137,8 @@ hr.sep{border:0;border-top:1px dashed #2a3574;margin:10px 0}
   </div>
 
   <!-- quick tools -->
-  <div class="row-flex" style="justify-content:flex-end;margin-top:6px;margin-bottom:6px">
-    <button class="btn mini muted" onclick="collapseAll()">Collapse all</button>
-    <button class="btn mini" onclick="expandAll()">Expand all</button>
+  <div class="row-flex" style="justify-content:flex-start;margin-top:6px;margin-bottom:6px">
+    <button id="toggleAll" class="btn mini">Collapse all</button>
   </div>
 
   <!-- Targets -->
@@ -279,13 +279,12 @@ function render(){
   // header
   weekRange.textContent = `Week ${state.week}, ${state.year} • ${formatRange(state.year,state.week)}`;
 
-  // hearts + accent color by user
+  // hearts
   document.getElementById('youBtn').classList.toggle('active', state.user==='you');
   document.getElementById('himBtn').classList.toggle('active', state.user==='him');
+  // update accent color for contrast based on selected user
   const rootStyle = document.documentElement.style;
-  rootStyle.setProperty('--accent', state.user==='you'
-    ? getComputedStyle(document.documentElement).getPropertyValue('--mint')
-    : getComputedStyle(document.documentElement).getPropertyValue('--purple'));
+  rootStyle.setProperty('--accent', state.user==='you' ? getComputedStyle(document.documentElement).getPropertyValue('--mint') : getComputedStyle(document.documentElement).getPropertyValue('--purple'));
 
   // load data
   const uid = getUID(), wkKey = ywwKey(state.year,state.week);
@@ -296,6 +295,10 @@ function render(){
   document.getElementById('goalSugar').value = data.goals.sugar ?? '';
   document.getElementById('goalWater').value = data.goals.water ?? '';
   document.getElementById('goalEx').value = data.goals.ex ?? '';
+
+  // update toggleAll label
+  const tbtn = document.getElementById('toggleAll');
+  if(tbtn){ tbtn.textContent = anyExpanded() ? 'Collapse all' : 'Expand all'; }
 
   // build days
   grid.innerHTML = '';
@@ -322,6 +325,8 @@ function render(){
         </div>
       </div>
       <div class="daybody">
+      <div class="tot small">Kcal <b>${calToday||0}</b> • Sugar <b>${sugarToday||0}g</b> • Water <b>${dayData.water||0}ml</b></div>
+      </div>
 
       <div class="section">
         <div class="small" style="margin-bottom:6px">Meals</div>
@@ -371,7 +376,6 @@ function render(){
           <button class="btn mini danger" onclick="clearDay('${date}')">Clear Day</button>
         </div>
       </div>
-
       </div>
     `;
     grid.appendChild(wrap);
@@ -418,6 +422,7 @@ function saveGoals(){
   data.goals.ex = +document.getElementById('goalEx').value || 0;
   writeWeek(uid, wkKey, data); render();
 }
+
 function addMeal(date){
   const uid = getUID(), wkKey = ywwKey(state.year,state.week);
   const data = readWeek(uid, wkKey);
@@ -425,6 +430,7 @@ function addMeal(date){
   const cal = +val(`cal-${date}`)||0;
   const sugar = +val(`sug-${date}`)||0;
   const tag = val(`tag-${date}`);
+
   if(!name){ flash(`name-${date}`); return; }
   const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
   d.meals.push({name,cal,sugar,tag});
@@ -495,6 +501,18 @@ function clearDay(date){
 }
 
 /* ---------- collapse helpers ---------- */
+function anyExpanded(){
+  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
+  const data = readWeek(uid, wkKey);
+  for(let i=0;i<7;i++){
+    const dt = dayISO(state.year,state.week,i);
+    const d = data.days[dt];
+    if(!d || !d.collapsed) return true;
+  }
+  return false;
+}
+function toggleAll(){ if(anyExpanded()) collapseAll(); else expandAll(); }
+
 function toggleDay(date){
   const uid = getUID(), wkKey = ywwKey(state.year,state.week);
   const data = readWeek(uid, wkKey);
@@ -505,13 +523,21 @@ function toggleDay(date){
 function collapseAll(){
   const uid = getUID(), wkKey = ywwKey(state.year,state.week);
   const data = readWeek(uid, wkKey);
-  for(let i=0;i<7;i++){ const dt = dayISO(state.year,state.week,i); const d = data.days[dt] ||= {meals:[], water:0, exMins:0, exNote:''}; d.collapsed = true; }
+  for(let i=0;i<7;i++){
+    const dt = dayISO(state.year,state.week,i);
+    const d = data.days[dt] ||= {meals:[], water:0, exMins:0, exNote:''};
+    d.collapsed = true;
+  }
   writeWeek(uid, wkKey, data); render();
 }
 function expandAll(){
   const uid = getUID(), wkKey = ywwKey(state.year,state.week);
   const data = readWeek(uid, wkKey);
-  for(let i=0;i<7;i++){ const dt = dayISO(state.year,state.week,i); const d = data.days[dt] ||= {meals:[], water:0, exMins:0, exNote:''}; d.collapsed = false; }
+  for(let i=0;i<7;i++){
+    const dt = dayISO(state.year,state.week,i);
+    const d = data.days[dt] ||= {meals:[], water:0, exMins:0, exNote:''};
+    d.collapsed = false;
+  }
   writeWeek(uid, wkKey, data); render();
 }
 
@@ -534,7 +560,7 @@ function clearWeek(){
 function val(id){return document.getElementById(id).value}
 function clearInputs(...ids){ids.forEach(id=>document.getElementById(id).value='')}
 function flash(id){const el=document.getElementById(id);el.style.outline='2px solid var(--warn)';setTimeout(()=>el.style.outline='none',700)}
-function esc(s){return String(s).replace(/[&<>\"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function esc(s){return String(s).replace(/[&<>"']/g,m=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
 /* ---------- events ---------- */
 document.getElementById('prevWeek').onclick=()=>{ state.week--; if(state.week<1){state.year--; state.week=53} updateURL(); render(); };
@@ -553,6 +579,8 @@ document.addEventListener('keydown', (e)=>{
     document.getElementById('adminBar').classList.toggle('show', state.admin);
   }
 });
+
+document.getElementById('toggleAll').onclick=()=>toggleAll();
 
 document.getElementById('imp').addEventListener('change', async (e)=>{
   const file = e.target.files?.[0]; if(!file) return;
@@ -574,8 +602,8 @@ function updateURL(){
   history.replaceState(null,'',u);
 }
 
-/* ---------- init ---------- */
 render();
+
 </script>
 </body>
 </html>
