@@ -17,6 +17,7 @@
     const ROOM_KEY = "couple";
 
     let CURRENT_USER = null;
+    let HAS_SORT_COLUMN = true; // auto-detected below
 
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -28,6 +29,12 @@
         return;
       }
       CURRENT_USER = user;
+
+      // probe if 'sort' column exists
+      try {
+        const { error } = await supabase.from('reminders').select('id, sort').eq('room_key', ROOM_KEY).limit(1);
+        if (error && /sort/.test(error.message)) HAS_SORT_COLUMN = false;
+      } catch { HAS_SORT_COLUMN = false; }
 
       loadReminders();
 
@@ -119,12 +126,7 @@
       transition: all 0.3s ease;
       box-shadow: 0 0 10px rgba(0,0,0,0.2);
     }
-
-    button:hover {
-      background-color: #8fc6bb;
-      transform: scale(1.07);
-      box-shadow: 0 0 15px #fff;
-    }
+    button:hover { background-color: #8fc6bb; transform: scale(1.07); box-shadow: 0 0 15px #fff; }
 
     #icon-area { }
 
@@ -144,343 +146,105 @@
       place-items: center;
       text-decoration: none;
     }
-
-    .album-icon:hover {
-      transform: scale(1.07);
-      box-shadow: 0 0 15px #e43fec, 0 0 25px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
-    }
-
-    .album-icon img {
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      object-fit: cover;
-      display: block;
-    }
-
+    .album-icon:hover { transform: scale(1.07); box-shadow: 0 0 15px #e43fec, 0 0 25px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3); }
+    .album-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; display: block; }
     .album-icon .icon-label{
-      width: 100%;
-      height: 100%;
-      border-radius: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 6px;
-      text-align: center;
-      font-family: 'Patrick Hand', cursive;
-      font-weight: 800;
-      font-size: 14px;
-      line-height: 1.1;
-      color: #fff;
-      text-shadow: 0 1px 2px rgba(0,0,0,.6);
-      background: rgba(255,255,255,0.06);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
+      width: 100%; height: 100%; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center; padding: 6px;
+      text-align: center; font-family: 'Patrick Hand', cursive; font-weight: 800; font-size: 14px; line-height: 1.1; color: #fff;
+      text-shadow: 0 1px 2px rgba(0,0,0,.6); background: rgba(255,255,255,0.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
     }
 
     #timezone-box {
-      position: fixed;
-      top: 40px;
-      right: 40px;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 18px 22px;
-      width: 220px;
-      color: white;
-      font-family: 'Segoe UI', sans-serif;
-      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3);
-      text-align: left;
-      z-index: 5;
+      position: fixed; top: 40px; right: 40px;
+      background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);
+      border-radius: 20px; padding: 18px 22px; width: 220px; color: white; font-family: 'Segoe UI', sans-serif;
+      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3); text-align: left; z-index: 5;
     }
-
-    .tz-header {
-      font-family: 'Great Vibes', cursive;
-      font-size: 1.6em;
-      color: #ffffff;
-      text-shadow: 1px 1px 4px #8e5dd2;
-      margin-bottom: 10px;
-    }
-
-    .tz-line {
-      margin: 6px 0;
-      font-size: 1em;
-      color: #111;
-      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a;
-    }
-
-    .tz-label {
-      font-weight: bold;
-      color: #111;
-      text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a;
-    }
+    .tz-header { font-family: 'Great Vibes', cursive; font-size: 1.6em; color: #ffffff; text-shadow: 1px 1px 4px #8e5dd2; margin-bottom: 10px; }
+    .tz-line { margin: 6px 0; font-size: 1em; color: #111; text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a; }
+    .tz-label { font-weight: bold; color: #111; text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a; }
 
     #countdown-box {
-      position: fixed;
-      top: 180px;
-      right: 40px;
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(10px);
-      border-radius: 20px;
-      padding: 18px;
-      width: 220px;
-      color: #fff;
-      font-family: 'Segoe UI', sans-serif;
-      box-shadow: 0 0 12px #f5b3f5, 4px 4px 12px rgba(0,0,0,0.3);
-      text-align: center;
-      z-index: 5;
+      position: fixed; top: 180px; right: 40px;
+      background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px);
+      border-radius: 20px; padding: 18px; width: 220px; color: #fff;
+      font-family: 'Segoe UI', sans-serif; box-shadow: 0 0 12px #f5b3f5, 4px 4px 12px rgba(0,0,0,0.3);
+      text-align: center; z-index: 5;
     }
+    #countdown-box .count-number { font-size: 1.6em; font-weight: bold; color: #ffecf7; text-shadow: 0 0 8px #a027a0; }
+    #countdown-box .count-label { font-size: 1em; color: #f8e5f8; text-shadow: 0 0 6px #a027a0; }
 
-    #countdown-box .count-number {
-      font-size: 1.6em;
-      font-weight: bold;
-      color: #ffecf7;
-      text-shadow: 0 0 8px #a027a0;
-    }
-
-    #countdown-box .count-label {
-      font-size: 1em;
-      color: #f8e5f8;
-      text-shadow: 0 0 6px #a027a0;
-    }
-
-    canvas#heart-canvas {
-      position: fixed;
-      top: 0;
-      left: 0;
-      z-index: -1;
-      pointer-events: none;
-    }
-
-    #mood-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
-    }
+    canvas#heart-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
+    #mood-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
     .quote-box{
-      position: fixed;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%,-50%);
-      max-width: min(780px, 86vw);
-      padding: 16px 24px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.22);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.45);
-      color: #fff;
-      text-align: center;
-      z-index: 9999;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 26px;
-      line-height: 1.3;
-      letter-spacing: 0.4px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-      opacity: 0;
-      transition: opacity 420ms ease, transform 420ms ease;
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      max-width: min(780px, 86vw); padding: 16px 24px; border-radius: 16px;
+      background: rgba(255,255,255,0.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.45); color: #fff; text-align: center; z-index: 9999;
+      font-family: 'Patrick Hand', cursive; font-size: 26px; line-height: 1.3; letter-spacing: 0.4px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 420ms ease, transform 420ms ease;
     }
     .quote-box.show { opacity: 1; transform: translate(-50%,-50%); }
     .quote-box.fade-out { opacity: 0; transform: translate(-50%,-48%); }
 
+    /* ——— Reminders (updated) ——— */
     #reminder-box {
-      position: fixed;
-      top: 330px;            
-      right: 40px;
-      width: 260px;
-      padding: 14px;
-      background: rgba(255, 255, 255, 0.25);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      box-shadow: 0 0 12px #c6a8f7, 4px 4px 12px rgba(0,0,0,0.3);
-      border: 1px solid rgba(255,255,255,0.45);
-      color: #fff;
-      z-index: 5;
-      text-align: left;
+      position: fixed; top: 330px; right: 40px; width: 290px; padding: 14px;
+      background: rgba(0,0,0,0.55); backdrop-filter: blur(10px);
+      border-radius: 16px; box-shadow: 0 0 12px #7e5bd2, 4px 4px 12px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.25); color: #fff; z-index: 5; text-align: left;
     }
-
-    #reminder-box h3 {
-      margin: 0 0 10px 0;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 20px;
-      text-shadow: 0 0 6px #a027a0;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .reminder-input-row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 10px;
-      align-items: center;
-    }
-
+    #reminder-box h3 { margin: 0 0 10px 0; font-family: 'Patrick Hand', cursive; font-size: 20px; text-shadow: 0 0 6px #a027a0; display: flex; align-items: center; gap: 6px; }
+    .reminder-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
     #reminder-input {
-      flex: 1;
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.45);
-      background: rgba(255,255,255,0.9);
-      color: #111;
-      font-size: 14px;
-      outline: none;
-      min-width: 0;
+      flex: 1; padding: 10px 12px; border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.9); color: #000; font-size: 14px; outline: none; min-width: 0; cursor: text;
     }
-
-    #add-reminder-btn {
-      padding: 10px 12px;
-      border-radius: 10px;
-      border: none;
-      background: #a3d2ca;
-      cursor: pointer;
-      font-size: 14px;
-      flex: 0 0 auto;
-    }
+    #add-reminder-btn { padding: 10px 12px; border-radius: 10px; border: none; background: #a3d2ca; cursor: pointer; font-size: 14px; flex: 0 0 auto; }
     #add-reminder-btn:hover { background:#8fc6bb; transform:none; box-shadow:0 0 10px rgba(0,0,0,.2); }
-
-    #reminder-list {
-      max-height: 300px;  
-      overflow-y: auto;
-      padding-right: 4px;
-    }
+    #reminder-list { max-height: 300px; overflow-y: auto; padding-right: 4px; }
 
     .reminder-item {
-      position: relative;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 26px 10px 10px;
-      margin-bottom: 10px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.22);
-      border: 1px solid rgba(255,255,255,0.45);
-      box-shadow: 0 0 10px rgba(0,0,0,0.15);
-      min-height: 52px;
+      position: relative; display: grid; grid-template-columns: 22px 1fr 22px; align-items: center; gap: 8px;
+      padding: 10px 26px 10px 10px; margin-bottom: 10px; border-radius: 12px;
+      background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.35);
+      box-shadow: 0 0 10px rgba(0,0,0,0.15); min-height: 52px;
     }
+    .reminder-item::before{ content:""; position:absolute; left:-1px; top:0; bottom:0; width:4px; border-radius:12px 0 0 12px; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
+    .drag-handle { position: absolute; left: -20px; top: 0; bottom: 0; width: 16px; display: grid; place-items: center; cursor: grab; user-select: none; color: #111; opacity: .6; }
+    .reminder-item.dragging { opacity: .6; transform: scale(.996); }
+    .reminder-item input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
+    .reminder-text { font-size: 18px; font-weight: 800; color: #000; letter-spacing: 0.2px; word-break: break-word; }
+    .edit-btn{
+      justify-self: end; background: transparent; border: none; color: #7a5af8;
+      font-size: 18px; line-height: 1; cursor: pointer; padding: 0; filter: drop-shadow(0 0 2px rgba(0,0,0,.5));
+    }
+    .edit-btn:hover { transform: scale(1.08); }
 
-    .reminder-item::before{
-      content:"";
-      position:absolute;
-      left:-1px; top:0; bottom:0;
-      width:4px;
-      border-radius:12px 0 0 12px;
-      background: var(--teal);
-      box-shadow: 0 0 10px var(--teal);
-    }
+    /* pop-up editor */
+    .editor-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
+    .editor-backdrop.show { opacity: 1; pointer-events: auto; }
+    .editor-modal { width: min(92vw, 720px); background: #111; border: 1px solid #7a5af8; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5); padding: 16px; }
+    .editor-title { color: #fff; font-weight: 700; margin: 0 0 8px 0; }
+    .editor-area { width: 100%; min-height: 160px; border-radius: 12px; resize: vertical; border: 1px solid #333; padding: 12px; font-size: 15px; line-height: 1.5; background: #fff; color: #000; outline: none; }
+    .editor-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
+    .btn { padding: 10px 14px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px; }
+    .btn-primary { background: #7a5af8; color: #fff; }
+    .btn-secondary { background: #e6e6e6; color: #111; }
 
-    .warn {
-      font-size: 20px;
-      line-height: 1;
-      filter: drop-shadow(0 0 6px rgba(0,0,0,0.6));
-      user-select: none;
-    }
-
-    .reminder-item input[type="checkbox"] {
-      cursor: pointer;
-      transform: scale(1.2);
-    }
-
-    .reminder-text {
-      flex: 1;
-      font-size: 18px;
-      font-weight: 800;
-      color: #fff;            
-      letter-spacing: 0.2px;
-      -webkit-text-stroke: 0.4px #000; 
-      text-shadow:
-        0 0 5px var(--teal),     
-        0 0 10px var(--teal);   
-      word-break: break-word;
-    }
-    .reminder-text.done{
-      text-decoration: line-through;
-      opacity: 0.75;
-      text-shadow: 0 0 6px var(--teal);
-    }
-
-    .delete-btn{
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      background: transparent;
-      border: none;
-      color: #ff6b6b;
-      font-size: 16px;
-      line-height: 1;
-      cursor: pointer;
-      padding: 0;
-      filter: drop-shadow(0 0 3px #000);
-    }
-    .delete-btn:hover { transform: scale(1.08); }
-
-    .secret-heart {
-      position: fixed;
-      right: 16px;
-      bottom: 16px;
-      font-size: 18px;
-      opacity: .25;
-      transition: transform .15s ease, opacity .15s ease;
-      cursor: pointer;
-      user-select: none;
-      z-index: 9998;
-    }
+    .secret-heart { position: fixed; right: 16px; bottom: 16px; font-size: 18px; opacity: .25; transition: transform .15s ease, opacity .15s ease; cursor: pointer; user-select: none; z-index: 9998; }
     .secret-heart:hover { opacity: .6; transform: scale(1.1); }
-    .secret-heart:active { transform: scale(.95); }
-
-    .secret-backdrop {
-      position: fixed; inset: 0;
-      background: rgba(0,0,0,.65);
-      display: grid;
-      place-items: center;
-      opacity: 0; pointer-events: none;
-      transition: opacity .22s ease;
-      z-index: 9999;
-    }
+    .secret-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity .22s ease; z-index: 9999; }
     .secret-backdrop.show { opacity: 1; pointer-events: auto; }
-
-    .secret-modal {
-      width: min(92vw, 920px);
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 20px 60px rgba(0,0,0,.35);
-      overflow: hidden;
-      transform: translateY(8px) scale(.985);
-      opacity: 0;
-      transition: transform .22s ease, opacity .22s ease;
-      position: relative;
-    }
-    .secret-backdrop.show .secret-modal {
-      transform: translateY(0) scale(1);
-      opacity: 1;
-    }
-    .secret-close {
-      position: absolute; top: 8px; right: 10px;
-      font-size: 22px; line-height: 1;
-      background: #fff; border: 2px solid #e43fec;
-      color: #e43fec; border-radius: 999px;
-      width: 34px; height: 34px; display: grid; place-items: center;
-      cursor: pointer;
-    }
+    .secret-modal { width: min(92vw, 920px); background: #fff; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.35); overflow: hidden; transform: translateY(8px) scale(.985); opacity: 0; transition: transform .22s ease, opacity .22s ease; position: relative; }
+    .secret-backdrop.show .secret-modal { transform: translateY(0) scale(1); opacity: 1; }
+    .secret-close { position: absolute; top: 8px; right: 10px; font-size: 22px; line-height: 1; background: #fff; border: 2px solid #e43fec; color: #e43fec; border-radius: 999px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; }
     .secret-frame { width: 100%; height: clamp(220px, 56vw, 520px); display:block; }
 
-    .title-heart{
-      margin-left: 6px;
-      font-size: 0.8em;
-      line-height: 1;
-      display: inline-block;
-      user-select: none;
-      -webkit-user-select: none;
-      -ms-user-select: none;
-      touch-action: none;
-      cursor: default;
-      vertical-align: baseline;
-    }
-
+    .title-heart{ margin-left: 6px; font-size: 0.8em; line-height: 1; display: inline-block; user-select: none; cursor: default; vertical-align: baseline; }
     #startHeart { margin-left: 0; margin-right: 6px; cursor: pointer; }
     #startHeart:focus { outline: 2px solid #67e4ca55; outline-offset: 2px; border-radius: 6px; }
 
@@ -489,53 +253,28 @@
       h1{ font-size: 2.8em }
       #timezone-box, #countdown-box, #reminder-box{ right: 20px }
     }
-
     @media (max-width: 768px){
       body{ padding:16px }
       h1{ font-size:2.2em; margin-bottom:12px }
       #duration-block{ padding:10px 14px }
       #duration-label, #duration-value{ font-size:1.5em }
-
       #timezone-box, #countdown-box, #reminder-box{
-        position: static;
-        width: 100%;
-        max-width: 540px;
-        margin: 10px auto;
+        position: static; width: 100%; max-width: 540px; margin: 10px auto;
       }
       #reminder-list{ max-height: 40vh }
-
       #icon-area{
-        position: fixed;
-        left: 50%;
-        bottom: 8px;
-        transform: translateX(-50%);
-        width: min(680px, calc(100% - 16px));
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 76px;
-        gap: 10px;
-        padding: 8px;
-        overflow-x: auto;
-        background: rgba(0,0,0,0.35);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border-radius: 16px;
-        z-index: 30;
+        position: fixed; left: 50%; bottom: 8px; transform: translateX(-50%);
+        width: min(680px, calc(100% - 16px)); display: grid; grid-auto-flow: column; grid-auto-columns: 76px;
+        gap: 10px; padding: 8px; overflow-x: auto; background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+        border-radius: 16px; z-index: 30;
       }
       #icon-area::-webkit-scrollbar{ height:6px }
       #icon-area::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.25); border-radius: 999px }
-
-      .album-icon{
-        position: static !important;
-        left: auto !important;
-        top: auto !important;
-        width: 64px; height: 64px;
-      }
+      .album-icon{ position: static !important; left: auto !important; top: auto !important; width: 64px; height: 64px; }
       .album-icon .icon-label{ font-size: 12px }
-
       .secret-heart{ bottom: 84px }
     }
-
     @media (max-width:420px){
       h1{ font-size:1.8em }
       #duration-label, #duration-value{ font-size:1.35em }
@@ -564,38 +303,28 @@
     </div>
 
     <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
-        alt="Work Schedule Icon"
-        onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png" alt="Work Schedule Icon"
+           onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='gamelist.html'" title="Game List">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png"
-        alt="Game List Icon"
-        onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png" alt="Game List Icon"
+           onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 300px; left: 150px;" onclick="location.href='middle-earth-map.html'" title="Middle Earth Map">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png"
-        alt="Middle Earth Map Icon"
-        onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png" alt="Middle Earth Map Icon"
+           onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 400px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png"
-        alt="Love Letters Icon"
-        onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png" alt="Love Letters Icon"
+           onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 500px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png"
-        alt="Learning Icon"
-        onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png" alt="Learning Icon"
+           onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
@@ -615,7 +344,7 @@
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
     </div>
   </div>
-  
+
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
     <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
@@ -631,33 +360,32 @@
   <div id="reminder-box">
     <h3>📄 Reminders</h3>
     <div class="reminder-input-row">
-      <input id="reminder-input" type="text" placeholder="Type a reminder…" maxlength="200">
-      <button id="add-reminder-btn">Add</button>
+      <input id="reminder-input" type="text" placeholder="Click to write a reminder…" maxlength="200" readonly>
+      <button id="add-reminder-btn" title="Quick add using the small box">Add</button>
     </div>
     <div id="reminder-list"></div>
   </div>
 
-  <canvas id="heart-canvas"></canvas>
+  <!-- pop-up editor -->
+  <div class="editor-backdrop" id="editorBackdrop" aria-hidden="true">
+    <div class="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
+      <h4 class="editor-title" id="editorTitle">New Reminder</h4>
+      <textarea class="editor-area" id="editorArea" placeholder="Type your reminder here…"></textarea>
+      <div class="editor-actions">
+        <button class="btn btn-secondary" id="editorCancel">Cancel</button>
+        <button class="btn btn-primary" id="editorSave">Save</button>
+      </div>
+    </div>
+  </div>
 
+  <canvas id="heart-canvas"></canvas>
   <div id="mood-overlay"></div>
 
-  <template id="work-schedule-label-template">
-    <div class="icon-label">🗓<br>Schedule</div>
-  </template>
-  <template id="gamelist-label-template">
-    <div class="icon-label">🎮<br>Game&nbsp;List</div>
-  </template>
-  <template id="letters-label-template">
-    <div class="icon-label">💌<br>Letters</div>
-  </template>
-  <!-- NEW: fallback label for Learning -->
-  <template id="learning-label-template">
-    <div class="icon-label">✏️<br>Learning</div>
-  </template>
-  <!-- optional fallback if mem image fails -->
-  <template id="mem-label-template">
-    <div class="icon-label">🗺️<br>Middle-Earth</div>
-  </template>
+  <template id="work-schedule-label-template"><div class="icon-label">🗓<br>Schedule</div></template>
+  <template id="gamelist-label-template"><div class="icon-label">🎮<br>Game&nbsp;List</div></template>
+  <template id="letters-label-template"><div class="icon-label">💌<br>Letters</div></template>
+  <template id="learning-label-template"><div class="icon-label">✏️<br>Learning</div></template>
+  <template id="mem-label-template"><div class="icon-label">🗺️<br>Middle-Earth</div></template>
 
   <div class="secret-heart" id="secretHeart" title=" ">
     💚
@@ -685,14 +413,13 @@
       const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
       const parts = fmt.formatToParts(new Date());
       const y = +parts.find(p => p.type === 'year').value;
-      const m = +parts.find(p => p.type === 'month').value; 
-      const d = +parts.find(p => p.type === 'day').value;   
+      const m = +parts.find(p => p.type === 'month').value;
+      const d = +parts.find(p => p.type === 'day').value;
       return { y, m0: m - 1, d };
     }
 
     function monthsAndDaysSince(startY, startM0, startD) {
       const { y, m0, d } = vegasTodayParts();
-
       let months = (y - startY) * 12 + (m0 - startM0);
       if (d < startD) months--;
 
@@ -703,7 +430,7 @@
       const anchorUTC = Date.UTC(anchorY, anchorM0, startD);
       const todayUTC  = Date.UTC(y, m0, d);
 
-      const days = Math.max(0, Math.floor((todayUTC - anchorUTC) / MS_DAY)); 
+      const days = Math.max(0, Math.floor((todayUTC - anchorUTC) / MS_DAY));
       return { months: Math.max(months, 0), days };
     }
 
@@ -723,7 +450,6 @@
       const todayUTC = Date.UTC(y, m0, d);
       const annivUTC = Date.UTC(2025, 9, 13);
       const diffDays = Math.max(0, Math.floor((annivUTC - todayUTC) / MS_DAY));
-
       const box = document.getElementById('countdown-number');
       if (diffDays > 0) {
         box.textContent = `${diffDays} days`;
@@ -748,52 +474,35 @@
       const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
       const hour = new Date(vegasTime).getHours();
       let color;
-
-      if (hour >= 6 && hour < 12) {
-        color = 'rgba(255, 231, 214, 0.35)'; 
-      } else if (hour >= 12 && hour < 18) {
-        color = 'rgba(214, 255, 226, 0.35)'; 
-      } else if (hour >= 18 && hour < 22) {
-        color = 'rgba(232, 214, 255, 0.35)'; 
-      } else {
-        color = 'rgba(10, 15, 60, 0.30)'; 
-      }
-
+      if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';
+      else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)';
+      else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)';
+      else color = 'rgba(10, 15, 60, 0.30)';
       document.getElementById('mood-overlay').style.background = color;
     }
 
     updateTimeZones();
     updateDurationAndCountdown();
     applyMoodOverlay();
-
     setInterval(updateTimeZones, 60000);
-    setInterval(applyMoodOverlay, 60 * 60 * 1000); 
+    setInterval(applyMoodOverlay, 60 * 60 * 1000);
   </script>
 
   <script>
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
     let hearts = [];
-
     const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
 
-    function resizeCanvas() {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
-    }
-
+    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
     resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
 
     document.addEventListener('mousemove', e => {
       for (let i = 0; i < 3; i++) {
         hearts.push({
-          x: e.clientX,
-          y: e.clientY,
-          size: Math.random() * 8 + 4,
-          alpha: 1,
-          dx: (Math.random() - 0.5) * 2,
-          dy: Math.random() * -2 - 1,
+          x: e.clientX, y: e.clientY, size: Math.random() * 8 + 4, alpha: 1,
+          dx: (Math.random() - 0.5) * 2, dy: Math.random() * -2 - 1,
           color: HEART_COLORS[(Math.random() * HEART_COLORS.length) | 0]
         });
       }
@@ -806,125 +515,31 @@
         ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
         ctx.fillStyle = h.color;
         ctx.fillText('♥', h.x, h.y);
-
-        h.x += h.dx;
-        h.y += h.dy;
-        h.alpha -= 0.02;
+        h.x += h.dx; h.y += h.dy; h.alpha -= 0.02;
         if (h.alpha <= 0) hearts.splice(i, 1);
       });
       requestAnimationFrame(drawHearts);
     }
-
     drawHearts();
 
-    const sweetQuotes = [
-      "You make ordinary moments feel special.",
-      "Your laugh is my favorite sound.",
-      "I’m grateful for you every day.",
-      "You’re my calm in the chaos.",
-      "I love the way you care.",
-      "You’re my soft place to land.",
-      "Thank you for choosing me.",
-      "Your smile makes everything lighter.",
-      "Being with you feels like home.",
-      "You’re the best part of my day.",
-      "You make life taste sweeter.",
-      "I cherish our quiet minutes.",
-      "Every little thing with you matters.",
-      "You’re my favorite comfort.",
-      "I adore your kind heart.",
-      "We’re a team, and we win together.",
-      "You matter. Your voice matters. Your life matters.",
-      "Every little victory is worth celebrating.",
-      "The person you were is the reason I get to love the person you are." ,
-      "You make even the dullest days shine.",
-      "Your voice is my favorite comfort.",
-      "I love the way you listen to me.",
-      "Being around you feels effortless.",
-      "You always know how to make me smile.",
-      "You turn small moments into treasures.",
-      "My heart feels lighter when you’re here.",
-      "You’re the calm after every storm.",
-      "I love how you notice the little things.",
-      "Just thinking of you makes me happy."
-    ];
-
-    const romanticQuotes = [
-      "In every version of my life, I find you.",
-      "With you, I am home.",
-      "You’re my favorite place to be.",
-      "I fall for you over and over.",
-      "You’re the chapter I never want to end.",
-      "My heart knows your name.",
-      "You are my quietest poem.",
-      "You’re my always and my again.",
-      "I love you more than yesterday, less than tomorrow.",
-      "You’re my wish come true.",
-      "You light up the in-between.",
-      "Your happiness is my favorite thing to protect.",
-      "Your hand fits mine like it was meant to.",
-      "You’re my favorite hello.",
-      "Loving you is my best habit.",
-      "I love you for who you are, not just for your best days.",
-      "I choose you over and over, in every version of this life."
-    ];
-
-    const supportiveQuotes = [
-      "We’re a team, always.",
-      "You’ve got this, and I’ve got you.",
-      "I believe in you completely.",
-      "You’re stronger than you think.",
-      "One step at a time, together.",
-      "I’m proud of how far you’ve come.",
-      "Your effort matters, I see it.",
-      "Breathe, you’re doing great.",
-      "I trust your pace.",
-      "Whatever happens, i’m here.",
-      "We’ll figure it out side by side.",
-      "Progress, not perfection.",
-      "You are capable of so much.",
-      "On hard days, lean on me.",
-      "I won’t let you do this alone.",
-      "Every day may not be good, but there’s something good in every day.",
-      "Choose hope, even when it’s hard to find.",
-      "It’s okay to rest. Resting is part of the journey.",
-      "Believe in yourself a little more today than you did yesterday.",
-      "You are enough.Always have been, always will be.",
-      "Change doesn’t erase you, it adds depth to who you are.",
-      "The past shaped you, but the present is where you shine.",
-      "Change doesn’t erase you, it adds depth to who you are.",
-      "You haven’t lost yourself, you’ve just grown into new parts of you.",
-      "Your soul is the same, only touched by deeper colors now."
-    ];
-
+    const sweetQuotes = ["You make ordinary moments feel special.","Your laugh is my favorite sound.","I’m grateful for you every day.","You’re my calm in the chaos.","I love the way you care.","You’re my soft place to land.","Thank you for choosing me.","Your smile makes everything lighter.","Being with you feels like home.","You’re the best part of my day.","You make life taste sweeter.","I cherish our quiet minutes.","Every little thing with you matters.","You’re my favorite comfort.","I adore your kind heart.","We’re a team, and we win together.","You matter. Your voice matters. Your life matters.","Every little victory is worth celebrating.","The person you were is the reason I get to love the person you are." ,"You make even the dullest days shine.","Your voice is my favorite comfort.","I love the way you listen to me.","Being around you feels effortless.","You always know how to make me smile.","You turn small moments into treasures.","My heart feels lighter when you’re here.","You’re the calm after every storm.","I love how you notice the little things.","Just thinking of you makes me happy."];
+    const romanticQuotes = ["In every version of my life, I find you.","With you, I am home.","You’re my favorite place to be.","I fall for you over and over.","You’re the chapter I never want to end.","My heart knows your name.","You are my quietest poem.","You’re my always and my again.","I love you more than yesterday, less than tomorrow.","You’re my wish come true.","You light up the in-between.","Your happiness is my favorite thing to protect.","Your hand fits mine like it was meant to.","You’re my favorite hello.","Loving you is my best habit.","I love you for who you are, not just for your best days.","I choose you over and over, in every version of this life."];
+    const supportiveQuotes = ["We’re a team, always.","You’ve got this, and I’ve got you.","I believe in you completely.","You’re stronger than you think.","One step at a time, together.","I’m proud of how far you’ve come.","Your effort matters, I see it.","Breathe, you’re doing great.","I trust your pace.","Whatever happens, i’m here.","We’ll figure it out side by side.","Progress, not perfection.","You are capable of so much.","On hard days, lean on me.","I won’t let you do this alone.","Every day may not be good, but there’s something good in every day.","Choose hope, even when it’s hard to find.","It’s okay to rest. Resting is part of the journey.","Believe in yourself a little more today than you did yesterday.","You are enough.Always have been, always will be.","Change doesn’t erase you, it adds depth to who you are.","The past shaped you, but the present is where you shine.","Change doesn’t erase you, it adds depth to who you are.","You haven’t lost yourself, you’ve just grown into new parts of you.","Your soul is the same, only touched by deeper colors now."];
     const quoteColors = ["#246B3E","#27658A","#453299"];
 
     function showRandomQuote() {
       const pool = [...sweetQuotes, ...romanticQuotes, ...supportiveQuotes];
       const text = pool[Math.floor(Math.random()*pool.length)];
       const color = quoteColors[Math.floor(Math.random()*quoteColors.length)];
-
-      const old = document.querySelector('.quote-box');
-      if (old) old.remove();
-
-      const box = document.createElement('div');
-      box.className = 'quote-box';
-      box.textContent = text;
-
+      const old = document.querySelector('.quote-box'); if (old) old.remove();
+      const box = document.createElement('div'); box.className = 'quote-box'; box.textContent = text;
       box.style.textShadow = `0 0 10px ${color}, 0 0 18px ${color}55`;
       box.style.boxShadow = `0 8px 30px ${color}55`;
       box.style.borderColor = `${color}80`;
-
       document.body.appendChild(box);
-
       requestAnimationFrame(() => box.classList.add('show'));
-
-      const visibleMs = 5000;
-      const fadeMs = 420;
-      setTimeout(() => {
-        box.classList.add('fade-out');
-        setTimeout(() => box.remove(), fadeMs + 20);
-      }, visibleMs);
+      const visibleMs = 5000, fadeMs = 420;
+      setTimeout(() => { box.classList.add('fade-out'); setTimeout(() => box.remove(), fadeMs + 20); }, visibleMs);
     }
 
     document.addEventListener('click', (e) => {
@@ -932,28 +547,64 @@
       const blocked = e.target.closest('.album-icon, #timezone-box, #countdown-box, #reminder-box');
       if (blocked) return;
       if (disallow.includes(e.target.tagName)) return;
-
-      if (e.target === document.body || e.target.tagName === 'HTML') {
-        showRandomQuote();
-        return;
-      }
-
-      if (!e.target.closest('a, button, .album-icon, #timezone-box, #countdown-box, #reminder-box')) {
-        showRandomQuote();
-      }
+      if (e.target === document.body || e.target.tagName === 'HTML') { showRandomQuote(); return; }
+      if (!e.target.closest('a, button, .album-icon, #timezone-box, #countdown-box, #reminder-box')) showRandomQuote();
     });
 
+    // ——— Reminders logic ———
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
 
+    // popup editor refs
+    const editorBackdrop = document.getElementById('editorBackdrop');
+    const editorArea = document.getElementById('editorArea');
+    const editorSave = document.getElementById('editorSave');
+    const editorCancel = document.getElementById('editorCancel');
+    const editorTitle = document.getElementById('editorTitle');
+
+    // editor mode
+    let editingId = null;
+
+    function openEditor(prefill = '', id = null) {
+      editingId = id;
+      editorTitle.textContent = id ? 'Edit Reminder' : 'New Reminder';
+      editorArea.value = prefill;
+      editorBackdrop.classList.add('show');
+      editorBackdrop.setAttribute('aria-hidden','false');
+      setTimeout(() => editorArea.focus(), 0);
+    }
+    function closeEditor() {
+      editingId = null;
+      editorBackdrop.classList.remove('show');
+      editorBackdrop.setAttribute('aria-hidden','true');
+    }
+
+    inputEl.addEventListener('click', () => openEditor(inputEl.value));
+    inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') openEditor(inputEl.value); });
+    editorCancel.addEventListener('click', closeEditor);
+    editorBackdrop.addEventListener('click', e => { if (e.target === editorBackdrop) closeEditor(); });
+    editorArea.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'enter') editorSave.click();
+    });
+    editorSave.addEventListener('click', async () => {
+      const text = (editorArea.value || '').trim();
+      if (!text) { closeEditor(); return; }
+      if (editingId) {
+        await updateReminderText(editingId, text);
+      } else {
+        await addReminderText(text);
+      }
+      closeEditor();
+    });
+
     async function loadReminders() {
       if (!CURRENT_USER) return;
+      const cols = HAS_SORT_COLUMN ? 'id, text, done, sort, created_at' : 'id, text, done, created_at';
       const { data, error } = await supabase
         .from('reminders')
-        .select('*')
-        .eq('room_key', ROOM_KEY) 
-        .order('created_at', { ascending: false });
+        .select(cols)
+        .eq('room_key', ROOM_KEY);
 
       if (error) {
         console.warn('Load reminders error:', error.message);
@@ -961,7 +612,19 @@
         return;
       }
 
-      renderReminders(data || []);
+      let rows = (data || []).filter(r => !r.done); // hide completed
+      // ordering
+      const saved = JSON.parse(localStorage.getItem('reminderOrder:'+ROOM_KEY) || '[]');
+      if (HAS_SORT_COLUMN) {
+        rows.sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at > b.created_at ? 1 : -1));
+      } else if (saved.length) {
+        const idx = Object.fromEntries(saved.map((id,i)=>[id,i]));
+        rows.sort((a,b) => (idx[a.id] ?? 99999) - (idx[b.id] ?? 99999));
+      } else {
+        rows.sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
+      }
+
+      renderReminders(rows);
     }
 
     function renderReminders(rows) {
@@ -971,70 +634,128 @@
         return;
       }
 
-      rows.forEach(r => {
+      rows.forEach((r) => {
         const item = document.createElement('div');
         item.className = 'reminder-item';
+        item.dataset.id = r.id;
+        item.draggable = true;
+
+        const handle = document.createElement('div');
+        handle.className = 'drag-handle';
+        handle.innerHTML = '⋮⋮';
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = !!r.done;
-        cb.addEventListener('change', () => toggleDone(r.id, cb.checked));
-
-        const warn = document.createElement('span');
-        warn.className = 'warn';
-        warn.textContent = '⚠️';
+        cb.addEventListener('change', async () => {
+          await toggleDone(r.id, cb.checked);
+          // instantly hide if marked done
+          if (cb.checked) {
+            item.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease';
+            item.style.opacity = '0';
+            item.style.margin = '0';
+            item.style.paddingTop = '0';
+            item.style.paddingBottom = '0';
+            setTimeout(() => item.remove(), 200);
+          }
+        });
 
         const span = document.createElement('span');
-        span.className = 'reminder-text' + (r.done ? ' done' : '');
+        span.className = 'reminder-text';
         span.textContent = r.text;
 
-        const del = document.createElement('button');
-        del.className = 'delete-btn';
-        del.title = 'Delete';
-        del.setAttribute('aria-label','Delete reminder');
-        del.innerText = '×';
-        del.addEventListener('click', () => deleteReminder(r.id));
+        const edit = document.createElement('button');
+        edit.className = 'edit-btn';
+        edit.title = 'Edit';
+        edit.setAttribute('aria-label','Edit reminder');
+        edit.textContent = '✏️';
+        edit.addEventListener('click', () => openEditor(r.text, r.id));
 
+        item.appendChild(handle);
         item.appendChild(cb);
-        item.appendChild(warn);
         item.appendChild(span);
-        item.appendChild(del);
+        item.appendChild(edit);
         listEl.appendChild(item);
       });
+
+      wireDnD();
     }
 
-    async function addReminder() {
-      const text = (inputEl.value || '').trim();
-      if (!text) return;
+    async function addReminderText(text) {
       if (!CURRENT_USER) return;
-
-      inputEl.value = '';
-      const { error } = await supabase.from('reminders').insert({
-        room_key: ROOM_KEY,  
-        text,
-        done: false
-      });
+      const payload = { room_key: ROOM_KEY, text, done: false };
+      if (HAS_SORT_COLUMN) payload.sort = Date.now();
+      const { error } = await supabase.from('reminders').insert(payload);
       if (error) console.warn('Add reminder error:', error.message);
+      await loadReminders();
+    }
+
+    async function updateReminderText(id, text) {
+      const { error } = await supabase.from('reminders').update({ text }).eq('id', id);
+      if (error) console.warn('Update text error:', error.message);
       await loadReminders();
     }
 
     async function toggleDone(id, done) {
       const { error } = await supabase.from('reminders').update({ done }).eq('id', id);
       if (error) console.warn('Toggle error:', error.message);
-      await loadReminders();
+      // no reload here; we visually remove on check. Unchecks would show next full reload (e.g., after edit/add/refresh)
     }
 
-    async function deleteReminder(id) {
-      const { error } = await supabase.from('reminders').delete().eq('id', id);
-      if (error) console.warn('Delete error:', error.message);
-      await loadReminders();
+    async function addReminder() {
+      const text = (inputEl.value || '').trim();
+      if (!text) return;
+      await addReminderText(text);
+      inputEl.value = '';
     }
 
     addBtn.addEventListener('click', addReminder);
     inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') addReminder(); });
+
+    // ——— Drag & Drop ordering ———
+    function wireDnD() {
+      const items = Array.from(listEl.querySelectorAll('.reminder-item'));
+      let dragEl = null;
+
+      items.forEach(it => {
+        it.addEventListener('dragstart', e => {
+          dragEl = it;
+          it.classList.add('dragging');
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', it.dataset.id);
+        });
+        it.addEventListener('dragend', () => { if (dragEl) dragEl.classList.remove('dragging'); dragEl = null; });
+        it.addEventListener('dragover', e => {
+          e.preventDefault();
+          const after = getDragAfterElement(listEl, e.clientY);
+          if (after == null) listEl.appendChild(dragEl);
+          else listEl.insertBefore(dragEl, after);
+        });
+      });
+
+      listEl.addEventListener('drop', async () => {
+        const orderIds = Array.from(listEl.querySelectorAll('.reminder-item')).map(x => x.dataset.id);
+        localStorage.setItem('reminderOrder:'+ROOM_KEY, JSON.stringify(orderIds));
+        if (HAS_SORT_COLUMN) {
+          const base = Date.now();
+          await Promise.all(orderIds.map((id, idx) => supabase.from('reminders').update({ sort: base + idx }).eq('id', id)));
+        }
+      });
+
+      function getDragAfterElement(container, y) {
+        const els = [...container.querySelectorAll('.reminder-item:not(.dragging)')];
+        return els.reduce((closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height/2;
+          if (offset < 0 && offset > closest.offset) return { offset, element: child };
+          else return closest;
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+      }
+    }
   </script>
 
   <script>
+    // secret modal (unchanged)
     (() => {
       const heart = document.getElementById('secretHeart');
       const backdrop = document.getElementById('secretBackdrop');
@@ -1076,14 +797,13 @@
         iframe.src = "";
       }
 
-      backdrop.addEventListener('click', (e) => {
-        if (e.target === backdrop) closeModal();
-      }, true);
+      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); }, true);
       closeBtn.addEventListener('click', (e)=> { e.stopPropagation(); closeModal(); });
     })();
   </script>
 
   <script>
+    // hold to open story (unchanged)
     (() => {
       const heartEl = document.getElementById('title-heart');
       if (!heartEl) return;
@@ -1092,8 +812,8 @@
       let holdTimer = null;
 
       const startHold = (e) => {
-        e.preventDefault();              
-        e.stopPropagation();               
+        e.preventDefault();
+        e.stopPropagation();
         clearTimeout(holdTimer);
         holdTimer = setTimeout(() => {
           window.location.href = 'story.html';
@@ -1117,6 +837,7 @@
   </script>
 
   <script>
+    // start heart -> journal (unchanged)
     (() => {
       const start = document.getElementById('startHeart');
       if (!start) return;
