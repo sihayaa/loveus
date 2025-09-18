@@ -144,7 +144,7 @@
     /* ——— Night mode toggle (small, above timezone card) ——— */
     .theme-toggle{
       position: fixed;
-      top: 10px;                 /* adjusted so it won't overlap */
+      top: 10px;
       right: 40px;
       z-index: 6;
       padding: 6px 10px;
@@ -160,7 +160,7 @@
     .theme-toggle:hover{ transform: translateY(-1px); }
 
     #timezone-box {
-      position: fixed; top: 60px; right: 40px; /* pushed down to clear the toggle */
+      position: fixed; top: 60px; right: 40px;
       background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);
       border-radius: 20px; padding: 18px 22px; width: 220px; color: white; font-family: 'Segoe UI', sans-serif;
       box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3); text-align: left; z-index: 5;
@@ -170,7 +170,7 @@
     .tz-label { font-weight: bold; color: #111; text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a; }
 
     #countdown-box {
-      position: fixed; top: 200px; right: 40px; /* moved down to maintain spacing */
+      position: fixed; top: 200px; right: 40px;
       background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px);
       border-radius: 20px; padding: 18px; width: 220px; color: #fff;
       font-family: 'Segoe UI', sans-serif; box-shadow: 0 0 12px #f5b3f5, 4px 4px 12px rgba(0,0,0,0.3);
@@ -201,9 +201,9 @@
     /* ——— Reminders ——— */
     #reminder-box {
       position: fixed;
-      top: 350px;               /* nudged to keep spacing with shifted countdown box */
+      top: 350px;
       right: 40px;
-      bottom: 16px;              /* stretch down */
+      bottom: 16px;
       width: 290px;
       padding: 14px;
       background: rgba(0,0,0,0.55);
@@ -232,15 +232,15 @@
       min-height: 0;
       overflow-y: auto;
       padding-right: 0;
-      -ms-overflow-style: none;  /* IE/Edge */
-      scrollbar-width: none;     /* Firefox */
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
     #reminder-list::-webkit-scrollbar { width: 0; height: 0; }
 
     .reminder-item {
       position: relative;
       display: grid;
-      grid-template-columns: 22px 1fr; /* checkbox | text */
+      grid-template-columns: 22px 1fr;
       align-items: center;
       gap: 8px;
       padding: 10px 26px 10px 10px;
@@ -265,7 +265,6 @@
     }
     .reminder-text.done{ text-decoration: line-through; opacity: 0.7; }
 
-    /* small pencil at top-right */
     .edit-btn{
       position: absolute;
       top: 6px;
@@ -281,7 +280,6 @@
     }
     .edit-btn:hover { transform: scale(1.05); opacity: 1; }
 
-    /* pop-up editor */
     .editor-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
     .editor-backdrop.show { opacity: 1; pointer-events: auto; }
     .editor-modal { width: min(92vw, 720px); background: #111; border: 1px solid #7a5af8; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5); padding: 20px; }
@@ -392,10 +390,28 @@
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
 
   <div id="icon-area">
+    <!-- Left column -->
     <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
       <img src="album-icon.png" alt="Album Icon">
     </div>
 
+    <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/dateplan_bg.png" alt="Date Plans Icon">
+    </div>
+
+    <div class="album-icon" style="top: 300px;" onclick="location.href='doctor.html'">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
+    </div>
+
+    <div class="album-icon" style="top: 400px;" onclick="location.href='wishlist.html'">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish-icon.png" alt="Wishlist Icon">
+    </div>
+
+    <div class="album-icon" style="top: 500px;" onclick="location.href='tracking.html'">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
+    </div>
+
+    <!-- Right column -->
     <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
       <img
         src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
@@ -410,42 +426,18 @@
         onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
     </div>
 
-    <div class="album-icon" style="top: 300px; left: 150px;" onclick="location.href='middle-earth-map.html'" title="Middle Earth Map">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png"
-        alt="Middle Earth Map Icon"
-        onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
-    </div>
-
-    <div class="album-icon" style="top: 400px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
+    <div class="album-icon" style="top: 300px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
       <img
         src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png"
         alt="Love Letters Icon"
         onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
 
-    <div class="album-icon" style="top: 500px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
+    <div class="album-icon" style="top: 400px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
       <img
         src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png"
         alt="Learning Icon"
         onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
-    </div>
-
-    <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/dateplan_bg.png" alt="Date Plans Icon">
-    </div>
-
-    <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
-    </div>
-    <div class="album-icon" style="top: 400px;" onclick="location.href='doctor.html'">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
-    </div>
-    <div class="album-icon" style="top: 500px;" onclick="location.href='wishlist.html'">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish-icon.png" alt="Wishlist Icon">
-    </div>
-    <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
     </div>
   </div>
 
@@ -492,7 +484,6 @@
   <template id="gamelist-label-template"><div class="icon-label">🎮<br>Game&nbsp;List</div></template>
   <template id="letters-label-template"><div class="icon-label">💌<br>Letters</div></template>
   <template id="learning-label-template"><div class="icon-label">✏️<br>Learning</div></template>
-  <template id="mem-label-template"><div class="icon-label">🗺️<br>Middle-Earth</div></template>
 
   <div class="secret-heart" id="secretHeart" title=" ">
     💚
@@ -746,7 +737,7 @@
 
     // KEYBOARD: Enter = save, Shift+Enter = newline, Ctrl/Cmd+Enter = save
     editorArea.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && e.shiftKey) return;        // newline
+      if (e.key === 'Enter' && e.shiftKey) return;
       if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
         e.preventDefault();
         editorSave.click();
