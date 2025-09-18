@@ -121,6 +121,20 @@ hr.sep{border:0;border-top:1px dashed #2a3574;margin:10px 0}
 /* dropdown menu readability */
 .day select{background:#fff!important;color:#000!important;border-color:#1c6280}
 .day select option{background:#fff!important;color:#000!important}
+/* stronger outline for week boxes */
+.day,.day.alt{border-width:2px;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+
+/* user‑specific panel colors (you=green, him=purple) */
+:root{ --panel:#057D3A; --panel-border:#046b33; }
+.user-him{ --panel:#6928A6; --panel-border:#4e1f7d; }
+.targets .target-card{background:var(--panel)!important;border-color:var(--panel-border)!important;color:#fff}
+.targets .target-card label{color:#fff!important;opacity:1}
+.targets .target-card .ring{background:color-mix(in srgb, var(--panel) 75%, #000)!important;border-color:var(--panel-border)!important;color:#fff}
+.targets .target-card input{background:rgba(0,0,0,.2)!important;border-color:var(--panel-border)!important;color:#fff}
+.targets .target-card .btn{background:var(--panel)!important;border-color:var(--panel-border)!important;color:#fff}
+.summary{background:var(--panel)!important;border-color:var(--panel-border)!important;color:#fff}
+.summary .kv .cell{background:rgba(0,0,0,.18)!important;border-color:var(--panel-border)!important;color:#fff}
+
 </style>
 </head>
 <body>
@@ -284,7 +298,11 @@ function render(){
   document.getElementById('himBtn').classList.toggle('active', state.user==='him');
   // update accent color for contrast based on selected user
   const rootStyle = document.documentElement.style;
-  rootStyle.setProperty('--accent', state.user==='you' ? getComputedStyle(document.documentElement).getPropertyValue('--mint') : getComputedStyle(document.documentElement).getPropertyValue('--purple'));
+  rootStyle.setProperty('--accent', state.user==='you'
+    ? getComputedStyle(document.documentElement).getPropertyValue('--mint')
+    : getComputedStyle(document.documentElement).getPropertyValue('--purple'));
+  // toggle class to switch panel colors (you=green, him=purple)
+  document.body.classList.toggle('user-him', state.user==='him');
 
   // load data
   const uid = getUID(), wkKey = ywwKey(state.year,state.week);
@@ -602,6 +620,7 @@ function updateURL(){
   history.replaceState(null,'',u);
 }
 
+/* ---------- init ---------- */
 render();
 
 </script>
