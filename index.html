@@ -6,8 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="icon" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/icon.png?v=2" type="image/png" sizes="32x32">
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+
   <script>
     const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
     const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
@@ -17,7 +17,7 @@
     const ROOM_KEY = "couple";
 
     let CURRENT_USER = null;
-    let HAS_SORT_COLUMN = true; // auto-detected below
+    let HAS_SORT_COLUMN = true;
 
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
@@ -30,10 +30,10 @@
       }
       CURRENT_USER = user;
 
-      // probe if 'sort' column exists
+      // probe 'sort' column
       try {
         const { error } = await supabase.from('reminders').select('id, sort').eq('room_key', ROOM_KEY).limit(1);
-        if (error && /sort/.test(error.message)) HAS_SORT_COLUMN = false;
+        if (error && /does not exist/i.test(error.message)) HAS_SORT_COLUMN = false;
       } catch { HAS_SORT_COLUMN = false; }
 
       loadReminders();
@@ -101,18 +101,14 @@
     }
 
     @keyframes pulseGlow {
-      0%, 100% {
-        text-shadow:
+      0%, 100% { text-shadow:
           -1px -1px 0 #000, 1px -1px 0 #000,
           -1px 1px 0 #000, 1px  1px 0 #000,
-          0 0 4px #4fa981, 0 0 8px #4fa981;
-      }
-      50% {
-        text-shadow:
+          0 0 4px #4fa981, 0 0 8px #4fa981; }
+      50% { text-shadow:
           -1px -1px 0 #000, 1px -1px 0 #000,
           -1px 1px 0 #000, 1px  1px 0 #000,
-          0 0 10px #4fa981, 0 0 18px #4fa981;
-      }
+          0 0 10px #4fa981, 0 0 18px #4fa981; }
     }
 
     button {
@@ -131,29 +127,37 @@
     #icon-area { }
 
     .album-icon {
-      position: fixed;
-      left: 20px;
-      width: 80px;
-      height: 80px;
-      background-color: #884ea0;
-      border-radius: 20px;
+      position: fixed; left: 20px; width: 80px; height: 80px;
+      background-color: #884ea0; border-radius: 20px;
       box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
-      padding: 6px;
-      cursor: pointer;
-      z-index: 10;
-      transition: all 0.3s ease;
-      display: grid;
-      place-items: center;
-      text-decoration: none;
+      padding: 6px; cursor: pointer; z-index: 10; transition: all 0.3s ease;
+      display: grid; place-items: center; text-decoration: none;
     }
     .album-icon:hover { transform: scale(1.07); box-shadow: 0 0 15px #e43fec, 0 0 25px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3); }
     .album-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; display: block; }
     .album-icon .icon-label{
-      width: 100%; height: 100%; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center; padding: 6px;
+      width: 100%; height: 100%; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 6px;
       text-align: center; font-family: 'Patrick Hand', cursive; font-weight: 800; font-size: 14px; line-height: 1.1; color: #fff;
       text-shadow: 0 1px 2px rgba(0,0,0,.6); background: rgba(255,255,255,0.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
     }
+
+    /* ——— Night mode toggle (small, above timezone card) ——— */
+    .theme-toggle{
+      position: fixed;
+      top: 8px;                 /* above timezone box */
+      right: 40px;
+      z-index: 6;
+      padding: 6px 10px;
+      font-size: 13px;
+      border: 1px solid rgba(255,255,255,.25);
+      border-radius: 999px;
+      background: rgba(0,0,0,.55);
+      color: #fff;
+      backdrop-filter: blur(8px);
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0,0,0,.25);
+    }
+    .theme-toggle:hover{ transform: translateY(-1px); }
 
     #timezone-box {
       position: fixed; top: 40px; right: 40px;
@@ -177,6 +181,11 @@
 
     canvas#heart-canvas { position: fixed; top: 0; left: 0; z-index: -1; pointer-events: none; }
     #mood-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    body.night #mood-overlay{ background: rgba(5, 8, 30, 0.55) !important; }
+    body.night::after{
+      content:""; position: fixed; inset: 0; background: rgba(0,0,0,.12);
+      pointer-events: none; z-index: 0;
+    }
 
     .quote-box{
       position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
@@ -189,12 +198,24 @@
     .quote-box.show { opacity: 1; transform: translate(-50%,-50%); }
     .quote-box.fade-out { opacity: 0; transform: translate(-50%,-48%); }
 
-    /* ——— Reminders (updated) ——— */
+    /* ——— Reminders ——— */
     #reminder-box {
-      position: fixed; top: 330px; right: 40px; width: 290px; padding: 14px;
-      background: rgba(0,0,0,0.55); backdrop-filter: blur(10px);
-      border-radius: 16px; box-shadow: 0 0 12px #7e5bd2, 4px 4px 12px rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.25); color: #fff; z-index: 5; text-align: left;
+      position: fixed;
+      top: 330px;
+      right: 40px;
+      bottom: 16px;              /* stretch down */
+      width: 290px;
+      padding: 14px;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(10px);
+      border-radius: 16px;
+      box-shadow: 0 0 12px #7e5bd2, 4px 4px 12px rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.25);
+      color: #fff;
+      z-index: 5;
+      text-align: left;
+      display: flex;
+      flex-direction: column;
     }
     #reminder-box h3 { margin: 0 0 10px 0; font-family: 'Patrick Hand', cursive; font-size: 20px; text-shadow: 0 0 6px #a027a0; display: flex; align-items: center; gap: 6px; }
     .reminder-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
@@ -205,31 +226,72 @@
     }
     #add-reminder-btn { padding: 10px 12px; border-radius: 10px; border: none; background: #a3d2ca; cursor: pointer; font-size: 14px; flex: 0 0 auto; }
     #add-reminder-btn:hover { background:#8fc6bb; transform:none; box-shadow:0 0 10px rgba(0,0,0,.2); }
-    #reminder-list { max-height: 300px; overflow-y: auto; padding-right: 4px; }
+
+    #reminder-list {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding-right: 0;
+      -ms-overflow-style: none;  /* IE/Edge */
+      scrollbar-width: none;     /* Firefox */
+    }
+    #reminder-list::-webkit-scrollbar { width: 0; height: 0; }
 
     .reminder-item {
-      position: relative; display: grid; grid-template-columns: 22px 1fr 22px; align-items: center; gap: 8px;
-      padding: 10px 26px 10px 10px; margin-bottom: 10px; border-radius: 12px;
-      background: rgba(255,255,255,0.9); border: 1px solid rgba(255,255,255,0.35);
-      box-shadow: 0 0 10px rgba(0,0,0,0.15); min-height: 52px;
+      position: relative;
+      display: grid;
+      grid-template-columns: 22px 1fr; /* checkbox | text */
+      align-items: center;
+      gap: 8px;
+      padding: 10px 26px 10px 10px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.9);
+      border: 1px solid rgba(255,255,255,0.35);
+      box-shadow: 0 0 10px rgba(0,0,0,0.15);
+      min-height: 52px;
     }
-    .reminder-item::before{ content:""; position:absolute; left:-1px; top:0; bottom:0; width:4px; border-radius:12px 0 0 12px; background: var(--teal); box-shadow: 0 0 10px var(--teal); }
-    .drag-handle { position: absolute; left: -20px; top: 0; bottom: 0; width: 16px; display: grid; place-items: center; cursor: grab; user-select: none; color: #111; opacity: .6; }
-    .reminder-item.dragging { opacity: .6; transform: scale(.996); }
+    .reminder-item::before{
+      content:"";
+      position:absolute; left:-1px; top:0; bottom:0; width:4px;
+      border-radius:12px 0 0 12px;
+      background: var(--teal); box-shadow: 0 0 10px var(--teal);
+    }
     .reminder-item input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
-    .reminder-text { font-size: 18px; font-weight: 800; color: #000; letter-spacing: 0.2px; word-break: break-word; }
-    .edit-btn{
-      justify-self: end; background: transparent; border: none; color: #7a5af8;
-      font-size: 18px; line-height: 1; cursor: pointer; padding: 0; filter: drop-shadow(0 0 2px rgba(0,0,0,.5));
+
+    .reminder-text {
+      font-size: 18px; font-weight: 800; color: #000; letter-spacing: 0.2px;
+      -webkit-text-stroke: 0; text-shadow: none; word-break: break-word;
     }
-    .edit-btn:hover { transform: scale(1.08); }
+    .reminder-text.done{ text-decoration: line-through; opacity: 0.7; }
+
+    /* small pencil at top-right */
+    .edit-btn{
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: transparent;
+      border: none;
+      padding: 0;
+      line-height: 1;
+      font-size: 14px;
+      color: #7a5af8;
+      cursor: pointer;
+      opacity: .9;
+    }
+    .edit-btn:hover { transform: scale(1.05); opacity: 1; }
 
     /* pop-up editor */
     .editor-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
     .editor-backdrop.show { opacity: 1; pointer-events: auto; }
-    .editor-modal { width: min(92vw, 720px); background: #111; border: 1px solid #7a5af8; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5); padding: 16px; }
+    .editor-modal { width: min(92vw, 720px); background: #111; border: 1px solid #7a5af8; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5); padding: 20px; }
     .editor-title { color: #fff; font-weight: 700; margin: 0 0 8px 0; }
-    .editor-area { width: 100%; min-height: 160px; border-radius: 12px; resize: vertical; border: 1px solid #333; padding: 12px; font-size: 15px; line-height: 1.5; background: #fff; color: #000; outline: none; }
+    .editor-area {
+      display: block; width: 100%; box-sizing: border-box;
+      min-height: 160px; border-radius: 12px; resize: vertical;
+      border: 1px solid #333; padding: 12px; font-size: 15px; line-height: 1.5;
+      background: #fff; color: #000; outline: none; margin: 0;
+    }
     .editor-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
     .btn { padding: 10px 14px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px; }
     .btn-primary { background: #7a5af8; color: #fff; }
@@ -251,30 +313,63 @@
     @media (max-width: 1024px){
       body{ padding: 28px }
       h1{ font-size: 2.8em }
+      .theme-toggle{ right: 20px }
       #timezone-box, #countdown-box, #reminder-box{ right: 20px }
     }
+
     @media (max-width: 768px){
       body{ padding:16px }
       h1{ font-size:2.2em; margin-bottom:12px }
       #duration-block{ padding:10px 14px }
       #duration-label, #duration-value{ font-size:1.5em }
-      #timezone-box, #countdown-box, #reminder-box{
-        position: static; width: 100%; max-width: 540px; margin: 10px auto;
+
+      .theme-toggle{
+        top: 12px;
+        right: 12px;
+        padding: 6px 10px;
+        font-size: 13px;
       }
-      #reminder-list{ max-height: 40vh }
+
+      #timezone-box, #countdown-box, #reminder-box{
+        position: static;
+        width: 100%;
+        max-width: 540px;
+        margin: 10px auto;
+      }
+      /* on mobile the reminder list height is controlled by max-height */
+      #reminder-list{ max-height: 40vh; overflow-y: auto; }
       #icon-area{
-        position: fixed; left: 50%; bottom: 8px; transform: translateX(-50%);
-        width: min(680px, calc(100% - 16px)); display: grid; grid-auto-flow: column; grid-auto-columns: 76px;
-        gap: 10px; padding: 8px; overflow-x: auto; background: rgba(0,0,0,0.35);
-        backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
-        border-radius: 16px; z-index: 30;
+        position: fixed;
+        left: 50%;
+        bottom: 8px;
+        transform: translateX(-50%);
+        width: min(680px, calc(100% - 16px));
+        display: grid;
+        grid-auto-flow: column;
+        grid-auto-columns: 76px;
+        gap: 10px;
+        padding: 8px;
+        overflow-x: auto;
+        background: rgba(0,0,0,0.35);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        border-radius: 16px;
+        z-index: 30;
       }
       #icon-area::-webkit-scrollbar{ height:6px }
       #icon-area::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.25); border-radius: 999px }
-      .album-icon{ position: static !important; left: auto !important; top: auto !important; width: 64px; height: 64px; }
+
+      .album-icon{
+        position: static !important;
+        left: auto !important;
+        top: auto !important;
+        width: 64px; height: 64px;
+      }
       .album-icon .icon-label{ font-size: 12px }
+
       .secret-heart{ bottom: 84px }
     }
+
     @media (max-width:420px){
       h1{ font-size:1.8em }
       #duration-label, #duration-value{ font-size:1.35em }
@@ -303,28 +398,38 @@
     </div>
 
     <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png" alt="Work Schedule Icon"
-           onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
+        alt="Work Schedule Icon"
+        onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='gamelist.html'" title="Game List">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png" alt="Game List Icon"
-           onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png"
+        alt="Game List Icon"
+        onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 300px; left: 150px;" onclick="location.href='middle-earth-map.html'" title="Middle Earth Map">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png" alt="Middle Earth Map Icon"
-           onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png"
+        alt="Middle Earth Map Icon"
+        onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 400px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png" alt="Love Letters Icon"
-           onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png"
+        alt="Love Letters Icon"
+        onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 500px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png" alt="Learning Icon"
-           onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
+      <img
+        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png"
+        alt="Learning Icon"
+        onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
     </div>
 
     <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
@@ -344,6 +449,9 @@
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
     </div>
   </div>
+
+  <!-- Night mode toggle (above timezone) -->
+  <button id="theme-toggle" class="theme-toggle" aria-pressed="false" title="Toggle night mode">🌙 Night</button>
 
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
@@ -470,7 +578,15 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
+    // Night/Auto overlay logic with toggle support
     function applyMoodOverlay() {
+      const mode = localStorage.getItem('themeMode') || 'auto'; // 'auto' | 'night'
+      if (mode === 'night') {
+        document.getElementById('mood-overlay').style.background = 'rgba(5, 8, 30, 0.55)';
+        document.body.classList.add('night');
+        return;
+      }
+      document.body.classList.remove('night');
       const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
       const hour = new Date(vegasTime).getHours();
       let color;
@@ -486,6 +602,25 @@
     applyMoodOverlay();
     setInterval(updateTimeZones, 60000);
     setInterval(applyMoodOverlay, 60 * 60 * 1000);
+
+    // theme toggle wiring
+    const themeBtn = document.getElementById('theme-toggle');
+    function reflectThemeBtn(){
+      const mode = localStorage.getItem('themeMode') || 'auto';
+      const active = mode === 'night';
+      themeBtn.setAttribute('aria-pressed', active ? 'true' : 'false');
+      themeBtn.textContent = active ? '☀️ Day (auto)' : '🌙 Night';
+    }
+    if (themeBtn) {
+      reflectThemeBtn();
+      themeBtn.addEventListener('click', () => {
+        const mode = localStorage.getItem('themeMode') || 'auto';
+        const next = mode === 'night' ? 'auto' : 'night';
+        localStorage.setItem('themeMode', next);
+        reflectThemeBtn();
+        applyMoodOverlay();
+      });
+    }
   </script>
 
   <script>
@@ -522,9 +657,36 @@
     }
     drawHearts();
 
-    const sweetQuotes = ["You make ordinary moments feel special.","Your laugh is my favorite sound.","I’m grateful for you every day.","You’re my calm in the chaos.","I love the way you care.","You’re my soft place to land.","Thank you for choosing me.","Your smile makes everything lighter.","Being with you feels like home.","You’re the best part of my day.","You make life taste sweeter.","I cherish our quiet minutes.","Every little thing with you matters.","You’re my favorite comfort.","I adore your kind heart.","We’re a team, and we win together.","You matter. Your voice matters. Your life matters.","Every little victory is worth celebrating.","The person you were is the reason I get to love the person you are." ,"You make even the dullest days shine.","Your voice is my favorite comfort.","I love the way you listen to me.","Being around you feels effortless.","You always know how to make me smile.","You turn small moments into treasures.","My heart feels lighter when you’re here.","You’re the calm after every storm.","I love how you notice the little things.","Just thinking of you makes me happy."];
-    const romanticQuotes = ["In every version of my life, I find you.","With you, I am home.","You’re my favorite place to be.","I fall for you over and over.","You’re the chapter I never want to end.","My heart knows your name.","You are my quietest poem.","You’re my always and my again.","I love you more than yesterday, less than tomorrow.","You’re my wish come true.","You light up the in-between.","Your happiness is my favorite thing to protect.","Your hand fits mine like it was meant to.","You’re my favorite hello.","Loving you is my best habit.","I love you for who you are, not just for your best days.","I choose you over and over, in every version of this life."];
-    const supportiveQuotes = ["We’re a team, always.","You’ve got this, and I’ve got you.","I believe in you completely.","You’re stronger than you think.","One step at a time, together.","I’m proud of how far you’ve come.","Your effort matters, I see it.","Breathe, you’re doing great.","I trust your pace.","Whatever happens, i’m here.","We’ll figure it out side by side.","Progress, not perfection.","You are capable of so much.","On hard days, lean on me.","I won’t let you do this alone.","Every day may not be good, but there’s something good in every day.","Choose hope, even when it’s hard to find.","It’s okay to rest. Resting is part of the journey.","Believe in yourself a little more today than you did yesterday.","You are enough.Always have been, always will be.","Change doesn’t erase you, it adds depth to who you are.","The past shaped you, but the present is where you shine.","Change doesn’t erase you, it adds depth to who you are.","You haven’t lost yourself, you’ve just grown into new parts of you.","Your soul is the same, only touched by deeper colors now."];
+    const sweetQuotes = [
+      "You make ordinary moments feel special.","Your laugh is my favorite sound.","I’m grateful for you every day.","You’re my calm in the chaos.",
+      "I love the way you care.","You’re my soft place to land.","Thank you for choosing me.","Your smile makes everything lighter.",
+      "Being with you feels like home.","You’re the best part of my day.","You make life taste sweeter.","I cherish our quiet minutes.",
+      "Every little thing with you matters.","You’re my favorite comfort.","I adore your kind heart.","We’re a team, and we win together.",
+      "You matter. Your voice matters. Your life matters.","Every little victory is worth celebrating.",
+      "The person you were is the reason I get to love the person you are.","You make even the dullest days shine.",
+      "Your voice is my favorite comfort.","I love the way you listen to me.","Being around you feels effortless.",
+      "You always know how to make me smile.","You turn small moments into treasures.","My heart feels lighter when you’re here.",
+      "You’re the calm after every storm.","I love how you notice the little things.","Just thinking of you makes me happy."
+    ];
+    const romanticQuotes = [
+      "In every version of my life, I find you.","With you, I am home.","You’re my favorite place to be.","I fall for you over and over.",
+      "You’re the chapter I never want to end.","My heart knows your name.","You are my quietest poem.","You’re my always and my again.",
+      "I love you more than yesterday, less than tomorrow.","You’re my wish come true.","You light up the in-between.",
+      "Your happiness is my favorite thing to protect.","Your hand fits mine like it was meant to.","You’re my favorite hello.",
+      "Loving you is my best habit.","I love you for who you are, not just for your best days.",
+      "I choose you over and over, in every version of this life."
+    ];
+    const supportiveQuotes = [
+      "We’re a team, always.","You’ve got this, and I’ve got you.","I believe in you completely.","You’re stronger than you think.",
+      "One step at a time, together.","I’m proud of how far you’ve come.","Your effort matters, I see it.","Breathe, you’re doing great.",
+      "I trust your pace.","Whatever happens, i’m here.","We’ll figure it out side by side.","Progress, not perfection.",
+      "You are capable of so much.","On hard days, lean on me.","I won’t let you do this alone.",
+      "Every day may not be good, but there’s something good in every day.","Choose hope, even when it’s hard to find.",
+      "It’s okay to rest. Resting is part of the journey.","Believe in yourself a little more today than you did yesterday.",
+      "You are enough.Always have been, always will be.","Change doesn’t erase you, it adds depth to who you are.",
+      "The past shaped you, but the present is where you shine.","Change doesn’t erase you, it adds depth to who you are.",
+      "You haven’t lost yourself, you’ve just grown into new parts of you.","Your soul is the same, only touched by deeper colors now."
+    ];
     const quoteColors = ["#246B3E","#27658A","#453299"];
 
     function showRandomQuote() {
@@ -562,8 +724,6 @@
     const editorSave = document.getElementById('editorSave');
     const editorCancel = document.getElementById('editorCancel');
     const editorTitle = document.getElementById('editorTitle');
-
-    // editor mode
     let editingId = null;
 
     function openEditor(prefill = '', id = null) {
@@ -613,7 +773,7 @@
       }
 
       let rows = (data || []).filter(r => !r.done); // hide completed
-      // ordering
+
       const saved = JSON.parse(localStorage.getItem('reminderOrder:'+ROOM_KEY) || '[]');
       if (HAS_SORT_COLUMN) {
         rows.sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at > b.created_at ? 1 : -1));
@@ -640,16 +800,11 @@
         item.dataset.id = r.id;
         item.draggable = true;
 
-        const handle = document.createElement('div');
-        handle.className = 'drag-handle';
-        handle.innerHTML = '⋮⋮';
-
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = !!r.done;
         cb.addEventListener('change', async () => {
           await toggleDone(r.id, cb.checked);
-          // instantly hide if marked done
           if (cb.checked) {
             item.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease';
             item.style.opacity = '0';
@@ -671,7 +826,6 @@
         edit.textContent = '✏️';
         edit.addEventListener('click', () => openEditor(r.text, r.id));
 
-        item.appendChild(handle);
         item.appendChild(cb);
         item.appendChild(span);
         item.appendChild(edit);
@@ -699,7 +853,6 @@
     async function toggleDone(id, done) {
       const { error } = await supabase.from('reminders').update({ done }).eq('id', id);
       if (error) console.warn('Toggle error:', error.message);
-      // no reload here; we visually remove on check. Unchecks would show next full reload (e.g., after edit/add/refresh)
     }
 
     async function addReminder() {
@@ -712,7 +865,7 @@
     addBtn.addEventListener('click', addReminder);
     inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') addReminder(); });
 
-    // ——— Drag & Drop ordering ———
+    // Drag & Drop ordering
     function wireDnD() {
       const items = Array.from(listEl.querySelectorAll('.reminder-item'));
       let dragEl = null;
@@ -755,7 +908,7 @@
   </script>
 
   <script>
-    // secret modal (unchanged)
+    // secret modal
     (() => {
       const heart = document.getElementById('secretHeart');
       const backdrop = document.getElementById('secretBackdrop');
@@ -803,7 +956,7 @@
   </script>
 
   <script>
-    // hold to open story (unchanged)
+    // hold to open story
     (() => {
       const heartEl = document.getElementById('title-heart');
       if (!heartEl) return;
@@ -837,7 +990,7 @@
   </script>
 
   <script>
-    // start heart -> journal (unchanged)
+    // start heart -> journal
     (() => {
       const start = document.getElementById('startHeart');
       if (!start) return;
