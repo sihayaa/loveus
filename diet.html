@@ -46,7 +46,7 @@ input::placeholder,textarea::placeholder{color:#9fb0ff}
 .ring .val{font-weight:800}
 
 /* responsive grid that wraps and centers — no horizontal scroll */
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px;margin-top:12px;align-items:start}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(340px,1fr));gap:20px;margin-top:12px;align-items:start}
 
 /* day cards with alternating contrast */
 .day{border:1px solid #2a3574;border-radius:16px;background:linear-gradient(180deg,#141b4a,#0f1646);padding:12px;box-shadow:0 0 18px rgba(122,90,248,.08)}
@@ -143,6 +143,14 @@ hr.sep{border:0;border-top:1px dashed #2a3574;margin:10px 0}
 /* tidy spacing for sheet */
 .sheet-row .mlbl{min-width:90px}
 .sheet input::placeholder{color:#eaf4ff}
+/* layout tweaks for wider cards & fixed inputs */
+.day{overflow:hidden}
+.noterow{display:grid;grid-template-columns:110px 1fr 90px 100px 72px;gap:8px;align-items:center;margin:8px 0}
+.noterow .lbl{font-weight:700}
+.noterow input{background:rgba(0,0,0,.18);border:1px solid #1c6280;color:#fff;border-radius:10px;padding:.45rem .6rem;min-width:0}
+@media (max-width:1400px){.grid{grid-template-columns:repeat(3,minmax(320px,1fr))}}
+@media (max-width:1024px){.grid{grid-template-columns:repeat(2,minmax(300px,1fr))}}
+@media (max-width:700px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
