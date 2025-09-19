@@ -135,6 +135,14 @@ hr.sep{border:0;border-top:1px dashed #2a3574;margin:10px 0}
 .summary{background:var(--panel)!important;border-color:var(--panel-border)!important;color:#fff}
 .summary .kv .cell{background:rgba(0,0,0,.18)!important;border-color:var(--panel-border)!important;color:#fff}
 
+/* sheet (note-style) meals */
+.sheet{display:grid;gap:8px}
+.sheet-row{display:grid;grid-template-columns:110px 1fr 90px 90px;gap:8px;align-items:center}
+.mlbl{font-weight:700;opacity:.95}
+.sheet-row input{height:36px}
+/* tidy spacing for sheet */
+.sheet-row .mlbl{min-width:90px}
+.sheet input::placeholder{color:#eaf4ff}
 </style>
 </head>
 <body>
@@ -343,27 +351,16 @@ function render(){
         </div>
       </div>
       <div class="daybody">
-      <div class="tot small">Kcal <b>${calToday||0}</b> • Sugar <b>${sugarToday||0}g</b> • Water <b>${dayData.water||0}ml</b></div>
-      </div>
+      
 
       <div class="section">
         <div class="small" style="margin-bottom:6px">Meals</div>
-        <div id="ml-${date}">
-          ${dayData.meals.map((m,idx)=>mealRow(date, m, idx)).join('')}
-        </div>
-        <div class="addline">
-          <input id="name-${date}" placeholder="Food name (e.g., oats)" />
-          <input id="cal-${date}" type="number" min="0" placeholder="kcal" />
-          <input id="sug-${date}" type="number" min="0" placeholder="g sugar" />
-          <div class="row-flex">
-            <select id="tag-${date}">
-              <option>breakfast</option>
-              <option>lunch</option>
-              <option>dinner</option>
-              <option>snack</option>
-            </select>
-            <button class="save" onclick="addMeal('${date}')">Save</button>
-          </div>
+        <div class="sheet">
+          <div class="sheet-row"><span class="mlbl">Breakfast</span><input id="bf-name-${date}" placeholder="food (e.g., oats, eggs)" /><input id="bf-cal-${date}" type="number" min="0" placeholder="kcal" /><input id="bf-sug-${date}" type="number" min="0" placeholder="g sugar" /></div>
+          <div class="sheet-row"><span class="mlbl">Lunch</span><input id="lu-name-${date}" placeholder="food" /><input id="lu-cal-${date}" type="number" min="0" placeholder="kcal" /><input id="lu-sug-${date}" type="number" min="0" placeholder="g sugar" /></div>
+          <div class="sheet-row"><span class="mlbl">Dinner</span><input id="di-name-${date}" placeholder="food" /><input id="di-cal-${date}" type="number" min="0" placeholder="kcal" /><input id="di-sug-${date}" type="number" min="0" placeholder="g sugar" /></div>
+          <div class="sheet-row"><span class="mlbl">Snack</span><input id="sn-name-${date}" placeholder="food" /><input id="sn-cal-${date}" type="number" min="0" placeholder="kcal" /><input id="sn-sug-${date}" type="number" min="0" placeholder="g sugar" /></div>
+          <div class="row-flex" style="justify-content:flex-end;margin-top:6px"><button class="btn mini" onclick="saveMealSheet('${date}')">Save Meals</button></div>
         </div>
       </div>
 
@@ -397,6 +394,9 @@ function render(){
       </div>
     `;
     grid.appendChild(wrap);
+
+    // prefill note-style meal sheet with existing data
+    prefillMealSheet(date, dayData);
 
     // rings for today's date (leftovers/so far)
     const todayISO = new Date().toISOString().slice(0,10);
@@ -441,43 +441,40 @@ function saveGoals(){
   writeWeek(uid, wkKey, data); render();
 }
 
-function addMeal(date){
+/* note-style meals helpers */
+function aggregateMeals(dayData){
+  const res = {breakfast:{names:[],cal:0,sugar:0},lunch:{names:[],cal:0,sugar:0},dinner:{names:[],cal:0,sugar:0},snack:{names:[],cal:0,sugar:0}};
+  (dayData.meals||[]).forEach(m=>{
+    const t = (m.tag||'snack');
+    if(res[t]){ res[t].names.push(m.name||''); res[t].cal += (+m.cal||0); res[t].sugar += (+m.sugar||0); }
+  });
+  return res;
+}
+function prefillMealSheet(date, dayData){
+  const agg = aggregateMeals(dayData);
+  const map = {bf:'breakfast', lu:'lunch', di:'dinner', sn:'snack'};
+  for(const [p,tag] of Object.entries(map)){
+    const a = agg[tag];
+    const n = document.getElementById(`${p}-name-${date}`); if(n) n.value = a.names.filter(Boolean).join(', ');
+    const c = document.getElementById(`${p}-cal-${date}`); if(c) c.value = a.cal||'';
+    const s = document.getElementById(`${p}-sug-${date}`); if(s) s.value = a.sugar||'';
+  }
+}
+function saveMealSheet(date){
   const uid = getUID(), wkKey = ywwKey(state.year,state.week);
   const data = readWeek(uid, wkKey);
-  const name = val(`name-${date}`).trim();
-  const cal = +val(`cal-${date}`)||0;
-  const sugar = +val(`sug-${date}`)||0;
-  const tag = val(`tag-${date}`);
-
-  if(!name){ flash(`name-${date}`); return; }
   const d = data.days[date] ||= {meals:[], water:0, exMins:0, exNote:''};
-  d.meals.push({name,cal,sugar,tag});
-  writeWeek(uid, wkKey, data);
-  clearInputs(`name-${date}`,`cal-${date}`,`sug-${date}`);
-  render();
-}
-function editMeal(date, idx){
-  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
-  const data = readWeek(uid, wkKey);
-  const m = (data.days[date]||{meals:[]}).meals[idx]; if(!m) return;
-  const name = prompt("Food name:", m.name); if(name===null) return;
-  const cal = Number(prompt("Calories (kcal):", m.cal)); if(Number.isNaN(cal)) return;
-  const sugar = Number(prompt("Sugar (g):", m.sugar)); if(Number.isNaN(sugar)) return;
-  m.name = name; m.cal = cal; m.sugar = sugar;
-  writeWeek(uid, wkKey, data); render();
-}
-function cycleTag(date, idx){
-  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
-  const data = readWeek(uid, wkKey);
-  const m = (data.days[date]||{meals:[]}).meals[idx]; if(!m) return;
-  const order = ['breakfast','lunch','dinner','snack'];
-  m.tag = order[(order.indexOf(m.tag)+1)%order.length];
-  writeWeek(uid, wkKey, data); render();
-}
-function delMeal(date, idx){
-  const uid = getUID(), wkKey = ywwKey(state.year,state.week);
-  const data = readWeek(uid, wkKey);
-  (data.days[date]||{meals:[]}).meals.splice(idx,1);
+  const rows = [
+    ['breakfast','bf'],['lunch','lu'],['dinner','di'],['snack','sn']
+  ];
+  // remove existing entries for these tags
+  d.meals = (d.meals||[]).filter(m=>!rows.some(([tag])=>m.tag===tag));
+  for(const [tag,p] of rows){
+    const name = (document.getElementById(`${p}-name-${date}`)?.value||'').trim();
+    const cal = +document.getElementById(`${p}-cal-${date}`)?.value || 0;
+    const sugar = +document.getElementById(`${p}-sug-${date}`)?.value || 0;
+    if(name || cal || sugar){ d.meals.push({name,cal,sugar,tag}); }
+  }
   writeWeek(uid, wkKey, data); render();
 }
 
