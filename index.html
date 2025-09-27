@@ -170,14 +170,13 @@
       border: 1px solid rgba(255,255,255,0.45); color: #fff; text-align: center;
       font-family: 'Patrick Hand', cursive; font-size: 26px; line-height: 1.3; letter-spacing: 0.4px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 420ms ease, transform 420ms ease;
-      /* keep quotes below the modal just in case */
+  
       z-index: 9000;
       pointer-events: none;
     }
     .quote-box.show { opacity: 1; transform: translate(-50%,-50%); }
     .quote-box.fade-out { opacity: 0; transform: translate(-50%,-48%); }
 
-    /* Reminders */
     #reminder-box {
       position: fixed;
       top: 330px;
@@ -259,14 +258,10 @@
     }
     .edit-btn:hover { transform: scale(1.05); opacity: 1; }
 
-    /* Secret modal */
-    .secret-heart { position: fixed; right: 16px; bottom: 16px; font-size: 18px; opacity: .25; transition: transform .15s ease, opacity .15s ease; cursor: pointer; user-select: none; z-index: 9500; }
-    .secret-heart:hover { opacity: .6; transform: scale(1.1); }
     .secret-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity .22s ease; z-index: 12000; }
     .secret-backdrop.show { opacity: 1; pointer-events: auto; }
     .secret-modal { width: min(92vw, 920px); background: #000; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.55); overflow: hidden; transform: translateY(8px) scale(.985); opacity: 0; transition: transform .22s ease, opacity .22s ease; position: relative; z-index: 12001; border: 2px solid #e43fec; }
     .secret-backdrop.show .secret-modal { transform: translateY(0) scale(1); opacity: 1; }
-    .secret-close { position: absolute; top: 8px; right: 10px; font-size: 22px; line-height: 1; background: #fff; border: 2px solid #e43fec; color: #e43fec; border-radius: 999px; width: 34px; height: 34px; display: grid; place-items: center; cursor: pointer; z-index: 12002; }
     .secret-frame { width: 100%; height: clamp(220px, 56vw, 520px); display:block; background:#000; }
 
     .editor-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
@@ -335,8 +330,6 @@
         width: 64px; height: 64px;
       }
       .album-icon .icon-label{ font-size: 12px }
-
-      .secret-heart{ bottom: 84px }
     }
 
     @media (max-width:420px){
@@ -440,7 +433,6 @@
     <div id="reminder-list"></div>
   </div>
 
-  <!-- pop-up editor -->
   <div class="editor-backdrop" id="editorBackdrop" aria-hidden="true">
     <div class="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
       <h4 class="editor-title" id="editorTitle">New Reminder</h4>
@@ -461,12 +453,8 @@
   <template id="learning-label-template"><div class="icon-label">✏️<br>Learning</div></template>
   <template id="mem-label-template"><div class="icon-label">🗺️<br>Middle-Earth</div></template>
 
-  <div class="secret-heart" id="secretHeart" title=" ">
-    💚
-  </div>
   <div class="secret-backdrop" id="secretBackdrop" aria-hidden="true">
     <div class="secret-modal" role="dialog" aria-modal="true" aria-label="Surprise video">
-      <button class="secret-close" id="secretClose" aria-label="Close">×</button>
       <iframe
         id="secretFrame"
         class="secret-frame"
@@ -544,14 +532,13 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
-    // TIME-BASED overlay (no manual toggle)
     function applyMoodOverlay() {
       const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
       const hour = new Date(vegasTime).getHours();
       let color;
-      if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';   // morning
-      else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; // afternoon
-      else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)'; // evening
+      if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';   
+      else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; 
+      else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)'; 
       else color = 'rgba(10, 15, 60, 0.30)'; // night
       document.getElementById('mood-overlay').style.background = color;
     }
@@ -597,7 +584,6 @@
     }
     drawHearts();
 
-    // ----- Quotes -----
     const sweetQuotes = [
       "You make ordinary moments feel special.","Your laugh is my favorite sound.","I’m grateful for you every day.","You’re my calm in the chaos.",
       "I love the way you care.","You’re my soft place to land.","Thank you for choosing me.","Your smile makes everything lighter.",
@@ -630,7 +616,6 @@
     ];
     const quoteColors = ["#246B3E","#27658A","#453299"];
 
-    // NEW: a flag to pause quotes while the video modal is open
     window.QUOTES_DISABLED = false;
 
     function showRandomQuote() {
@@ -854,25 +839,11 @@
   </script>
 
   <script>
-    // ----- Secret video modal (updated) -----
+
     (() => {
-      const heart = document.getElementById('secretHeart');
       const backdrop = document.getElementById('secretBackdrop');
-      const closeBtn = document.getElementById('secretClose');
       const iframe = document.getElementById('secretFrame');
-
-      // NEW: centralize video id
       const YT_ID = "HJyvMmyQOYQ";
-
-      [heart, backdrop].forEach(el => el.addEventListener('click', e => e.stopPropagation(), true));
-      [heart, backdrop].forEach(el => el.addEventListener('touchstart', e => e.stopPropagation(), { passive: true, capture: true }));
-
-      let pressTimer;
-      const startPress = (e) => { e.stopPropagation(); clearTimeout(pressTimer); pressTimer = setTimeout(openModal, 2000); };
-      const cancelPress = (e) => { e.stopPropagation(); clearTimeout(pressTimer); };
-      heart.addEventListener('mousedown', startPress);
-      heart.addEventListener('touchstart', startPress, {passive:true});
-      ['mouseup','mouseleave','touchend','touchcancel'].forEach(ev => heart.addEventListener(ev, cancelPress));
 
       let buffer = '';
       window.addEventListener('keydown', (e) => {
@@ -901,12 +872,10 @@
         backdrop.setAttribute('aria-hidden','true');
         document.body.style.overflow = '';
         iframe.src = "about:blank";
-        // re-enable quotes
         window.QUOTES_DISABLED = false;
       }
 
       backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); }, true);
-      closeBtn.addEventListener('click', (e)=> { e.stopPropagation(); closeModal(); });
     })();
   </script>
 
