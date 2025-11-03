@@ -557,10 +557,10 @@
         if (dayPeriod && /am/i.test(dayPeriod) && hour === 12) hour = 0;
 
         let color;
-        if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';   // morning
-        else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; // afternoon
-        else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)'; // evening
-        else color = 'rgba(10, 15, 60, 0.30)'; // night
+        if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';   
+        else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; 
+        else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)';
+        else color = 'rgba(10, 15, 60, 0.30)'; 
 
         document.getElementById('mood-overlay').style.background = color;
       } catch (err) {
@@ -576,39 +576,78 @@
   </script>
 
   <script>
-    const canvas = document.getElementById('heart-canvas');
-    const ctx = canvas.getContext('2d');
-    let hearts = [];
-    const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
+ <canvas id="heart-canvas" style="position:fixed;inset:0;pointer-events:none"></canvas>
+<script>
+const canvas = document.getElementById('heart-canvas');
+const ctx = canvas.getContext('2d');
+const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
+let hearts = [];
 
-    function resizeCanvas() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+function resizeCanvas() {
+  const dpr = window.devicePixelRatio || 1;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0); 
+}
+resizeCanvas();
+window.addEventListener('resize', resizeCanvas);
 
-    document.addEventListener('mousemove', e => {
-      for (let i = 0; i < 3; i++) {
-        hearts.push({
-          x: e.clientX, y: e.clientY, size: Math.random() * 8 + 4, alpha: 1,
-          dx: (Math.random() - 0.5) * 2, dy: Math.random() * -2 - 1,
-          color: HEART_COLORS[(Math.random() * HEART_COLORS.length) | 0]
-        });
-      }
+document.addEventListener('mousemove', e => {
+  for (let i = 0; i < 3; i++) {
+    hearts.push({
+      x: e.clientX,
+      y: e.clientY,
+      size: Math.random() * 8 + 4,
+      alpha: 1,
+      dx: (Math.random() - 0.5) * 60,  
+      dy: -(Math.random() * 60 + 40),    
+      fadePerSec: 0.6,                    
+      color: HEART_COLORS[(Math.random() * HEART_COLORS.length) | 0]
     });
+  }
 
-    function drawHearts() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      hearts.forEach((h, i) => {
-        ctx.globalAlpha = h.alpha;
-        ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
-        ctx.fillStyle = h.color;
-        ctx.fillText('♥', h.x, h.y);
-        h.x += h.dx; h.y += h.dy; h.alpha -= 0.02;
-        if (h.alpha <= 0) hearts.splice(i, 1);
-      });
-      requestAnimationFrame(drawHearts);
+  if (hearts.length > 1500) hearts = hearts.slice(-1500);
+});
+
+let lastTime = 0;
+function drawHearts(ts) {
+  if (!lastTime) lastTime = ts;
+  const dt = Math.min((ts - lastTime) / 1000, 0.05);
+  lastTime = ts;
+
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = hearts.length - 1; i >= 0; i--) {
+    const h = hearts[i];
+
+    h.x += h.dx * dt;
+    h.y += h.dy * dt;
+    h.alpha -= h.fadePerSec * dt;
+
+    if (h.alpha <= 0) {
+      hearts.splice(i, 1);
+      continue;
     }
-    drawHearts();
 
+    ctx.globalAlpha = h.alpha;
+    ctx.fillStyle = h.color;
+    ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'center';
+    ctx.fillText('♥', h.x, h.y);
+  }
+
+  ctx.globalAlpha = 1;
+  requestAnimationFrame(drawHearts);
+}
+requestAnimationFrame(drawHearts);
+</script>
+
+  <script>
     const sweetQuotes = [
       "You make ordinary moments feel special.","Your laugh is my favorite sound.","I’m grateful for you every day.","You’re my calm in the chaos.",
       "I love the way you care.","You’re my soft place to land.","Thank you for choosing me.","Your smile makes everything lighter.",
