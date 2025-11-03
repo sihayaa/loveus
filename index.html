@@ -524,25 +524,56 @@
       }
     }
 
+    // --- DST-aware helpers and display (replaces previous updateTimeZones/applyMoodOverlay) ---
+
+    // get hour/minute/dayPeriod for Vegas using Intl (DST-aware)
+    function vegasTimeParts() {
+      const opts = { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true };
+      const fmt = new Intl.DateTimeFormat('en-US', opts);
+      const parts = fmt.formatToParts(new Date());
+      const hour = parts.find(p => p.type === 'hour')?.value || '00';
+      const minute = parts.find(p => p.type === 'minute')?.value || '00';
+      const dayPeriod = parts.find(p => p.type === 'dayPeriod')?.value || '';
+      return { hour, minute, dayPeriod };
+    }
+
+    // update displayed timezone strings (Intl will handle DST)
     function updateTimeZones() {
-      const options = { hour: '2-digit', minute: '2-digit', hour12: true };
-      const vegasTime = new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles', ...options });
-      const manilaTime = new Date().toLocaleString('en-PH', { timeZone: 'Asia/Manila', ...options });
+      const timeOpts12 = { hour: '2-digit', minute: '2-digit', hour12: true };
+      const vegasFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', ...timeOpts12 });
+      const manilaFormatter = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', ...timeOpts12 });
+
+      const vegasTime = vegasFormatter.format(new Date());
+      const manilaTime = manilaFormatter.format(new Date());
+
       document.getElementById('vegas-time').textContent = vegasTime;
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
+    // apply mood overlay based on Vegas hour without parsing formatted strings
     function applyMoodOverlay() {
-      const vegasTime = new Date().toLocaleString("en-US", { timeZone: "America/Los_Angeles" });
-      const hour = new Date(vegasTime).getHours();
-      let color;
-      if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';   
-      else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; 
-      else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)'; 
-      else color = 'rgba(10, 15, 60, 0.30)'; // night
-      document.getElementById('mood-overlay').style.background = color;
+      try {
+        const { hour: hStr, dayPeriod } = vegasTimeParts();
+        let hour = parseInt(hStr, 10);
+        if (Number.isNaN(hour)) hour = 0;
+
+        // convert 12-hour + dayPeriod to 0-23
+        if (dayPeriod && /pm/i.test(dayPeriod) && hour < 12) hour += 12;
+        if (dayPeriod && /am/i.test(dayPeriod) && hour === 12) hour = 0;
+
+        let color;
+        if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';   // morning
+        else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; // afternoon
+        else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)'; // evening
+        else color = 'rgba(10, 15, 60, 0.30)'; // night
+
+        document.getElementById('mood-overlay').style.background = color;
+      } catch (err) {
+        console.warn('applyMoodOverlay error', err);
+      }
     }
 
+    // initial run and intervals
     updateTimeZones();
     updateDurationAndCountdown();
     applyMoodOverlay();
