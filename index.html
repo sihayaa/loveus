@@ -524,9 +524,7 @@
       }
     }
 
-    // --- DST-aware helpers and display (replaces previous updateTimeZones/applyMoodOverlay) ---
-
-    // get hour/minute/dayPeriod for Vegas using Intl (DST-aware)
+  
     function vegasTimeParts() {
       const opts = { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true };
       const fmt = new Intl.DateTimeFormat('en-US', opts);
@@ -537,7 +535,6 @@
       return { hour, minute, dayPeriod };
     }
 
-    // update displayed timezone strings (Intl will handle DST)
     function updateTimeZones() {
       const timeOpts12 = { hour: '2-digit', minute: '2-digit', hour12: true };
       const vegasFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', ...timeOpts12 });
@@ -550,14 +547,12 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
-    // apply mood overlay based on Vegas hour without parsing formatted strings
     function applyMoodOverlay() {
       try {
         const { hour: hStr, dayPeriod } = vegasTimeParts();
         let hour = parseInt(hStr, 10);
         if (Number.isNaN(hour)) hour = 0;
 
-        // convert 12-hour + dayPeriod to 0-23
         if (dayPeriod && /pm/i.test(dayPeriod) && hour < 12) hour += 12;
         if (dayPeriod && /am/i.test(dayPeriod) && hour === 12) hour = 0;
 
@@ -573,7 +568,6 @@
       }
     }
 
-    // initial run and intervals
     updateTimeZones();
     updateDurationAndCountdown();
     applyMoodOverlay();
@@ -676,7 +670,6 @@
   </script>
 
   <script>
-    // Reminders
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
@@ -707,7 +700,6 @@
     editorCancel.addEventListener('click', closeEditor);
     editorBackdrop.addEventListener('click', e => { if (e.target === editorBackdrop) closeEditor(); });
 
-    // Enter = save, Shift+Enter = newline, Ctrl/Cmd+Enter = save
     editorArea.addEventListener('keydown', (e) => {
       if (e.key === 'Enter' && e.shiftKey) return;
       if (e.key === 'Enter' && !e.shiftKey && !e.ctrlKey && !e.metaKey) { e.preventDefault(); editorSave.click(); return; }
@@ -888,7 +880,6 @@
 
       function openModal() {
         if (!backdrop.classList.contains('show')) {
-          // clear any showing quote and pause new ones
           document.querySelectorAll('.quote-box').forEach(el => el.remove());
           window.QUOTES_DISABLED = true;
 
