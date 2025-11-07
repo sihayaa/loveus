@@ -140,6 +140,15 @@
       text-shadow: 0 1px 2px rgba(0,0,0,.6); background: rgba(255,255,255,0.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
     }
 
+    /* --- placeholder icon (keeps the spot blank) --- */
+    .album-icon.placeholder {
+      background: transparent;
+      box-shadow: none;
+      padding: 0;
+      cursor: default;
+      pointer-events: none;
+    }
+
     #timezone-box {
       position: fixed; top: 40px; right: 40px;
       background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(10px);
@@ -195,6 +204,19 @@
       flex-direction: column;
     }
     #reminder-box h3 { margin: 0 0 10px 0; font-family: 'Patrick Hand', cursive; font-size: 20px; text-shadow: 0 0 6px #a027a0; display: flex; align-items: center; gap: 6px; }
+
+    /* --- history toggle button (small, top-right) --- */
+    #history-toggle {
+      margin-left: auto;
+      font-size: 12px;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.25);
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      cursor: pointer;
+    }
+
     .reminder-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
     #reminder-input {
       flex: 1; padding: 10px 12px; border-radius: 10px;
@@ -358,12 +380,8 @@
       <img src="album-icon.png" alt="Album Icon">
     </div>
 
-    <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='schedule.html'" title="Work Schedule">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/schedule_icon.png"
-        alt="Work Schedule Icon"
-        onerror="this.replaceWith(document.getElementById('work-schedule-label-template').content.cloneNode(true));">
-    </div>
+    <!-- Work Schedule removed, keep blank spot -->
+    <div class="album-icon placeholder" style="top: 100px; left: 150px;" title="">&nbsp;</div>
 
     <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='gamelist.html'" title="Game List">
       <img
@@ -372,12 +390,8 @@
         onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
     </div>
 
-    <div class="album-icon" style="top: 300px; left: 150px;" onclick="location.href='middle-earth-map.html'" title="Middle Earth Map">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/mem.png"
-        alt="Middle Earth Map Icon"
-        onerror="this.replaceWith(document.getElementById('mem-label-template').content.cloneNode(true));">
-    </div>
+    <!-- Middle-Earth Map removed, keep blank spot -->
+    <div class="album-icon placeholder" style="top: 300px; left: 150px;" title="">&nbsp;</div>
 
     <div class="album-icon" style="top: 400px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
       <img
@@ -397,9 +411,9 @@
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/dateplan_bg.png" alt="Date Plans Icon">
     </div>
 
-    <div class="album-icon" style="top: 300px;" onclick="location.href='chatwall.html'">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/chatwallbg.png" alt="Chat Wall Icon">
-    </div>
+    <!-- Chat Wall removed, keep blank spot -->
+    <div class="album-icon placeholder" style="top: 300px;" title="">&nbsp;</div>
+
     <div class="album-icon" style="top: 400px;" onclick="location.href='doctor.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
     </div>
@@ -420,11 +434,11 @@
   <div id="countdown-box">
     <div class="count-number" id="countdown-number">loading...</div>
     <div class="count-label">before</div>
-    <div class="count-label">1-year anniversary</div>
+    <div class="count-label">2nd-year anniversary</div>
   </div>
 
   <div id="reminder-box">
-    <h3>📄 Reminders</h3>
+    <h3>📄 Reminders <button id="history-toggle" title="View completed reminders">History</button></h3>
     <div class="reminder-input-row">
       <input id="reminder-input" type="text" placeholder="Click to write a reminder…" maxlength="200" readonly>
       <button id="add-reminder-btn" title="Quick add using the small box">Add</button>
@@ -578,23 +592,16 @@
         durEl.textContent = `${remMonths} month${remMonths!==1?'s':''} and ${days} day${days!==1?'s':''}`;
       }
 
+      /* Countdown to 2nd-year anniversary: October 13, 2026 */
       const { y, m0, d } = vegasTodayParts();
       const todayUTC = Date.UTC(y, m0, d);
-      const annivUTC = Date.UTC(2025, 9, 13);
+      const annivUTC = Date.UTC(2026, 9, 13);
       const diffDays = Math.max(0, Math.floor((annivUTC - todayUTC) / MS_DAY));
       const box = document.getElementById('countdown-number');
-      if (diffDays > 0) {
-        box.textContent = `${diffDays} days`;
-        document.querySelectorAll('.count-label')[0].textContent = 'before';
-        document.querySelectorAll('.count-label')[1].textContent = '1-year anniversary';
-      } else {
-        box.textContent = `Happy 💖`;
-        document.querySelectorAll('.count-label')[0].textContent = 'Anniversary';
-        document.querySelectorAll('.count-label')[1].textContent = '';
-      }
+      box.textContent = `${diffDays} days`;
+      document.querySelectorAll('.count-label')[0].textContent = 'before';
+      document.querySelectorAll('.count-label')[1].textContent = '2nd-year anniversary';
     }
-
-
 
     function vegasTimeParts() {
       const opts = { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true };
@@ -605,7 +612,6 @@
       const dayPeriod = parts.find(p => p.type === 'dayPeriod')?.value || '';
       return { hour, minute, dayPeriod };
     }
-
 
     function updateTimeZones() {
       const timeOpts12 = { hour: '2-digit', minute: '2-digit', hour12: true };
@@ -619,14 +625,12 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
- 
     function applyMoodOverlay() {
       try {
         const { hour: hStr, dayPeriod } = vegasTimeParts();
         let hour = parseInt(hStr, 10);
         if (Number.isNaN(hour)) hour = 0;
 
-        // convert 12-hour + dayPeriod to 0-23
         if (dayPeriod && /pm/i.test(dayPeriod) && hour < 12) hour += 12;
         if (dayPeriod && /am/i.test(dayPeriod) && hour === 12) hour = 0;
 
@@ -642,7 +646,6 @@
       }
     }
 
-
     updateTimeZones();
     updateDurationAndCountdown();
     applyMoodOverlay();
@@ -652,7 +655,6 @@
 
   <script>
     const canvas2 = document.getElementById('heart-canvas'); 
-
   </script>
 
   <script>
@@ -718,7 +720,6 @@
 
 
   <script>
-
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
@@ -729,6 +730,15 @@
     const editorCancel = document.getElementById('editorCancel');
     const editorTitle = document.getElementById('editorTitle');
     let editingId = null;
+
+    /* --- HISTORY TOGGLE STATE --- */
+    let SHOW_HISTORY = false;
+    const historyBtn = document.getElementById('history-toggle');
+    historyBtn.addEventListener('click', () => {
+      SHOW_HISTORY = !SHOW_HISTORY;
+      historyBtn.textContent = SHOW_HISTORY ? 'Active' : 'History';
+      loadReminders();
+    });
 
     function openEditor(prefill = '', id = null) {
       editingId = id;
@@ -776,15 +786,20 @@
         return;
       }
 
-      let rows = (data || []).filter(r => !r.done);
+      let rows = (data || []).filter(r => SHOW_HISTORY ? !!r.done : !r.done);
 
       const saved = JSON.parse(localStorage.getItem('reminderOrder:'+ROOM_KEY) || '[]');
-      if (HAS_SORT_COLUMN) {
-        rows.sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at > b.created_at ? 1 : -1));
-      } else if (saved.length) {
-        const idx = Object.fromEntries(saved.map((id,i)=>[id,i]));
-        rows.sort((a,b) => (idx[a.id] ?? 99999) - (idx[b.id] ?? 99999));
+      if (!SHOW_HISTORY) {
+        if (HAS_SORT_COLUMN) {
+          rows.sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at > b.created_at ? 1 : -1));
+        } else if (saved.length) {
+          const idx = Object.fromEntries(saved.map((id,i)=>[id,i]));
+          rows.sort((a,b) => (idx[a.id] ?? 99999) - (idx[b.id] ?? 99999));
+        } else {
+          rows.sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
+        }
       } else {
+        // For history view, sort most recently completed first by created_at
         rows.sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
       }
 
@@ -794,7 +809,7 @@
     function renderReminders(rows) {
       listEl.innerHTML = '';
       if (!rows.length) {
-        listEl.innerHTML = `<div style="font-size:12px;opacity:.8">No reminders yet.</div>`;
+        listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${SHOW_HISTORY ? 'No completed reminders yet.' : 'No reminders yet.'}</div>`;
         return;
       }
 
@@ -802,26 +817,31 @@
         const item = document.createElement('div');
         item.className = 'reminder-item';
         item.dataset.id = r.id;
-        item.draggable = true;
+        item.draggable = !SHOW_HISTORY;
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = !!r.done;
-        cb.addEventListener('change', async () => {
-          await toggleDone(r.id, cb.checked);
-          if (cb.checked) {
-            item.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease';
-            item.style.opacity = '0';
-            item.style.margin = '0';
-            item.style.paddingTop = '0';
-            item.style.paddingBottom = '0';
-            setTimeout(() => item.remove(), 200);
-          }
-        });
+        if (SHOW_HISTORY) {
+          cb.disabled = true;
+        } else {
+          cb.addEventListener('change', async () => {
+            await toggleDone(r.id, cb.checked);
+            if (cb.checked) {
+              item.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease';
+              item.style.opacity = '0';
+              item.style.margin = '0';
+              item.style.paddingTop = '0';
+              item.style.paddingBottom = '0';
+              setTimeout(() => item.remove(), 200);
+            }
+          });
+        }
 
         const span = document.createElement('span');
         span.className = 'reminder-text';
         span.textContent = r.text;
+        if (SHOW_HISTORY || r.done) span.classList.add('done');
 
         const edit = document.createElement('button');
         edit.className = 'edit-btn';
@@ -836,7 +856,7 @@
         listEl.appendChild(item);
       });
 
-      wireDnD();
+      if (!SHOW_HISTORY) wireDnD();
     }
 
     async function addReminderText(text) {
@@ -911,7 +931,6 @@
   </script>
 
   <script>
-
     (() => {
       const backdrop = document.getElementById('secretBackdrop');
       const iframe = document.getElementById('secretFrame');
