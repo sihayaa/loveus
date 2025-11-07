@@ -39,7 +39,6 @@
       loadLoveWall();
       cleanupLoveWallOld();
 
-      // realtime
       supabase
         .channel('reminders-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders', filter: `room_key=eq.${ROOM_KEY}` }, loadReminders)
@@ -85,7 +84,7 @@
       display: inline-block;
       padding: 12px 20px;
       border-radius: 12px;
-      margin-bottom: 30px;
+      margin-bottom: 16px;
     }
 
     #duration-label {
@@ -188,52 +187,63 @@
       text-shadow: 0 0 10px var(--teal), 0 0 18px #67e4ca88;
     }
 
-    /* LOVE WALL — centered panel */
-    #mini-wall {
-      position: fixed; left: 50%; top: 50%;
-      transform: translate(-50%,-50%);
-      width: min(780px, 86vw);
-      max-height: min(54vh, 520px);
-      padding: 14px 16px 8px;
-      background: rgba(255,255,255,0.22);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.45);
-      border-radius: 16px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-      z-index: 8000;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    /* ===== Love Wall (inline, chatwall-style) ===== */
+    #mini-wall{
+      position: static;
+      width: 100%;
+      max-width: 760px;
+      margin: 10px auto 6px;
+      padding: 0 8px;
+      z-index: 2;
     }
     .mini-wall-title{
-      font-family: 'Patrick Hand', cursive; font-size: 22px; margin: 0 0 4px 0;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 22px;
+      margin: 0 0 8px 0;
+      text-align: center;
       text-shadow: 0 0 6px #a027a0;
     }
-    .mini-wall-list{
-      overflow-y: auto; padding-right: 4px; margin: 0; list-style: none; flex: 1;
-      -ms-overflow-style: none; scrollbar-width: thin;
+    .lw-stream{
+      width: 100%;
+      max-height: 320px;
+      overflow-y: auto;
+      padding: 10px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.12);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      border: 1px solid rgba(255,255,255,.25);
+      scrollbar-width: thin;
     }
-    .mini-wall-item{
-      display: grid; grid-template-columns: 1fr auto; gap: 8px;
-      background: rgba(255,255,255,.92);
-      border: 1px solid rgba(255,255,255,.35);
-      border-radius: 12px; padding: 10px 12px;
-      color:#000;
-      box-shadow: 0 0 10px rgba(0,0,0,.15);
-    }
-    .mini-wall-meta{ font-size: 12px; opacity:.7; margin-top: 2px }
-    .mini-wall-check{ display:flex; align-items:center; gap:6px; user-select:none; }
-    .mini-wall-faded{ opacity:.55; }
-    .mini-wall-item.heart-green{ border-left: 4px solid #67e4ca; }
-    .mini-wall-item.heart-purple{ border-left: 4px solid #7a5af8; }
+    #miniWallList{ display:flex; flex-direction:column; }
 
-    /* Compose bar */
+    .lw-msg{
+      position: relative;
+      margin-bottom: 10px;
+      padding: 10px 12px 8px 12px;
+      max-width: 80%;
+      word-wrap: break-word;
+      overflow-wrap: anywhere;
+      border-radius: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,.12);
+      background: rgba(255,255,255,.95);
+      color: #000;
+    }
+    .lw-left  { align-self: flex-start; background:#f3e7ff; color:#6e2fb9; }
+    .lw-right { align-self: flex-end;   background:#dcffec; color:#28a745;  }
+    .lw-meta{ font-size: 12px; opacity:.7; margin-top: 6px }
+    .lw-check{
+      position: absolute; right: 8px; top: 8px;
+      display: inline-flex; align-items: center; gap: 6px;
+      user-select: none;
+    }
+    .lw-faded{ opacity:.55 }
+
     .mini-wall-compose{
       display: grid;
       grid-template-columns: auto 1fr auto;
       gap: 8px;
-      margin-top: 6px;
+      margin-top: 10px;
       align-items: center;
     }
     .sender-toggle{
@@ -252,8 +262,17 @@
       transform: scale(1.03);
     }
     .mini-wall-input{
-      width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,.25);
-      background: rgba(255,255,255,.92); color: #000; font-size: 14px; outline: none;
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,.25);
+      background: rgba(255,255,255,.95);
+      color: #000;
+      font-size: 14px;
+      outline: none;
+      resize: none;
+      line-height: 1.35;
+      max-height: 120px;
     }
     .mini-wall-send{
       padding: 10px 12px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px;
@@ -421,7 +440,8 @@
         width: 64px; height: 64px;
       }
       .album-icon .icon-label{ font-size: 12px }
-      #mini-wall{ width: min(96vw, 760px); max-height: 48vh }
+      #mini-wall{ max-width: 96vw; margin: 10px auto }
+      .lw-stream{ max-height: 40vh }
       #daily-quote{ max-width: 90vw }
     }
 
@@ -444,7 +464,20 @@
     <span id="duration-value">loading...</span>
   </div>
 
-  <br>
+  <!-- Love Wall sits inline under the duration block -->
+  <div id="mini-wall" aria-live="polite">
+    <h3 class="mini-wall-title">Love Wall</h3>
+    <div class="lw-stream" id="miniWallList"></div>
+    <div class="mini-wall-compose" id="miniWallCompose">
+      <div class="sender-toggle" id="senderToggle" role="tablist" aria-label="Sender">
+        <button class="sender-btn" data-sender="💚" aria-selected="false" title="Sihaya">💚</button>
+        <button class="sender-btn" data-sender="💜" aria-selected="false" title="Godbrand">💜</button>
+      </div>
+      <textarea id="miniWallText" class="mini-wall-input" rows="1" maxlength="700" placeholder="Type a message… (Shift+Enter = new line)"></textarea>
+      <button id="miniWallSend" class="mini-wall-send">Send</button>
+    </div>
+  </div>
+
   <button onclick="location.href='games.html'">🎮 Mini Games</button>
 
   <div id="icon-area">
@@ -515,22 +548,6 @@
     <div class="count-number" id="countdown-number">loading...</div>
     <div class="count-label">before</div>
     <div class="count-label">1-year anniversary</div>
-  </div>
-
-  <!-- LOVE WALL (Center) -->
-  <div id="mini-wall" aria-live="polite">
-    <h3 class="mini-wall-title">Love Wall</h3>
-    <ul class="mini-wall-list" id="miniWallList"></ul>
-
-    <!-- Compose bar -->
-    <div class="mini-wall-compose" id="miniWallCompose">
-      <div class="sender-toggle" id="senderToggle" role="tablist" aria-label="Sender">
-        <button class="sender-btn active" data-sender="💚" aria-selected="true" title="Sihaya">💚</button>
-        <button class="sender-btn" data-sender="💜" aria-selected="false" title="Godbrand">💜</button>
-      </div>
-      <input id="miniWallInput" class="mini-wall-input" type="text" maxlength="280" placeholder="Type a message…" />
-      <button id="miniWallSend" class="mini-wall-send">Send</button>
-    </div>
   </div>
 
   <!-- REMINDERS -->
@@ -775,7 +792,6 @@
     ];
     const quotePool = [...romanticQuotes, ...supportiveQuotes];
 
-    // One quote per Vegas calendar day, stable index
     function vegasDateKey() {
       return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Los_Angeles' }).format(new Date());
     }
@@ -1080,12 +1096,11 @@
 
   <!-- LOVE WALL LOGIC -->
   <script>
-    const miniWallList   = document.getElementById('miniWallList');
-    const senderToggle   = document.getElementById('senderToggle');
-    const miniWallInput  = document.getElementById('miniWallInput');
-    const miniWallSend   = document.getElementById('miniWallSend');
+    const miniWallList  = document.getElementById('miniWallList');
+    const senderToggle  = document.getElementById('senderToggle');
+    const miniWallText  = document.getElementById('miniWallText');
+    const miniWallSend  = document.getElementById('miniWallSend');
 
-    // Persist sender in browser
     const SENDER_STORE_KEY = `loveWallSender:${ROOM_KEY}`;
     let CURRENT_SENDER = localStorage.getItem(SENDER_STORE_KEY) || '💚';
 
@@ -1098,28 +1113,34 @@
         btn.setAttribute('aria-selected', String(isActive));
       });
     }
-
     senderToggle?.addEventListener('click', (e)=>{
       const btn = e.target.closest('.sender-btn');
       if (!btn) return;
       setSender(btn.dataset.sender);
     });
-    // reflect saved sender on load
     setSender(CURRENT_SENDER);
 
+    function autosize(){
+      miniWallText.style.height = 'auto';
+      miniWallText.style.height = Math.min(miniWallText.scrollHeight, 120) + 'px';
+    }
+    miniWallText?.addEventListener('input', autosize);
+    setTimeout(autosize, 0);
+
     async function sendLoveWall(){
-      const text = (miniWallInput?.value || '').trim();
+      const text = (miniWallText?.value || '').trim();
       if (!text || !CURRENT_USER) return;
       const payload = { room_key: ROOM_KEY, sender: CURRENT_SENDER, text };
       const { error } = await supabase.from('mini_wall').insert(payload);
       if (!error) {
-        miniWallInput.value = '';
+        miniWallText.value = '';
+        autosize();
       }
       loadLoveWall();
     }
 
     miniWallSend?.addEventListener('click', sendLoveWall);
-    miniWallInput?.addEventListener('keydown', (e)=>{
+    miniWallText?.addEventListener('keydown', (e)=>{
       if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendLoveWall(); }
     });
 
@@ -1135,10 +1156,10 @@
         .from('mini_wall')
         .select('id, sender, text, created_at, checked_at')
         .eq('room_key', ROOM_KEY)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: true });
 
       if (error){
-        miniWallList.innerHTML = `<li style="font-size:12px;opacity:.8;list-style:none">Couldn’t load Love Wall.</li>`;
+        miniWallList.innerHTML = `<div style="font-size:12px;opacity:.8">Couldn’t load Love Wall.</div>`;
         return;
       }
 
@@ -1150,37 +1171,46 @@
       });
 
       renderLoveWall(rows);
+      miniWallList.scrollTop = miniWallList.scrollHeight;
     }
 
     function renderLoveWall(rows){
       miniWallList.innerHTML = '';
       if (!rows.length){
-        miniWallList.innerHTML = `<li style="font-size:12px;opacity:.8;list-style:none">No messages.</li>`;
+        miniWallList.innerHTML = `<div style="font-size:12px;opacity:.8;text-align:center">No messages.</div>`;
         return;
       }
-      rows.forEach(r => {
-        const li = document.createElement('li');
-        const colorClass = r.sender === '💜' ? 'heart-purple' : 'heart-green';
-        li.className = 'mini-wall-item ' + colorClass + (r.checked_at ? ' mini-wall-faded' : '');
+      rows.forEach(r => miniWallList.appendChild(makeBubble(r)));
+    }
 
-        const left = document.createElement('div');
-        left.innerHTML = `<div>${escapeHTML(r.text)}</div>` +
-                         `<div class="mini-wall-meta">${r.sender ? escapeHTML(r.sender) + ' · ' : ''}${fmtTime(r.created_at)}</div>`;
+    function makeBubble(r){
+      const isPurple = r.sender === '💜';
+      const wrap = document.createElement('div');
+      wrap.className = 'lw-msg ' + (isPurple ? 'lw-left' : 'lw-right') + (r.checked_at ? ' lw-faded' : '');
 
-        const right = document.createElement('label');
-        right.className = 'mini-wall-check';
-        const cb = document.createElement('input');
-        cb.type = 'checkbox';
-        cb.checked = !!r.checked_at;
-        cb.addEventListener('change', async () => {
-          const nowISO = cb.checked ? new Date().toISOString() : null;
-          await supabase.from('mini_wall').update({ checked_at: nowISO }).eq('id', r.id);
-          loadLoveWall();
-        });
-        right.append(cb, document.createTextNode(' done'));
-        li.append(left, right);
-        miniWallList.appendChild(li);
+      const text = document.createElement('div');
+      text.textContent = r.text;
+      wrap.appendChild(text);
+
+      const meta = document.createElement('div');
+      meta.className = 'lw-meta';
+      meta.textContent = `${r.sender || ''} · ${fmtTime(r.created_at)}`;
+      wrap.appendChild(meta);
+
+      const check = document.createElement('label');
+      check.className = 'lw-check';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.checked = !!r.checked_at;
+      cb.addEventListener('change', async () => {
+        const nowISO = cb.checked ? new Date().toISOString() : null;
+        await supabase.from('mini_wall').update({ checked_at: nowISO }).eq('id', r.id);
+        loadLoveWall();
       });
+      check.append(cb, document.createTextNode(' done'));
+      wrap.appendChild(check);
+
+      return wrap;
     }
 
     function fmtTime(iso){
@@ -1189,7 +1219,6 @@
         return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
       }catch{ return '' }
     }
-    function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
 
     setInterval(cleanupLoveWallOld, 60*60*1000);
   </script>
