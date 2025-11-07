@@ -35,11 +35,20 @@
         if (error && /does not exist/i.test(error.message)) HAS_SORT_COLUMN = false;
       } catch { HAS_SORT_COLUMN = false; }
 
-      loadReminders();
+      loadReminders();          
+      loadMiniWall();            
+      cleanupMiniWallOld();    
 
+     
       supabase
         .channel('reminders-feed')
         .on('postgres_changes', { event: '*', schema: 'public', table: 'reminders', filter: `room_key=eq.${ROOM_KEY}` }, loadReminders)
+        .subscribe();
+
+     
+      supabase
+        .channel('mini-wall-feed') 
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'mini_wall', filter: `room_key=eq.${ROOM_KEY}` }, loadMiniWall)
         .subscribe();
     })();
   </script>
@@ -162,20 +171,65 @@
 
     #mood-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
-    .quote-box{
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      max-width: min(780px, 86vw); padding: 16px 24px; border-radius: 16px;
-      background: rgba(255,255,255,0.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.45); color: #fff; text-align: center;
-      font-family: 'Patrick Hand', cursive; font-size: 26px; line-height: 1.3; letter-spacing: 0.4px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 420ms ease, transform 420ms ease;
   
+    #daily-quote {                   
+      position: fixed; left: 16px; bottom: 16px;
+      max-width: min(520px, 86vw);
+      padding: 12px 16px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.22);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.45);
+      color: #fff;
+      text-align: left;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 18px; line-height: 1.25; letter-spacing: 0.2px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
       z-index: 9000;
-      pointer-events: none;
+      text-shadow: 0 0 10px var(--teal), 0 0 18px #67e4ca88;
     }
-    .quote-box.show { opacity: 1; transform: translate(-50%,-50%); }
-    .quote-box.fade-out { opacity: 0; transform: translate(-50%,-48%); }
 
+ 
+    #mini-wall {                        
+      position: fixed; left: 50%; top: 50%;
+      transform: translate(-50%,-50%);
+      width: min(780px, 86vw);
+      max-height: min(54vh, 520px);
+      padding: 14px 16px 8px;
+      background: rgba(255,255,255,0.22);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.45);
+      border-radius: 16px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+      z-index: 8000;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .mini-wall-title{
+      font-family: 'Patrick Hand', cursive; font-size: 22px; margin: 0 0 4px 0;
+      text-shadow: 0 0 6px #a027a0;
+    }
+    .mini-wall-list{
+      overflow-y: auto; padding-right: 4px; margin: 0; list-style: none; flex: 1;
+      -ms-overflow-style: none; scrollbar-width: thin;
+    }
+    .mini-wall-item{
+      display: grid; grid-template-columns: 1fr auto; gap: 8px;
+      background: rgba(255,255,255,.92);
+      border: 1px solid rgba(255,255,255,.35);
+      border-radius: 12px; padding: 10px 12px;
+      color:#000;
+      box-shadow: 0 0 10px rgba(0,0,0,.15);
+    }
+    .mini-wall-meta{ font-size: 12px; opacity:.7; margin-top: 2px }
+    .mini-wall-check{
+      display:flex; align-items:center; gap:6px; user-select:none;
+    }
+    .mini-wall-faded{ opacity:.55; }
+
+    /* Reminders */
     #reminder-box {
       position: fixed;
       top: 330px;
@@ -194,7 +248,14 @@
       display: flex;
       flex-direction: column;
     }
-    #reminder-box h3 { margin: 0 0 10px 0; font-family: 'Patrick Hand', cursive; font-size: 20px; text-shadow: 0 0 6px #a027a0; display: flex; align-items: center; gap: 6px; }
+    #reminder-box h3 { margin: 0 0 10px 0; font-family: 'Patrick Hand', cursive; font-size: 20px; text-shadow: 0 0 6px #a027a0; display: flex; align-items: center; gap: 6px; justify-content: space-between; }
+    #historyToggle {                   
+      font-size: 12px; opacity:.9; cursor: pointer; user-select:none;
+      background: transparent; border: none; color: #67e4ca; padding: 2px 6px; border-radius: 6px;
+      box-shadow: 0 0 10px #67e4ca55; transition: transform .15s ease, box-shadow .15s ease;
+    }
+    #historyToggle:hover { transform: scale(1.03); box-shadow: 0 0 14px #67e4ca88; }
+
     .reminder-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
     #reminder-input {
       flex: 1; padding: 10px 12px; border-radius: 10px;
@@ -329,6 +390,8 @@
         width: 64px; height: 64px;
       }
       .album-icon .icon-label{ font-size: 12px }
+      #mini-wall{ width: min(96vw, 760px); max-height: 48vh } /* responsive */
+      #daily-quote{ max-width: 90vw }
     }
 
     @media (max-width:420px){
@@ -423,8 +486,18 @@
     <div class="count-label">1-year anniversary</div>
   </div>
 
+
+  <div id="mini-wall" aria-live="polite">
+    <h3 class="mini-wall-title">Mini Wall</h3>
+    <ul class="mini-wall-list" id="miniWallList"></ul>
+  </div>
+
+
   <div id="reminder-box">
-    <h3>📄 Reminders</h3>
+    <h3>
+      📄 Reminders
+      <button id="historyToggle" title="Show completed reminders">History</button>
+    </h3>
     <div class="reminder-input-row">
       <input id="reminder-input" type="text" placeholder="Click to write a reminder…" maxlength="200" readonly>
       <button id="add-reminder-btn" title="Quick add using the small box">Add</button>
@@ -432,6 +505,7 @@
     <div id="reminder-list"></div>
   </div>
 
+ 
   <div class="editor-backdrop" id="editorBackdrop" aria-hidden="true">
     <div class="editor-modal" role="dialog" aria-modal="true" aria-labelledby="editorTitle">
       <h4 class="editor-title" id="editorTitle">New Reminder</h4>
@@ -446,77 +520,71 @@
 
   <canvas id="heart-canvas" style="position:fixed;inset:0;pointer-events:none"></canvas>
   <script>
-  const canvas = document.getElementById('heart-canvas');
-  const ctx = canvas.getContext('2d');
-  const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
-  let hearts = [];
+    const canvas = document.getElementById('heart-canvas');
+    const ctx = canvas.getContext('2d');
+    const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
+    let hearts = [];
 
-  function resizeCanvas() {
-    const dpr = window.devicePixelRatio || 1;
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    canvas.width = Math.round(w * dpr);
-    canvas.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); 
-  }
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
-
-  document.addEventListener('mousemove', e => {
-    for (let i = 0; i < 3; i++) {
-      hearts.push({
-        x: e.clientX,
-        y: e.clientY,
-        size: Math.random() * 8 + 4,
-        alpha: 1,
-        dx: (Math.random() - 0.5) * 60,      
-        dy: -(Math.random() * 60 + 40),     
-        fadePerSec: 0.6,                     
-        color: HEART_COLORS[(Math.random() * HEART_COLORS.length) | 0]
-      });
+    function resizeCanvas() {
+      const dpr = window.devicePixelRatio || 1;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
 
-    if (hearts.length > 1500) hearts = hearts.slice(-1500);
-  });
+    document.addEventListener('mousemove', e => {
+      for (let i = 0; i < 3; i++) {
+        hearts.push({
+          x: e.clientX,
+          y: e.clientY,
+          size: Math.random() * 8 + 4,
+          alpha: 1,
+          dx: (Math.random() - 0.5) * 60,
+          dy: -(Math.random() * 60 + 40),
+          fadePerSec: 0.6,
+          color: HEART_COLORS[(Math.random() * HEART_COLORS.length) | 0]
+        });
+      }
+      if (hearts.length > 1500) hearts = hearts.slice(-1500);
+    });
 
-  let lastTime = 0;
-  function drawHearts(ts) {
-    if (!lastTime) lastTime = ts;
-    const dt = Math.min((ts - lastTime) / 1000, 0.05);
-    lastTime = ts;
+    let lastTime = 0;
+    function drawHearts(ts) {
+      if (!lastTime) lastTime = ts;
+      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+      lastTime = ts;
 
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    for (let i = hearts.length - 1; i >= 0; i--) {
-      const h = hearts[i];
-
-      h.x += h.dx * dt;
-      h.y += h.dy * dt;
-      h.alpha -= h.fadePerSec * dt;
-
-      if (h.alpha <= 0) {
-        hearts.splice(i, 1);
-        continue;
+      for (let i = hearts.length - 1; i >= 0; i--) {
+        const h = hearts[i];
+        h.x += h.dx * dt;
+        h.y += h.dy * dt;
+        h.alpha -= h.fadePerSec * dt;
+        if (h.alpha <= 0) { hearts.splice(i, 1); continue; }
+        ctx.globalAlpha = h.alpha;
+        ctx.fillStyle = h.color;
+        ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText('♥', h.x, h.y);
       }
 
-      ctx.globalAlpha = h.alpha;
-      ctx.fillStyle = h.color;
-      ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
-      ctx.textBaseline = 'middle';
-      ctx.textAlign = 'center';
-      ctx.fillText('♥', h.x, h.y);
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(drawHearts);
     }
-
-    ctx.globalAlpha = 1;
     requestAnimationFrame(drawHearts);
-  }
-  requestAnimationFrame(drawHearts);
   </script>
 
   <div id="mood-overlay"></div>
 
+ 
   <template id="work-schedule-label-template"><div class="icon-label">🗓<br>Schedule</div></template>
   <template id="gamelist-label-template"><div class="icon-label">🎮<br>Game&nbsp;List</div></template>
   <template id="letters-label-template"><div class="icon-label">💌<br>Letters</div></template>
@@ -594,8 +662,6 @@
       }
     }
 
-
-
     function vegasTimeParts() {
       const opts = { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true };
       const fmt = new Intl.DateTimeFormat('en-US', opts);
@@ -605,7 +671,6 @@
       const dayPeriod = parts.find(p => p.type === 'dayPeriod')?.value || '';
       return { hour, minute, dayPeriod };
     }
-
 
     function updateTimeZones() {
       const timeOpts12 = { hour: '2-digit', minute: '2-digit', hour12: true };
@@ -619,29 +684,25 @@
       document.getElementById('manila-time').textContent = manilaTime;
     }
 
- 
     function applyMoodOverlay() {
       try {
         const { hour: hStr, dayPeriod } = vegasTimeParts();
         let hour = parseInt(hStr, 10);
         if (Number.isNaN(hour)) hour = 0;
 
-        // convert 12-hour + dayPeriod to 0-23
+     
         if (dayPeriod && /pm/i.test(dayPeriod) && hour < 12) hour += 12;
         if (dayPeriod && /am/i.test(dayPeriod) && hour === 12) hour = 0;
 
         let color;
-        if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';  
-        else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; 
-        else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)'; 
-        else color = 'rgba(10, 15, 60, 0.30)'; 
+        if (hour >= 6 && hour < 12)      color = 'rgba(255, 231, 214, 0.35)';
+        else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)';
+        else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)';
+        else                              color = 'rgba(10, 15, 60, 0.30)';
 
         document.getElementById('mood-overlay').style.background = color;
-      } catch (err) {
-        console.warn('applyMoodOverlay error', err);
-      }
+      } catch (err) { console.warn('applyMoodOverlay error', err); }
     }
-
 
     updateTimeZones();
     updateDurationAndCountdown();
@@ -650,23 +711,10 @@
     setInterval(applyMoodOverlay, 60 * 60 * 1000);
   </script>
 
-  <script>
-    const canvas2 = document.getElementById('heart-canvas'); 
 
-  </script>
-
+  <div id="daily-quote" aria-live="polite">Loading quote…</div>
   <script>
-    const sweetQuotes = [
-      "You make ordinary moments feel special.","Your laugh is my favorite sound.","I’m grateful for you every day.","You’re my calm in the chaos.",
-      "I love the way you care.","You’re my soft place to land.","Thank you for choosing me.","Your smile makes everything lighter.",
-      "Being with you feels like home.","You’re the best part of my day.","You make life taste sweeter.","I cherish our quiet minutes.",
-      "Every little thing with you matters.","You’re my favorite comfort.","I adore your kind heart.","We’re a team, and we win together.",
-      "You matter. Your voice matters. Your life matters.","Every little victory is worth celebrating.",
-      "The person you were is the reason I get to love the person you are.","You make even the dullest days shine.",
-      "Your voice is my favorite comfort.","I love the way you listen to me.","Being around you feels effortless.",
-      "You always know how to make me smile.","You turn small moments into treasures.","My heart feels lighter when you’re here.",
-      "You’re the calm after every storm.","I love how you notice the little things.","Just thinking of you makes me happy."
-    ];
+   
     const romanticQuotes = [
       "In every version of my life, I find you.","With you, I am home.","You’re my favorite place to be.","I fall for you over and over.",
       "You’re the chapter I never want to end.","My heart knows your name.","You are my quietest poem.","You’re my always and my again.",
@@ -682,43 +730,31 @@
       "You are capable of so much.","On hard days, lean on me.","I won’t let you do this alone.",
       "Every day may not be good, but there’s something good in every day.","Choose hope, even when it’s hard to find.",
       "It’s okay to rest. Resting is part of the journey.","Believe in yourself a little more today than you did yesterday.",
-      "You are enough.Always have been, always will be.","Change doesn’t erase you, it adds depth to who you are.",
-      "The past shaped you, but the present is where you shine.","Change doesn’t erase you, it adds depth to who you are.",
-      "You haven’t lost yourself, you’ve just grown into new parts of you.","Your soul is the same, only touched by deeper colors now."
+      "You are enough. Always have been, always will be.","Change doesn’t erase you, it adds depth to who you are.",
+      "The past shaped you, but the present is where you shine.","You haven’t lost yourself, you’ve just grown into new parts of you."
     ];
-    const quoteColors = ["#246B3E","#27658A","#453299"];
+    const quotePool = [...romanticQuotes, ...supportiveQuotes]; 
 
-    window.QUOTES_DISABLED = false;
-
-    function showRandomQuote() {
-      if (window.QUOTES_DISABLED) return;
-      const pool = [...sweetQuotes, ...romanticQuotes, ...supportiveQuotes];
-      const text = pool[Math.floor(Math.random()*pool.length)];
-      const color = quoteColors[Math.floor(Math.random()*quoteColors.length)];
-      const old = document.querySelector('.quote-box'); if (old) old.remove();
-      const box = document.createElement('div'); box.className = 'quote-box'; box.textContent = text;
-      box.style.textShadow = `0 0 10px ${color}, 0 0 18px ${color}55`;
-      box.style.boxShadow = `0 8px 30px ${color}55`;
-      box.style.borderColor = `${color}80`;
-      document.body.appendChild(box);
-      requestAnimationFrame(() => box.classList.add('show'));
-      const visibleMs = 5000, fadeMs = 420;
-      setTimeout(() => { box.classList.add('fade-out'); setTimeout(() => box.remove(), fadeMs + 20); }, visibleMs);
+    function dailyIndex(len){
+      const now = new Date();
+    
+      const utc = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+   
+      const seed = (utc / (24*60*60*1000)) | 0;
+      let x = (seed ^ 0x9e3779b9) >>> 0;
+      x = (x ^ (x >>> 16)) >>> 0;
+      return x % len;
     }
 
-    document.addEventListener('click', (e) => {
-      const disallow = ['BUTTON','A','IMG','CANVAS','INPUT','TEXTAREA','SELECT','IFRAME'];
-      const blocked = e.target.closest('.album-icon, #timezone-box, #countdown-box, #reminder-box, .secret-backdrop');
-      if (blocked) return;
-      if (disallow.includes(e.target.tagName)) return;
-      if (e.target === document.body || e.target.tagName === 'HTML') { showRandomQuote(); return; }
-      if (!e.target.closest('a, button, .album-icon, #timezone-box, #countdown-box, #reminder-box')) showRandomQuote();
-    });
+    function putDailyQuote(){
+      const q = quotePool[dailyIndex(quotePool.length)];
+      const el = document.getElementById('daily-quote');
+      el.textContent = q;
+    }
+    putDailyQuote();
   </script>
 
-
   <script>
-
     const listEl = document.getElementById('reminder-list');
     const inputEl = document.getElementById('reminder-input');
     const addBtn = document.getElementById('add-reminder-btn');
@@ -728,7 +764,10 @@
     const editorSave = document.getElementById('editorSave');
     const editorCancel = document.getElementById('editorCancel');
     const editorTitle = document.getElementById('editorTitle');
+
+    const historyToggle = document.getElementById('historyToggle'); 
     let editingId = null;
+    let SHOW_HISTORY = false;                                       
 
     function openEditor(prefill = '', id = null) {
       editingId = id;
@@ -776,7 +815,7 @@
         return;
       }
 
-      let rows = (data || []).filter(r => !r.done);
+      let rows = (data || []).filter(r => SHOW_HISTORY ? !!r.done : !r.done);
 
       const saved = JSON.parse(localStorage.getItem('reminderOrder:'+ROOM_KEY) || '[]');
       if (HAS_SORT_COLUMN) {
@@ -794,7 +833,7 @@
     function renderReminders(rows) {
       listEl.innerHTML = '';
       if (!rows.length) {
-        listEl.innerHTML = `<div style="font-size:12px;opacity:.8">No reminders yet.</div>`;
+        listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${SHOW_HISTORY ? 'No completed reminders.' : 'No reminders yet.'}</div>`;
         return;
       }
 
@@ -802,25 +841,27 @@
         const item = document.createElement('div');
         item.className = 'reminder-item';
         item.dataset.id = r.id;
-        item.draggable = true;
+        item.draggable = !SHOW_HISTORY; 
 
         const cb = document.createElement('input');
         cb.type = 'checkbox';
         cb.checked = !!r.done;
         cb.addEventListener('change', async () => {
           await toggleDone(r.id, cb.checked);
-          if (cb.checked) {
+          if (!SHOW_HISTORY && cb.checked) {
             item.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease';
             item.style.opacity = '0';
             item.style.margin = '0';
             item.style.paddingTop = '0';
             item.style.paddingBottom = '0';
             setTimeout(() => item.remove(), 200);
+          } else {
+            loadReminders();
           }
         });
 
         const span = document.createElement('span');
-        span.className = 'reminder-text';
+        span.className = 'reminder-text' + (r.done ? ' done' : '');
         span.textContent = r.text;
 
         const edit = document.createElement('button');
@@ -829,6 +870,7 @@
         edit.setAttribute('aria-label','Edit reminder');
         edit.textContent = '✏️';
         edit.addEventListener('click', () => openEditor(r.text, r.id));
+        if (SHOW_HISTORY) edit.style.display = 'none';
 
         item.appendChild(cb);
         item.appendChild(span);
@@ -836,7 +878,7 @@
         listEl.appendChild(item);
       });
 
-      wireDnD();
+      if (!SHOW_HISTORY) wireDnD();
     }
 
     async function addReminderText(text) {
@@ -908,10 +950,17 @@
         }, { offset: Number.NEGATIVE_INFINITY }).element;
       }
     }
+
+    historyToggle.addEventListener('click', () => {
+      SHOW_HISTORY = !SHOW_HISTORY;
+      historyToggle.textContent = SHOW_HISTORY ? 'Back' : 'History';
+      historyToggle.title = SHOW_HISTORY ? 'Show active reminders' : 'Show completed reminders';
+      loadReminders();
+    });
   </script>
 
+  
   <script>
-
     (() => {
       const backdrop = document.getElementById('secretBackdrop');
       const iframe = document.getElementById('secretFrame');
@@ -922,16 +971,11 @@
         if (e.key.length === 1 && /\d/.test(e.key)) {
           buffer = (buffer + e.key).slice(-4);
           if (buffer === '1013') { openModal(); buffer=''; }
-        } else if (e.key === 'Escape' && backdrop.classList.contains('show')) {
-          closeModal();
-        }
+        } else if (e.key === 'Escape' && backdrop.classList.contains('show')) { closeModal(); }
       });
 
       function openModal() {
         if (!backdrop.classList.contains('show')) {
-          document.querySelectorAll('.quote-box').forEach(el => el.remove());
-          window.QUOTES_DISABLED = true;
-
           backdrop.classList.add('show');
           backdrop.setAttribute('aria-hidden','false');
           document.body.style.overflow = 'hidden';
@@ -943,12 +987,12 @@
         backdrop.setAttribute('aria-hidden','true');
         document.body.style.overflow = '';
         iframe.src = "about:blank";
-        window.QUOTES_DISABLED = false;
       }
 
       backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); }, true);
     })();
   </script>
+
 
   <script>
     (() => {
@@ -993,6 +1037,79 @@
         if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); go(); }
       });
     })();
+  </script>
+
+
+  <script>
+    const miniWallList = document.getElementById('miniWallList');
+
+    async function cleanupMiniWallOld(){                 
+    
+      try{
+        const cutoff = new Date(Date.now() - 24*60*60*1000).toISOString();
+        await supabase.from('mini_wall').delete().lt('checked_at', cutoff).eq('room_key', ROOM_KEY);
+      }catch(e){}
+    }
+
+    async function loadMiniWall(){                        
+      const { data, error } = await supabase
+        .from('mini_wall')
+        .select('id, sender, text, created_at, checked_at')
+        .eq('room_key', ROOM_KEY)
+        .order('created_at', { ascending: false });
+
+      if (error){
+        miniWallList.innerHTML = `<li style="font-size:12px;opacity:.8">Couldn’t load mini wall.</li>`;
+        return;
+      }
+
+      const now = Date.now();
+      const rows = (data || []).filter(r => {
+        if (!r.checked_at) return true;
+        const t = new Date(r.checked_at).getTime();
+        return (now - t) < 24*60*60*1000; 
+      });
+
+      renderMiniWall(rows);
+    }
+
+    function renderMiniWall(rows){
+      miniWallList.innerHTML = '';
+      if (!rows.length){
+        miniWallList.innerHTML = `<li style="font-size:12px;opacity:.8;list-style:none">No messages.</li>`;
+        return;
+      }
+      rows.forEach(r => {
+        const li = document.createElement('li');
+        li.className = 'mini-wall-item' + (r.checked_at ? ' mini-wall-faded' : '');
+        const left = document.createElement('div');
+        left.innerHTML = `<div>${escapeHTML(r.text)}</div>` +
+                         `<div class="mini-wall-meta">${r.sender ? escapeHTML(r.sender) + ' · ' : ''}${fmtTime(r.created_at)}</div>`;
+        const right = document.createElement('label');
+        right.className = 'mini-wall-check';
+        const cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = !!r.checked_at;
+        cb.addEventListener('change', async () => {
+          const nowISO = cb.checked ? new Date().toISOString() : null;
+          await supabase.from('mini_wall').update({ checked_at: nowISO }).eq('id', r.id);
+          loadMiniWall();
+        });
+        right.append(cb, document.createTextNode(' done'));
+        li.append(left, right);
+        miniWallList.appendChild(li);
+      });
+    }
+
+    function fmtTime(iso){
+      try{
+        const d = new Date(iso);
+        return d.toLocaleString(undefined, { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      }catch{ return '' }
+    }
+    function escapeHTML(s){ return (s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+
+    setInterval(cleanupMiniWallOld, 60*60*1000);
   </script>
 </body>
 </html>
