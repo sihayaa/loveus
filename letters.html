@@ -7,25 +7,24 @@
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root {
+    :root{
       --page-pad-top: 0px;
     }
 
-    * { box-sizing: border-box }
+    *{ box-sizing: border-box }
 
     body {
       margin: 0;
       padding: 0;
-      position: relative;
       font-family: 'Patrick Hand', cursive;
-      color: #e8d9ef;
+      color: #4b2354;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
       padding-top: var(--page-pad-top);
       background: 
-        linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
+        linear-gradient(rgba(0,0,0,0.55), rgba(0,0,0,0.55)),
         url('https://github.com/sihayaa/loveus/blob/main/letterbg2.png?raw=true') no-repeat center center fixed;
       background-size: cover;
     }
@@ -34,14 +33,14 @@
       position: fixed;
       top: 20px;
       left: 20px;
-      background: rgba(209, 179, 224, 0.8);
+      background: #d1b3e0;
       padding: 8px 14px;
       text-decoration: none;
-      color: #2a1432;
+      color: #4b2354;
       border-radius: 10px;
       font-size: 1.1em;
       z-index: 20;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .center-content {
@@ -57,8 +56,8 @@
 
     h1 {
       font-size: 3.4em;
-      color: #f0d8ff;
       margin-bottom: 10px;
+      color: #f3e5ff;
     }
 
     .forever {
@@ -96,8 +95,8 @@
       border: 2px dashed #a28dc2;
       font-family: 'Patrick Hand', cursive;
       font-size: 1.2em;
-      background: rgba(255, 250, 252, 0.1);
-      color: #f2e9f7;
+      background: #fffafc;
+      color: #4b2354;
     }
 
     .letter-form textarea {
@@ -120,7 +119,7 @@
       border-radius: 20px;
       padding: 8px 20px;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
     }
 
     .letters {
@@ -134,16 +133,15 @@
     }
 
     .letter {
-      background: rgba(255,255,255,0.08);
+      background: #fff;
       border-radius: 10px;
       padding: 20px;
       font-size: 1.1em;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
       position: relative;
       cursor: pointer;
-      color: #f4e7ff;
     }
 
     .letter-header {
@@ -162,7 +160,7 @@
       inset: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0,0,0,0.65);
+      background: rgba(0,0,0,0.6);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -171,14 +169,14 @@
     }
 
     .zoomed-letter {
-      background: rgba(30, 15, 40, 0.95);
-      color: #f3e4f8;
+      background: #fff;
+      color: #4b2354;
       padding: 30px 30px 60px;
       border-radius: 14px;
       max-width: 85vw;
       width: 600px;
       font-size: 1.2em;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
       position: relative;
       max-height: 85vh;
       overflow: auto;
@@ -186,7 +184,7 @@
 
     .zoomed-letter .date {
       text-align: right;
-      color: #bda8cf;
+      color: #777;
       font-size: 0.9em;
       margin-top: 20px;
     }
@@ -222,10 +220,10 @@
     }
 
     @media (max-width: 768px){
-      body {
+      body{
         background-attachment: scroll;
       }
-      .letters {
+      .letters{
         grid-template-columns: 1fr;
       }
     }
@@ -238,7 +236,7 @@
     <h1>Love Letters</h1>
     <p class="forever">❤️Mike & Tricia Forever❤️</p>
     <p style="font-size: 1.2em;">💌 Express your love</p>
-    <p style="font-size: 1.1em; color: #d6c5e4;">📖 You can come back anytime and read something sweet.</p>
+    <p style="font-size: 1.1em; color: #e8d9ef;">📖 You can come back anytime and read something sweet.</p>
 
     <div class="letter-form">
       <input type="text" id="toInput" placeholder="To:">
@@ -246,7 +244,7 @@
         <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
         <button id="colorBtn" title="Pick a text color"
                 style="position: absolute; top: 10px; right: 10px; font-size: 18px; border: none; background: transparent; cursor: pointer;">🎨</button>
-        <input type="color" id="colorPicker" value="#f3e4f8" style="display: none;" />
+        <input type="color" id="colorPicker" value="#4b2354" style="display: none;" />
       </div>
       <input type="text" id="fromInput" placeholder="Love:">
       <div class="form-row">
@@ -288,7 +286,7 @@
       document.getElementById('toInput').value = '';
       document.getElementById('letterInput').value = '';
       document.getElementById('fromInput').value = '';
-      document.getElementById('colorPicker').value = '#f3e4f8';
+      document.getElementById('colorPicker').value = '#4b2354';
       showerHearts();
       loadLetters();
     }
@@ -309,7 +307,7 @@
 
         const body = document.createElement('div');
         body.textContent = letter.content;
-        body.style.color = letter.color || '#f4e7ff';
+        body.style.color = letter.color || '#4b2354';
 
         const footer = document.createElement('div');
         footer.className = 'letter-footer';
@@ -321,7 +319,7 @@
         deleteBtn.style.top = '8px';
         deleteBtn.style.right = '12px';
         deleteBtn.style.cursor = 'pointer';
-        deleteBtn.style.color = '#d86b6b';
+        deleteBtn.style.color = '#b75d5d';
         deleteBtn.style.fontSize = '1.2em';
         deleteBtn.title = 'Delete this letter';
         deleteBtn.onclick = async (e) => {
@@ -360,7 +358,7 @@
       text.textContent = letter.content;
       text.style.whiteSpace = 'pre-wrap';
       text.style.marginTop = '10px';
-      text.style.color = letter.color || '#f3e4f8';
+      text.style.color = letter.color || '#4b2354';
 
       const footer = document.createElement('div');
       footer.className = 'letter-footer';
@@ -399,8 +397,6 @@
       textarea.style.fontSize = '1.2em';
       textarea.style.border = '2px dashed #a28dc2';
       textarea.style.padding = '12px';
-      textarea.style.background = 'rgba(255,255,255,0.08)';
-      textarea.style.color = '#f3e4f8';
 
       const saveBtn = document.createElement('button');
       saveBtn.textContent = 'Save';
