@@ -11,10 +11,10 @@
       margin: 0;
       padding: 0;
       font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #c2f0f4, #fddde6, #fad1d1);
+      background: linear-gradient(135deg, #1b1a2f, #2c1f3a, #122028);
       background-size: 300% 300%;
-      animation: gradientShift 15s ease infinite;
-      color: #4b2354;
+      animation: gradientShift 20s ease infinite;
+      color: #e6d9ef;
       text-align: center;
     }
 
@@ -35,22 +35,25 @@
     h1 {
       font-size: 2.5em;
       margin-top: 40px;
+      color: #e3c8ff;
+      text-shadow: 0 0 10px rgba(163, 99, 255, 0.4);
     }
 
     .back-button {
       display: inline-block;
       margin-top: 20px;
       padding: 10px 20px;
-      background: #d2b4de;
-      color: white;
+      background: #4a2a5a;
+      color: #d4c2f0;
       border-radius: 10px;
       text-decoration: none;
       font-weight: bold;
-      transition: background 0.3s ease;
+      transition: background 0.3s ease, box-shadow 0.3s ease;
     }
 
     .back-button:hover {
-      background: #b085c6;
+      background: #5b2e70;
+      box-shadow: 0 0 10px #b380f7;
     }
 
     .upload-section {
@@ -65,44 +68,44 @@
     .custom-button {
       font-family: 'Freestyle Script', cursive;
       font-size: 1.2em;
-      color: #a7d33a;
-      background: linear-gradient(to bottom, #6a4c93, #5c3d85);
+      color: #c4f9a8;
+      background: linear-gradient(to bottom, #3e2b55, #291c3d);
       border: none;
       border-radius: 40px;
       padding: 10px 25px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
       cursor: pointer;
       display: inline-block;
     }
 
     .custom-button:hover {
-      box-shadow: 0 0 15px rgba(255, 105, 180, 0.7);
+      box-shadow: 0 0 15px rgba(167, 255, 187, 0.7);
     }
 
     .caption-input {
       font-family: 'Freestyle Script', cursive;
       font-size: 1.2em;
-      color: black;
-      background: white;
-      border: none;
+      color: #f2f2f2;
+      background: #232334;
+      border: 1px solid #4b3b60;
       border-radius: 40px;
       padding: 10px 25px;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
     }
 
     .gallery {
       display: grid;
-      grid-template-columns: repeat(10, 1fr);
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
       gap: 20px;
       padding: 30px;
       justify-items: center;
     }
 
     .photo-block {
-      background: white;
-      border: 3px solid #eee;
+      background: #2b2540;
+      border: 2px solid #3e3360;
       border-radius: 12px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
       padding: 10px;
       width: 100%;
       max-width: 180px;
@@ -110,6 +113,12 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .photo-block:hover {
+      transform: scale(1.02);
+      box-shadow: 0 0 15px rgba(180, 120, 255, 0.4);
     }
 
     .photo-block img {
@@ -117,16 +126,16 @@
       height: 220px;
       object-fit: contain;
       border-radius: 8px;
-      background-color: #f0f0f0;
+      background-color: #1a1a25;
       cursor: pointer;
     }
 
     .photo-block p {
       font-family: 'Great Vibes', cursive;
       font-size: 1.6em;
-      color: #8628ac;
+      color: #c07eff;
       margin-top: 8px;
-      text-shadow: 0 1px 1px #fff;
+      text-shadow: 0 0 5px rgba(204, 153, 255, 0.4);
     }
 
     .timestamp {
@@ -134,7 +143,7 @@
       bottom: 10px;
       right: 12px;
       background-color: rgba(0, 0, 0, 0.6);
-      color: white;
+      color: #ccc;
       font-size: 0.65em;
       line-height: 1.2em;
       padding: 4px 6px;
@@ -150,11 +159,11 @@
       top: 0;
       width: 100%;
       height: 100%;
-      background-color: rgba(0, 0, 0, 0.8);
+      background-color: rgba(0, 0, 0, 0.9);
       justify-content: center;
       align-items: center;
       flex-direction: column;
-      color: #fff;
+      color: #e5d1ff;
       font-family: 'Great Vibes', cursive;
       font-size: 2em;
       padding: 20px;
@@ -165,6 +174,7 @@
       max-height: 80%;
       object-fit: contain;
       border-radius: 10px;
+      box-shadow: 0 0 20px rgba(180, 100, 255, 0.5);
     }
 
     .delete-btn,
@@ -174,9 +184,16 @@
       font-size: 0.7em;
       padding: 2px 4px;
       cursor: pointer;
-      background: #fff;
+      background: #2a1f3f;
+      color: #f2f2f2;
       border-radius: 50%;
-      border: 1px solid #ccc;
+      border: 1px solid #554a6d;
+      transition: background 0.3s ease;
+    }
+
+    .delete-btn:hover,
+    .edit-btn:hover {
+      background: #493363;
     }
 
     .delete-btn {
@@ -193,7 +210,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
       display: none;
       align-items: center;
       justify-content: center;
@@ -201,12 +218,12 @@
     }
 
     #modalBox {
-      background: white;
+      background: #2a2142;
       border-radius: 20px;
       padding: 25px 35px;
       max-width: 350px;
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.24);
-      color: #4b2354;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5);
+      color: #d6b9f7;
       text-align: center;
     }
 
@@ -217,7 +234,9 @@
       margin: 10px 0;
       padding: 8px;
       border-radius: 8px;
-      border: 1px solid #ccc;
+      border: 1px solid #584c70;
+      background: #1d162a;
+      color: #e3d2ff;
       font-family: inherit;
     }
   </style>
@@ -233,7 +252,7 @@
     <img id="preview-thumb" style="width:60px;height:60px;border-radius:10px;object-fit:cover;display:none;margin-left:10px;">
     <input type="text" id="caption" placeholder="Add a sweet caption..." class="caption-input">
     <button id="uploadBtn" class="custom-button">💞 Seal the Memory</button>
-    <select id="orderSelect" style="border-radius:20px;padding:5px 10px;">
+    <select id="orderSelect" style="border-radius:20px;padding:5px 10px;background:#2b2540;color:#e3d2ff;border:1px solid #4a3f66;">
       <option value="asc">Oldest First</option>
       <option value="desc">Newest First</option>
     </select>
@@ -253,7 +272,7 @@
       <textarea id="modalTextarea" style="display:none"></textarea>
       <div style="margin-top:15px;">
         <button id="modalYes" class="custom-button">Yes</button>
-        <button id="modalNo" class="custom-button" style="margin-left:10px;background:#ccc;color:#000;">Cancel</button>
+        <button id="modalNo" class="custom-button" style="margin-left:10px;background:#555;color:#fff;">Cancel</button>
       </div>
     </div>
   </div>
@@ -295,10 +314,8 @@
         const block = document.createElement('div');
         block.className = 'photo-block';
 
-        // force UTC
         const utcDate = new Date(item.created_at + "Z");
 
-        // Manila time
         const manilaTime = utcDate.toLocaleString('en-US', {
           year: 'numeric',
           month: 'short',
@@ -308,7 +325,6 @@
           timeZone: 'Asia/Manila'
         });
 
-        // Vegas time
         const vegasTime = utcDate.toLocaleString('en-US', {
           year: 'numeric',
           month: 'short',
