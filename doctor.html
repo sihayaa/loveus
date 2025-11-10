@@ -18,12 +18,11 @@
 
     body {
       font-family: 'Patrick Hand', cursive;
-      background: url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor_bg2.jpg') no-repeat center center fixed;
-      /* desktop keeps your original sizing */
-      background-size: 100% auto;
+      /* dark midnight blue theme */
+      background: radial-gradient(circle at top, #262b4a 0%, #17192f 45%, #0f111f 100%);
       margin: 0;
       padding: 0;
-      color: #333;
+      color: #f3edf9;
       padding-top: var(--form-pad-top);
     }
 
@@ -36,20 +35,23 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      background: transparent;
+      background: rgba(10, 11, 25, 0.92);
+      box-shadow: 0 10px 35px rgba(0,0,0,0.6);
       z-index: 100;
+      backdrop-filter: blur(10px);
     }
 
     h1 {
-      color: #2e3a59;
+      color: #aaf0d4;
       font-size: 36px;
       margin: 0 0 5px;
       text-align: center;
+      text-shadow: 0 0 8px rgba(0,0,0,0.8);
     }
 
     .glowpulse {
       font-family: 'Dancing Script', cursive;
-      color: #34E371;
+      color: #67e4ca;
       font-size: 24px;
       text-align: center;
       animation: glowPulse 2s ease-in-out infinite alternate, floatUp 3s ease-in-out infinite;
@@ -57,8 +59,8 @@
     }
 
     @keyframes glowPulse {
-      0% { text-shadow: 0 0 5px #34E371, 0 0 10px #34E371; }
-      100% { text-shadow: 0 0 15px #34E371, 0 0 25px #34E371; }
+      0% { text-shadow: 0 0 4px #67e4ca, 0 0 8px #67e4ca; }
+      100% { text-shadow: 0 0 12px #67e4ca, 0 0 22px #67e4ca; }
     }
 
     @keyframes floatUp {
@@ -72,14 +74,18 @@
       top: 10px;
       left: 10px;
       padding: 10px 20px;
-      background: #d2b4de;
-      color: white;
+      background: rgba(10, 11, 25, 0.95);
+      color: #67e4ca;
       border-radius: 10px;
       text-decoration: none;
       font-weight: bold;
       z-index: 200;
+      border: 1px solid #67e4ca;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
     }
-    .back-button:hover { background: #b085c6; }
+    .back-button:hover {
+      background: rgba(17, 22, 48, 0.98);
+    }
 
     .checklist {
       width: 100%;
@@ -95,8 +101,9 @@
       gap: 10px;
       padding: 12px;
       margin-bottom: 8px;
-      background-color: #f0f4ff;
-      border-radius: 8px;
+      background-color: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.5);
     }
 
     .checklist-left {
@@ -109,7 +116,7 @@
 
     .checked span {
       text-decoration: line-through;
-      color: #999;
+      color: #8f8f9b;
     }
 
     input[type="text"] {
@@ -117,38 +124,54 @@
       width: 100%;
       max-width: 600px;
       margin-top: 10px;
-      border: 1px solid #ccc;
       border-radius: 8px;
       font-family: 'Patrick Hand', cursive;
+      border: 1px solid #67e4ca;
+      background: rgba(4, 6, 18, 0.85);
+      color: #f5f4ff;
+    }
+
+    input[type="text"]::placeholder {
+      color: #b3b0cc;
     }
 
     button {
       padding: 8px 14px;
       margin-top: 10px;
-      background-color: #4f6cff;
+      background-color: #3a8f73;
       color: white;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-family: 'Patrick Hand', cursive;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.5);
     }
-    .delete-btn { background-color: #ff5c5c; }
+    button:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    .delete-btn {
+      background-color: #e0576a;
+    }
 
     .appointment-box {
       position: fixed;
       top: 140px;
       right: 110px;
       width: 320px;
-      background: rgba(255,255,255,0.85);
+      background: rgba(9, 10, 26, 0.96);
       padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.75);
+      border: 1px solid rgba(255,255,255,0.12);
+      backdrop-filter: blur(12px);
     }
 
     .appointment-box h2 {
       margin-top: 0;
       font-size: 22px;
-      color: #2e3a59;
+      color: #f3edf9;
       text-align: left;
     }
 
@@ -156,10 +179,10 @@
       position: relative;
       margin-bottom: 10px;
       padding: 10px 30px 10px 10px;
-      background: #2e2b47; 
+      background: #252342;
       border-radius: 8px;
-      color: #ffffff; 
-      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+      color: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
     }
 
     .delete-x {
@@ -167,7 +190,7 @@
       top: 6px;
       right: 8px;
       background: none;
-      color: #ff4c4c;
+      color: #ff8080;
       border: none;
       font-size: 16px;
       font-weight: bold;
@@ -175,7 +198,7 @@
       padding: 0;
       line-height: 1;
     }
-    .delete-x:hover { color: #d11a2a; }
+    .delete-x:hover { color: #ff4c4c; }
 
     .appointment-item button {
       margin-right: 8px;
@@ -189,7 +212,7 @@
 
     .flatpickr-confirm {
       margin-top: 10px;
-      background: #4f6cff;
+      background: #3a8f73;
       color: white;
       padding: 6px 12px;
       border: none;
@@ -235,14 +258,13 @@
 
     /* phones/tablets */
     @media (max-width: 900px){
-      /* iOS Safari hates fixed backgrounds; also make the image cover cleanly */
       body{
         --form-pad-top: 180px;
-        background-size: cover;
-        background-attachment: scroll;
       }
 
-      .fixed-form{ padding: 14px 16px 8px; }
+      .fixed-form{
+        padding: 14px 16px 8px;
+      }
       h1{ font-size: 28px; }
       .glowpulse{ font-size: 20px; }
 
@@ -252,7 +274,7 @@
         width: min(100%, 640px);
         margin: 12px auto;
         right: auto; top: auto;
-        background: rgba(255,255,255,0.92);
+        background: rgba(9, 10, 26, 0.96);
       }
 
       .checklist{ padding: 0 16px; }
