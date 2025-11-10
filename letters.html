@@ -7,37 +7,41 @@
   <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Great+Vibes&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
-    :root{
-      --page-pad-top: 0px; /* can be nudged for phones via media queries */
+    :root {
+      --page-pad-top: 0px;
     }
 
-    *{ box-sizing: border-box }
+    * { box-sizing: border-box }
 
     body {
       margin: 0;
       padding: 0;
-      background: url('https://github.com/sihayaa/loveus/blob/main/letterbg2.png?raw=true') no-repeat center center fixed;
-      background-size: cover;
+      position: relative;
       font-family: 'Patrick Hand', cursive;
-      color: #4b2354;
+      color: #e8d9ef;
       display: flex;
       flex-direction: column;
       align-items: center;
       min-height: 100vh;
       padding-top: var(--page-pad-top);
+      background: 
+        linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)),
+        url('https://github.com/sihayaa/loveus/blob/main/letterbg2.png?raw=true') no-repeat center center fixed;
+      background-size: cover;
     }
 
     a.back-button {
-      position: fixed;             /* fixed so it stays put */
+      position: fixed;
       top: 20px;
       left: 20px;
-      background: #d1b3e0;
+      background: rgba(209, 179, 224, 0.8);
       padding: 8px 14px;
       text-decoration: none;
-      color: #4b2354;
+      color: #2a1432;
       border-radius: 10px;
       font-size: 1.1em;
       z-index: 20;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
     .center-content {
@@ -53,13 +57,14 @@
 
     h1 {
       font-size: 3.4em;
+      color: #f0d8ff;
       margin-bottom: 10px;
     }
 
     .forever {
       font-family: 'Great Vibes', cursive;
       font-size: 2em;
-      color: #d14185;
+      color: #ff8ec2;
       animation: glowPulse 3s ease-in-out infinite;
       margin-bottom: 20px;
     }
@@ -91,7 +96,8 @@
       border: 2px dashed #a28dc2;
       font-family: 'Patrick Hand', cursive;
       font-size: 1.2em;
-      background: #fffafc;
+      background: rgba(255, 250, 252, 0.1);
+      color: #f2e9f7;
     }
 
     .letter-form textarea {
@@ -114,6 +120,7 @@
       border-radius: 20px;
       padding: 8px 20px;
       cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.3);
     }
 
     .letters {
@@ -127,15 +134,16 @@
     }
 
     .letter {
-      background: #fff;
+      background: rgba(255,255,255,0.08);
       border-radius: 10px;
       padding: 20px;
       font-size: 1.1em;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
       border-left: 5px solid #a28dc2;
       white-space: pre-wrap;
       position: relative;
       cursor: pointer;
+      color: #f4e7ff;
     }
 
     .letter-header {
@@ -154,30 +162,31 @@
       inset: 0;
       width: 100vw;
       height: 100vh;
-      background: rgba(0,0,0,0.5);
+      background: rgba(0,0,0,0.65);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      padding: 16px; /* breathing room on tiny screens */
+      padding: 16px;
     }
 
     .zoomed-letter {
-      background: #fff;
-      padding: 30px 30px 60px; /* extra bottom so button doesn’t overlap text */
+      background: rgba(30, 15, 40, 0.95);
+      color: #f3e4f8;
+      padding: 30px 30px 60px;
       border-radius: 14px;
       max-width: 85vw;
       width: 600px;
       font-size: 1.2em;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.3);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.4);
       position: relative;
-      max-height: 85vh;      /* scroll inside modal on phones */
+      max-height: 85vh;
       overflow: auto;
     }
 
     .zoomed-letter .date {
       text-align: right;
-      color: #777;
+      color: #bda8cf;
       font-size: 0.9em;
       margin-top: 20px;
     }
@@ -212,61 +221,13 @@
       100% { transform: translateY(100vh) rotate(360deg); opacity: 0; }
     }
 
-    /* ---------- Responsive polish (keeps desktop intact) ---------- */
-
-    /* laptops/tablets */
-    @media (max-width: 1024px){
-      .letters{ gap: 16px; padding: 0 16px 32px }
-      .zoomed-letter{ max-width: 92vw }
-    }
-
-    /* phones */
     @media (max-width: 768px){
-      /* iOS Safari perf: avoid fixed backgrounds on mobile */
-      body{
+      body {
         background-attachment: scroll;
-        background-size: cover;
-        --page-pad-top: 0px;
       }
-      a.back-button{ padding: 8px 12px; font-size: 1em; }
-
-      .center-content{ padding: 0 16px; }
-      h1{ font-size: 2.4em; }
-      .forever{ font-size: 1.8em; }
-
-      .letters{
-        grid-template-columns: 1fr; /* single column */
-        gap: 14px;
-        padding: 0 16px 28px;
+      .letters {
+        grid-template-columns: 1fr;
       }
-      .letter{ font-size: 1.05em; padding: 16px; }
-
-      .zoomed-letter{
-        width: 92vw;
-        max-height: 80vh;
-        padding: 22px 18px 56px;
-      }
-      button{ font-size: 1.05em; padding: 8px 16px; }
-    }
-
-    @media (max-width: 420px){
-      h1{ font-size: 2em; }
-      .forever{ font-size: 1.6em }
-      .letter-form input, .letter-form textarea{ font-size: 1.05em }
-    }
-
-    /* Respect iPhone safe areas */
-    @supports (padding: max(0px)){
-      a.back-button{
-        top: max(20px, env(safe-area-inset-top));
-        left: max(20px, env(safe-area-inset-left));
-      }
-      .zoom-overlay{ padding: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right)) }
-    }
-
-    /* Motion-friendly option */
-    @media (prefers-reduced-motion: reduce){
-      .forever{ animation: none }
     }
   </style>
 </head>
@@ -277,18 +238,16 @@
     <h1>Love Letters</h1>
     <p class="forever">❤️Mike & Tricia Forever❤️</p>
     <p style="font-size: 1.2em;">💌 Express your love</p>
-    <p style="font-size: 1.1em; color: #4b2354;">📖 You can come back anytime and read something sweet.</p>
+    <p style="font-size: 1.1em; color: #d6c5e4;">📖 You can come back anytime and read something sweet.</p>
 
     <div class="letter-form">
       <input type="text" id="toInput" placeholder="To:">
-
       <div style="position: relative;">
         <textarea id="letterInput" placeholder="Write your letter here..."></textarea>
         <button id="colorBtn" title="Pick a text color"
                 style="position: absolute; top: 10px; right: 10px; font-size: 18px; border: none; background: transparent; cursor: pointer;">🎨</button>
-        <input type="color" id="colorPicker" value="#4b2354" style="display: none;" />
+        <input type="color" id="colorPicker" value="#f3e4f8" style="display: none;" />
       </div>
-
       <input type="text" id="fromInput" placeholder="Love:">
       <div class="form-row">
         <button onclick="sealLetter()">Seal the Letter 💌</button>
@@ -329,7 +288,7 @@
       document.getElementById('toInput').value = '';
       document.getElementById('letterInput').value = '';
       document.getElementById('fromInput').value = '';
-      document.getElementById('colorPicker').value = '#4b2354';
+      document.getElementById('colorPicker').value = '#f3e4f8';
       showerHearts();
       loadLetters();
     }
@@ -350,7 +309,7 @@
 
         const body = document.createElement('div');
         body.textContent = letter.content;
-        body.style.color = letter.color || '#4b2354';
+        body.style.color = letter.color || '#f4e7ff';
 
         const footer = document.createElement('div');
         footer.className = 'letter-footer';
@@ -362,7 +321,7 @@
         deleteBtn.style.top = '8px';
         deleteBtn.style.right = '12px';
         deleteBtn.style.cursor = 'pointer';
-        deleteBtn.style.color = '#b75d5d';
+        deleteBtn.style.color = '#d86b6b';
         deleteBtn.style.fontSize = '1.2em';
         deleteBtn.title = 'Delete this letter';
         deleteBtn.onclick = async (e) => {
@@ -401,7 +360,7 @@
       text.textContent = letter.content;
       text.style.whiteSpace = 'pre-wrap';
       text.style.marginTop = '10px';
-      text.style.color = letter.color || '#4b2354';
+      text.style.color = letter.color || '#f3e4f8';
 
       const footer = document.createElement('div');
       footer.className = 'letter-footer';
@@ -424,7 +383,6 @@
       overlay.appendChild(zoomBox);
       document.body.appendChild(overlay);
 
-      // allow ESC to close
       const escClose = (ev)=>{ if(ev.key==='Escape'){ document.body.removeChild(overlay); document.removeEventListener('keydown', escClose); }};
       document.addEventListener('keydown', escClose);
     }
@@ -441,6 +399,8 @@
       textarea.style.fontSize = '1.2em';
       textarea.style.border = '2px dashed #a28dc2';
       textarea.style.padding = '12px';
+      textarea.style.background = 'rgba(255,255,255,0.08)';
+      textarea.style.color = '#f3e4f8';
 
       const saveBtn = document.createElement('button');
       saveBtn.textContent = 'Save';
