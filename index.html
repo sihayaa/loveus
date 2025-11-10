@@ -165,8 +165,22 @@
       font-family: 'Segoe UI', sans-serif; box-shadow: 0 0 12px #f5b3f5, 4px 4px 12px rgba(0,0,0,0.3);
       text-align: center; z-index: 5;
     }
-    #countdown-box .count-number { font-size: 1.6em; font-weight: bold; color: #ffecf7; text-shadow: 0 0 8px #a027a0; }
-    #countdown-box .count-label { font-size: 1em; color: #f8e5f8; text-shadow: 0 0 6px #a027a0; }
+    #countdown-box .count-number { 
+  font-size: 1.6em;
+  font-weight: bold;
+  color: #ffecf7;
+  text-shadow: 0 0 8px #a027a0;
+  filter: blur(6px);          
+  user-select: none;
+}
+
+#countdown-box .count-label { 
+  font-size: 1em;
+  color: #f8e5f8;
+  text-shadow: 0 0 6px #a027a0;
+  filter: blur(6px);         
+  user-select: none;
+}
 
     #mood-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
