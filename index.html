@@ -140,7 +140,6 @@
       text-shadow: 0 1px 2px rgba(0,0,0,.6); background: rgba(255,255,255,0.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
     }
 
-    /* --- placeholder icon (keeps the spot blank) --- */
     .album-icon.placeholder {
       background: transparent;
       box-shadow: none;
@@ -205,7 +204,6 @@
     }
     #reminder-box h3 { margin: 0 0 10px 0; font-family: 'Patrick Hand', cursive; font-size: 20px; text-shadow: 0 0 6px #a027a0; display: flex; align-items: center; gap: 6px; }
 
-    /* --- history toggle button (small, top-right) --- */
     #history-toggle {
       margin-left: auto;
       font-size: 12px;
@@ -380,47 +378,29 @@
       <img src="album-icon.png" alt="Album Icon">
     </div>
 
-    <!-- Work Schedule removed, keep blank spot -->
-    <div class="album-icon placeholder" style="top: 100px; left: 150px;" title="">&nbsp;</div>
-
-    <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='gamelist.html'" title="Game List">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/gamelist_icon.png"
-        alt="Game List Icon"
-        onerror="this.replaceWith(document.getElementById('gamelist-label-template').content.cloneNode(true));">
-    </div>
-
-    <!-- Middle-Earth Map removed, keep blank spot -->
-    <div class="album-icon placeholder" style="top: 300px; left: 150px;" title="">&nbsp;</div>
-
-    <div class="album-icon" style="top: 400px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
+    <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
       <img
         src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png"
         alt="Love Letters Icon"
         onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
 
-    <div class="album-icon" style="top: 500px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
+    <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
       <img
         src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png"
         alt="Learning Icon"
         onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
     </div>
 
-    <div class="album-icon" style="top: 200px;" onclick="location.href='dateplans.html'" title="Date Plans">
-      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/dateplan_bg.png" alt="Date Plans Icon">
-    </div>
-
-    <!-- Chat Wall removed, keep blank spot -->
-    <div class="album-icon placeholder" style="top: 300px;" title="">&nbsp;</div>
-
-    <div class="album-icon" style="top: 400px;" onclick="location.href='doctor.html'">
+    <div class="album-icon" style="top: 200px;" onclick="location.href='doctor.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
     </div>
-    <div class="album-icon" style="top: 500px;" onclick="location.href='wishlist.html'">
+
+    <div class="album-icon" style="top: 300px;" onclick="location.href='wishlist.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/wish-icon.png" alt="Wishlist Icon">
     </div>
-    <div class="album-icon" style="top: 600px;" onclick="location.href='tracking.html'">
+
+    <div class="album-icon" style="top: 400px;" onclick="location.href='tracking.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
     </div>
   </div>
@@ -592,7 +572,6 @@
         durEl.textContent = `${remMonths} month${remMonths!==1?'s':''} and ${days} day${days!==1?'s':''}`;
       }
 
-      /* Countdown to 2nd-year anniversary: October 13, 2026 */
       const { y, m0, d } = vegasTodayParts();
       const todayUTC = Date.UTC(y, m0, d);
       const annivUTC = Date.UTC(2026, 9, 13);
@@ -731,7 +710,6 @@
     const editorTitle = document.getElementById('editorTitle');
     let editingId = null;
 
-    /* --- HISTORY TOGGLE STATE --- */
     let SHOW_HISTORY = false;
     const historyBtn = document.getElementById('history-toggle');
     historyBtn.addEventListener('click', () => {
@@ -799,7 +777,6 @@
           rows.sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
         }
       } else {
-        // For history view, sort most recently completed first by created_at
         rows.sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
       }
 
