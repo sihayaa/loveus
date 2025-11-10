@@ -268,7 +268,7 @@
       h1{ font-size: 28px; }
       .glowpulse{ font-size: 20px; }
 
-      /* make the appointments panel flow and full width */
+     
       .appointment-box{
         position: static;
         width: min(100%, 640px);
@@ -279,7 +279,7 @@
 
       .checklist{ padding: 0 16px; }
 
-      /* smaller, neater buttons on mobile */
+     
       button{ padding: 8px 12px; }
       .back-button{ padding: 8px 12px; }
     }
@@ -292,13 +292,13 @@
       .delete-x{ font-size: 18px; top: 4px; right: 6px; }
     }
 
-    /* respect safe areas (iPhone notch) */
+
     @supports (padding: max(0px)){
       .fixed-form{ padding-top: max(20px, env(safe-area-inset-top)); }
       .back-button{ top: max(10px, env(safe-area-inset-top)); }
     }
 
-    /* optional: reduce motion */
+  
     @media (prefers-reduced-motion: reduce){
       .glowpulse{ animation: none; }
     }
@@ -462,7 +462,7 @@
         apptDiv.className = 'appointment-item';
         const apptTime = appt.datetime;
 
-        /* safer string injection using JSON.stringify so quotes don’t break HTML */
+   
         apptDiv.innerHTML = `
           <button class="delete-x" onclick="deleteAppointment('${appt.id}')">&times;</button>
           <div><strong>${appt.reason}</strong></div>
