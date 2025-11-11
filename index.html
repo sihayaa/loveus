@@ -166,37 +166,51 @@
       text-align: center; z-index: 5;
     }
     #countdown-box .count-number { 
-  font-size: 1.6em;
-  font-weight: bold;
-  color: #ffecf7;
-  text-shadow: 0 0 8px #a027a0;
-  filter: blur(6px);          
-  user-select: none;
-}
+      font-size: 1.6em;
+      font-weight: bold;
+      color: #ffecf7;
+      text-shadow: 0 0 8px #a027a0;
+      filter: blur(6px);          
+      user-select: none;
+    }
 
-#countdown-box .count-label { 
-  font-size: 1em;
-  color: #f8e5f8;
-  text-shadow: 0 0 6px #a027a0;
-  filter: blur(6px);         
-  user-select: none;
-}
+    #countdown-box .count-label { 
+      font-size: 1em;
+      color: #f8e5f8;
+      text-shadow: 0 0 6px #a027a0;
+      filter: blur(6px);         
+      user-select: none;
+    }
 
     #mood-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
 
+    /* UPDATED: quote box now bottom-left and smaller */
     .quote-box{
-      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      max-width: min(780px, 86vw); padding: 16px 24px; border-radius: 16px;
-      background: rgba(255,255,255,0.22); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.45); color: #fff; text-align: center;
-      font-family: 'Patrick Hand', cursive; font-size: 26px; line-height: 1.3; letter-spacing: 0.4px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25); opacity: 0; transition: opacity 420ms ease, transform 420ms ease;
-  
+      position: fixed;
+      left: 20px;
+      bottom: 20px;
+      max-width: min(420px, 80vw);
+      padding: 10px 14px;
+      border-radius: 14px;
+      background: rgba(255,255,255,0.22);
+      backdrop-filter: blur(10px);
+      -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.45);
+      color: #fff;
+      text-align: left;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 16px;
+      line-height: 1.35;
+      letter-spacing: 0.3px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+      opacity: 0;
+      transition: opacity 420ms ease, transform 420ms ease;
+      transform: translateY(8px);
       z-index: 9000;
       pointer-events: none;
     }
-    .quote-box.show { opacity: 1; transform: translate(-50%,-50%); }
-    .quote-box.fade-out { opacity: 0; transform: translate(-50%,-48%); }
+    .quote-box.show { opacity: 1; transform: translateY(0); }
+    .quote-box.fade-out { opacity: 0; transform: translateY(4px); }
 
     #reminder-box {
       position: fixed;
@@ -335,6 +349,14 @@
         margin: 10px auto;
       }
       #reminder-list{ max-height: 40vh; overflow-y: auto; }
+
+      /* keep quote bottom-left but give it a bit of margin from edges on small screens */
+      .quote-box{
+        left: 12px;
+        bottom: 12px;
+        max-width: 88vw;
+      }
+
       #icon-area{
         position: fixed;
         left: 50%;
@@ -562,6 +584,7 @@
       const { y, m0, d } = vegasTodayParts();
       let months = (y - startY) * 12 + (m0 - startM0);
       if (d < startD) months--;
+
 
       let anchorY = startY + Math.floor((startM0 + months) / 12);
       let anchorM0 = (startM0 + months) % 12;
