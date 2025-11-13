@@ -158,6 +158,17 @@
     .tz-line { margin: 6px 0; font-size: 1em; color: #111; text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a; }
     .tz-label { font-weight: bold; color: #111; text-shadow: 0 0 3px #4a004a, 0 0 6px #4a004a, 0 0 9px #4a004a; }
 
+    /* NEW: time big, date smaller */
+    .tz-time-main {
+      font-size: 1.05em;
+      font-weight: 700;
+    }
+    .tz-time-sub {
+      font-size: 0.78em;
+      opacity: 0.9;
+      margin-left: 6px;
+    }
+
     #countdown-box {
       position: fixed; top: 180px; right: 40px;
       background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px);
@@ -401,10 +412,10 @@
   </div>
 
   <br>
-  <!-- Mini Games button removed -->
+ 
 
   <div id="icon-area">
-    <!-- Row 1 -->
+ 
     <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
       <img src="album-icon.png" alt="Album Icon">
     </div>
@@ -416,7 +427,7 @@
         onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
 
-    <!-- Row 2 -->
+   
     <div class="album-icon" style="top: 200px;" onclick="location.href='doctor.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
     </div>
@@ -428,16 +439,26 @@
         onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
     </div>
 
-    <!-- Row 3 -->
     <div class="album-icon" style="top: 300px;" onclick="location.href='tracking.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
     </div>
   </div>
 
+ 
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
-    <div class="tz-line"><span class="tz-label">🌆 Las Vegas:</span> <span id="vegas-time">loading...</span></div>
-    <div class="tz-line"><span class="tz-label">🌇 Manila:</span> <span id="manila-time">loading...</span></div>
+
+    <div class="tz-line">
+      <span class="tz-label">🌆 Las Vegas:</span>
+      <span id="vegas-time" class="tz-time-main">loading...</span>
+      <span id="vegas-date" class="tz-time-sub"></span>
+    </div>
+
+    <div class="tz-line">
+      <span class="tz-label">🌇 Manila:</span>
+      <span id="manila-time" class="tz-time-main">loading...</span>
+      <span id="manila-date" class="tz-time-sub"></span>
+    </div>
   </div>
 
   <div id="countdown-box">
@@ -540,7 +561,7 @@
 
   <div id="mood-overlay"></div>
 
-  <!-- (Optional) You can remove unused templates if you want to keep it tidy -->
+  
   <template id="work-schedule-label-template"><div class="icon-label">🗓<br>Schedule</div></template>
   <template id="letters-label-template"><div class="icon-label">💌<br>Letters</div></template>
   <template id="learning-label-template"><div class="icon-label">✏️<br>Learning</div></template>
@@ -621,16 +642,44 @@
       return { hour, minute, dayPeriod };
     }
 
+    
     function updateTimeZones() {
-      const timeOpts12 = { hour: '2-digit', minute: '2-digit', hour12: true };
-      const vegasFormatter = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Los_Angeles', ...timeOpts12 });
-      const manilaFormatter = new Intl.DateTimeFormat('en-PH', { timeZone: 'Asia/Manila', ...timeOpts12 });
+      const now = new Date();
 
-      const vegasTime = vegasFormatter.format(new Date());
-      const manilaTime = manilaFormatter.format(new Date());
+      function buildTz(timeZone) {
+        const timeFmt = new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
 
-      document.getElementById('vegas-time').textContent = vegasTime;
-      document.getElementById('manila-time').textContent = manilaTime;
+        const dateFmt = new Intl.DateTimeFormat('en-US', {
+          timeZone,
+          weekday: 'short',
+          month: '2-digit',
+          day: '2-digit'
+        });
+
+        const timeStr = timeFmt.format(now);
+
+        const parts = dateFmt.formatToParts(now);
+        const weekday = (parts.find(p => p.type === 'weekday')?.value || '').toUpperCase();
+        const month   = parts.find(p => p.type === 'month')?.value || '';
+        const day     = parts.find(p => p.type === 'day')?.value || '';
+
+        const dateStr = `(${weekday},${month}/${day})`;
+        return { timeStr, dateStr };
+      }
+
+      const vegas  = buildTz('America/Los_Angeles');
+      const manila = buildTz('Asia/Manila');
+
+      document.getElementById('vegas-time').textContent  = vegas.timeStr;
+      document.getElementById('vegas-date').textContent  = vegas.dateStr;
+
+      document.getElementById('manila-time').textContent = manila.timeStr;
+      document.getElementById('manila-date').textContent = manila.dateStr;
     }
 
     function applyMoodOverlay() {
@@ -660,7 +709,6 @@
     setInterval(updateTimeZones, 60000);
     setInterval(applyMoodOverlay, 60 * 60 * 1000);
   </script>
-
   <script>
     const canvas2 = document.getElementById('heart-canvas'); 
   </script>
