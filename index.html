@@ -420,29 +420,14 @@
   box-shadow: 0 0 8px rgba(255,255,255,0.4);
 }
 
-/* editing banner under header */
-#quick-editing-indicator{
-  display: none;
-  font-size: 11px;
-  margin-bottom: 6px;
-  opacity: 0.9;
-}
-#quick-editing-preview{
-  font-style: italic;
-  opacity: 0.85;
-}
-#quick-cancel-edit{
-  margin-left: 6px;
-  font-size: 11px;
-  border-radius: 999px;
-  border: none;
-  padding: 2px 8px;
-  cursor: pointer;
-  background: rgba(0,0,0,0.45);
-  color: #fff;
+
+#quick-editing-indicator,
+#quick-editing-preview,
+#quick-cancel-edit {
+  display: none !important;
 }
 
-/* message list */
+
 #quick-messages{
   max-height: 180px;
   overflow-y: auto;
@@ -465,7 +450,7 @@
   padding: 4px 0;
 }
 
-/* base row */
+
 .quick-message-row{
   display: flex;
   align-items: flex-start;
@@ -473,15 +458,14 @@
   margin-bottom: 6px;
 }
 
-/* LEFT / RIGHT layout using mine / theirs */
+
 .quick-message-row.mine{
-  justify-content: flex-end;          /* my messages on the right */
+  justify-content: flex-end;       
 }
 .quick-message-row.theirs{
-  justify-content: flex-start;        /* their messages on the left */
+  justify-content: flex-start;       
 }
 
-/* keep checkbox near the bubble */
 .quick-hide-checkbox-wrapper{
   flex-shrink: 0;
   padding-top: 4px;
@@ -491,13 +475,12 @@
 }
 
 .quick-message-row.mine .quick-hide-checkbox-wrapper{
-  order: 2;                            /* checkbox outside on the right */
-}
+  order: 2;                          
 .quick-message-row.mine .quick-message-bubble{
   order: 1;
 }
 
-/* bubble */
+
 .quick-message-bubble{
   flex: 0 1 auto;
   max-width: 80%;
@@ -510,7 +493,7 @@
   box-shadow: 0 4px 10px rgba(0,0,0,0.35);
 }
 
-/* colors by sender */
+
 .sender-sihaya .quick-message-bubble{
   border-left: 3px solid #67e4ca;
 }
@@ -518,13 +501,11 @@
   border-left: 3px solid #7a5af8;
 }
 
-/* checked style */
 .quick-message-checked{
   opacity: 0.7;
   text-decoration: line-through;
 }
 
-/* header inside bubble */
 .quick-message-header{
   display: flex;
   justify-content: space-between;
@@ -548,34 +529,37 @@
   font-size: 11px;
 }
 
-/* edit icon INSIDE bubble – hidden until edit-mode */
+
 .quick-edit-icon{
+  position: absolute;
+  right: -22px;        
+  top: 8px;
+  font-size: 13px;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
   border: none;
   background: transparent;
-  font-size: 11px;
-  cursor: pointer;
-  padding: 0;
   line-height: 1;
-  opacity: 0;                          /* default: hidden */
-  transition: opacity 0.15s ease, transform 0.15s ease;
+  transition: opacity .15s ease, transform .15s ease;
+  color: #fff;
 }
 
-/* when edit-mode is on, show them */
 #quick-chat-shell.edit-mode .quick-edit-icon{
   opacity: 0.85;
 }
 #quick-chat-shell.edit-mode .quick-edit-icon:hover{
+  transform: scale(1.15);
   opacity: 1;
-  transform: scale(1.05);
 }
 
-/* message body */
+
 .quick-message-body{
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-/* form */
+
 #quick-message-form{
   display: flex;
   gap: 8px;
@@ -783,7 +767,7 @@
     </div>
     <button id="quick-btn-godbrand" type="button" class="quick-sender-btn">💜</button>
 
-    <!-- ONE edit-mode toggle button -->
+
     <button id="quick-master-edit-btn" type="button" class="quick-master-edit-btn" title="Edit your notes">
       ✏️
     </button>
