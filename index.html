@@ -497,32 +497,46 @@
       transition:transform 0.18s ease;
     }
 
-    .quick-master-edit-btn{
+    /* Wand button in header */
+.quick-master-edit-btn{
   border: none;
-  background: rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.10);
   color: #fff;
   border-radius: 10px;
-  padding: 3px 7px;      /* slightly smaller */
-  font-size: 13px;
+  padding: 6px 10px;
+  font-size: 18px;
   cursor: pointer;
-  margin-left: 8px;
-  margin-right: 2px;     /* so it’s not hugging the wall */
   transition: 0.2s;
 }
-    .quick-master-edit-btn:hover{
-      background:rgba(255,255,255,0.25);
-    }
-    .quick-master-edit-btn.active{
-      background:rgba(255,255,255,0.35);
-      box-shadow:0 0 8px rgba(255,255,255,0.4);
-    }
+.quick-master-edit-btn:hover{
+  background: rgba(255,255,255,0.25);
+}
+.quick-master-edit-btn.active{
+  background: rgba(255,255,255,0.35);
+  box-shadow: 0 0 8px rgba(255,255,255,0.4);
+}
 
-    /* hide editing banner completely */
-    #quick-editing-indicator,
-    #quick-editing-preview,
-    #quick-cancel-edit{
-      display:none !important;
-    }
+/* Hide banner completely */
+#quick-editing-indicator,
+#quick-editing-preview,
+#quick-cancel-edit {
+  display: none !important;
+}
+
+/* Hover highlight while edit mode active */
+#quick-chat-shell.edit-mode .quick-message-bubble.can-edit{
+  cursor: pointer;
+  transition: box-shadow 0.15s ease, transform 0.15s ease;
+}
+#quick-chat-shell.edit-mode .quick-message-bubble.can-edit:hover{
+  box-shadow: 0 0 0 2px rgba(103,228,202,0.7),
+              0 0 12px rgba(103,228,202,0.5);
+  transform: translateY(-1px);
+}
+
+/* Remove all old edit icons */
+.quick-edit-icon{ display:none !important; }
+
 
     #quick-messages{
       max-height:180px;
