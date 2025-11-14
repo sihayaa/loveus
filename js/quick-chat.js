@@ -1,6 +1,6 @@
 window.initQuickChat = function () {
-  const supabaseClient = window.supabaseClient;
-  const CURRENT_USER = window.CURRENT_USER;
+  const supabaseClient = typeof supabase !== "undefined" ? supabase : null;
+  const CURRENT_USER = window.CURRENT_USER || null;
   const ROOM_KEY = window.ROOM_KEY || "couple";
 
   if (!supabaseClient || !CURRENT_USER) {
@@ -24,8 +24,19 @@ window.initQuickChat = function () {
   const cancelEditBtn = document.getElementById("quick-cancel-edit");
   const sendBtn = document.getElementById("quick-send-btn");
 
-  if (!messagesEl || !formEl || !inputEl || !btnGodbrand || !btnSihaya ||
-      !switchTrack || !switchThumb || !editIndicator || !editPreview || !cancelEditBtn || !sendBtn) {
+  if (
+    !messagesEl ||
+    !formEl ||
+    !inputEl ||
+    !btnGodbrand ||
+    !btnSihaya ||
+    !switchTrack ||
+    !switchThumb ||
+    !editIndicator ||
+    !editPreview ||
+    !cancelEditBtn ||
+    !sendBtn
+  ) {
     console.warn("Quick chat: missing DOM elements");
     return;
   }
@@ -87,13 +98,16 @@ window.initQuickChat = function () {
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("quick_chat")
-      .select("id, room_key, user_id, sender, text, created_at, updated_at, is_checked, hide_after")
+      .select(
+        "id, room_key, user_id, sender, text, created_at, updated_at, is_checked, hide_after"
+      )
       .eq("room_key", ROOM_KEY)
       .order("created_at", { ascending: true });
 
     if (error) {
       console.warn("Quick chat load error:", error.message);
-      messagesEl.innerHTML = `<div class="quick-empty-state">couldn’t load notes right now 💧</div>`;
+      messagesEl.innerHTML =
+        `<div class="quick-empty-state">couldn’t load notes right now 💧</div>`;
       return;
     }
 
@@ -101,7 +115,6 @@ window.initQuickChat = function () {
     messages = (data || []).filter((row) => {
       if (!row.hide_after) return true;
       const hideAt = new Date(row.hide_after);
-
       return hideAt > now;
     });
 
@@ -112,7 +125,8 @@ window.initQuickChat = function () {
     messagesEl.innerHTML = "";
 
     if (!messages.length) {
-      messagesEl.innerHTML = `<div class="quick-empty-state">no little notes yet — leave one for each other? 💫</div>`;
+      messagesEl.innerHTML =
+        `<div class="quick-empty-state">no little notes yet — leave one for each other? 💫</div>`;
       return;
     }
 
@@ -120,7 +134,9 @@ window.initQuickChat = function () {
 
     messages.forEach((msg) => {
       const row = document.createElement("div");
-      row.className = "quick-message-row sender-" + (msg.sender === "godbrand" ? "godbrand" : "sihaya");
+      row.className =
+        "quick-message-row sender-" +
+        (msg.sender === "godbrand" ? "godbrand" : "sihaya");
       row.dataset.id = msg.id;
 
       const cbWrap = document.createElement("div");
@@ -144,7 +160,8 @@ window.initQuickChat = function () {
 
       const senderSpan = document.createElement("span");
       senderSpan.className = "quick-message-sender";
-      senderSpan.textContent = msg.sender === "godbrand" ? "Godbrand 💜" : "Sihaya 💚";
+      senderSpan.textContent =
+        msg.sender === "godbrand" ? "Godbrand 💜" : "Sihaya 💚";
 
       const timeSpan = document.createElement("span");
       timeSpan.className = "quick-message-time";
@@ -175,7 +192,6 @@ window.initQuickChat = function () {
       messagesEl.appendChild(row);
     });
 
-
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
@@ -186,7 +202,7 @@ window.initQuickChat = function () {
       hour: "2-digit",
       minute: "2-digit",
       month: "2-digit",
-      day: "2-digit"
+      day: "2-digit",
     });
   }
 
@@ -196,8 +212,10 @@ window.initQuickChat = function () {
     let hide_after = null;
 
     if (is_checked) {
-
-      hide_after = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+      // hide after 24h
+      hide_after = new Date(
+        now.getTime() + 24 * 60 * 60 * 1000
+      ).toISOString();
     }
 
     msg.is_checked = is_checked;
@@ -256,10 +274,10 @@ window.initQuickChat = function () {
           .from("quick_chat")
           .update({
             text,
-            updated_at: new Date().toISOString()
+            updated_at: new Date().toISOString(),
           })
           .eq("id", id)
-          .eq("user_id", CURRENT_USER.id); 
+          .eq("user_id", CURRENT_USER.id); // only allow editing own notes
 
         if (error) {
           console.warn("Quick chat edit error:", error.message);
@@ -274,7 +292,7 @@ window.initQuickChat = function () {
           sender: sender === "godbrand" ? "godbrand" : "sihaya",
           text,
           is_checked: false,
-          hide_after: null
+          hide_after: null,
         };
 
         const { error } = await supabaseClient
@@ -293,17 +311,23 @@ window.initQuickChat = function () {
     }
   });
 
+  // realtime updates
   supabaseClient
     .channel("quick-chat-feed")
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "quick_chat", filter: `room_key=eq.${ROOM_KEY}` },
+      {
+        event: "*",
+        schema: "public",
+        table: "quick_chat",
+        filter: `room_key=eq.${ROOM_KEY}`,
+      },
       () => {
-  
         loadMessages();
       }
     )
     .subscribe();
 
+  // initial load
   loadMessages();
 };
