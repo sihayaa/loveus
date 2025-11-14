@@ -225,31 +225,41 @@ window.initQuickChat = function () {
     });
   }
 
-  // --- Check / hide logic --------------------------------------------------
-  async function handleCheckToggle(msg, checkbox) {
-    const is_checked = checkbox.checked;
-    const now = new Date();
-    let hide_after = null;
+async function handleCheckToggle(msg, checkbox) {
+  const is_checked = !!checkbox.checked;
+  const now = new Date();
+  let hide_after = null;
 
-    if (is_checked) {
-      hide_after = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
-    }
 
-    msg.is_checked = is_checked;
-    msg.hide_after = hide_after;
-    renderMessages();
-
-    const { error } = await supabaseClient
-      .from("quick_chat")
-      .update({ is_checked, hide_after })
-      .eq("id", msg.id);
-
-    if (error) {
-      console.warn("Quick chat check update error:", error.message);
-    }
+  if (is_checked) {
+    hide_after = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
   }
 
-  // --- Editing helpers -----------------------------------------------------
+
+  msg.is_checked = is_checked;
+  msg.hide_after = hide_after;
+  renderMessages();
+
+
+  const { data, error } = await supabaseClient
+    .from("quick_chat")
+    .update({ is_checked, hide_after })
+    .eq("id", msg.id)
+    .select("id, is_checked, hide_after")
+    .single();
+
+  if (error) {
+    console.warn("Quick chat check update error:", error.message);
+    return;
+  }
+
+
+  if (data && data.id === msg.id) {
+    msg.is_checked = data.is_checked;
+    msg.hide_after = data.hide_after;
+  }
+}
+
   function startEditing(msg) {
     editingId = msg.id;
     inputEl.value = msg.text || "";
