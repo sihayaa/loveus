@@ -422,7 +422,7 @@
     }
     .edit-btn:hover{transform:scale(1.05);opacity:1;}
 
-    /* --- QUICK CHAT MINI WALL --- */
+   
     #quick-chat-shell{
       width:100%;
       max-width:620px;
@@ -455,7 +455,7 @@
     .quick-chat-sender-controls{
   display: flex;
   align-items: center;
-  gap: 6px;          /* more spacing */
+  gap: 6px;       
   font-size: 12px;
 }
 
@@ -497,7 +497,7 @@
       transition:transform 0.18s ease;
     }
 
-    /* Wand button in header */
+ 
 .quick-master-edit-btn{
   border: none;
   background: rgba(255,255,255,0.10);
@@ -516,14 +516,14 @@
   box-shadow: 0 0 8px rgba(255,255,255,0.4);
 }
 
-/* Hide banner completely */
+
 #quick-editing-indicator,
 #quick-editing-preview,
 #quick-cancel-edit {
   display: none !important;
 }
 
-/* Hover highlight while edit mode active */
+
 #quick-chat-shell.edit-mode .quick-message-bubble.can-edit{
   cursor: pointer;
   transition: box-shadow 0.15s ease, transform 0.15s ease;
@@ -534,7 +534,7 @@
   transform: translateY(-1px);
 }
 
-/* Remove all old edit icons */
+
 .quick-edit-icon{ display:none !important; }
 
 
@@ -582,7 +582,7 @@
     }
 
     .quick-message-row.mine .quick-hide-checkbox-wrapper{
-      order:2; /* checkbox on outside right */
+      order:2; 
     }
     .quick-message-row.mine .quick-message-bubble{
       order:1;
@@ -628,6 +628,32 @@
     .quick-message-time{
       font-size:11px;
     }
+
+.quick-message-sender {
+  font-size: 13px;       
+  font-weight: 700;
+  color: #1a1a1a;        
+}
+
+
+.quick-message-time {
+  font-size: 10px;      
+  opacity: 0.75;       
+  color: #555;         
+
+
+.quick-message-body {
+  font-size: 15px;     
+  line-height: 1.4;
+  margin-top: 3px;
+  color: #000;
+}
+
+
+.quick-message-header {
+  margin-bottom: 4px;
+}
+
 
     .quick-edit-icon{
       position:absolute;
