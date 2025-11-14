@@ -334,22 +334,23 @@ window.initQuickChat = function () {
   });
 
 
+// --- Live updates from Supabase -----------------------------------------
 supabaseClient
   .channel("quick-chat-feed")
   .on(
+    "postgres_changes",
     {
       event: "*",
       schema: "public",
       table: "quick_chat",
-     
       filter: "room_key=eq." + ROOM_KEY,
     },
     () => {
+      // whenever anything changes in this room, reload the messages
       loadMessages();
     }
   )
   .subscribe();
-
 
   loadMessages();
 };
