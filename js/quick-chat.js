@@ -93,26 +93,12 @@ window.initQuickChat = function () {
 
   applySenderUI();
 
-  // --- Master edit mode (wand button) -------------------------------------
-  masterEditBtn.addEventListener("click", (e) => {
-    e.preventDefault();
-    editMode = !editMode;
-    shell.classList.toggle("edit-mode", editMode);
-    masterEditBtn.classList.toggle("active", editMode);
-
-    // if we turn edit mode OFF while editing something, cancel the edit
-    if (!editMode && editingId !== null) {
-      cancelEditing();
-    }
-    renderMessages();
-  });
-
   // --- Load messages -------------------------------------------------------
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("quick_chat")
       .select(
-        "id, room_key, user_id, sender, text, created_at, updated_at, is_checked, hide_after"
+        "id, room_key, user_id, sender, text, created_at, updated_at, is_checked"
       )
       .eq("room_key", ROOM_KEY)
       .order("created_at", { ascending: true });
@@ -124,13 +110,7 @@ window.initQuickChat = function () {
       return;
     }
 
-    const now = new Date();
-    messages = (data || []).filter((row) => {
-      if (!row.hide_after) return true;
-      const hideAt = new Date(row.hide_after);
-      return hideAt > now;
-    });
-
+    messages = data || [];
     renderMessages();
   }
 
@@ -225,41 +205,25 @@ window.initQuickChat = function () {
     });
   }
 
-async function handleCheckToggle(msg, checkbox) {
-  const is_checked = !!checkbox.checked;
-  const now = new Date();
-  let hide_after = null;
+  // --- Check logic (no auto-hide) -----------------------------------------
+  async function handleCheckToggle(msg, checkbox) {
+    const is_checked = !!checkbox.checked;
 
+    // update local copy so UI feels instant
+    msg.is_checked = is_checked;
+    renderMessages();
 
-  if (is_checked) {
-    hide_after = new Date(now.getTime() + 24 * 60 * 60 * 1000).toISOString();
+    const { error } = await supabaseClient
+      .from("quick_chat")
+      .update({ is_checked })
+      .eq("id", msg.id);
+
+    if (error) {
+      console.warn("Quick chat check update error:", error.message);
+    }
   }
 
-
-  msg.is_checked = is_checked;
-  msg.hide_after = hide_after;
-  renderMessages();
-
-
-  const { data, error } = await supabaseClient
-    .from("quick_chat")
-    .update({ is_checked, hide_after })
-    .eq("id", msg.id)
-    .select("id, is_checked, hide_after")
-    .single();
-
-  if (error) {
-    console.warn("Quick chat check update error:", error.message);
-    return;
-  }
-
-
-  if (data && data.id === msg.id) {
-    msg.is_checked = data.is_checked;
-    msg.hide_after = data.hide_after;
-  }
-}
-
+  // --- Editing helpers -----------------------------------------------------
   function startEditing(msg) {
     editingId = msg.id;
     inputEl.value = msg.text || "";
@@ -328,7 +292,6 @@ async function handleCheckToggle(msg, checkbox) {
           sender: sender === "godbrand" ? "godbrand" : "sihaya",
           text,
           is_checked: false,
-          hide_after: null,
         };
 
         const { error } = await supabaseClient
