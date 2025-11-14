@@ -181,15 +181,15 @@ window.initQuickChat = function () {
       bubble.appendChild(header);
       bubble.appendChild(body);
 
-      // small wand icon, only for your own notes, and only in edit-mode
-      if (msg.user_id === currentUserId && editMode) {
-        const editBtn = document.createElement("button");
-        editBtn.type = "button";
-        editBtn.className = "quick-edit-icon";
-        editBtn.title = "Edit note";
-        editBtn.textContent = "🪄";
-        editBtn.addEventListener("click", () => startEditing(msg));
-        bubble.appendChild(editBtn);
+      // ✅ Make your own notes clickable in edit mode (no per-message wand)
+      if (msg.user_id === currentUserId) {
+        bubble.classList.add("can-edit");
+        bubble.addEventListener("click", () => {
+          // only react if edit mode is ON
+          if (editMode) {
+            startEditing(msg);
+          }
+        });
       }
 
       row.appendChild(cbWrap);
@@ -239,11 +239,12 @@ window.initQuickChat = function () {
   function startEditing(msg) {
     editingId = msg.id;
     inputEl.value = msg.text || "";
-    // banner is visually hidden by CSS, but we still keep state in case
+    inputEl.focus();
+
+    // these are visually hidden by CSS but we keep them for logic safety
     editIndicator.style.display = "block";
     editPreview.textContent = shorten(msg.text || "");
     cancelEditBtn.style.display = "inline-block";
-    inputEl.focus();
   }
 
   function cancelEditing() {
@@ -329,7 +330,6 @@ window.initQuickChat = function () {
   supabaseClient
     .channel("quick-chat-feed")
     .on(
-      "postgres_changes",
       {
         event: "*",
         schema: "public",
