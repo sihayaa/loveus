@@ -1,48 +1,51 @@
 window.initQuickChat = function () {
   const supabaseClient = window.supabaseClient;
-  const CURRENT_USER = window.CURRENT_USER;
-  const ROOM_KEY = window.ROOM_KEY || "couple";
+  const CURRENT_USER   = window.CURRENT_USER;
+  const ROOM_KEY       = window.ROOM_KEY || "couple";
 
   if (!supabaseClient || !CURRENT_USER) {
     console.warn("Quick chat: supabaseClient or CURRENT_USER not ready");
     return;
   }
 
-  const shell = document.getElementById("quick-chat-shell");
+  const shell          = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
-  const messagesEl      = document.getElementById("quick-messages");
-  const formEl          = document.getElementById("quick-message-form");
-  const inputEl         = document.getElementById("quick-message-input");
-  const btnGodbrand     = document.getElementById("quick-btn-godbrand");
-  const btnSihaya       = document.getElementById("quick-btn-sihaya");
-  const switchTrack     = document.getElementById("quick-sender-switch-track");
-  const switchThumb     = document.getElementById("quick-sender-switch-thumb");
-  const editIndicator   = document.getElementById("quick-editing-indicator");
-  const editPreview     = document.getElementById("quick-editing-preview");
-  const cancelEditBtn   = document.getElementById("quick-cancel-edit");
-  const sendBtn         = document.getElementById("quick-send-btn");
-  const masterEditBtn   = document.getElementById("quick-master-edit-btn");
+  const messagesEl     = document.getElementById("quick-messages");
+  const formEl         = document.getElementById("quick-message-form");
+  const inputEl        = document.getElementById("quick-message-input");
+  const btnGodbrand    = document.getElementById("quick-btn-godbrand");
+  const btnSihaya      = document.getElementById("quick-btn-sihaya");
+  const switchTrack    = document.getElementById("quick-sender-switch-track");
+  const switchThumb    = document.getElementById("quick-sender-switch-thumb");
+  const editIndicator  = document.getElementById("quick-editing-indicator");
+  const editPreview    = document.getElementById("quick-editing-preview");
+  const cancelEditBtn  = document.getElementById("quick-cancel-edit");
+  const sendBtn        = document.getElementById("quick-send-btn");
+  const masterEditBtn  = document.getElementById("quick-master-edit-btn");
 
-  if (!messagesEl || !formEl || !inputEl || !btnGodbrand || !btnSihaya ||
-      !switchTrack || !switchThumb || !editIndicator || !editPreview ||
-      !cancelEditBtn || !sendBtn || !masterEditBtn) {
+  if (
+    !messagesEl || !formEl || !inputEl || !btnGodbrand || !btnSihaya ||
+    !switchTrack || !switchThumb || !editIndicator || !editPreview ||
+    !cancelEditBtn || !sendBtn || !masterEditBtn
+  ) {
     console.warn("Quick chat: missing DOM elements");
     return;
   }
 
   let messages  = [];
-  let editingId = null;
-  let editMode  = false;
+  let editingId = null;   // which row is being edited
+  let editMode  = false;  // master edit mode on/off
 
   const SENDER_KEY = "quickChatSender";
-  const myEmail = (CURRENT_USER.email || "").toLowerCase();
+  const myEmail    = (CURRENT_USER.email || "").toLowerCase();
 
+  // --- Sender preference (💚 / 💜) ----------------------------------------
   let sender = localStorage.getItem(SENDER_KEY);
   if (!sender) {
-    if (myEmail === "gokumeng48@gmail.com") sender = "sihaya";
-    else if (myEmail === "micdmick@gmail.com") sender = "godbrand";
-    else sender = "sihaya";
+    if (myEmail === "gokumeng48@gmail.com")      sender = "sihaya";
+    else if (myEmail === "micdmick@gmail.com")   sender = "godbrand";
+    else                                         sender = "sihaya";
     localStorage.setItem(SENDER_KEY, sender);
   }
 
@@ -81,20 +84,21 @@ window.initQuickChat = function () {
 
   applySenderUI();
 
-
+  // --- Master edit mode (wand button) -------------------------------------
   masterEditBtn.addEventListener("click", (e) => {
     e.preventDefault();
     editMode = !editMode;
     shell.classList.toggle("edit-mode", editMode);
     masterEditBtn.classList.toggle("active", editMode);
 
-
+    // if we turn edit mode OFF while editing something, cancel the edit
     if (!editMode && editingId !== null) {
       cancelEditing();
     }
     renderMessages();
   });
 
+  // --- Load messages -------------------------------------------------------
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("quick_chat")
@@ -118,6 +122,7 @@ window.initQuickChat = function () {
     renderMessages();
   }
 
+  // --- Render messages -----------------------------------------------------
   function renderMessages() {
     messagesEl.innerHTML = "";
 
@@ -132,7 +137,6 @@ window.initQuickChat = function () {
       const row = document.createElement("div");
       row.className = "quick-message-row sender-" + (msg.sender === "godbrand" ? "godbrand" : "sihaya");
       row.dataset.id = msg.id;
-
 
       if (msg.user_id === currentUserId) {
         row.classList.add("mine");
@@ -177,7 +181,7 @@ window.initQuickChat = function () {
       bubble.appendChild(header);
       bubble.appendChild(body);
 
-
+      // small wand icon, only for your own notes, and only in edit-mode
       if (msg.user_id === currentUserId && editMode) {
         const editBtn = document.createElement("button");
         editBtn.type = "button";
@@ -207,6 +211,7 @@ window.initQuickChat = function () {
     });
   }
 
+  // --- Check / hide logic --------------------------------------------------
   async function handleCheckToggle(msg, checkbox) {
     const is_checked = checkbox.checked;
     const now = new Date();
@@ -230,9 +235,11 @@ window.initQuickChat = function () {
     }
   }
 
+  // --- Editing helpers -----------------------------------------------------
   function startEditing(msg) {
     editingId = msg.id;
     inputEl.value = msg.text || "";
+    // banner is visually hidden by CSS, but we still keep state in case
     editIndicator.style.display = "block";
     editPreview.textContent = shorten(msg.text || "");
     cancelEditBtn.style.display = "inline-block";
@@ -258,15 +265,19 @@ window.initQuickChat = function () {
     cancelEditing();
   });
 
+  // --- Form submit (send / edit) ------------------------------------------
   formEl.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = (inputEl.value || "").trim();
+
+    // if nothing typed and not editing, do nothing
     if (!text && !editingId) return;
 
     sendBtn.disabled = true;
 
     try {
       if (editingId) {
+        // update existing note
         const id = editingId;
         const { error } = await supabaseClient
           .from("quick_chat")
@@ -280,10 +291,15 @@ window.initQuickChat = function () {
         if (error) {
           console.warn("Quick chat edit error:", error.message);
         } else {
+          // ✅ after editing and sending, exit edit mode completely
           cancelEditing();
+          editMode = false;
+          shell.classList.remove("edit-mode");
+          masterEditBtn.classList.remove("active");
           await loadMessages();
         }
       } else {
+        // create new note
         const payload = {
           room_key: ROOM_KEY,
           user_id: CURRENT_USER.id,
@@ -309,12 +325,17 @@ window.initQuickChat = function () {
     }
   });
 
-
+  // --- Live updates from Supabase -----------------------------------------
   supabaseClient
     .channel("quick-chat-feed")
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "quick_chat", filter: `room_key=eq.${ROOM_KEY}` },
+      {
+        event: "*",
+        schema: "public",
+        table: "quick_chat",
+        filter: `room_key=eq.${ROOM_KEY}`,
+      },
       () => {
         loadMessages();
       }
