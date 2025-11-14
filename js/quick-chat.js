@@ -11,7 +11,7 @@ window.initQuickChat = function () {
   const shell = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
-  
+ 
   if (shell.dataset.quickChatInitialized === "1") {
     console.warn("Quick chat already initialized, skipping.");
     return;
@@ -41,13 +41,13 @@ window.initQuickChat = function () {
   }
 
   let messages  = [];
-  let editingId = null;   
-  let editMode  = false;  
+  let editingId = null;  
+  let editMode  = false; 
 
   const SENDER_KEY = "quickChatSender";
   const myEmail    = (CURRENT_USER.email || "").toLowerCase();
 
-  
+ 
   let sender = localStorage.getItem(SENDER_KEY);
   if (!sender) {
     if (myEmail === "gokumeng48@gmail.com")      sender = "sihaya";
@@ -98,7 +98,7 @@ window.initQuickChat = function () {
     shell.classList.toggle("edit-mode", editMode);
     masterEditBtn.classList.toggle("active", editMode);
 
-    
+  
     if (!editMode && editingId !== null) {
       cancelEditing();
     }
@@ -129,7 +129,7 @@ window.initQuickChat = function () {
     renderMessages();
   }
 
- 
+  
   function renderMessages() {
     messagesEl.innerHTML = "";
 
@@ -188,11 +188,11 @@ window.initQuickChat = function () {
       bubble.appendChild(header);
       bubble.appendChild(body);
 
-      
+     
       if (msg.user_id === currentUserId) {
         bubble.classList.add("can-edit");
         bubble.addEventListener("click", () => {
-         
+        
           if (editMode) {
             startEditing(msg);
           }
@@ -218,7 +218,7 @@ window.initQuickChat = function () {
     });
   }
 
-  
+
   async function handleCheckToggle(msg, checkbox) {
     const is_checked = checkbox.checked;
     const now = new Date();
@@ -242,13 +242,13 @@ window.initQuickChat = function () {
     }
   }
 
- 
+
   function startEditing(msg) {
     editingId = msg.id;
     inputEl.value = msg.text || "";
     inputEl.focus();
 
-   
+  
     editIndicator.style.display = "block";
     editPreview.textContent = shorten(msg.text || "");
     cancelEditBtn.style.display = "inline-block";
@@ -273,12 +273,12 @@ window.initQuickChat = function () {
     cancelEditing();
   });
 
-  
+ 
   formEl.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = (inputEl.value || "").trim();
 
-    
+  
     if (!text && !editingId) return;
 
     sendBtn.disabled = true;
@@ -299,7 +299,7 @@ window.initQuickChat = function () {
         if (error) {
           console.warn("Quick chat edit error:", error.message);
         } else {
-         
+        
           cancelEditing();
           editMode = false;
           shell.classList.remove("edit-mode");
@@ -307,7 +307,7 @@ window.initQuickChat = function () {
           await loadMessages();
         }
       } else {
-       
+     
         const payload = {
           room_key: ROOM_KEY,
           user_id: CURRENT_USER.id,
@@ -333,22 +333,23 @@ window.initQuickChat = function () {
     }
   });
 
- 
-  supabaseClient
-    .channel("quick-chat-feed")
-    .on(
-      {
-        event: "*",
-        schema: "public",
-        table: "quick_chat",
-        filter: `room_key=eq.${ROOM_KEY}`,
-      },
-      () => {
-        loadMessages();
-      }
-    )
-    .subscribe();
 
- 
+supabaseClient
+  .channel("quick-chat-feed")
+  .on(
+    {
+      event: "*",
+      schema: "public",
+      table: "quick_chat",
+     
+      filter: "room_key=eq." + ROOM_KEY,
+    },
+    () => {
+      loadMessages();
+    }
+  )
+  .subscribe();
+
+
   loadMessages();
 };
