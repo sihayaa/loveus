@@ -325,18 +325,11 @@
 
    /* --- QUICK CHAT MINI WALL --- */
 #quick-chat-shell{
-  position: fixed;
-  left: 50%;
-  top: 56%;                        /* move up/down by changing this */
-  transform: translate(-50%, -50%);
-  width: min(460px, 92vw);
-  max-height: 420px;
-
-  z-index: 6;
-
-  padding: 10px 14px 8px;
-  border-radius: 20px;
-  background: rgba(0,0,0,0.68);
+  max-width: 520px;
+  margin: 32px auto 0;              /* centered like main content */
+  padding: 12px 16px 10px;
+  border-radius: 18px;
+  background: rgba(0,0,0,0.72);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255,255,255,0.25);
@@ -344,9 +337,90 @@
     0 0 18px rgba(122,90,248,0.65),
     0 18px 40px rgba(0,0,0,0.6);
   box-sizing: border-box;
+  z-index: 3;
 }
 
-/* let messages scroll if they get tall */
+.quick-chat-header{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 4px;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 16px;
+}
+
+.quick-chat-title{
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-shadow: 0 0 6px #a027a0;
+}
+
+.quick-chat-sender-controls{
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.quick-sender-btn{
+  border: none;
+  border-radius: 999px;
+  padding: 2px 6px;
+  font-size: 13px;
+  cursor: pointer;
+  background: rgba(0,0,0,0.15);
+  color: #fff;
+}
+.quick-sender-btn.active{
+  background: rgba(255,255,255,0.25);
+  box-shadow: 0 0 8px rgba(255,255,255,0.3);
+}
+
+#quick-sender-switch-track{
+  width: 40px;
+  height: 18px;
+  border-radius: 999px;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.5);
+  position: relative;
+  cursor: pointer;
+  box-sizing: border-box;
+}
+
+#quick-sender-switch-thumb{
+  width: 18px;
+  height: 14px;
+  border-radius: 999px;
+  background: #67e4ca;
+  box-shadow: 0 0 6px #67e4ca;
+  position: absolute;
+  top: 1px;
+  left: 1px;
+  transition: transform 0.18s ease;
+}
+
+#quick-editing-indicator{
+  display: none;
+  font-size: 11px;
+  margin-bottom: 4px;
+  opacity: 0.9;
+}
+#quick-editing-preview{
+  font-style: italic;
+  opacity: 0.8;
+}
+#quick-cancel-edit{
+  margin-left: 6px;
+  font-size: 11px;
+  border-radius: 999px;
+  border: none;
+  padding: 2px 8px;
+  cursor: pointer;
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+}
+
 #quick-messages{
   max-height: 260px;
   overflow-y: auto;
@@ -362,198 +436,102 @@
   border-radius: 999px;
 }
 
-    .quick-chat-header{
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-      margin-bottom: 4px;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 16px;
-    }
+.quick-empty-state{
+  font-size: 12px;
+  opacity: 0.75;
+  text-align: center;
+  padding: 4px 0;
+}
 
-    .quick-chat-title{
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      text-shadow: 0 0 6px #a027a0;
-    }
+.quick-message-row{
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin-bottom: 6px;
+}
 
-    .quick-chat-sender-controls{
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-    }
+.quick-hide-checkbox-wrapper{
+  flex-shrink: 0;
+  padding-top: 4px;
+}
 
-    .quick-sender-btn{
-      border: none;
-      border-radius: 999px;
-      padding: 2px 6px;
-      font-size: 13px;
-      cursor: pointer;
-      background: rgba(0,0,0,0.15);
-      color: #fff;
-    }
-    .quick-sender-btn.active{
-      background: rgba(255,255,255,0.25);
-      box-shadow: 0 0 8px rgba(255,255,255,0.3);
-    }
+.quick-message-bubble{
+  flex: 1;
+  padding: 6px 8px;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.9);
+  color: #000;
+  font-size: 12px;
+  position: relative;
+  box-shadow: 0 0 6px rgba(0,0,0,0.2);
+}
 
-    #quick-sender-switch-track{
-      width: 40px;
-      height: 18px;
-      border-radius: 999px;
-      background: rgba(255,255,255,0.15);
-      border: 1px solid rgba(255,255,255,0.5);
-      position: relative;
-      cursor: pointer;
-      box-sizing: border-box;
-    }
+.sender-sihaya .quick-message-bubble{
+  border-left: 3px solid #67e4ca;
+}
+.sender-godbrand .quick-message-bubble{
+  border-left: 3px solid #7a5af8;
+}
 
-    #quick-sender-switch-thumb{
-      width: 18px;
-      height: 14px;
-      border-radius: 999px;
-      background: #67e4ca;
-      box-shadow: 0 0 6px #67e4ca;
-      position: absolute;
-      top: 1px;
-      left: 1px;
-      transition: transform 0.18s ease;
-    }
+.quick-message-checked{
+  opacity: 0.7;
+  text-decoration: line-through;
+}
 
-    #quick-editing-indicator{
-      display: none;
-      font-size: 11px;
-      margin-bottom: 4px;
-      opacity: 0.9;
-    }
-    #quick-editing-preview{
-      font-style: italic;
-      opacity: 0.8;
-    }
-    #quick-cancel-edit{
-      margin-left: 6px;
-      font-size: 11px;
-      border-radius: 999px;
-      border: none;
-      padding: 2px 8px;
-      cursor: pointer;
-      background: rgba(0,0,0,0.35);
-      color: #fff;
-    }
+.quick-message-header{
+  display: flex;
+  justify-content: space-between;
+  font-size: 11px;
+  margin-bottom: 2px;
+  opacity: 0.8;
+}
 
-    #quick-messages{
-      max-height: 130px;
-      overflow-y: auto;
-      padding-right: 2px;
-      margin-bottom: 4px;
-      font-size: 13px;
-    }
-    #quick-messages::-webkit-scrollbar{
-      width: 4px;
-    }
-    #quick-messages::-webkit-scrollbar-thumb{
-      background: rgba(255,255,255,0.4);
-      border-radius: 999px;
-    }
+.quick-message-body{
+  white-space: pre-wrap;
+  word-break: break-word;
+}
 
-    .quick-empty-state{
-      font-size: 12px;
-      opacity: 0.75;
-      text-align: center;
-      padding: 4px 0;
-    }
+.quick-edit-icon{
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  border: none;
+  background: transparent;
+  font-size: 13px;
+  cursor: pointer;
+}
 
-    .quick-message-row{
-      display: flex;
-      align-items: flex-start;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
+#quick-message-form{
+  display: flex;
+  gap: 6px;
+  margin-top: 4px;
+}
 
-    .quick-hide-checkbox-wrapper{
-      flex-shrink: 0;
-      padding-top: 4px;
-    }
+#quick-message-input{
+  flex: 1;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.35);
+  padding: 6px 10px;
+  font-size: 12px;
+  outline: none;
+  background: rgba(255,255,255,0.95);
+  color: #000;
+  min-width: 0;
+}
 
-    .quick-message-bubble{
-      flex: 1;
-      padding: 6px 8px;
-      border-radius: 10px;
-      background: rgba(255,255,255,0.9);
-      color: #000;
-      font-size: 12px;
-      position: relative;
-      box-shadow: 0 0 6px rgba(0,0,0,0.2);
-    }
-
-    .sender-sihaya .quick-message-bubble{
-      border-left: 3px solid #67e4ca;
-    }
-    .sender-godbrand .quick-message-bubble{
-      border-left: 3px solid #7a5af8;
-    }
-
-    .quick-message-checked{
-      opacity: 0.7;
-      text-decoration: line-through;
-    }
-
-    .quick-message-header{
-      display: flex;
-      justify-content: space-between;
-      font-size: 11px;
-      margin-bottom: 2px;
-      opacity: 0.8;
-    }
-
-    .quick-message-body{
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
-
-    .quick-edit-icon{
-      position: absolute;
-      top: 4px;
-      right: 4px;
-      border: none;
-      background: transparent;
-      font-size: 13px;
-      cursor: pointer;
-    }
-
-    #quick-message-form{
-      display: flex;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    #quick-message-input{
-      flex: 1;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.35);
-      padding: 6px 10px;
-      font-size: 12px;
-      outline: none;
-      background: rgba(255,255,255,0.95);
-      color: #000;
-      min-width: 0;
-    }
-
-    #quick-send-btn{
-      border-radius: 999px;
-      border: none;
-      padding: 6px 10px;
-      font-size: 12px;
-      cursor: pointer;
-      background: #a3d2ca;
-      color: #000;
-    }
-    #quick-send-btn:disabled{
-      opacity: 0.6;
-      cursor: default;
-    }
+#quick-send-btn{
+  border-radius: 999px;
+  border: none;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+  background: #a3d2ca;
+  color: #000;
+}
+#quick-send-btn:disabled{
+  opacity: 0.6;
+  cursor: default;
+}
 
     .secret-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity .22s ease; z-index: 12000; }
     .secret-backdrop.show { opacity: 1; pointer-events: auto; }
@@ -631,12 +609,9 @@
       }
       .album-icon .icon-label{ font-size: 12px }
 
-        #quick-chat-shell{
-    position: static;
-    transform: none;
-    width: 100%;
-    max-width: 540px;
-    margin: 10px auto;
+          #quick-chat-shell{
+    max-width: 100%;
+    margin: 16px auto 0;
   }
 
     @media (max-width:420px){
@@ -716,10 +691,8 @@
     <div class="count-label">before</div>
     <div class="count-label">2nd-year anniversary</div>
   </div>
-
-  <div id="reminder-box">
-    <!-- QUICK CHAT MINI WALL -->
-    <div id="quick-chat-shell">
+  
+ <div id="quick-chat-shell">
       <div class="quick-chat-header">
         <div class="quick-chat-title">Mini Notes</div>
 
@@ -749,8 +722,9 @@
         <button id="quick-send-btn" type="submit">Send</button>
       </form>
     </div>
-
-    <!-- REMINDERS -->
+  
+  <div id="reminder-box">
+   
     <h3>📄 Reminders <button id="history-toggle" title="View completed reminders">History</button></h3>
     <div class="reminder-input-row">
       <input id="reminder-input" type="text" placeholder="Click to write a reminder…" maxlength="200" readonly>
