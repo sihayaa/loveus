@@ -6,10 +6,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="icon" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/icon.png?v=2" type="image/png" sizes="32x32">
-
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
-
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Patrick+Hand&display=swap" rel="stylesheet">
+
   <style>
     :root{
       --quote-green:#246B3E;
@@ -18,120 +17,171 @@
       --teal:#67e4ca;
     }
 
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
-      background-size: cover;
-      color: #fff;
-      margin: 0;
-      padding: 40px;
-      text-align: center;
-      overflow-x: hidden;
+    body{
+      font-family:'Segoe UI',sans-serif;
+      background:url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
+      background-size:cover;
+      color:#fff;
+      margin:0;
+      padding:40px;
+      text-align:center;
+      overflow-x:hidden;
     }
 
-    h1 {
-      font-family: 'Great Vibes', cursive;
-      font-size: 3.4em;
-      color: white;
-      text-shadow: 2px 2px 8px #8e5dd2;
-      margin-bottom: 20px;
+    h1{
+      font-family:'Great Vibes',cursive;
+      font-size:3.4em;
+      color:#fff;
+      text-shadow:2px 2px 8px #8e5dd2;
+      margin-bottom:20px;
     }
 
-    #duration-block {
-      background: rgba(255, 255, 255, 0.65);
-      display: inline-block;
-      padding: 12px 20px;
-      border-radius: 12px;
-      margin-bottom: 30px;
+    #duration-block{
+      background:rgba(255,255,255,0.65);
+      display:inline-block;
+      padding:12px 20px;
+      border-radius:12px;
+      margin-bottom:30px;
     }
 
-    #duration-label {
-      font-family: 'Great Vibes', cursive;
-      color: #111;
-      font-weight: normal;
-      font-size: 1.9em;
-      text-shadow: 0 0 6px #4fa981, 0 0 10px #4fa981;
+    #duration-label{
+      font-family:'Great Vibes',cursive;
+      color:#111;
+      font-weight:normal;
+      font-size:1.9em;
+      text-shadow:0 0 6px #4fa981,0 0 10px #4fa981;
     }
 
-    #duration-value {
-      color: #4fa981;
-      font-weight: bold;
-      font-size: 1.9em;
+    #duration-value{
+      color:#4fa981;
+      font-weight:bold;
+      font-size:1.9em;
       text-shadow:
-        -1px -1px 0 #000, 1px -1px 0 #000,
-        -1px  1px 0 #000, 1px  1px 0 #000,
-        0 0 6px #4fa981, 0 0 10px #4fa981;
-      animation: pulseGlow 2s ease-in-out infinite;
+        -1px -1px 0 #000,1px -1px 0 #000,
+        -1px  1px 0 #000,1px  1px 0 #000,
+        0 0 6px #4fa981,0 0 10px #4fa981;
+      animation:pulseGlow 2s ease-in-out infinite;
     }
 
-    @keyframes pulseGlow {
-      0%, 100% { text-shadow:
-          -1px -1px 0 #000, 1px -1px 0 #000,
-          -1px 1px 0 #000, 1px  1px 0 #000,
-          0 0 4px #4fa981, 0 0 8px #4fa981; }
-      50% { text-shadow:
-          -1px -1px 0 #000, 1px -1px 0 #000,
-          -1px 1px 0 #000, 1px  1px 0 #000,
-          0 0 10px #4fa981, 0 0 18px #4fa981; }
+    @keyframes pulseGlow{
+      0%,100%{
+        text-shadow:
+          -1px -1px 0 #000,1px -1px 0 #000,
+          -1px  1px 0 #000,1px  1px 0 #000,
+          0 0 4px #4fa981,0 0 8px #4fa981;
+      }
+      50%{
+        text-shadow:
+          -1px -1px 0 #000,1px -1px 0 #000,
+          -1px  1px 0 #000,1px  1px 0 #000,
+          0 0 10px #4fa981,0 0 18px #4fa981;
+      }
     }
 
-    button {
-      padding: 10px 20px;
-      margin: 10px;
-      font-size: 1em;
-      background-color: #a3d2ca;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+    button{
+      padding:10px 20px;
+      margin:10px;
+      font-size:1em;
+      background-color:#a3d2ca;
+      border:none;
+      border-radius:8px;
+      cursor:pointer;
+      transition:all 0.3s ease;
+      box-shadow:0 0 10px rgba(0,0,0,0.2);
     }
-    button:hover { background-color: #8fc6bb; transform: scale(1.07); box-shadow: 0 0 15px #fff; }
-
-    #icon-area { }
-
-    .album-icon {
-      position: fixed; left: 20px; width: 80px; height: 80px;
-      background-color: #884ea0; border-radius: 20px;
-      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3);
-      padding: 6px; cursor: pointer; z-index: 10; transition: all 0.3s ease;
-      display: grid; place-items: center; text-decoration: none;
+    button:hover{
+      background-color:#8fc6bb;
+      transform:scale(1.07);
+      box-shadow:0 0 15px #fff;
     }
-    .album-icon:hover { transform: scale(1.07); box-shadow: 0 0 15px #e43fec, 0 0 25px #d2b4de, 4px 4px 12px rgba(0,0,0,0.3); }
-    .album-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; display: block; }
+
+    #icon-area{}
+
+    .album-icon{
+      position:fixed;
+      left:20px;
+      width:80px;
+      height:80px;
+      background-color:#884ea0;
+      border-radius:20px;
+      box-shadow:0 0 12px #d2b4de,4px 4px 12px rgba(0,0,0,0.3);
+      padding:6px;
+      cursor:pointer;
+      z-index:10;
+      transition:all 0.3s ease;
+      display:grid;
+      place-items:center;
+      text-decoration:none;
+    }
+    .album-icon:hover{
+      transform:scale(1.07);
+      box-shadow:0 0 15px #e43fec,0 0 25px #d2b4de,4px 4px 12px rgba(0,0,0,0.3);
+    }
+    .album-icon img{
+      width:100%;
+      height:100%;
+      border-radius:12px;
+      object-fit:cover;
+      display:block;
+    }
     .album-icon .icon-label{
-      width: 100%; height: 100%; border-radius: 12px; display: flex; align-items: center; justify-content: center; padding: 6px;
-      text-align: center; font-family: 'Patrick Hand', cursive; font-weight: 800; font-size: 14px; line-height: 1.1; color: #fff;
-      text-shadow: 0 1px 2px rgba(0,0,0,.6); background: rgba(255,255,255,0.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.22);
+      width:100%;
+      height:100%;
+      border-radius:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:6px;
+      text-align:center;
+      font-family:'Patrick Hand',cursive;
+      font-weight:800;
+      font-size:14px;
+      line-height:1.1;
+      color:#fff;
+      text-shadow:0 1px 2px rgba(0,0,0,.6);
+      background:rgba(255,255,255,0.06);
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,0.22);
     }
 
-    .album-icon.placeholder {
-      background: transparent;
-      box-shadow: none;
-      padding: 0;
-      cursor: default;
-      pointer-events: none;
+    .album-icon.placeholder{
+      background:transparent;
+      box-shadow:none;
+      padding:0;
+      cursor:default;
+      pointer-events:none;
     }
 
-    #timezone-box {
-      position: fixed; top: 40px; right: 40px;
-      background: rgba(0, 0, 0, 0.6); 
-      backdrop-filter: blur(14px);
-      backdrop-filter: blur(10px);
-      border-radius: 20px; padding: 18px 22px; width: 280px; color: white; font-family: 'Segoe UI', sans-serif;
-      box-shadow: 0 0 12px #d2b4de, 4px 4px 12px rgba(0, 0, 0, 0.3); text-align: left; z-index: 5;
+    #timezone-box{
+      position:fixed;
+      top:40px;
+      right:40px;
+      background:rgba(0,0,0,0.6);
+      backdrop-filter:blur(10px);
+      border-radius:20px;
+      padding:18px 22px;
+      width:280px;
+      color:#fff;
+      font-family:'Segoe UI',sans-serif;
+      box-shadow:0 0 12px #d2b4de,4px 4px 12px rgba(0,0,0,0.3);
+      text-align:left;
+      z-index:5;
     }
-    .tz-header { font-family: 'Great Vibes', cursive; font-size: 1.6em; color: #ffffff; text-shadow: 1px 1px 4px #8e5dd2; margin-bottom: 10px; }
+    .tz-header{
+      font-family:'Great Vibes',cursive;
+      font-size:1.6em;
+      color:#fff;
+      text-shadow:1px 1px 4px #8e5dd2;
+      margin-bottom:10px;
+    }
 
-    .tz-line {
-      margin: 6px 0;
-      font-size: 1em;
-      color: #fff;
-      display: flex;
-      align-items: baseline;
-      column-gap: 4px;
-      flex-wrap: nowrap;
-
+    .tz-line{
+      margin:6px 0;
+      font-size:1em;
+      color:#fff;
+      display:flex;
+      align-items:baseline;
+      column-gap:4px;
+      flex-wrap:nowrap;
       text-shadow:
         -1px -1px 0 #000,
          1px -1px 0 #000,
@@ -139,549 +189,676 @@
          1px  1px 0 #000;
     }
 
-    .tz-label {
-      font-weight: bold;
-      color: #fff;
-
+    .tz-label{
+      font-weight:bold;
+      color:#fff;
       text-shadow:
         -1px -1px 0 #000,
          1px -1px 0 #000,
         -1px  1px 0 #000,
          1px  1px 0 #000;
-
-      flex-shrink: 0;
-    }
-
-    .tz-time-sub {
-      font-size: 0.78em;
-      opacity: 0.9;
-
-      text-shadow:
-        -1px -1px 0 #000,
-         1px -1px 0 #000,
-        -1px  1px 0 #000,
-         1px  1px 0 #000;
+      flex-shrink:0;
     }
 
     .tz-time-main,
-    .tz-time-sub {
-      white-space: nowrap;
+    .tz-time-sub{
+      white-space:nowrap;
     }
 
-    .tz-time-main {
-      font-size: 1.05em;
-      font-weight: 700;
+    .tz-time-main{
+      font-size:1.05em;
+      font-weight:700;
     }
-    .tz-time-sub {
-      font-size: 0.78em;
-      opacity: 0.9;
-      margin-left: 6px;
-    }
-
-    #countdown-box {
-      position: fixed; top: 180px; right: 40px;
-      background: rgba(255, 255, 255, 0.25); backdrop-filter: blur(10px);
-      border-radius: 20px; padding: 18px; width: 220px; color: #fff;
-      font-family: 'Segoe UI', sans-serif; box-shadow: 0 0 12px #f5b3f5, 4px 4px 12px rgba(0,0,0,0.3);
-      text-align: center; z-index: 5;
-    }
-    #countdown-box .count-number { 
-      font-size: 1.6em;
-      font-weight: bold;
-      color: #ffecf7;
-      text-shadow: 0 0 8px #a027a0;
-      filter: blur(6px);
-      user-select: none;
-    }
-    #countdown-box .count-label { 
-      font-size: 1em;
-      color: #f8e5f8;
-      text-shadow: 0 0 6px #a027a0;
-      filter: blur(6px);
-      user-select: none;
+    .tz-time-sub{
+      font-size:0.78em;
+      opacity:0.9;
+      margin-left:6px;
     }
 
-    #mood-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+    #countdown-box{
+      position:fixed;
+      top:180px;
+      right:40px;
+      background:rgba(255,255,255,0.25);
+      backdrop-filter:blur(10px);
+      border-radius:20px;
+      padding:18px;
+      width:220px;
+      color:#fff;
+      font-family:'Segoe UI',sans-serif;
+      box-shadow:0 0 12px #f5b3f5,4px 4px 12px rgba(0,0,0,0.3);
+      text-align:center;
+      z-index:5;
+    }
+    #countdown-box .count-number{
+      font-size:1.6em;
+      font-weight:bold;
+      color:#ffecf7;
+      text-shadow:0 0 8px #a027a0;
+      filter:blur(6px);
+      user-select:none;
+    }
+    #countdown-box .count-label{
+      font-size:1em;
+      color:#f8e5f8;
+      text-shadow:0 0 6px #a027a0;
+      filter:blur(6px);
+      user-select:none;
+    }
+
+    #mood-overlay{
+      position:fixed;
+      top:0;
+      left:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+      z-index:0;
+    }
 
     .quote-box{
-      position: fixed;
-      left: 20px;
-      bottom: 20px;
-      max-width: min(420px, 80vw);
-      padding: 10px 14px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.22);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,0.45);
-      color: #fff;
-      text-align: left;
-      font-family: 'Patrick Hand', cursive;
-      font-size: 16px;
-      line-height: 1.35;
-      letter-spacing: 0.3px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.25);
-      opacity: 0;
-      transition: opacity 420ms ease, transform 420ms ease;
-      transform: translateY(8px);
-      z-index: 9000;
-      pointer-events: none;
+      position:fixed;
+      left:20px;
+      bottom:20px;
+      max-width:min(420px,80vw);
+      padding:10px 14px;
+      border-radius:14px;
+      background:rgba(255,255,255,0.22);
+      backdrop-filter:blur(10px);
+      -webkit-backdrop-filter:blur(10px);
+      border:1px solid rgba(255,255,255,0.45);
+      color:#fff;
+      text-align:left;
+      font-family:'Patrick Hand',cursive;
+      font-size:16px;
+      line-height:1.35;
+      letter-spacing:0.3px;
+      box-shadow:0 8px 30px rgba(0,0,0,0.25);
+      opacity:0;
+      transition:opacity 420ms ease,transform 420ms ease;
+      transform:translateY(8px);
+      z-index:9000;
+      pointer-events:none;
     }
-    .quote-box.show { opacity: 1; transform: translateY(0); }
-    .quote-box.fade-out { opacity: 0; transform: translateY(4px); }
+    .quote-box.show{opacity:1;transform:translateY(0);}
+    .quote-box.fade-out{opacity:0;transform:translateY(4px);}
 
-    #reminder-box {
-      position: fixed;
-      top: 330px;
-      right: 40px;
-      bottom: 16px;
-      width: 320px;
-      padding: 14px;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
-      box-shadow: 0 0 12px #7e5bd2, 4px 4px 12px rgba(0,0,0,0.35);
-      border: 1px solid rgba(255,255,255,0.25);
-      color: #fff;
-      z-index: 5;
-      text-align: left;
-      display: flex;
-      flex-direction: column;
+    #reminder-box{
+      position:fixed;
+      top:330px;
+      right:40px;
+      bottom:16px;
+      width:320px;
+      padding:14px;
+      background:rgba(0,0,0,0.55);
+      backdrop-filter:blur(10px);
+      border-radius:16px;
+      box-shadow:0 0 12px #7e5bd2,4px 4px 12px rgba(0,0,0,0.35);
+      border:1px solid rgba(255,255,255,0.25);
+      color:#fff;
+      z-index:5;
+      text-align:left;
+      display:flex;
+      flex-direction:column;
     }
-    #reminder-box h3 { margin: 0 0 10px 0; font-family: 'Patrick Hand', cursive; font-size: 20px; text-shadow: 0 0 6px #a027a0; display: flex; align-items: center; gap: 6px; }
-
-    #history-toggle {
-      margin-left: auto;
-      font-size: 12px;
-      padding: 6px 8px;
-      border-radius: 8px;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.12);
-      color: #fff;
-      cursor: pointer;
+    #reminder-box h3{
+      margin:0 0 10px 0;
+      font-family:'Patrick Hand',cursive;
+      font-size:20px;
+      text-shadow:0 0 6px #a027a0;
+      display:flex;
+      align-items:center;
+      gap:6px;
     }
 
-    .reminder-input-row { display: flex; gap: 8px; margin-bottom: 10px; align-items: center; }
-    #reminder-input {
-      flex: 1; padding: 10px 12px; border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.25);
-      background: rgba(255,255,255,0.9); color: #000; font-size: 14px; outline: none; min-width: 0; cursor: text;
+    #history-toggle{
+      margin-left:auto;
+      font-size:12px;
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,0.25);
+      background:rgba(255,255,255,0.12);
+      color:#fff;
+      cursor:pointer;
     }
-    #add-reminder-btn { padding: 10px 12px; border-radius: 10px; border: none; background: #a3d2ca; cursor: pointer; font-size: 14px; flex: 0 0 auto; }
-    #add-reminder-btn:hover { background:#8fc6bb; transform:none; box-shadow:0 0 10px rgba(0,0,0,.2); }
 
-    #reminder-list {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      padding-right: 0;
-      -ms-overflow-style: none;
-      scrollbar-width: none;
+    .reminder-input-row{
+      display:flex;
+      gap:8px;
+      margin-bottom:10px;
+      align-items:center;
     }
-    #reminder-list::-webkit-scrollbar { width: 0; height: 0; }
+    #reminder-input{
+      flex:1;
+      padding:10px 12px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,0.25);
+      background:rgba(255,255,255,0.9);
+      color:#000;
+      font-size:14px;
+      outline:none;
+      min-width:0;
+      cursor:text;
+    }
+    #add-reminder-btn{
+      padding:10px 12px;
+      border-radius:10px;
+      border:none;
+      background:#a3d2ca;
+      cursor:pointer;
+      font-size:14px;
+      flex:0 0 auto;
+    }
+    #add-reminder-btn:hover{
+      background:#8fc6bb;
+      transform:none;
+      box-shadow:0 0 10px rgba(0,0,0,.2);
+    }
 
-    .reminder-item {
-      position: relative;
-      display: grid;
-      grid-template-columns: 22px 1fr;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 26px 10px 10px;
-      margin-bottom: 10px;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.9);
-      border: 1px solid rgba(255,255,255,0.35);
-      box-shadow: 0 0 10px rgba(0,0,0,0.15);
-      min-height: 52px;
+    #reminder-list{
+      flex:1;
+      min-height:0;
+      overflow-y:auto;
+      padding-right:0;
+      -ms-overflow-style:none;
+      scrollbar-width:none;
+    }
+    #reminder-list::-webkit-scrollbar{width:0;height:0;}
+
+    .reminder-item{
+      position:relative;
+      display:grid;
+      grid-template-columns:22px 1fr;
+      align-items:center;
+      gap:8px;
+      padding:10px 26px 10px 10px;
+      margin-bottom:10px;
+      border-radius:12px;
+      background:rgba(255,255,255,0.9);
+      border:1px solid rgba(255,255,255,0.35);
+      box-shadow:0 0 10px rgba(0,0,0,0.15);
+      min-height:52px;
     }
     .reminder-item::before{
       content:"";
-      position:absolute; left:-1px; top:0; bottom:0; width:4px;
+      position:absolute;
+      left:-1px;
+      top:0;
+      bottom:0;
+      width:4px;
       border-radius:12px 0 0 12px;
-      background: var(--teal); box-shadow: 0 0 10px var(--teal);
+      background:var(--teal);
+      box-shadow:0 0 10px var(--teal);
     }
-    .reminder-item input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
+    .reminder-item input[type="checkbox"]{
+      cursor:pointer;
+      transform:scale(1.2);
+    }
 
-    .reminder-text {
-      font-size: 18px; font-weight: 800; color: #000; letter-spacing: 0.2px;
-      word-break: break-word;
+    .reminder-text{
+      font-size:18px;
+      font-weight:800;
+      color:#000;
+      letter-spacing:0.2px;
+      word-break:break-word;
     }
-    .reminder-text.done{ text-decoration: line-through; opacity: 0.7; }
+    .reminder-text.done{
+      text-decoration:line-through;
+      opacity:0.7;
+    }
 
     .edit-btn{
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      background: transparent;
-      border: none;
-      padding: 0;
-      line-height: 1;
-      font-size: 14px;
-      color: #7a5af8;
-      cursor: pointer;
-      opacity: .9;
+      position:absolute;
+      top:6px;
+      right:6px;
+      background:transparent;
+      border:none;
+      padding:0;
+      line-height:1;
+      font-size:14px;
+      color:#7a5af8;
+      cursor:pointer;
+      opacity:.9;
     }
-    .edit-btn:hover { transform: scale(1.05); opacity: 1; }
+    .edit-btn:hover{transform:scale(1.05);opacity:1;}
 
-/* --- QUICK CHAT MINI WALL --- */
-#quick-chat-shell{
-  width: 100%;
-  max-width: 620px;
-  margin: 40px auto 10px;       /* center it on the page */
-  padding: 14px 18px 12px;
-  border-radius: 24px;
-  background: rgba(7, 4, 22, 0.92);
-  border: 1px solid rgba(255,255,255,0.18);
-  box-shadow: 0 12px 30px rgba(0,0,0,0.55);
-  box-sizing: border-box;
-}
-
-/* header row */
-.quick-chat-header{
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  margin-bottom: 8px;
-  font-family: 'Patrick Hand', cursive;
-  font-size: 16px;
-  color: #fff;
-}
-
-.quick-chat-title{
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  text-shadow: 0 0 8px #f8bfff;
-}
-
-/* sender toggle */
-.quick-chat-sender-controls{
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 12px;
-}
-
-.quick-sender-btn{
-  border: none;
-  border-radius: 999px;
-  padding: 2px 8px;
-  font-size: 13px;
-  cursor: pointer;
-  background: rgba(0,0,0,0.35);
-  color: #fff;
-  box-shadow: 0 0 6px rgba(0,0,0,0.4);
-}
-.quick-sender-btn.active{
-  background: rgba(255,255,255,0.18);
-  box-shadow: 0 0 12px rgba(255,255,255,0.45);
-}
-
-#quick-sender-switch-track{
-  width: 42px;
-  height: 20px;
-  border-radius: 999px;
-  background: rgba(255,255,255,0.12);
-  border: 1px solid rgba(255,255,255,0.45);
-  position: relative;
-  cursor: pointer;
-  box-sizing: border-box;
-}
-
-#quick-sender-switch-thumb{
-  width: 20px;
-  height: 16px;
-  border-radius: 999px;
-  background: #67e4ca;
-  box-shadow: 0 0 6px #67e4ca;
-  position: absolute;
-  top: 1px;
-  left: 1px;
-  transition: transform 0.18s ease;
-}
-
-/* ONE small edit button in header */
-.quick-master-edit-btn{
-  border: none;
-  background: rgba(255,255,255,0.12);
-  color: #fff;
-  border-radius: 8px;
-  padding: 4px 8px;
-  font-size: 14px;
-  cursor: pointer;
-  margin-left: 6px;
-  transition: 0.2s;
-}
-.quick-master-edit-btn:hover{
-  background: rgba(255,255,255,0.25);
-}
-.quick-master-edit-btn.active{
-  background: rgba(255,255,255,0.35);
-  box-shadow: 0 0 8px rgba(255,255,255,0.4);
-}
-
-
-#quick-editing-indicator,
-#quick-editing-preview,
-#quick-cancel-edit {
-  display: none !important;
-}
-
-
-#quick-messages{
-  max-height: 180px;
-  overflow-y: auto;
-  padding-right: 2px;
-  margin-bottom: 8px;
-  font-size: 13px;
-}
-#quick-messages::-webkit-scrollbar{
-  width: 4px;
-}
-#quick-messages::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,0.4);
-  border-radius: 999px;
-}
-
-.quick-empty-state{
-  font-size: 12px;
-  opacity: 0.75;
-  text-align: center;
-  padding: 4px 0;
-}
-
-
-.quick-message-row{
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
-  margin-bottom: 6px;
-}
-
-
-.quick-message-row.mine{
-  justify-content: flex-end;       
-}
-.quick-message-row.theirs{
-  justify-content: flex-start;       
-}
-
-.quick-hide-checkbox-wrapper{
-  flex-shrink: 0;
-  padding-top: 4px;
-}
-.quick-hide-checkbox-wrapper input{
-  transform: scale(1.05);
-}
-
-.quick-message-row.mine .quick-hide-checkbox-wrapper{
-  order: 2;                          
-.quick-message-row.mine .quick-message-bubble{
-  order: 1;
-}
-
-
-.quick-message-bubble{
-  flex: 0 1 auto;
-  max-width: 80%;
-  padding: 6px 10px 7px;
-  border-radius: 14px;
-  background: rgba(244,244,248,0.96);
-  color: #000;
-  font-size: 12px;
-  position: relative;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-}
-
-
-.sender-sihaya .quick-message-bubble{
-  border-left: 3px solid #67e4ca;
-}
-.sender-godbrand .quick-message-bubble{
-  border-left: 3px solid #7a5af8;
-}
-
-.quick-message-checked{
-  opacity: 0.7;
-  text-decoration: line-through;
-}
-
-.quick-message-header{
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 11px;
-  margin-bottom: 2px;
-  opacity: 0.85;
-}
-
-.quick-message-sender{
-  font-weight: 600;
-}
-
-.quick-message-meta{
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.quick-message-time{
-  font-size: 11px;
-}
-
-
-.quick-edit-icon{
-  position: absolute;
-  right: -22px;        
-  top: 8px;
-  font-size: 13px;
-  padding: 0;
-  cursor: pointer;
-  opacity: 0;
-  border: none;
-  background: transparent;
-  line-height: 1;
-  transition: opacity .15s ease, transform .15s ease;
-  color: #fff;
-}
-
-#quick-chat-shell.edit-mode .quick-edit-icon{
-  opacity: 0.85;
-}
-#quick-chat-shell.edit-mode .quick-edit-icon:hover{
-  transform: scale(1.15);
-  opacity: 1;
-}
-
-
-.quick-message-body{
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-
-#quick-message-form{
-  display: flex;
-  gap: 8px;
-  margin-top: 6px;
-}
-
-#quick-message-input{
-  flex: 1;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,0.35);
-  padding: 8px 12px;
-  font-size: 13px;
-  outline: none;
-  background: rgba(255,255,255,0.95);
-  color: #000;
-  min-width: 0;
-}
-
-#quick-send-btn{
-  border-radius: 999px;
-  border: none;
-  padding: 8px 14px;
-  font-size: 12px;
-  cursor: pointer;
-  background: #a3d2ca;
-  color: #000;
-  box-shadow: 0 0 8px rgba(0,0,0,0.35);
-}
-#quick-send-btn:disabled{
-  opacity: 0.6;
-  cursor: default;
-}
-
-
-    .secret-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.65); display: grid; place-items: center; opacity: 0; pointer-events: none; transition: opacity .22s ease; z-index: 12000; }
-    .secret-backdrop.show { opacity: 1; pointer-events: auto; }
-    .secret-modal { width: min(92vw, 920px); background: #000; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.55); overflow: hidden; transform: translateY(8px) scale(.985); opacity: 0; transition: transform .22s ease, opacity .22s ease; position: relative; z-index: 12001; border: 2px solid #e43fec; }
-    .secret-backdrop.show .secret-modal { transform: translateY(0) scale(1); opacity: 1; }
-    .secret-frame { width: 100%; height: clamp(220px, 56vw, 520px); display:block; background:#000; }
-
-    .editor-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; z-index: 10000; opacity: 0; pointer-events: none; transition: opacity .2s ease; }
-    .editor-backdrop.show { opacity: 1; pointer-events: auto; }
-    .editor-modal { width: min(92vw, 720px); background: #111; border: 1px solid #7a5af8; border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,.5); padding: 20px; }
-    .editor-title { color: #fff; font-weight: 700; margin: 0 0 8px 0; }
-    .editor-area {
-      display: block; width: 100%; box-sizing: border-box;
-      min-height: 160px; border-radius: 12px; resize: vertical;
-      border: 1px solid #333; padding: 12px; font-size: 15px; line-height: 1.5;
-      background: #fff; color: #000; outline: none; margin: 0;
-    }
-    .editor-actions { margin-top: 12px; display: flex; gap: 8px; justify-content: flex-end; }
-    .btn { padding: 10px 14px; border-radius: 10px; border: none; cursor: pointer; font-size: 14px; }
-    .btn-primary { background: #7a5af8; color: #fff; }
-    .btn-secondary { background: #e6e6e6; color: #111; }
-
-    .title-heart{ margin-left: 6px; font-size: 0.8em; line-height: 1; display: inline-block; user-select: none; cursor: default; vertical-align: baseline; }
-    #startHeart { margin-left: 0; margin-right: 6px; cursor: pointer; }
-    #startHeart:focus { outline: 2px solid #67e4ca55; outline-offset: 2px; border-radius: 6px; }
-
-    @media (max-width: 1024px){
-      body{ padding: 28px }
-      h1{ font-size: 2.8em }
-      #timezone-box, #countdown-box, #reminder-box{ right: 20px }
+    /* --- QUICK CHAT MINI WALL --- */
+    #quick-chat-shell{
+      width:100%;
+      max-width:620px;
+      margin:40px auto 10px;
+      padding:14px 18px 12px;
+      border-radius:24px;
+      background:rgba(7,4,22,0.92);
+      border:1px solid rgba(255,255,255,0.18);
+      box-shadow:0 12px 30px rgba(0,0,0,0.55);
+      box-sizing:border-box;
     }
 
-          @media (max-width: 768px){
-      body{ padding:16px }
-      h1{ font-size:2.2em; margin-bottom:12px }
-      #duration-block{ padding:10px 14px }
-      #duration-label, #duration-value{ font-size:1.5em }
+    .quick-chat-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      margin-bottom:8px;
+      font-family:'Patrick Hand',cursive;
+      font-size:16px;
+      color:#fff;
+    }
 
-      #timezone-box, #countdown-box, #reminder-box{
-        position: static;
-        width: 100%;
-        max-width: 540px;
-        margin: 10px auto;
+    .quick-chat-title{
+      font-weight:700;
+      letter-spacing:0.3px;
+      text-shadow:0 0 8px #f8bfff;
+    }
+
+    .quick-chat-sender-controls{
+      display:flex;
+      align-items:center;
+      gap:4px;
+      font-size:12px;
+    }
+
+    .quick-sender-btn{
+      border:none;
+      border-radius:999px;
+      padding:2px 8px;
+      font-size:13px;
+      cursor:pointer;
+      background:rgba(0,0,0,0.35);
+      color:#fff;
+      box-shadow:0 0 6px rgba(0,0,0,0.4);
+    }
+    .quick-sender-btn.active{
+      background:rgba(255,255,255,0.18);
+      box-shadow:0 0 12px rgba(255,255,255,0.45);
+    }
+
+    #quick-sender-switch-track{
+      width:42px;
+      height:20px;
+      border-radius:999px;
+      background:rgba(255,255,255,0.12);
+      border:1px solid rgba(255,255,255,0.45);
+      position:relative;
+      cursor:pointer;
+      box-sizing:border-box;
+    }
+
+    #quick-sender-switch-thumb{
+      width:20px;
+      height:16px;
+      border-radius:999px;
+      background:#67e4ca;
+      box-shadow:0 0 6px #67e4ca;
+      position:absolute;
+      top:1px;
+      left:1px;
+      transition:transform 0.18s ease;
+    }
+
+    .quick-master-edit-btn{
+      border:none;
+      background:rgba(255,255,255,0.12);
+      color:#fff;
+      border-radius:8px;
+      padding:4px 8px;
+      font-size:14px;
+      cursor:pointer;
+      margin-left:6px;
+      transition:0.2s;
+    }
+    .quick-master-edit-btn:hover{
+      background:rgba(255,255,255,0.25);
+    }
+    .quick-master-edit-btn.active{
+      background:rgba(255,255,255,0.35);
+      box-shadow:0 0 8px rgba(255,255,255,0.4);
+    }
+
+    /* hide editing banner completely */
+    #quick-editing-indicator,
+    #quick-editing-preview,
+    #quick-cancel-edit{
+      display:none !important;
+    }
+
+    #quick-messages{
+      max-height:180px;
+      overflow-y:auto;
+      padding-right:2px;
+      margin-bottom:8px;
+      font-size:13px;
+    }
+    #quick-messages::-webkit-scrollbar{
+      width:4px;
+    }
+    #quick-messages::-webkit-scrollbar-thumb{
+      background:rgba(255,255,255,0.4);
+      border-radius:999px;
+    }
+
+    .quick-empty-state{
+      font-size:12px;
+      opacity:0.75;
+      text-align:center;
+      padding:4px 0;
+    }
+
+    .quick-message-row{
+      display:flex;
+      align-items:flex-start;
+      gap:6px;
+      margin-bottom:6px;
+    }
+    .quick-message-row.mine{
+      justify-content:flex-end;
+    }
+    .quick-message-row.theirs{
+      justify-content:flex-start;
+    }
+
+    .quick-hide-checkbox-wrapper{
+      flex-shrink:0;
+      padding-top:4px;
+    }
+    .quick-hide-checkbox-wrapper input{
+      transform:scale(1.05);
+    }
+
+    .quick-message-row.mine .quick-hide-checkbox-wrapper{
+      order:2; /* checkbox on outside right */
+    }
+    .quick-message-row.mine .quick-message-bubble{
+      order:1;
+    }
+
+    .quick-message-bubble{
+      flex:0 1 auto;
+      max-width:80%;
+      padding:6px 10px 7px;
+      border-radius:14px;
+      background:rgba(244,244,248,0.96);
+      color:#000;
+      font-size:12px;
+      position:relative;
+      box-shadow:0 4px 10px rgba(0,0,0,0.35);
+    }
+
+    .sender-sihaya .quick-message-bubble{
+      border-left:3px solid #67e4ca;
+    }
+    .sender-godbrand .quick-message-bubble{
+      border-right:3px solid #7a5af8;
+    }
+
+    .quick-message-checked{
+      opacity:0.7;
+      text-decoration:line-through;
+    }
+
+    .quick-message-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      font-size:11px;
+      margin-bottom:2px;
+      opacity:0.85;
+    }
+
+    .quick-message-sender{
+      font-weight:600;
+    }
+
+    .quick-message-time{
+      font-size:11px;
+    }
+
+    .quick-edit-icon{
+      position:absolute;
+      top:8px;
+      right:-20px;
+      font-size:13px;
+      padding:0;
+      cursor:pointer;
+      opacity:0;
+      border:none;
+      background:transparent;
+      line-height:1;
+      transition:opacity 0.15s ease,transform 0.15s ease;
+      color:#fff;
+    }
+    #quick-chat-shell.edit-mode .quick-edit-icon{
+      opacity:0.85;
+    }
+    #quick-chat-shell.edit-mode .quick-edit-icon:hover{
+      transform:scale(1.15);
+      opacity:1;
+    }
+
+    .quick-message-body{
+      white-space:pre-wrap;
+      word-break:break-word;
+    }
+
+    #quick-message-form{
+      display:flex;
+      gap:8px;
+      margin-top:6px;
+    }
+
+    #quick-message-input{
+      flex:1;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.35);
+      padding:8px 12px;
+      font-size:13px;
+      outline:none;
+      background:rgba(255,255,255,0.95);
+      color:#000;
+      min-width:0;
+    }
+
+    #quick-send-btn{
+      border-radius:999px;
+      border:none;
+      padding:8px 14px;
+      font-size:12px;
+      cursor:pointer;
+      background:#a3d2ca;
+      color:#000;
+      box-shadow:0 0 8px rgba(0,0,0,0.35);
+    }
+    #quick-send-btn:disabled{
+      opacity:0.6;
+      cursor:default;
+    }
+
+    .secret-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.65);
+      display:grid;
+      place-items:center;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .22s ease;
+      z-index:12000;
+    }
+    .secret-backdrop.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+    .secret-modal{
+      width:min(92vw,920px);
+      background:#000;
+      border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,.55);
+      overflow:hidden;
+      transform:translateY(8px) scale(.985);
+      opacity:0;
+      transition:transform .22s ease,opacity .22s ease;
+      position:relative;
+      z-index:12001;
+      border:2px solid #e43fec;
+    }
+    .secret-backdrop.show .secret-modal{
+      transform:translateY(0) scale(1);
+      opacity:1;
+    }
+    .secret-frame{
+      width:100%;
+      height:clamp(220px,56vw,520px);
+      display:block;
+      background:#000;
+    }
+
+    .editor-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(0,0,0,.6);
+      display:grid;
+      place-items:center;
+      z-index:10000;
+      opacity:0;
+      pointer-events:none;
+      transition:opacity .2s ease;
+    }
+    .editor-backdrop.show{
+      opacity:1;
+      pointer-events:auto;
+    }
+    .editor-modal{
+      width:min(92vw,720px);
+      background:#111;
+      border:1px solid #7a5af8;
+      border-radius:16px;
+      box-shadow:0 20px 60px rgba(0,0,0,.5);
+      padding:20px;
+    }
+    .editor-title{
+      color:#fff;
+      font-weight:700;
+      margin:0 0 8px 0;
+    }
+    .editor-area{
+      display:block;
+      width:100%;
+      box-sizing:border-box;
+      min-height:160px;
+      border-radius:12px;
+      resize:vertical;
+      border:1px solid #333;
+      padding:12px;
+      font-size:15px;
+      line-height:1.5;
+      background:#fff;
+      color:#000;
+      outline:none;
+      margin:0;
+    }
+    .editor-actions{
+      margin-top:12px;
+      display:flex;
+      gap:8px;
+      justify-content:flex-end;
+    }
+    .btn{
+      padding:10px 14px;
+      border-radius:10px;
+      border:none;
+      cursor:pointer;
+      font-size:14px;
+    }
+    .btn-primary{background:#7a5af8;color:#fff;}
+    .btn-secondary{background:#e6e6e6;color:#111;}
+
+    .title-heart{
+      margin-left:6px;
+      font-size:0.8em;
+      line-height:1;
+      display:inline-block;
+      user-select:none;
+      cursor:default;
+      vertical-align:baseline;
+    }
+    #startHeart{
+      margin-left:0;
+      margin-right:6px;
+      cursor:pointer;
+    }
+    #startHeart:focus{
+      outline:2px solid #67e4ca55;
+      outline-offset:2px;
+      border-radius:6px;
+    }
+
+    @media (max-width:1024px){
+      body{padding:28px;}
+      h1{font-size:2.8em;}
+      #timezone-box,#countdown-box,#reminder-box{right:20px;}
+    }
+
+    @media (max-width:768px){
+      body{padding:16px;}
+      h1{font-size:2.2em;margin-bottom:12px;}
+      #duration-block{padding:10px 14px;}
+      #duration-label,#duration-value{font-size:1.5em;}
+
+      #timezone-box,#countdown-box,#reminder-box{
+        position:static;
+        width:100%;
+        max-width:540px;
+        margin:10px auto;
       }
-      #reminder-list{ max-height: 40vh; overflow-y: auto; }
+      #reminder-list{max-height:40vh;overflow-y:auto;}
 
-      .quote-box{ left: 12px; bottom: 12px; max-width: 88vw; }
+      .quote-box{left:12px;bottom:12px;max-width:88vw;}
 
       #icon-area{
-        position: fixed;
-        left: 50%;
-        bottom: 8px;
-        transform: translateX(-50%);
-        width: min(680px, calc(100% - 16px));
-        display: grid;
-        grid-auto-flow: column;
-        grid-auto-columns: 76px;
-        gap: 10px;
-        padding: 8px;
-        overflow-x: auto;
-        background: rgba(0,0,0,0.35);
-        backdrop-filter: blur(8px);
-        -webkit-backdrop-filter: blur(8px);
-        border-radius: 16px;
-        z-index: 30;
+        position:fixed;
+        left:50%;
+        bottom:8px;
+        transform:translateX(-50%);
+        width:min(680px,calc(100% - 16px));
+        display:grid;
+        grid-auto-flow:column;
+        grid-auto-columns:76px;
+        gap:10px;
+        padding:8px;
+        overflow-x:auto;
+        background:rgba(0,0,0,0.35);
+        backdrop-filter:blur(8px);
+        -webkit-backdrop-filter:blur(8px);
+        border-radius:16px;
+        z-index:30;
       }
-      #icon-area::-webkit-scrollbar{ height:6px }
-      #icon-area::-webkit-scrollbar-thumb{ background: rgba(255,255,255,.25); border-radius: 999px }
+      #icon-area::-webkit-scrollbar{height:6px;}
+      #icon-area::-webkit-scrollbar-thumb{
+        background:rgba(255,255,255,.25);
+        border-radius:999px;
+      }
 
       .album-icon{
-        position: static !important;
-        left: auto !important;
-        top: auto !important;
-        width: 64px; height: 64px;
+        position:static !important;
+        left:auto !important;
+        top:auto !important;
+        width:64px;
+        height:64px;
       }
-      .album-icon .icon-label{ font-size: 12px }
+      .album-icon .icon-label{font-size:12px;}
 
-  
       #quick-chat-shell{
-        max-width: 100%;
-        margin: 16px auto 0;
+        max-width:100%;
+        margin:16px auto 0;
       }
-    } 
+    }
 
-    @media (max-width: 420px){
-      h1{ font-size:1.8em }
-      #duration-label, #duration-value{ font-size:1.35em }
-      button{ padding:9px 14px; font-size:.95em }
-    }  
+    @media (max-width:420px){
+      h1{font-size:1.8em;}
+      #duration-label,#duration-value{font-size:1.35em;}
+      button{padding:9px 14px;font-size:.95em;}
+    }
   </style>
 </head>
 
@@ -700,49 +877,44 @@
   <br>
 
   <div id="icon-area">
-    <div class="album-icon" style="top: 100px;" onclick="location.href='album.html'">
+    <div class="album-icon" style="top:100px;" onclick="location.href='album.html'">
       <img src="album-icon.png" alt="Album Icon">
     </div>
 
-    <div class="album-icon" style="top: 100px; left: 150px;" onclick="location.href='letters.html'" title="Love Letters">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png"
-        alt="Love Letters Icon"
-        onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
+    <div class="album-icon" style="top:100px;left:150px;" onclick="location.href='letters.html'" title="Love Letters">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/love_letters_icon.png"
+           alt="Love Letters Icon"
+           onerror="this.replaceWith(document.getElementById('letters-label-template').content.cloneNode(true));">
     </div>
 
-    <div class="album-icon" style="top: 200px;" onclick="location.href='doctor.html'">
+    <div class="album-icon" style="top:200px;" onclick="location.href='doctor.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/doctor-icon.png" alt="Doctor Icon">
     </div>
 
-    <div class="album-icon" style="top: 200px; left: 150px;" onclick="location.href='learning.html'" title="Learning">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png"
-        alt="Learning Icon"
-        onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
+    <div class="album-icon" style="top:200px;left:150px;" onclick="location.href='learning.html'" title="Learning">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/learning.icon.png"
+           alt="Learning Icon"
+           onerror="this.replaceWith(document.getElementById('learning-label-template').content.cloneNode(true));">
     </div>
 
-    <div class="album-icon" style="top: 300px; left: 150px;"
-         onclick="window.open('https://godbrand.org/mt/', '_blank')" title="Godbrand MT">
-      <img
-        src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/GodbrandPortrait.png"
-        alt="Godbrand Website">
+    <div class="album-icon" style="top:300px;left:150px;"
+         onclick="window.open('https://godbrand.org/mt/','_blank')" title="Godbrand MT">
+      <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/GodbrandPortrait.png"
+           alt="Godbrand Website">
     </div>
 
-    <div class="album-icon" style="top: 300px;" onclick="location.href='tracking.html'">
+    <div class="album-icon" style="top:300px;" onclick="location.href='tracking.html'">
       <img src="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/tracking-icon.png" alt="Tracking Icon">
     </div>
   </div>
 
   <div id="timezone-box">
     <div class="tz-header">Time Zones</div>
-
     <div class="tz-line">
       <span class="tz-label">🌆 Las Vegas:</span>
       <span id="vegas-time" class="tz-time-main">loading...</span>
       <span id="vegas-date" class="tz-time-sub"></span>
     </div>
-
     <div class="tz-line">
       <span class="tz-label">🌇 Manila:</span>
       <span id="manila-time" class="tz-time-main">loading...</span>
@@ -755,45 +927,41 @@
     <div class="count-label">before</div>
     <div class="count-label">2nd-year anniversary</div>
   </div>
-  
- <div id="quick-chat-shell">
-      <div class="quick-chat-header">
-  <div class="quick-chat-title">Mini Notes</div>
 
-  <div class="quick-chat-sender-controls">
-    <button id="quick-btn-sihaya" type="button" class="quick-sender-btn">💚</button>
-    <div id="quick-sender-switch-track">
-      <div id="quick-sender-switch-thumb"></div>
-    </div>
-    <button id="quick-btn-godbrand" type="button" class="quick-sender-btn">💜</button>
-
-
-    <button id="quick-master-edit-btn" type="button" class="quick-master-edit-btn" title="Edit your notes">
-      ✏️
-    </button>
-  </div>
-</div>
-
-      <div id="quick-editing-indicator">
-        editing: <span id="quick-editing-preview"></span>
-        <button id="quick-cancel-edit" type="button">cancel</button>
+  <!-- QUICK CHAT MINI WALL -->
+  <div id="quick-chat-shell">
+    <div class="quick-chat-header">
+      <div class="quick-chat-title">Mini Notes</div>
+      <div class="quick-chat-sender-controls">
+        <button id="quick-btn-sihaya" type="button" class="quick-sender-btn">💚</button>
+        <div id="quick-sender-switch-track">
+          <div id="quick-sender-switch-thumb"></div>
+        </div>
+        <button id="quick-btn-godbrand" type="button" class="quick-sender-btn">💜</button>
+        <button id="quick-master-edit-btn" type="button" class="quick-master-edit-btn" title="Edit your notes">
+          🪄
+        </button>
       </div>
-
-      <div id="quick-messages"></div>
-
-      <form id="quick-message-form" autocomplete="off">
-        <input
-          id="quick-message-input"
-          type="text"
-          placeholder="leave a small note…"
-          maxlength="200"
-        />
-        <button id="quick-send-btn" type="submit">Send</button>
-      </form>
     </div>
-  
+
+    <!-- editing banner exists in HTML but fully hidden by CSS -->
+    <div id="quick-editing-indicator">
+      editing: <span id="quick-editing-preview"></span>
+      <button id="quick-cancel-edit" type="button">cancel</button>
+    </div>
+
+    <div id="quick-messages"></div>
+
+    <form id="quick-message-form" autocomplete="off">
+      <input id="quick-message-input"
+             type="text"
+             placeholder="leave a small note…"
+             maxlength="200" />
+      <button id="quick-send-btn" type="submit">Send</button>
+    </form>
+  </div>
+
   <div id="reminder-box">
-   
     <h3>📄 Reminders <button id="history-toggle" title="View completed reminders">History</button></h3>
     <div class="reminder-input-row">
       <input id="reminder-input" type="text" placeholder="Click to write a reminder…" maxlength="200" readonly>
@@ -815,14 +983,13 @@
 
   <canvas id="heart-canvas" style="position:fixed;inset:0;pointer-events:none"></canvas>
 
-
   <script>
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
-    const HEART_COLORS = ['#CF27F5', '#5D7EDE', '#5DDE8A', '#42B396'];
+    const HEART_COLORS = ['#CF27F5','#5D7EDE','#5DDE8A','#42B396'];
     let hearts = [];
 
-    function resizeCanvas() {
+    function resizeCanvas(){
       const dpr = window.devicePixelRatio || 1;
       const w = window.innerWidth;
       const h = window.innerHeight;
@@ -830,56 +997,51 @@
       canvas.style.height = h + 'px';
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0); 
+      ctx.setTransform(dpr,0,0,dpr,0,0);
     }
     resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+    window.addEventListener('resize',resizeCanvas);
 
-    document.addEventListener('mousemove', e => {
-      for (let i = 0; i < 3; i++) {
+    document.addEventListener('mousemove',e=>{
+      for(let i=0;i<3;i++){
         hearts.push({
-          x: e.clientX,
-          y: e.clientY,
-          size: Math.random() * 8 + 4,
-          alpha: 1,
-          dx: (Math.random() - 0.5) * 60,      
-          dy: -(Math.random() * 60 + 40),     
-          fadePerSec: 0.6,                     
-          color: HEART_COLORS[(Math.random() * HEART_COLORS.length) | 0]
+          x:e.clientX,
+          y:e.clientY,
+          size:Math.random()*8+4,
+          alpha:1,
+          dx:(Math.random()-0.5)*60,
+          dy:-(Math.random()*60+40),
+          fadePerSec:0.6,
+          color:HEART_COLORS[(Math.random()*HEART_COLORS.length)|0]
         });
       }
-
-      if (hearts.length > 1500) hearts = hearts.slice(-1500);
+      if(hearts.length>1500) hearts = hearts.slice(-1500);
     });
 
     let lastTime = 0;
-    function drawHearts(ts) {
-      if (!lastTime) lastTime = ts;
-      const dt = Math.min((ts - lastTime) / 1000, 0.05);
+    function drawHearts(ts){
+      if(!lastTime) lastTime = ts;
+      const dt = Math.min((ts-lastTime)/1000,0.05);
       lastTime = ts;
 
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0,0,canvas.width,canvas.height);
 
-      for (let i = hearts.length - 1; i >= 0; i--) {
+      for(let i=hearts.length-1;i>=0;i--){
         const h = hearts[i];
-
         h.x += h.dx * dt;
         h.y += h.dy * dt;
         h.alpha -= h.fadePerSec * dt;
-
-        if (h.alpha <= 0) {
-          hearts.splice(i, 1);
+        if(h.alpha<=0){
+          hearts.splice(i,1);
           continue;
         }
-
         ctx.globalAlpha = h.alpha;
         ctx.fillStyle = h.color;
         ctx.font = `${h.size}px "Times New Roman","Georgia","DejaVu Serif","Noto Serif",serif`;
         ctx.textBaseline = 'middle';
         ctx.textAlign = 'center';
-        ctx.fillText('♥', h.x, h.y);
+        ctx.fillText('♥',h.x,h.y);
       }
-
       ctx.globalAlpha = 1;
       requestAnimationFrame(drawHearts);
     }
@@ -909,90 +1071,76 @@
 
   <script>
     const TZ = 'America/Los_Angeles';
-    const MS_DAY = 24 * 60 * 60 * 1000;
+    const MS_DAY = 24*60*60*1000;
 
-    function vegasTodayParts() {
-      const fmt = new Intl.DateTimeFormat('en-CA', { timeZone: TZ, year: 'numeric', month: '2-digit', day: '2-digit' });
+    function vegasTodayParts(){
+      const fmt = new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'});
       const parts = fmt.formatToParts(new Date());
-      const y = +parts.find(p => p.type === 'year').value;
-      const m = +parts.find(p => p.type === 'month').value;
-      const d = +parts.find(p => p.type === 'day').value;
-      return { y, m0: m - 1, d };
+      const y = +parts.find(p=>p.type==='year').value;
+      const m = +parts.find(p=>p.type==='month').value;
+      const d = +parts.find(p=>p.type==='day').value;
+      return {y,m0:m-1,d};
     }
 
-    function monthsAndDaysSince(startY, startM0, startD) {
-      const { y, m0, d } = vegasTodayParts();
-      let months = (y - startY) * 12 + (m0 - startM0);
-      if (d < startD) months--;
+    function monthsAndDaysSince(startY,startM0,startD){
+      const {y,m0,d} = vegasTodayParts();
+      let months = (y-startY)*12 + (m0-startM0);
+      if(d<startD) months--;
 
-      let anchorY = startY + Math.floor((startM0 + months) / 12);
-      let anchorM0 = (startM0 + months) % 12;
-      if (anchorM0 < 0) { anchorM0 += 12; anchorY--; }
+      let anchorY = startY + Math.floor((startM0+months)/12);
+      let anchorM0 = (startM0+months)%12;
+      if(anchorM0<0){anchorM0+=12;anchorY--;}
 
-      const anchorUTC = Date.UTC(anchorY, anchorM0, startD);
-      const todayUTC  = Date.UTC(y, m0, d);
+      const anchorUTC = Date.UTC(anchorY,anchorM0,startD);
+      const todayUTC  = Date.UTC(y,m0,d);
 
-      const days = Math.max(0, Math.floor((todayUTC - anchorUTC) / MS_DAY));
-      return { months: Math.max(months, 0), days };
+      const days = Math.max(0,Math.floor((todayUTC-anchorUTC)/MS_DAY));
+      return {months:Math.max(months,0),days};
     }
 
-    function updateDurationAndCountdown() {
-      const { months, days } = monthsAndDaysSince(2024, 9, 13);
-      const years = Math.floor(months / 12);
-      const remMonths = months % 12;
+    function updateDurationAndCountdown(){
+      const {months,days} = monthsAndDaysSince(2024,9,13);
+      const years = Math.floor(months/12);
+      const remMonths = months%12;
 
       const durEl = document.getElementById('duration-value');
-      if (years > 0) {
+      if(years>0){
         durEl.textContent = `${years} year${years!==1?'s':''} ${remMonths} month${remMonths!==1?'s':''} ${days} day${days!==1?'s':''}`;
-      } else {
+      }else{
         durEl.textContent = `${remMonths} month${remMonths!==1?'s':''} and ${days} day${days!==1?'s':''}`;
       }
 
-      const { y, m0, d } = vegasTodayParts();
-      const todayUTC = Date.UTC(y, m0, d);
-      const annivUTC = Date.UTC(2026, 9, 13);
-      const diffDays = Math.max(0, Math.floor((annivUTC - todayUTC) / MS_DAY));
-      const box = document.getElementById('countdown-number');
-      box.textContent = `${diffDays} days`;
+      const {y,m0,d} = vegasTodayParts();
+      const todayUTC = Date.UTC(y,m0,d);
+      const annivUTC = Date.UTC(2026,9,13);
+      const diffDays = Math.max(0,Math.floor((annivUTC-todayUTC)/MS_DAY));
+      document.getElementById('countdown-number').textContent = `${diffDays} days`;
     }
 
-    function vegasTimeParts() {
-      const opts = { timeZone: TZ, hour: '2-digit', minute: '2-digit', hour12: true };
-      const fmt = new Intl.DateTimeFormat('en-US', opts);
+    function vegasTimeParts(){
+      const opts = {timeZone:TZ,hour:'2-digit',minute:'2-digit',hour12:true};
+      const fmt = new Intl.DateTimeFormat('en-US',opts);
       const parts = fmt.formatToParts(new Date());
-      const hour = parts.find(p => p.type === 'hour')?.value || '00';
-      const minute = parts.find(p => p.type === 'minute')?.value || '00';
-      const dayPeriod = parts.find(p => p.type === 'dayPeriod')?.value || '';
-      return { hour, minute, dayPeriod };
+      const hour = parts.find(p=>p.type==='hour')?.value || '00';
+      const minute = parts.find(p=>p.type==='minute')?.value || '00';
+      const dayPeriod = parts.find(p=>p.type==='dayPeriod')?.value || '';
+      return {hour,minute,dayPeriod};
     }
 
-    function updateTimeZones() {
+    function updateTimeZones(){
       const now = new Date();
 
-      function buildTz(timeZone) {
-        const timeFmt = new Intl.DateTimeFormat('en-US', {
-          timeZone,
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-
-        const dateFmt = new Intl.DateTimeFormat('en-US', {
-          timeZone,
-          weekday: 'short',
-          month: '2-digit',
-          day: '2-digit'
-        });
+      function buildTz(timeZone){
+        const timeFmt = new Intl.DateTimeFormat('en-US',{timeZone,hour:'2-digit',minute:'2-digit',hour12:true});
+        const dateFmt = new Intl.DateTimeFormat('en-US',{timeZone,weekday:'short',month:'2-digit',day:'2-digit'});
 
         const timeStr = timeFmt.format(now);
-
         const parts = dateFmt.formatToParts(now);
-        const weekday = (parts.find(p => p.type === 'weekday')?.value || '').toUpperCase();
-        const month   = parts.find(p => p.type === 'month')?.value || '';
-        const day     = parts.find(p => p.type === 'day')?.value || '';
-
+        const weekday = (parts.find(p=>p.type==='weekday')?.value || '').toUpperCase();
+        const month   = parts.find(p=>p.type==='month')?.value || '';
+        const day     = parts.find(p=>p.type==='day')?.value || '';
         const dateStr = `(${weekday},${month}/${day})`;
-        return { timeStr, dateStr };
+        return {timeStr,dateStr};
       }
 
       const vegas  = buildTz('America/Los_Angeles');
@@ -1000,59 +1148,57 @@
 
       document.getElementById('vegas-time').textContent  = vegas.timeStr;
       document.getElementById('vegas-date').textContent  = vegas.dateStr;
-
       document.getElementById('manila-time').textContent = manila.timeStr;
       document.getElementById('manila-date').textContent = manila.dateStr;
     }
 
-    function applyMoodOverlay() {
-      try {
-        const { hour: hStr, dayPeriod } = vegasTimeParts();
-        let hour = parseInt(hStr, 10);
-        if (Number.isNaN(hour)) hour = 0;
+    function applyMoodOverlay(){
+      try{
+        const {hour:hStr,dayPeriod} = vegasTimeParts();
+        let hour = parseInt(hStr,10);
+        if(Number.isNaN(hour)) hour = 0;
 
-        if (dayPeriod && /pm/i.test(dayPeriod) && hour < 12) hour += 12;
-        if (dayPeriod && /am/i.test(dayPeriod) && hour === 12) hour = 0;
+        if(dayPeriod && /pm/i.test(dayPeriod) && hour<12) hour += 12;
+        if(dayPeriod && /am/i.test(dayPeriod) && hour===12) hour = 0;
 
         let color;
-        if (hour >= 6 && hour < 12) color = 'rgba(255, 231, 214, 0.35)';  
-        else if (hour >= 12 && hour < 18) color = 'rgba(214, 255, 226, 0.35)'; 
-        else if (hour >= 18 && hour < 22) color = 'rgba(232, 214, 255, 0.35)'; 
-        else color = 'rgba(10, 15, 60, 0.30)'; 
+        if(hour>=6 && hour<12)      color = 'rgba(255, 231, 214, 0.35)';
+        else if(hour>=12 && hour<18)color = 'rgba(214, 255, 226, 0.35)';
+        else if(hour>=18 && hour<22)color = 'rgba(232, 214, 255, 0.35)';
+        else                        color = 'rgba(10, 15, 60, 0.30)';
 
         document.getElementById('mood-overlay').style.background = color;
-      } catch (err) {
-        console.warn('applyMoodOverlay error', err);
+      }catch(err){
+        console.warn('applyMoodOverlay error',err);
       }
     }
 
     updateTimeZones();
     updateDurationAndCountdown();
     applyMoodOverlay();
-    setInterval(updateTimeZones, 60000);
-    setInterval(applyMoodOverlay, 60 * 60 * 1000);
+    setInterval(updateTimeZones,60000);
+    setInterval(applyMoodOverlay,60*60*1000);
   </script>
-
 
   <script>
     (() => {
       const backdrop = document.getElementById('secretBackdrop');
-      const iframe = document.getElementById('secretFrame');
-      const YT_ID = "HJyvMmyQOYQ";
+      const iframe   = document.getElementById('secretFrame');
+      const YT_ID    = "HJyvMmyQOYQ";
 
       let buffer = '';
-      window.addEventListener('keydown', (e) => {
-        if (e.key.length === 1 && /\d/.test(e.key)) {
+      window.addEventListener('keydown',(e)=>{
+        if(e.key.length===1 && /\d/.test(e.key)){
           buffer = (buffer + e.key).slice(-4);
-          if (buffer === '1013') { openModal(); buffer=''; }
-        } else if (e.key === 'Escape' && backdrop.classList.contains('show')) {
+          if(buffer==='1013'){ openModal(); buffer=''; }
+        }else if(e.key==='Escape' && backdrop.classList.contains('show')){
           closeModal();
         }
       });
 
-      function openModal() {
-        if (!backdrop.classList.contains('show')) {
-          document.querySelectorAll('.quote-box').forEach(el => el.remove());
+      function openModal(){
+        if(!backdrop.classList.contains('show')){
+          document.querySelectorAll('.quote-box').forEach(el=>el.remove());
           window.QUOTES_DISABLED = true;
 
           backdrop.classList.add('show');
@@ -1061,7 +1207,7 @@
           iframe.src = `https://www.youtube.com/embed/${YT_ID}?autoplay=1&rel=0&modestbranding=1&playsinline=1`;
         }
       }
-      function closeModal() {
+      function closeModal(){
         backdrop.classList.remove('show');
         backdrop.setAttribute('aria-hidden','true');
         document.body.style.overflow = '';
@@ -1069,52 +1215,58 @@
         window.QUOTES_DISABLED = false;
       }
 
-      backdrop.addEventListener('click', (e) => { if (e.target === backdrop) closeModal(); }, true);
+      backdrop.addEventListener('click',(e)=>{
+        if(e.target===backdrop) closeModal();
+      },true);
     })();
   </script>
-
 
   <script>
     (() => {
       const heartEl = document.getElementById('title-heart');
-      if (!heartEl) return;
+      if(!heartEl) return;
 
       const HOLD_MS = 3000;
       let holdTimer = null;
 
-      const startHold = (e) => {
+      const startHold = (e)=>{
         e.preventDefault();
         e.stopPropagation();
         clearTimeout(holdTimer);
-        holdTimer = setTimeout(() => {
-          window.location.href = 'story.html';
-        }, HOLD_MS);
+        holdTimer = setTimeout(()=>{ window.location.href='story.html'; },HOLD_MS);
       };
 
-      const cancelHold = (e) => {
-        if (e) e.stopPropagation();
+      const cancelHold = (e)=>{
+        if(e) e.stopPropagation();
         clearTimeout(holdTimer);
         holdTimer = null;
       };
 
-      heartEl.addEventListener('pointerdown', startHold, { passive: false });
+      heartEl.addEventListener('pointerdown',startHold,{passive:false});
       ['pointerup','pointerleave','pointercancel'].forEach(ev =>
-        heartEl.addEventListener(ev, cancelHold)
+        heartEl.addEventListener(ev,cancelHold)
       );
 
-      heartEl.addEventListener('contextmenu', (e) => { e.preventDefault(); e.stopPropagation(); });
-      heartEl.addEventListener('click', (e) => e.stopPropagation());
+      heartEl.addEventListener('contextmenu',e=>{
+        e.preventDefault();
+        e.stopPropagation();
+      });
+      heartEl.addEventListener('click',e=>e.stopPropagation());
     })();
   </script>
 
   <script>
     (() => {
       const start = document.getElementById('startHeart');
-      if (!start) return;
-      const go = () => { window.location.href = 'journal.html'; };
-      start.addEventListener('click', (e) => { e.stopPropagation(); go(); });
-      start.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); go(); }
+      if(!start) return;
+      const go = ()=>{ window.location.href='journal.html'; };
+      start.addEventListener('click',e=>{ e.stopPropagation(); go(); });
+      start.addEventListener('keydown',e=>{
+        if(e.key==='Enter' || e.key===' '){
+          e.preventDefault();
+          e.stopPropagation();
+          go();
+        }
       });
     })();
   </script>
