@@ -46,8 +46,33 @@ window.initQuickChat = function () {
   let editingId = null;   // which row is being edited
   let editMode  = false;  // master edit mode on/off
 
-  const SENDER_KEY = "quickChatSender";
-  const myEmail    = (CURRENT_USER.email || "").toLowerCase();
+  const SENDER_KEY          = "quickChatSender";
+  const CHECK_STORAGE_KEY   = "quickChatCheckedMap";
+  const myEmail             = (CURRENT_USER.email || "").toLowerCase();
+
+  // --- load local checked map (for persistence on this browser) ----------
+  function loadCheckedMap() {
+    try {
+      const raw = localStorage.getItem(CHECK_STORAGE_KEY);
+      if (!raw) return {};
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object") return parsed;
+      return {};
+    } catch (e) {
+      console.warn("Quick chat: could not parse local checked map", e);
+      return {};
+    }
+  }
+
+  function saveCheckedMap() {
+    try {
+      localStorage.setItem(CHECK_STORAGE_KEY, JSON.stringify(checkedMap));
+    } catch (e) {
+      console.warn("Quick chat: could not save local checked map", e);
+    }
+  }
+
+  let checkedMap = loadCheckedMap(); // { [id]: true/false }
 
   // --- Sender preference (💚 / 💜) ----------------------------------------
   let sender = localStorage.getItem(SENDER_KEY);
@@ -139,18 +164,26 @@ window.initQuickChat = function () {
         row.classList.add("theirs");
       }
 
+      const idKey = String(msg.id);
+
+      // effective checked state: local override > DB value
+      const effectiveChecked =
+        checkedMap.hasOwnProperty(idKey)
+          ? !!checkedMap[idKey]
+          : !!msg.is_checked;
+
       const cbWrap = document.createElement("div");
       cbWrap.className = "quick-hide-checkbox-wrapper";
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
-      cb.checked = !!msg.is_checked;
+      cb.checked = effectiveChecked;
       cb.addEventListener("change", () => handleCheckToggle(msg, cb));
       cbWrap.appendChild(cb);
 
       const bubble = document.createElement("div");
       bubble.className = "quick-message-bubble";
-      if (msg.is_checked) {
+      if (effectiveChecked) {
         bubble.classList.add("quick-message-checked");
       }
 
@@ -205,14 +238,20 @@ window.initQuickChat = function () {
     });
   }
 
-  // --- Check logic (no auto-hide) -----------------------------------------
+  // --- Check logic (local + Supabase) -------------------------------------
   async function handleCheckToggle(msg, checkbox) {
     const is_checked = !!checkbox.checked;
+    const idKey      = String(msg.id);
 
-    // update local copy so UI feels instant
+    // update local map and save
+    checkedMap[idKey] = is_checked;
+    saveCheckedMap();
+
+    // update local copy then re-render
     msg.is_checked = is_checked;
     renderMessages();
 
+    // also try to persist to Supabase (if RLS allows)
     const { error } = await supabaseClient
       .from("quick_chat")
       .update({ is_checked })
@@ -294,9 +333,11 @@ window.initQuickChat = function () {
           is_checked: false,
         };
 
-        const { error } = await supabaseClient
+        const { data, error } = await supabaseClient
           .from("quick_chat")
-          .insert(payload);
+          .insert(payload)
+          .select("id")
+          .single();
 
         if (error) {
           console.warn("Quick chat insert error:", error.message);
@@ -308,6 +349,19 @@ window.initQuickChat = function () {
     } finally {
       sendBtn.disabled = false;
     }
+  });
+
+  // --- Master edit mode (wand button) -------------------------------------
+  masterEditBtn.addEventListener("click", (e) => {
+    e.preventDefault();
+    editMode = !editMode;
+    shell.classList.toggle("edit-mode", editMode);
+    masterEditBtn.classList.toggle("active", editMode);
+
+    if (!editMode && editingId !== null) {
+      cancelEditing();
+    }
+    renderMessages();
   });
 
   // --- Live updates from Supabase (postgres changes) ----------------------
