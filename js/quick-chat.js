@@ -10,9 +10,8 @@ window.initQuickChat = function () {
     return;
   }
 
-  // --- DOM refs ---
   const shell = document.getElementById("quick-chat-shell");
-  if (!shell) return; // no quick chat on this page
+  if (!shell) return;
 
   const messagesEl = document.getElementById("quick-messages");
   const formEl = document.getElementById("quick-message-form");
@@ -38,7 +37,6 @@ window.initQuickChat = function () {
   let messages = [];
   let editingId = null;
 
-  // --- sender state with browser memory ---
   const SENDER_KEY = "quickChatSender";
   const email = (CURRENT_USER.email || "").toLowerCase();
 
@@ -84,8 +82,6 @@ window.initQuickChat = function () {
   });
 
   applySenderUI();
-
-  // --- load + render ---
 
   async function loadMessages() {
     const { data, error } = await supabaseClient
@@ -299,7 +295,6 @@ window.initQuickChat = function () {
     }
   });
 
-  // --- realtime using Supabase v2 .channel() ---
   if (typeof supabaseClient.channel === "function") {
     supabaseClient
       .channel("quick-chat-feed")
@@ -320,6 +315,5 @@ window.initQuickChat = function () {
     console.warn("Quick chat: supabaseClient.channel not available; realtime disabled");
   }
 
-  // initial load
   loadMessages();
 };
