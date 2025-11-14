@@ -183,7 +183,7 @@ window.initQuickChat = function () {
         editBtn.type = "button";
         editBtn.className = "quick-edit-icon";
         editBtn.title = "Edit note";
-        editBtn.textContent = "✏️";
+        editBtn.textContent = "🪄";
         editBtn.addEventListener("click", () => startEditing(msg));
         bubble.appendChild(editBtn);
       }
