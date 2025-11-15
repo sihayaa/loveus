@@ -14,20 +14,6 @@ body{
   padding:40px;
   text-align:center;
   overflow-x:hidden;
-  position:relative;
-  z-index:0;
-}
-
-/* blurred background overlay */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:url('https://github.com/sihayaa/loveus/blob/main/ChatGPT%20Image%20May%205,%202025,%2005_04_14%20AM.png?raw=true') no-repeat center center fixed;
-  background-size:cover;
-  filter:blur(10px);      /* adjust this: 8, 10, 14, etc */
-  transform:scale(1.05);  /* avoids blurry edges */
-  z-index:-1;
 }
 
 h1{
