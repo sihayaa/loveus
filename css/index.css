@@ -5,15 +5,12 @@
   --teal:#67e4ca;
 }
 
-body{
-  font-family:'Segoe UI',sans-serif;
-  background:url('https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/background2test.png') no-repeat center center fixed;
-  background-size:cover;
-  color:#fff;
-  margin:0;
-  padding:40px;
-  text-align:center;
-  overflow-x:hidden;
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:linear-gradient(135deg, #4a3470, #2f1d48);
+  z-index:-1;
 }
 
 h1{
