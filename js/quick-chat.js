@@ -1,5 +1,3 @@
-// quick-chat.js
-
 window.initQuickChat = function () {
   const supabaseClient = window.supabaseClient;
   const CURRENT_USER   = window.CURRENT_USER;
@@ -10,12 +8,12 @@ window.initQuickChat = function () {
     return;
   }
 
-  const shell = document.getElementById("quick-chat-shell");
+  const shell          = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
-  // prevent double initialization
+
   if (shell.dataset.quickChatInitialized === "1") {
-    console.warn("Quick chat already initialized, skipping.");
+    console.warn("Quick chat: quick chat already initialized, skipping.");
     return;
   }
   shell.dataset.quickChatInitialized = "1";
@@ -43,38 +41,13 @@ window.initQuickChat = function () {
   }
 
   let messages  = [];
-  let editingId = null;   // which row is being edited
-  let editMode  = false;  // master edit mode on/off
+  let editingId = null;  
+  let editMode  = false;
 
-  const SENDER_KEY          = "quickChatSender";
-  const CHECK_STORAGE_KEY   = "quickChatCheckedMap";
-  const myEmail             = (CURRENT_USER.email || "").toLowerCase();
+  const SENDER_KEY = "quickChatSender";
+  const myEmail    = (CURRENT_USER.email || "").toLowerCase();
 
-  // --- load local checked map (for persistence on this browser) ----------
-  function loadCheckedMap() {
-    try {
-      const raw = localStorage.getItem(CHECK_STORAGE_KEY);
-      if (!raw) return {};
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === "object") return parsed;
-      return {};
-    } catch (e) {
-      console.warn("Quick chat: could not parse local checked map", e);
-      return {};
-    }
-  }
 
-  function saveCheckedMap() {
-    try {
-      localStorage.setItem(CHECK_STORAGE_KEY, JSON.stringify(checkedMap));
-    } catch (e) {
-      console.warn("Quick chat: could not save local checked map", e);
-    }
-  }
-
-  let checkedMap = loadCheckedMap(); // { [id]: true/false }
-
-  // --- Sender preference (💚 / 💜) ----------------------------------------
   let sender = localStorage.getItem(SENDER_KEY);
   if (!sender) {
     if (myEmail === "gokumeng48@gmail.com")      sender = "sihaya";
@@ -118,7 +91,6 @@ window.initQuickChat = function () {
 
   applySenderUI();
 
-  // --- Load messages -------------------------------------------------------
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("quick_chat")
@@ -139,7 +111,7 @@ window.initQuickChat = function () {
     renderMessages();
   }
 
-  // --- Render messages -----------------------------------------------------
+
   function renderMessages() {
     messagesEl.innerHTML = "";
 
@@ -164,13 +136,7 @@ window.initQuickChat = function () {
         row.classList.add("theirs");
       }
 
-      const idKey = String(msg.id);
-
-      // effective checked state: local override > DB value
-      const effectiveChecked =
-        checkedMap.hasOwnProperty(idKey)
-          ? !!checkedMap[idKey]
-          : !!msg.is_checked;
+      const effectiveChecked = !!msg.is_checked;
 
       const cbWrap = document.createElement("div");
       cbWrap.className = "quick-hide-checkbox-wrapper";
@@ -209,7 +175,7 @@ window.initQuickChat = function () {
       bubble.appendChild(header);
       bubble.appendChild(body);
 
-      // make your own notes clickable in edit mode
+ 
       if (msg.user_id === currentUserId) {
         bubble.classList.add("can-edit");
         bubble.addEventListener("click", () => {
@@ -238,20 +204,25 @@ window.initQuickChat = function () {
     });
   }
 
-  // --- Check logic (local + Supabase) -------------------------------------
+
   async function handleCheckToggle(msg, checkbox) {
     const is_checked = !!checkbox.checked;
-    const idKey      = String(msg.id);
 
-    // update local map and save
-    checkedMap[idKey] = is_checked;
-    saveCheckedMap();
 
-    // update local copy then re-render
     msg.is_checked = is_checked;
-    renderMessages();
 
-    // also try to persist to Supabase (if RLS allows)
+
+    const row = messagesEl.querySelector(
+      `.quick-message-row[data-id="${msg.id}"]`
+    );
+    if (row) {
+      const bubble = row.querySelector(".quick-message-bubble");
+      if (bubble) {
+        bubble.classList.toggle("quick-message-checked", is_checked);
+      }
+    }
+
+ 
     const { error } = await supabaseClient
       .from("quick_chat")
       .update({ is_checked })
@@ -262,7 +233,6 @@ window.initQuickChat = function () {
     }
   }
 
-  // --- Editing helpers -----------------------------------------------------
   function startEditing(msg) {
     editingId = msg.id;
     inputEl.value = msg.text || "";
@@ -292,7 +262,7 @@ window.initQuickChat = function () {
     cancelEditing();
   });
 
-  // --- Form submit (send / edit) ------------------------------------------
+
   formEl.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = (inputEl.value || "").trim();
@@ -303,7 +273,7 @@ window.initQuickChat = function () {
 
     try {
       if (editingId) {
-        // edit existing note
+     
         const id = editingId;
         const { error } = await supabaseClient
           .from("quick_chat")
@@ -324,7 +294,7 @@ window.initQuickChat = function () {
           await loadMessages();
         }
       } else {
-        // create new note
+
         const payload = {
           room_key: ROOM_KEY,
           user_id: CURRENT_USER.id,
@@ -351,7 +321,7 @@ window.initQuickChat = function () {
     }
   });
 
-  // --- Master edit mode (wand button) -------------------------------------
+
   masterEditBtn.addEventListener("click", (e) => {
     e.preventDefault();
     editMode = !editMode;
@@ -364,7 +334,6 @@ window.initQuickChat = function () {
     renderMessages();
   });
 
-  // --- Live updates from Supabase (postgres changes) ----------------------
   supabaseClient
     .channel("quick-chat-feed")
     .on(
@@ -381,6 +350,6 @@ window.initQuickChat = function () {
     )
     .subscribe();
 
-  // initial load
+
   loadMessages();
 };
