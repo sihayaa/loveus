@@ -7,7 +7,11 @@
 
 body{
   font-family:'Segoe UI',sans-serif;
-  background:none;
+  background-image:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/ChatGPT%20Image%20May%205%2C%202025%2C%2005_04_14%20AM.png");
+  background-size:cover;
+  background-repeat:no-repeat;
+  background-position:center center;
+  background-attachment:fixed;
   color:#fff;
   margin:0;
   padding:40px;
@@ -17,19 +21,7 @@ body{
   z-index:0;
 }
 
-/* purple gradient background */
-body::before{
-  content:"";
-  position:fixed;
-  inset:0;
-  background:linear-gradient(
-      135deg,
-      #4a3470 0%,
-      #3b2a5b 40%,
-      #2a1c45 100%
-  );
-  z-index:-1;
-}
+/* (removed the old purple gradient background here) */
 
 h1{
   font-family:'Great Vibes',cursive;
@@ -423,8 +415,10 @@ button:hover{
   cursor:pointer;
   opacity:.9;
 }
-edit-btn:hover{transform:scale(1.05);opacity:1;}
-
+.edit-btn:hover{
+  transform:scale(1.05);
+  opacity:1;
+}
 
 #quick-chat-shell{
   width:100%;
