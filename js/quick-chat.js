@@ -8,28 +8,28 @@ window.initQuickChat = function () {
     return;
   }
 
-  const shell          = document.getElementById("quick-chat-shell");
+  const shell = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
 
   if (shell.dataset.quickChatInitialized === "1") {
-    console.warn("Quick chat: quick chat already initialized, skipping.");
+    console.warn("Quick chat: already initialized, skipping.");
     return;
   }
   shell.dataset.quickChatInitialized = "1";
 
-  const messagesEl     = document.getElementById("quick-messages");
-  const formEl         = document.getElementById("quick-message-form");
-  const inputEl        = document.getElementById("quick-message-input");
-  const btnGodbrand    = document.getElementById("quick-btn-godbrand");
-  const btnSihaya      = document.getElementById("quick-btn-sihaya");
-  const switchTrack    = document.getElementById("quick-sender-switch-track");
-  const switchThumb    = document.getElementById("quick-sender-switch-thumb");
-  const editIndicator  = document.getElementById("quick-editing-indicator");
-  const editPreview    = document.getElementById("quick-editing-preview");
-  const cancelEditBtn  = document.getElementById("quick-cancel-edit");
-  const sendBtn        = document.getElementById("quick-send-btn");
-  const masterEditBtn  = document.getElementById("quick-master-edit-btn");
+  const messagesEl    = document.getElementById("quick-messages");
+  const formEl        = document.getElementById("quick-message-form");
+  const inputEl       = document.getElementById("quick-message-input");
+  const btnGodbrand   = document.getElementById("quick-btn-godbrand");
+  const btnSihaya     = document.getElementById("quick-btn-sihaya");
+  const switchTrack   = document.getElementById("quick-sender-switch-track");
+  const switchThumb   = document.getElementById("quick-sender-switch-thumb");
+  const editIndicator = document.getElementById("quick-editing-indicator");
+  const editPreview   = document.getElementById("quick-editing-preview");
+  const cancelEditBtn = document.getElementById("quick-cancel-edit");
+  const sendBtn       = document.getElementById("quick-send-btn");
+  const masterEditBtn = document.getElementById("quick-master-edit-btn");
 
   if (
     !messagesEl || !formEl || !inputEl || !btnGodbrand || !btnSihaya ||
@@ -41,7 +41,7 @@ window.initQuickChat = function () {
   }
 
   let messages  = [];
-  let editingId = null;  
+  let editingId = null;
   let editMode  = false;
 
   const SENDER_KEY = "quickChatSender";
@@ -91,6 +91,8 @@ window.initQuickChat = function () {
 
   applySenderUI();
 
+
+
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("quick_chat")
@@ -110,7 +112,6 @@ window.initQuickChat = function () {
     messages = data || [];
     renderMessages();
   }
-
 
   function renderMessages() {
     messagesEl.innerHTML = "";
@@ -138,6 +139,7 @@ window.initQuickChat = function () {
 
       const effectiveChecked = !!msg.is_checked;
 
+
       const cbWrap = document.createElement("div");
       cbWrap.className = "quick-hide-checkbox-wrapper";
 
@@ -147,6 +149,7 @@ window.initQuickChat = function () {
       cb.addEventListener("change", () => handleCheckToggle(msg, cb));
       cbWrap.appendChild(cb);
 
+    
       const bubble = document.createElement("div");
       bubble.className = "quick-message-bubble";
       if (effectiveChecked) {
@@ -190,6 +193,7 @@ window.initQuickChat = function () {
       messagesEl.appendChild(row);
     });
 
+
     messagesEl.scrollTop = messagesEl.scrollHeight;
   }
 
@@ -205,33 +209,28 @@ window.initQuickChat = function () {
   }
 
 
+
   async function handleCheckToggle(msg, checkbox) {
-    const is_checked = !!checkbox.checked;
+    const newValue = !!checkbox.checked;
 
 
-    msg.is_checked = is_checked;
-
-
-    const row = messagesEl.querySelector(
-      `.quick-message-row[data-id="${msg.id}"]`
-    );
-    if (row) {
-      const bubble = row.querySelector(".quick-message-bubble");
-      if (bubble) {
-        bubble.classList.toggle("quick-message-checked", is_checked);
-      }
-    }
-
- 
     const { error } = await supabaseClient
       .from("quick_chat")
-      .update({ is_checked })
+      .update({ is_checked: newValue })
       .eq("id", msg.id);
 
     if (error) {
       console.warn("Quick chat check update error:", error.message);
+ 
+      checkbox.checked = !newValue;
+      return;
     }
+
+
+    await loadMessages();
   }
+
+
 
   function startEditing(msg) {
     editingId = msg.id;
@@ -273,7 +272,7 @@ window.initQuickChat = function () {
 
     try {
       if (editingId) {
-     
+    
         const id = editingId;
         const { error } = await supabaseClient
           .from("quick_chat")
@@ -294,7 +293,7 @@ window.initQuickChat = function () {
           await loadMessages();
         }
       } else {
-
+     
         const payload = {
           room_key: ROOM_KEY,
           user_id: CURRENT_USER.id,
@@ -303,11 +302,9 @@ window.initQuickChat = function () {
           is_checked: false,
         };
 
-        const { data, error } = await supabaseClient
+        const { error } = await supabaseClient
           .from("quick_chat")
-          .insert(payload)
-          .select("id")
-          .single();
+          .insert(payload);
 
         if (error) {
           console.warn("Quick chat insert error:", error.message);
@@ -331,11 +328,12 @@ window.initQuickChat = function () {
     if (!editMode && editingId !== null) {
       cancelEditing();
     }
+
     renderMessages();
   });
 
   supabaseClient
-    .channel("quick-chat-feed")
+    .channel("quick-chat-feed-" + ROOM_KEY)
     .on(
       "postgres_changes",
       {
@@ -350,6 +348,6 @@ window.initQuickChat = function () {
     )
     .subscribe();
 
-
+ 
   loadMessages();
 };
