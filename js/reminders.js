@@ -31,21 +31,25 @@ window.initReminders = function () {
     editorTitle.textContent = id ? 'Edit Reminder' : 'New Reminder';
     editorArea.value = prefill;
     editorBackdrop.classList.add('show');
-    editorBackdrop.setAttribute('aria-hidden','false');
+    editorBackdrop.setAttribute('aria-hidden', 'false');
     setTimeout(() => editorArea.focus(), 0);
   }
 
   function closeEditor() {
     editingId = null;
     editorBackdrop.classList.remove('show');
-    editorBackdrop.setAttribute('aria-hidden','true');
+    editorBackdrop.setAttribute('aria-hidden', 'true');
   }
 
   inputEl.addEventListener('click', () => openEditor(inputEl.value));
-  inputEl.addEventListener('keydown', (e) => { if (e.key === 'Enter') openEditor(inputEl.value); });
+  inputEl.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') openEditor(inputEl.value);
+  });
 
   editorCancel.addEventListener('click', closeEditor);
-  editorBackdrop.addEventListener('click', e => { if (e.target === editorBackdrop) closeEditor(); });
+  editorBackdrop.addEventListener('click', (e) => {
+    if (e.target === editorBackdrop) closeEditor();
+  });
 
   editorArea.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.shiftKey) return;
@@ -76,6 +80,7 @@ window.initReminders = function () {
 
   async function loadReminders() {
     if (!CURRENT_USER) return;
+
     const cols = HAS_SORT_COLUMN
       ? 'id, text, done, sort, created_at'
       : 'id, text, done, created_at';
@@ -91,21 +96,26 @@ window.initReminders = function () {
       return;
     }
 
-    let rows = (data || []).filter(r => SHOW_HISTORY ? !!r.done : !r.done);
+    let rows = (data || []).filter((r) =>
+      SHOW_HISTORY ? !!r.done : !r.done
+    );
 
-    const saved = JSON.parse(localStorage.getItem('reminderOrder:'+ROOM_KEY) || '[]');
-
+    // 🔒 No localStorage ordering. Only DB is the source of truth.
     if (!SHOW_HISTORY) {
       if (HAS_SORT_COLUMN) {
-        rows.sort((a,b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at > b.created_at ? 1 : -1));
-      } else if (saved.length) {
-        const idx = Object.fromEntries(saved.map((id,i)=>[id,i]));
-        rows.sort((a,b) => (idx[a.id] ?? 99999) - (idx[b.id] ?? 99999));
+        // shared sort from DB
+        rows.sort(
+          (a, b) =>
+            (a.sort ?? 0) - (b.sort ?? 0) ||
+            (a.created_at > b.created_at ? 1 : -1)
+        );
       } else {
-        rows.sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
+        // fallback: newest first, same for everyone
+        rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
       }
     } else {
-      rows.sort((a,b) => (a.created_at < b.created_at ? 1 : -1));
+      // history: newest completed first
+      rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
     }
 
     renderReminders(rows);
@@ -114,7 +124,9 @@ window.initReminders = function () {
   function renderReminders(rows) {
     listEl.innerHTML = '';
     if (!rows.length) {
-      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${SHOW_HISTORY ? 'No completed reminders yet.' : 'No reminders yet.'}</div>`;
+      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${
+        SHOW_HISTORY ? 'No completed reminders yet.' : 'No reminders yet.'
+      }</div>`;
       return;
     }
 
@@ -122,7 +134,8 @@ window.initReminders = function () {
       const item = document.createElement('div');
       item.className = 'reminder-item';
       item.dataset.id = r.id;
-      item.draggable = !SHOW_HISTORY;
+      // draggable only when not showing history AND using shared sort column
+      item.draggable = !SHOW_HISTORY && !!HAS_SORT_COLUMN;
 
       const cb = document.createElement('input');
       cb.type = 'checkbox';
@@ -134,7 +147,8 @@ window.initReminders = function () {
         cb.addEventListener('change', async () => {
           await toggleDone(r.id, cb.checked);
           if (cb.checked) {
-            item.style.transition = 'opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease';
+            item.style.transition =
+              'opacity .18s ease, height .18s ease, margin .18s ease, padding .18s ease';
             item.style.opacity = '0';
             item.style.margin = '0';
             item.style.paddingTop = '0';
@@ -152,7 +166,7 @@ window.initReminders = function () {
       const edit = document.createElement('button');
       edit.className = 'edit-btn';
       edit.title = 'Edit';
-      edit.setAttribute('aria-label','Edit reminder');
+      edit.setAttribute('aria-label', 'Edit reminder');
       edit.textContent = '✏️';
       edit.addEventListener('click', () => openEditor(r.text, r.id));
 
@@ -162,7 +176,7 @@ window.initReminders = function () {
       listEl.appendChild(item);
     });
 
-    if (!SHOW_HISTORY) wireDnD();
+    if (!SHOW_HISTORY && HAS_SORT_COLUMN) wireDnD();
   }
 
   async function addReminderText(text) {
@@ -175,14 +189,22 @@ window.initReminders = function () {
   }
 
   async function updateReminderText(id, text) {
-    const { error } = await supabaseClient.from('reminders').update({ text }).eq('id', id);
+    const { error } = await supabaseClient
+      .from('reminders')
+      .update({ text })
+      .eq('id', id);
     if (error) console.warn('Update text error:', error.message);
     await loadReminders();
   }
 
   async function toggleDone(id, done) {
-    const { error } = await supabaseClient.from('reminders').update({ done }).eq('id', id);
+    const { error } = await supabaseClient
+      .from('reminders')
+      .update({ done })
+      .eq('id', id);
     if (error) console.warn('Toggle error:', error.message);
+    // optional: if you want instant refresh from DB as well:
+    // await loadReminders();
   }
 
   async function addReminder() {
@@ -198,11 +220,14 @@ window.initReminders = function () {
   });
 
   function wireDnD() {
+    // if somehow called without sort column, just bail
+    if (!HAS_SORT_COLUMN) return;
+
     const items = Array.from(listEl.querySelectorAll('.reminder-item'));
     let dragEl = null;
 
-    items.forEach(it => {
-      it.addEventListener('dragstart', e => {
+    items.forEach((it) => {
+      it.addEventListener('dragstart', (e) => {
         dragEl = it;
         it.classList.add('dragging');
         e.dataTransfer.effectAllowed = 'move';
@@ -214,39 +239,49 @@ window.initReminders = function () {
         dragEl = null;
       });
 
-      it.addEventListener('dragover', e => {
+      it.addEventListener('dragover', (e) => {
         e.preventDefault();
         const after = getDragAfterElement(listEl, e.clientY);
+        if (!dragEl) return;
         if (after == null) listEl.appendChild(dragEl);
         else listEl.insertBefore(dragEl, after);
       });
     });
 
     listEl.addEventListener('drop', async () => {
-      const orderIds = Array.from(listEl.querySelectorAll('.reminder-item'))
-        .map(x => x.dataset.id);
-      localStorage.setItem('reminderOrder:'+ROOM_KEY, JSON.stringify(orderIds));
+      const orderIds = Array.from(listEl.querySelectorAll('.reminder-item')).map(
+        (x) => x.dataset.id
+      );
+
       if (HAS_SORT_COLUMN) {
         const base = Date.now();
         await Promise.all(
           orderIds.map((id, idx) =>
-            supabaseClient.from('reminders').update({ sort: base + idx }).eq('id', id)
+            supabaseClient
+              .from('reminders')
+              .update({ sort: base + idx })
+              .eq('id', id)
           )
         );
       }
     });
 
     function getDragAfterElement(container, y) {
-      const els = [...container.querySelectorAll('.reminder-item:not(.dragging)')];
-      return els.reduce((closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height/2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset, element: child };
-        } else {
-          return closest;
-        }
-      }, { offset: Number.NEGATIVE_INFINITY }).element;
+      const els = [
+        ...container.querySelectorAll('.reminder-item:not(.dragging)'),
+      ];
+      return els.reduce(
+        (closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset, element: child };
+          } else {
+            return closest;
+          }
+        },
+        { offset: Number.NEGATIVE_INFINITY }
+      ).element;
     }
   }
 
@@ -257,7 +292,12 @@ window.initReminders = function () {
     .channel('reminders-feed')
     .on(
       'postgres_changes',
-      { event: '*', schema: 'public', table: 'reminders', filter: `room_key=eq.${ROOM_KEY}` },
+      {
+        event: '*',
+        schema: 'public',
+        table: 'reminders',
+        filter: `room_key=eq.${ROOM_KEY}`,
+      },
       loadReminders
     )
     .subscribe();
