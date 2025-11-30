@@ -11,7 +11,7 @@ window.initQuickChat = function () {
   const shell = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
-
+  
   if (shell.dataset.quickChatInitialized === "1") {
     console.warn("Quick chat: already initialized, skipping.");
     return;
@@ -47,7 +47,7 @@ window.initQuickChat = function () {
   const SENDER_KEY = "quickChatSender";
   const myEmail    = (CURRENT_USER.email || "").toLowerCase();
 
-
+  
   let sender = localStorage.getItem(SENDER_KEY);
   if (!sender) {
     if (myEmail === "gokumeng48@gmail.com")      sender = "sihaya";
@@ -91,7 +91,9 @@ window.initQuickChat = function () {
 
   applySenderUI();
 
+  
 
+  
 
   async function loadMessages() {
     const { data, error } = await supabaseClient
@@ -137,24 +139,9 @@ window.initQuickChat = function () {
         row.classList.add("theirs");
       }
 
-      const effectiveChecked = !!msg.is_checked;
-
-
-      const cbWrap = document.createElement("div");
-      cbWrap.className = "quick-hide-checkbox-wrapper";
-
-      const cb = document.createElement("input");
-      cb.type = "checkbox";
-      cb.checked = effectiveChecked;
-      cb.addEventListener("change", () => handleCheckToggle(msg, cb));
-      cbWrap.appendChild(cb);
-
-    
+     
       const bubble = document.createElement("div");
       bubble.className = "quick-message-bubble";
-      if (effectiveChecked) {
-        bubble.classList.add("quick-message-checked");
-      }
 
       const header = document.createElement("div");
       header.className = "quick-message-header";
@@ -178,8 +165,22 @@ window.initQuickChat = function () {
       bubble.appendChild(header);
       bubble.appendChild(body);
 
- 
+     
       if (msg.user_id === currentUserId) {
+        const delBtn = document.createElement("button");
+        delBtn.className = "quick-message-delete";
+        delBtn.type = "button";
+        delBtn.textContent = "×";
+        delBtn.title = "Delete note";
+
+        delBtn.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          await deleteMessage(msg.id);
+        });
+
+        bubble.appendChild(delBtn);
+
+       
         bubble.classList.add("can-edit");
         bubble.addEventListener("click", () => {
           if (editMode) {
@@ -188,7 +189,6 @@ window.initQuickChat = function () {
         });
       }
 
-      row.appendChild(cbWrap);
       row.appendChild(bubble);
       messagesEl.appendChild(row);
     });
@@ -208,27 +208,26 @@ window.initQuickChat = function () {
     });
   }
 
+ 
+  
+  
 
-
-  async function handleCheckToggle(msg, checkbox) {
-    const newValue = !!checkbox.checked;
-
-
+  async function deleteMessage(id) {
     const { error } = await supabaseClient
       .from("quick_chat")
-      .update({ is_checked: newValue })
-      .eq("id", msg.id);
+      .delete()
+      .eq("id", id)
+      .eq("user_id", CURRENT_USER.id);
 
     if (error) {
-      console.warn("Quick chat check update error:", error.message);
- 
-      checkbox.checked = !newValue;
+      console.warn("Quick chat delete error:", error.message);
       return;
     }
 
-
     await loadMessages();
   }
+
+
 
 
 
@@ -262,6 +261,9 @@ window.initQuickChat = function () {
   });
 
 
+  
+ 
+
   formEl.addEventListener("submit", async (e) => {
     e.preventDefault();
     const text = (inputEl.value || "").trim();
@@ -272,7 +274,7 @@ window.initQuickChat = function () {
 
     try {
       if (editingId) {
-    
+       
         const id = editingId;
         const { error } = await supabaseClient
           .from("quick_chat")
@@ -293,7 +295,7 @@ window.initQuickChat = function () {
           await loadMessages();
         }
       } else {
-     
+      
         const payload = {
           room_key: ROOM_KEY,
           user_id: CURRENT_USER.id,
@@ -328,9 +330,13 @@ window.initQuickChat = function () {
     if (!editMode && editingId !== null) {
       cancelEditing();
     }
-
+ 
     renderMessages();
   });
+
+
+
+
 
   supabaseClient
     .channel("quick-chat-feed-" + ROOM_KEY)
@@ -348,6 +354,5 @@ window.initQuickChat = function () {
     )
     .subscribe();
 
- 
   loadMessages();
 };
