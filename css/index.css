@@ -21,7 +21,6 @@ body{
   z-index:0;
 }
 
-/* (removed the old purple gradient background here) */
 
 h1{
   font-family:'Great Vibes',cursive;
@@ -595,6 +594,30 @@ button:hover{
   font-size:12px;
   position:relative;
   box-shadow:0 4px 10px rgba(0,0,0,0.35);
+}
+
+.quick-message-delete{
+  position:absolute;
+  top:4px;
+  right:6px;
+  border:none;
+  background:transparent;
+  font-size:14px;
+  line-height:1;
+  cursor:pointer;
+  opacity:0;
+  padding:0;
+  color:#555; 
+  transition:opacity 0.15s ease, transform 0.15s ease;
+}
+
+.quick-message-bubble:hover .quick-message-delete{
+  opacity:1;
+}
+
+.quick-message-bubble:hover .quick-message-delete:hover{
+  transform:scale(1.12);
+  color:#000;
 }
 
 .sender-sihaya .quick-message-bubble{
