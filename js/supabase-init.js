@@ -1,42 +1,147 @@
-// js/supabase-init.js
+<script>
+  const sb = window.supabaseClient;
 
-const SUPABASE_URL = "https://tmjozxcjylcxgemffnoc.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRtam96eGNqeWxjeGdlbWZmbm9jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTIwNzQxMzIsImV4cCI6MjA2NzY1MDEzMn0.W3VWFN5tiPhkoVzW_iZsYIZAcWn01LL2YfdI8zBowVI";
+  async function uploadPhoto() {
+    const fileInput = document.getElementById('upload');
+    const file = fileInput.files[0];
+    const caption = document.getElementById('caption').value.trim();
+    if (!file) return;
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const filePath = `${Date.now()}_${file.name}`;
 
-window.supabaseClient = supabaseClient;
-window.ALLOW = ["gokumeng48@gmail.com", "micdmick@gmail.com"];
-window.ROOM_KEY = "couple";
-window.CURRENT_USER = null;
+    const { error: uploadError } = await sb.storage
+      .from('memories')
+      .upload(filePath, file);
 
-// for now, don’t use DB sort column (no 400 error)
-window.HAS_SORT_COLUMN = false;
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return;
+    }
 
-(async () => {
-  const { data: { user } = { user: null } } = await supabaseClient.auth.getUser();
+    const imageUrl = sb.storage
+      .from('memories')
+      .getPublicUrl(filePath).data.publicUrl;
 
-  if (!user) {
-    location.href = "login.html";
-    return;
+    await sb.from('memories').insert([
+      { image_url: imageUrl, caption, file_path: filePath }
+    ]);
+
+    fileInput.value = '';
+    document.getElementById('caption').value = '';
+    document.getElementById('preview-thumb').style.display = 'none';
+
+    loadGallery();
   }
 
-  const email = (user.email || "").toLowerCase();
-  if (!window.ALLOW.includes(email)) {
-    await supabaseClient.auth.signOut();
-    document.body.innerHTML = "<p style='font:16px system-ui;padding:24px'>Not authorized.</p>";
-    return;
+  async function loadGallery() {
+    const order = document.getElementById('orderSelect').value || 'asc';
+
+    const { data, error } = await sb
+      .from('memories')
+      .select('*')
+      .order('created_at', { ascending: order === 'asc' });
+
+    if (error) {
+      console.error('Load error:', error);
+      return;
+    }
+
+    const gallery = document.getElementById('gallery');
+    gallery.innerHTML = '';
+
+    data.forEach(item => {
+      const block = document.createElement('div');
+      block.className = 'photo-block';
+
+      const utcDate = new Date(item.created_at + 'Z');
+
+      const manilaTime = utcDate.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: 'Asia/Manila'
+      });
+
+      const vegasTime = utcDate.toLocaleString('en-US', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: 'America/Los_Angeles'
+      });
+
+      block.innerHTML = `
+        <span class="delete-btn" onclick="triggerDelete('${item.id}')">✖</span>
+        <span class="edit-btn" onclick="triggerEdit('${item.id}', \`${item.caption || ''}\`)">✎</span>
+        <img src="${item.image_url}" alt="Memory"
+             onclick="showLightbox('${item.image_url}', \`${item.caption || ''}\`)">
+        <div class="timestamp">
+          Manila: ${manilaTime}<br>
+          Vegas: ${vegasTime}
+        </div>
+        <p>${item.caption || ''}</p>
+      `;
+
+      gallery.appendChild(block);
+    });
   }
 
-  window.CURRENT_USER = user;
+  function openModal(title, message, showTextarea, callback) {
+    document.getElementById('modalTitle').textContent = title;
+    document.getElementById('modalText').textContent = message;
 
-  // if we ever decide to use a real DB sort column, we can add the check back here
+    const textarea = document.getElementById('modalTextarea');
+    textarea.style.display = showTextarea ? 'block' : 'none';
+    textarea.value = '';
 
-  if (typeof window.initReminders === "function") {
-    window.initReminders();
+    document.getElementById('modalOverlay').style.display = 'flex';
+
+    document.getElementById('modalYes').onclick = async () => {
+      await callback(textarea.value.trim());
+      document.getElementById('modalOverlay').style.display = 'none';
+    };
+
+    document.getElementById('modalNo').onclick = () => {
+      document.getElementById('modalOverlay').style.display = 'none';
+    };
   }
 
-  if (typeof window.initQuickChat === "function") {
-    window.initQuickChat();
+  function triggerDelete(id) {
+    openModal('Are you sure?', 'Delete this memory?', false, async () => {
+      await sb.from('memories').delete().eq('id', id);
+      loadGallery();
+    });
   }
-})();
+
+  function triggerEdit(id, oldCap) {
+    openModal('Edit Caption', '', true, async (newCaption) => {
+      await sb.from('memories').update({ caption: newCaption }).eq('id', id);
+      loadGallery();
+    });
+    document.getElementById('modalTextarea').value = oldCap;
+  }
+
+  function showLightbox(src, caption) {
+    const lightbox = document.getElementById('lightbox');
+    document.getElementById('lightbox-img').src = src;
+    document.getElementById('lightbox-caption').innerHTML = caption;
+    lightbox.style.display = 'flex';
+  }
+
+  document.getElementById('uploadBtn').addEventListener('click', uploadPhoto);
+
+  document.querySelector('input[type="file"]').addEventListener('change', e => {
+    const preview = document.getElementById('preview-thumb');
+    if (e.target.files && e.target.files[0]) {
+      preview.src = URL.createObjectURL(e.target.files[0]);
+      preview.style.display = 'inline-block';
+    }
+  });
+
+  document.getElementById('orderSelect').addEventListener('change', loadGallery);
+
+  loadGallery();
+</script>
