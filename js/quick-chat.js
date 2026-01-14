@@ -1,3 +1,4 @@
+// js/quick-chat.js
 window.initQuickChat = function () {
   const supabaseClient = window.supabaseClient;
   const ROOM_KEY = window.ROOM_KEY || "couple";
@@ -39,7 +40,7 @@ window.initQuickChat = function () {
   let editingId = null;
   let editMode  = false;
 
-  // sender is just local UI now (no auth)
+  // 🧠 POV sender (LOCAL ONLY)
   const SENDER_KEY = "quickChatSender";
   let sender = localStorage.getItem(SENDER_KEY) || "sihaya";
 
@@ -47,6 +48,7 @@ window.initQuickChat = function () {
     sender = newSender === "godbrand" ? "godbrand" : "sihaya";
     localStorage.setItem(SENDER_KEY, sender);
     applySenderUI();
+    renderMessages(); // re-align instantly
   }
 
   function applySenderUI() {
@@ -61,12 +63,18 @@ window.initQuickChat = function () {
     }
   }
 
-  btnSihaya.addEventListener("click", (e) => { e.preventDefault(); setSender("sihaya"); });
-  btnGodbrand.addEventListener("click", (e) => { e.preventDefault(); setSender("godbrand"); });
-  switchTrack.addEventListener("click", (e) => { e.preventDefault(); setSender(sender === "sihaya" ? "godbrand" : "sihaya"); });
+  btnSihaya.addEventListener("click", e => { e.preventDefault(); setSender("sihaya"); });
+  btnGodbrand.addEventListener("click", e => { e.preventDefault(); setSender("godbrand"); });
+  switchTrack.addEventListener("click", e => {
+    e.preventDefault();
+    setSender(sender === "sihaya" ? "godbrand" : "sihaya");
+  });
 
   applySenderUI();
 
+  // =========================
+  // LOAD + RENDER
+  // =========================
   async function loadMessages() {
     const { data, error } = await supabaseClient
       .from("quick_chat")
@@ -76,7 +84,8 @@ window.initQuickChat = function () {
 
     if (error) {
       console.warn("Quick chat load error:", error.message);
-      messagesEl.innerHTML = '<div class="quick-empty-state">couldn’t load notes right now 💧</div>';
+      messagesEl.innerHTML =
+        '<div class="quick-empty-state">couldn’t load notes right now 💧</div>';
       return;
     }
 
@@ -88,13 +97,26 @@ window.initQuickChat = function () {
     messagesEl.innerHTML = "";
 
     if (!messages.length) {
-      messagesEl.innerHTML = '<div class="quick-empty-state">no little notes yet — leave one for each other? 💫</div>';
+      messagesEl.innerHTML =
+        '<div class="quick-empty-state">no little notes yet — leave one for each other? 💫</div>';
       return;
     }
 
-    messages.forEach((msg) => {
+    messages.forEach(msg => {
       const row = document.createElement("div");
-      row.className = "quick-message-row sender-" + (msg.sender === "godbrand" ? "godbrand" : "sihaya");
+
+      // base sender class
+      row.className =
+        "quick-message-row sender-" +
+        (msg.sender === "godbrand" ? "godbrand" : "sihaya");
+
+      // ⭐ POV ALIGNMENT ⭐
+      if (msg.sender === sender) {
+        row.classList.add("mine");    // RIGHT
+      } else {
+        row.classList.add("theirs");  // LEFT
+      }
+
       row.dataset.id = msg.id;
 
       const bubble = document.createElement("div");
@@ -105,7 +127,8 @@ window.initQuickChat = function () {
 
       const senderSpan = document.createElement("span");
       senderSpan.className = "quick-message-sender";
-      senderSpan.textContent = msg.sender === "godbrand" ? "Godbrand 💜" : "Sihaya 💚";
+      senderSpan.textContent =
+        msg.sender === "godbrand" ? "Godbrand 💜" : "Sihaya 💚";
 
       const timeSpan = document.createElement("span");
       timeSpan.className = "quick-message-time";
@@ -121,13 +144,13 @@ window.initQuickChat = function () {
       bubble.appendChild(header);
       bubble.appendChild(body);
 
-      // delete/edit only in "edit mode" (no user restriction now)
+      // delete / edit (edit-mode only)
       const delBtn = document.createElement("button");
       delBtn.className = "quick-message-delete";
       delBtn.type = "button";
       delBtn.textContent = "×";
       delBtn.title = "Delete note";
-      delBtn.addEventListener("click", async (e) => {
+      delBtn.addEventListener("click", async e => {
         e.stopPropagation();
         await deleteMessage(msg.id);
       });
@@ -148,11 +171,23 @@ window.initQuickChat = function () {
   function formatTime(iso) {
     if (!iso) return "";
     const d = new Date(iso);
-    return d.toLocaleString(undefined, { hour: "2-digit", minute: "2-digit", month: "2-digit", day: "2-digit" });
+    return d.toLocaleString(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      month: "2-digit",
+      day: "2-digit",
+    });
   }
 
+  // =========================
+  // CRUD
+  // =========================
   async function deleteMessage(id) {
-    const { error } = await supabaseClient.from("quick_chat").delete().eq("id", id);
+    const { error } = await supabaseClient
+      .from("quick_chat")
+      .delete()
+      .eq("id", id);
+
     if (error) console.warn("Quick chat delete error:", error.message);
     await loadMessages();
   }
@@ -181,9 +216,12 @@ window.initQuickChat = function () {
     return text.length > max ? text.slice(0, max) + "…" : text;
   }
 
-  cancelEditBtn.addEventListener("click", (e) => { e.preventDefault(); cancelEditing(); });
+  cancelEditBtn.addEventListener("click", e => {
+    e.preventDefault();
+    cancelEditing();
+  });
 
-  formEl.addEventListener("submit", async (e) => {
+  formEl.addEventListener("submit", async e => {
     e.preventDefault();
     const text = (inputEl.value || "").trim();
     if (!text && !editingId) return;
@@ -197,8 +235,7 @@ window.initQuickChat = function () {
           .update({ text, updated_at: new Date().toISOString() })
           .eq("id", editingId);
 
-        if (error) console.warn("Quick chat edit error:", error.message);
-        else {
+        if (!error) {
           cancelEditing();
           editMode = false;
           shell.classList.remove("edit-mode");
@@ -208,13 +245,15 @@ window.initQuickChat = function () {
       } else {
         const payload = {
           room_key: ROOM_KEY,
-          sender: sender,
+          sender,
           text,
         };
 
-        const { error } = await supabaseClient.from("quick_chat").insert(payload);
-        if (error) console.warn("Quick chat insert error:", error.message);
-        else {
+        const { error } = await supabaseClient
+          .from("quick_chat")
+          .insert(payload);
+
+        if (!error) {
           inputEl.value = "";
           await loadMessages();
         }
@@ -224,7 +263,7 @@ window.initQuickChat = function () {
     }
   });
 
-  masterEditBtn.addEventListener("click", (e) => {
+  masterEditBtn.addEventListener("click", e => {
     e.preventDefault();
     editMode = !editMode;
     shell.classList.toggle("edit-mode", editMode);
@@ -238,7 +277,12 @@ window.initQuickChat = function () {
     .channel("quick-chat-feed-" + ROOM_KEY)
     .on(
       "postgres_changes",
-      { event: "*", schema: "public", table: "quick_chat", filter: "room_key=eq." + ROOM_KEY },
+      {
+        event: "*",
+        schema: "public",
+        table: "quick_chat",
+        filter: "room_key=eq." + ROOM_KEY,
+      },
       loadMessages
     )
     .subscribe();
