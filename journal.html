@@ -16,18 +16,18 @@
 }
 </style>
 
-<!-- (optional) keep your Google Fonts link for the other fonts, but Patrick Hand will still work even if blocked -->
+<!-- Keep this if you still want the other fonts available -->
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700&family=Noto+Serif+SC:wght@500;700&family=JetBrains+Mono:wght@400;600&family=Patrick+Hand&family=Dancing+Script:wght@600&family=Press+Start+2P&family=Lobster&display=swap" rel="stylesheet">
 
 <link rel="icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAucB9b0m1qYAAAAASUVORK5CYII=">
 
 <style>
 :root{
-  --pageW:760px; --pageH:1060px;              
+  --pageW:760px; --pageH:1060px;
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
   --accent:#7a5af8; --mint:#67e4ca;
 
-  /* ✅ DEFAULT FONT LIKE YOUR SCREENSHOT */
+  /* ✅ DEFAULT */
   --font:"Patrick Hand", cursive;
 
   --cover-img:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-front.png");
@@ -85,19 +85,18 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .scrap-img{display:block; width:100%; height:100%; object-fit:contain; user-select:none; pointer-events:none; border-radius:16px}
 .scrap-item[data-fit="cover"] .scrap-img{object-fit:cover}
 
-/* ✅ ensure text always inherits your default font unless overridden */
+/* ✅ force default family (unless element sets its own) */
 .scrap-text{
   width:100%;
   background:transparent;
   border:0;
   color:inherit;
-  font:inherit;                 /* keep your sizing style */
-  font-family:var(--font);      /* force default family */
+  font:inherit;
+  font-family:var(--font);
   white-space:pre-wrap;
   overflow:visible;
   min-height:1.2em
 }
-
 .scrap-text[contenteditable="true"]{outline:2px dashed #7a5af888; outline-offset:4px}
 
 .page .page-canvas, .scrap-item { pointer-events:none }
@@ -356,10 +355,13 @@ body.editing .addpage{display:block}
   }
   prevBtn.onclick=()=>go(-1); nextBtn.onclick=()=>go(1);
 
-  /* clicking a page selects it when editing */
+  /* clicking a page selects it when editing (bind once per page) */
   function bindCanvasClicks(){
     pages().forEach((p,i)=>{
-      p.querySelector('.page-canvas').addEventListener('mousedown',()=>{
+      const c = p.querySelector('.page-canvas');
+      if(!c || c.dataset.bound === "1") return;
+      c.dataset.bound = "1";
+      c.addEventListener('mousedown',()=>{
         if(!document.body.classList.contains('editing')) return;
         current=i; setClasses();
       });
@@ -463,8 +465,7 @@ body.editing .addpage{display:block}
   });
   function safeName(n){ return String(n||'photo').replace(/[\/\\?#%]+/g,'-').replace(/[^\w.\-]+/g,'_').slice(-80); }
   function extFromMime(m){ if(!m) return ''; const t=m.split('/')[1]||''; return t.replace(/\+/g,'-'); }
-  async function uploadToBucket(file,{page}={}){ const ext=file.name.includes('.')?file.name.split('.').pop():extFromMime(file.type)||'bin';
-    const fname=`${Date.now()}_${safeName(file.name)}`.replace(/\.+/g,'.'); const folder=`${STATE_ID}/page_${String(page||0).padStart(2,'0')}`; const path=`${folder}/${fname}`;
+  async function uploadToBucket(file,{page}={}){ const fname=`${Date.now()}_${safeName(file.name)}`.replace(/\.+/g,'.'); const folder=`${STATE_ID}/page_${String(page||0).padStart(2,'0')}`; const path=`${folder}/${fname}`;
     const put=await fetch(`${SUPABASE_URL}/storage/v1/object/${BUCKET}/${encodeURIComponent(path)}?upsert=true`,{ method:'PUT', headers:{ apikey:SUPABASE_ANON, Authorization:'Bearer '+SUPABASE_ANON, 'Content-Type': file.type || 'application/octet-stream' }, body:file });
     if(!put.ok){ const txt=await put.text().catch(()=>String(put.status)); throw new Error(`Storage PUT ${put.status}: ${txt}`); }
     return `${SUPABASE_URL}/storage/v1/object/public/${BUCKET}/${encodeURIComponent(path)}`;
@@ -523,7 +524,7 @@ body.editing .addpage{display:block}
       const dx=e.clientX-startX, dy=e.clientY-startY;
       const hasImg=!!el.querySelector('.scrap-img');
       const ratio=parseFloat(el.dataset.aspect || (el.offsetWidth/Math.max(1,el.offsetHeight)));
-      const lockOn = hasImg && el.dataset.lock==='1' && !e.shiftKey; /* hold Shift to free-scale */
+      const lockOn = hasImg && el.dataset.lock==='1' && !e.shiftKey; /* Shift = free-scale */
       let w=Math.max(60,startW+dx), h=Math.max(40,startH+dy);
       if(lockOn && ratio>0){
         if(Math.abs(dx)>=Math.abs(dy)) h=Math.max(40,Math.round(w/ratio));
@@ -572,18 +573,32 @@ body.editing .addpage{display:block}
   document.getElementById('deleteSelectedBtn').onclick=()=>{ if(selectedItem){ selectedItem.remove(); deselect(); } };
   clearPageBtn.onclick=()=>{ if(current===0){ alert('Cover is locked.'); return; } const c=pages()[current].querySelector('.page-canvas'); if(confirm('Clear Page?')) c.querySelectorAll('.scrap-item').forEach(el=>el.remove()); };
 
-  /* Add Page */
-  function addPage(){
-    const el=document.createElement('div');
+  /* ✅ ADD PAGE AFTER CURRENT (NO SQL / NO DB SHIFT) */
+  function addPageAfterCurrent(){
+    if(current===0){ alert('Cover is locked. Go to page 2+ to insert.'); return; }
+
+    const P = pages();
+    const insertIdx = current + 1;
+
+    const el = document.createElement('div');
     el.className='page';
     el.innerHTML='<div class="page-canvas"></div>';
-    deck.appendChild(el);
-    current=pages().length-1;
-    el.querySelector('.page-canvas').addEventListener('mousedown',()=>{ if(!document.body.classList.contains('editing')) return; current=pages().length-1; setClasses(); });
-    setClasses(); centerDeck();
+
+    const ref = P[insertIdx];
+    if(ref) deck.insertBefore(el, ref);
+    else deck.appendChild(el);
+
+    // re-number data-page for consistency (UI only)
+    pages().forEach((pg, i)=> pg.setAttribute("data-page", String(i+1)));
+
+    bindCanvasClicks();
+
+    current = insertIdx;
+    setClasses();
+    centerDeck();
   }
-  addPageBtn.addEventListener('click', addPage);
-  addPageToolbarBtn.addEventListener('click', addPage);
+  addPageBtn.addEventListener('click', addPageAfterCurrent);
+  addPageToolbarBtn.addEventListener('click', addPageAfterCurrent);
 
   /* Save helpers */
   function gatherPageItems(pgIdx){
@@ -650,18 +665,23 @@ body.editing .addpage{display:block}
 
     for(let i=2;i<=pages().length;i++){
       const c=pages()[i-1]?.querySelector('.page-canvas'); if(!c) continue;
-      (byPage.get(i).texts||[]).forEach(it=>{ const box=document.createElement('div'); box.className='scrap-item';
+
+      (byPage.get(i).texts||[]).forEach(it=>{
+        const box=document.createElement('div'); box.className='scrap-item';
         box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px';
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; }
         const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
         const inner=holder.firstElementChild||document.createElement('div');
-        inner.classList.add('scrap-text');                 /* ✅ ensure class */
+        inner.classList.add('scrap-text');
         inner.setAttribute('contenteditable','false');
-        if(!inner.style.fontFamily) inner.style.fontFamily = 'var(--font)'; /* ✅ default if missing */
-        box.appendChild(inner); box.insertAdjacentHTML('beforeend','<div class="mover"></div><div class="resizer"></div><div class="rotator"></div>');
+        if(!inner.style.fontFamily) inner.style.fontFamily = 'var(--font)';
+        box.appendChild(inner);
+        box.insertAdjacentHTML('beforeend','<div class="mover"></div><div class="resizer"></div><div class="rotator"></div>');
         c.appendChild(box); makeDraggable(box); enableAutoGrow(box, inner);
       });
-      (byPage.get(i).photos||[]).forEach(it=>{ const box=document.createElement('div'); box.className='scrap-item';
+
+      (byPage.get(i).photos||[]).forEach(it=>{
+        const box=document.createElement('div'); box.className='scrap-item';
         box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px';
         box.dataset.fit=it.fit||'contain'; box.dataset.lock=it.lock?'1':'0';
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; }
@@ -679,15 +699,15 @@ body.editing .addpage{display:block}
     if(!tEl) return;
     tEl.style.fontFamily = familyFromValue(fontKey);
   }
-  document.getElementById('applyFontSelected').addEventListener('click', ()=>{
+  applyFontSelected.addEventListener('click', ()=>{
     const t=selectedItem?.querySelector('.scrap-text'); if(!t) return;
     applyFontToElement(t, fontSelect.value);
   });
-  document.getElementById('applyFontPage').addEventListener('click', ()=>{
+  applyFontPage.addEventListener('click', ()=>{
     const c=pages()[current].querySelector('.page-canvas');
     c.querySelectorAll('.scrap-text').forEach(t=>applyFontToElement(t, fontSelect.value));
   });
-  document.getElementById('applyFontAll').addEventListener('click', ()=>{
+  applyFontAll.addEventListener('click', ()=>{
     document.querySelectorAll('.scrap-text').forEach(t=>applyFontToElement(t, fontSelect.value));
   });
 
