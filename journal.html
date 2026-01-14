@@ -13,7 +13,10 @@
 :root{
   --pageW:760px; --pageH:1060px;              
   --bg:#0b0f2f; --paper:#f7eddc; --ink:#0d2a6b;
-  --accent:#7a5af8; --mint:#67e4ca; --font:"Lobster",cursive;
+  --accent:#7a5af8; --mint:#67e4ca;
+
+  /* default journal font */
+  --font:"Lobster", cursive;
 
   --cover-img:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-front.png");
   --cover-y:50%;
@@ -69,7 +72,18 @@ html,body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--
 .resizer{position:absolute; right:-6px; bottom:-6px; width:16px; height:16px; border-radius:4px; background:var(--mint); border:2px solid #0b2c28; cursor:nwse-resize}
 .scrap-img{display:block; width:100%; height:100%; object-fit:contain; user-select:none; pointer-events:none; border-radius:16px}
 .scrap-item[data-fit="cover"] .scrap-img{object-fit:cover}
-.scrap-text{width:100%; background:transparent; border:0; color:inherit; font:inherit; white-space:pre-wrap; overflow:visible; min-height:1.2em}
+
+/* ✅ FONT FIX: make text always use journal font unless overridden inline */
+.scrap-text{
+  width:100%;
+  background:transparent;
+  border:0;
+  color:inherit;
+  font-family:var(--font);
+  white-space:pre-wrap;
+  overflow:visible;
+  min-height:1.2em;
+}
 
 .scrap-text[contenteditable="true"]{outline:2px dashed #7a5af888; outline-offset:4px}
 
@@ -112,23 +126,6 @@ body.editing .addpage{display:block}
 #textEditor button{border:0;padding:10px 14px;border-radius:10px;font-weight:800;cursor:pointer}
 #editorCancel{background:#ff9aa2;color:#4c0a17}
 #editorSave{background:var(--mint);color:#022d2c}
-
-/* ===== Background Music (bottom-left, your IDs) ===== */
-#audioCtrl{
-  position:fixed; left:16px; bottom:16px; z-index:12000;
-  display:flex; align-items:center; gap:10px;
-  background:#ffffffd8; color:#182042;
-  border:2px solid #e8dcc6; border-radius:12px; padding:8px 12px;
-  box-shadow:0 10px 22px rgba(0,0,0,.25);
-}
-#musicPlay{
-  border:0; width:36px; height:36px; border-radius:50%;
-  display:grid; place-items:center; font-weight:900; cursor:pointer;
-  background:#fff; color:#182042;
-}
-#musicVol{ width:140px; accent-color:var(--accent); }
-#yt-holder{ position:fixed; left:-9999px; width:1px; height:1px; opacity:0; pointer-events:none; }
-@media (max-width:480px){ #musicVol{ width:100px; } }
 </style>
 </head>
 <body>
@@ -245,13 +242,6 @@ body.editing .addpage{display:block}
   </div>
 </div>
 
-<!-- ===== Background Music Controls (your IDs) ===== -->
-<div id="audioCtrl" aria-label="Music controls">
-  <button id="musicPlay" title="Play/Pause">▶</button>
-  <input id="musicVol" type="range" min="0" max="100" value="60" title="Volume">
-</div>
-<div id="yt-holder" aria-hidden="true"></div>
-
 <script>
 (function(){
   /* Supabase (separate bucket/tables) */
@@ -272,14 +262,14 @@ body.editing .addpage{display:block}
     "press-start": '"Press Start 2P", monospace'
   };
 
-  function familyFromValue(v){ return FONT_MAP[v] || FONT_MAP["inter"]; }
+  function familyFromValue(v){ return FONT_MAP[v] || FONT_MAP["lobster"]; }
   function detectSelectValueFromComputed(ff){
     ff = (ff || "").toLowerCase();
     for (const [key, fam] of Object.entries(FONT_MAP)){
       const main = fam.split(",")[0].replace(/["']/g,'').trim().toLowerCase();
       if (ff.includes(main)) return key;
     }
-    return "inter";
+    return "lobster";
   }
 
   const stage=document.getElementById('stage'), deck=document.getElementById('deck');
@@ -385,7 +375,7 @@ body.editing .addpage{display:block}
   exitEdit.onclick=exitEditMode; hideBar.onclick=hideToolbar;
 
   /* TEXT EDITOR FLOW */
-  function openTextEditor({text='',size=28,color='#0d2a6b',fontKey='inter',targetBox=null}={}){
+  function openTextEditor({text='',size=28,color='#0d2a6b',fontKey='lobster',targetBox=null}={}){
     editor.targetBox=targetBox;
     editor.input.value=text;
     editor.size.value=size;
@@ -651,7 +641,10 @@ body.editing .addpage{display:block}
         box.style.left=it.x+'px'; box.style.top=it.y+'px'; box.style.width=it.w+'px'; box.style.height=it.h+'px';
         if(it.rot){ box.dataset.rot=it.rot; box.style.transform='rotate('+it.rot+'deg)'; }
         const holder=document.createElement('div'); holder.innerHTML=(it.html||'').trim();
-        const inner=holder.firstElementChild||document.createElement('div'); inner.setAttribute('contenteditable','false');
+        const inner=holder.firstElementChild||document.createElement('div');
+        inner.classList.add('scrap-text');             /* ✅ ensure class exists */
+        inner.setAttribute('contenteditable','false');
+        if(!inner.style.fontFamily) inner.style.fontFamily = 'var(--font)'; /* ✅ default if none saved */
         box.appendChild(inner); box.insertAdjacentHTML('beforeend','<div class="mover"></div><div class="resizer"></div><div class="rotator"></div>');
         c.appendChild(box); makeDraggable(box); enableAutoGrow(box, inner);
       });
@@ -689,110 +682,5 @@ body.editing .addpage{display:block}
   (async function(){ await cloudLoadAll(); setClasses(); fitStage(); })();
 })();
 </script>
-
-<!-- ===== YouTube Background Audio (auto-play + first-gesture unmute) ===== -->
-<script>
-(function(){
-  const VIDEO_ID = 'WR8C7qwmurA';
-  const PLAYLIST = 'RDWR8C7qwmurA';
-
-  const btn = document.getElementById('musicPlay');
-  const vol = document.getElementById('musicVol');
-
-  let player, ready = false;
-
-  function clamp(n,a,b){ n = isNaN(n)?a:n; return Math.max(a, Math.min(b, n)); }
-
-  // unmute+play on first gesture if browser blocked audible autoplay
-  function armUnlock(){
-    const unlock = () => {
-      if(ready){
-        const v = clamp(parseInt(vol.value||'60',10),0,100);
-        try{
-          player.setVolume(v);
-          if(v>0) player.unMute();
-          player.playVideo();
-        }catch(_){}
-      }
-      window.removeEventListener('pointerdown', unlock);
-      window.removeEventListener('keydown', unlock);
-      window.removeEventListener('touchstart', unlock);
-    };
-    window.addEventListener('pointerdown', unlock, {once:true});
-    window.addEventListener('keydown', unlock, {once:true});
-    window.addEventListener('touchstart', unlock, {once:true, passive:true});
-  }
-
-  // YT API callback must be global
-  window.onYouTubeIframeAPIReady = function(){
-    player = new YT.Player('yt-holder', {
-      width:'0', height:'0',
-      videoId: VIDEO_ID,
-      playerVars: {
-        autoplay: 1,          // request immediate autoplay
-        mute: 1,              // allowed to autoplay
-        controls: 0, rel: 0, playsinline: 1, modestbranding: 1,
-        loop: 1,
-        listType: 'playlist',
-        list: PLAYLIST,
-        origin: location.origin // fixes postMessage origin mismatch
-      },
-      events: {
-        onReady: (e) => {
-          ready = true;
-          // ensure autoplay permission attribute
-          try { e.target.getIframe().setAttribute('allow','autoplay; encrypted-media'); } catch(_){}
-
-          const saved = clamp(parseInt(localStorage.getItem('music_vol') || vol.value, 10), 0, 100);
-          vol.value = String(saved);
-
-          try{
-            e.target.setVolume(saved);
-            if(saved>0) e.target.unMute(); else e.target.mute();
-            e.target.playVideo();      // if blocked, it will play muted
-          }catch(_){}
-
-          armUnlock();
-        },
-        onStateChange: (ev) => {
-          const playing = ev.data === YT.PlayerState.PLAYING;
-          btn.textContent = playing ? '⏸' : '▶';
-          btn.setAttribute('aria-pressed', playing ? 'true' : 'false');
-        }
-      }
-    });
-  };
-
-  // UI
-  btn.addEventListener('click', () => {
-    if(!ready) return;
-    const st = player.getPlayerState();
-    if(st === YT.PlayerState.PLAYING) player.pauseVideo();
-    else {
-      const v = clamp(parseInt(vol.value||'60',10),0,100);
-      if(v>0) player.unMute(); else player.mute();
-      player.playVideo();
-    }
-  });
-
-  vol.addEventListener('input', () => {
-    const v = clamp(parseInt(vol.value||'0',10),0,100);
-    if(ready){
-      try{
-        player.setVolume(v);
-        if(v>0) player.unMute(); else player.mute();
-      }catch(_){}
-    }
-    localStorage.setItem('music_vol', String(v));
-  });
-
-  // try to resume when returning to the tab
-  document.addEventListener('visibilitychange', () => {
-    if(!ready) return;
-    if(!document.hidden){ try{ player.playVideo(); }catch(_){ } }
-  });
-})();
-</script>
-<script src="https://www.youtube.com/iframe_api" async></script>
 </body>
 </html>
