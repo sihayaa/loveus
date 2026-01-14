@@ -16,7 +16,7 @@
   --accent:#7a5af8; --mint:#67e4ca;
 
   /* default journal font */
-  --font:"Lobster", cursive;
+  --font:"Patrick Hand", cursive;
 
   --cover-img:url("https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/journal-front.png");
   --cover-y:50%;
@@ -262,14 +262,14 @@ body.editing .addpage{display:block}
     "press-start": '"Press Start 2P", monospace'
   };
 
-  function familyFromValue(v){ return FONT_MAP[v] || FONT_MAP["lobster"]; }
+  function familyFromValue(v){ return FONT_MAP[v] || FONT_MAP["patrick"]; }
   function detectSelectValueFromComputed(ff){
     ff = (ff || "").toLowerCase();
     for (const [key, fam] of Object.entries(FONT_MAP)){
       const main = fam.split(",")[0].replace(/["']/g,'').trim().toLowerCase();
       if (ff.includes(main)) return key;
     }
-    return "lobster";
+    return "patrick";
   }
 
   const stage=document.getElementById('stage'), deck=document.getElementById('deck');
@@ -375,7 +375,7 @@ body.editing .addpage{display:block}
   exitEdit.onclick=exitEditMode; hideBar.onclick=hideToolbar;
 
   /* TEXT EDITOR FLOW */
-  function openTextEditor({text='',size=28,color='#0d2a6b',fontKey='lobster',targetBox=null}={}){
+  function openTextEditor({text='',size=28,color='#0d2a6b',fontKey='patrick',targetBox=null}={})
     editor.targetBox=targetBox;
     editor.input.value=text;
     editor.size.value=size;
