@@ -1,3 +1,4 @@
+// ===== UPDATED js/quick-chat.js (LOGIN VERSION + SEND FIX + GUARDS) =====
 window.initQuickChat = function () {
   const supabaseClient = window.supabaseClient;
   const ROOM_KEY = window.ROOM_KEY || "couple";
@@ -10,7 +11,7 @@ window.initQuickChat = function () {
   const shell = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
-  
+  // ✅ guard (prevents double listeners + double channels)
   if (shell.dataset.quickChatInitialized === "1") return;
   shell.dataset.quickChatInitialized = "1";
 
@@ -39,10 +40,9 @@ window.initQuickChat = function () {
   let messages  = [];
   let editingId = null;
   let editMode  = false;
-  let isSending = false;
-  let isLoading = false;
+  let sending   = false;
 
-  // local POV sender
+  // sender remembered per browser
   const SENDER_KEY = "quickChatSender";
   let sender = localStorage.getItem(SENDER_KEY) || "sihaya";
 
@@ -75,28 +75,21 @@ window.initQuickChat = function () {
   applySenderUI();
 
   async function loadMessages() {
-    if (isLoading) return;
-    isLoading = true;
+    const { data, error } = await supabaseClient
+      .from("quick_chat")
+      .select("id, room_key, sender, text, created_at, updated_at")
+      .eq("room_key", ROOM_KEY)
+      .order("created_at", { ascending: true });
 
-    try {
-      const { data, error } = await supabaseClient
-        .from("quick_chat")
-        .select("id, room_key, sender, text, created_at, updated_at")
-        .eq("room_key", ROOM_KEY)
-        .order("created_at", { ascending: true });
-
-      if (error) {
-        console.warn("Quick chat load error:", error);
-        messagesEl.innerHTML =
-          '<div class="quick-empty-state">couldn’t load notes right now 💧</div>';
-        return;
-      }
-
-      messages = data || [];
-      renderMessages();
-    } finally {
-      isLoading = false;
+    if (error) {
+      console.warn("Quick chat load error:", error);
+      messagesEl.innerHTML =
+        '<div class="quick-empty-state">couldn’t load notes right now 💧</div>';
+      return;
     }
+
+    messages = data || [];
+    renderMessages();
   }
 
   function renderMessages() {
@@ -110,12 +103,11 @@ window.initQuickChat = function () {
 
     messages.forEach(msg => {
       const row = document.createElement("div");
-
       row.className =
         "quick-message-row sender-" +
         (msg.sender === "godbrand" ? "godbrand" : "sihaya");
 
-     
+      // POV alignment stays (like your current behavior)
       if (msg.sender === sender) row.classList.add("mine");
       else row.classList.add("theirs");
 
@@ -189,9 +181,7 @@ window.initQuickChat = function () {
     if (error) {
       console.warn("Quick chat delete error:", error);
       alert("Delete failed: " + error.message);
-      return;
     }
-
     await loadMessages();
   }
 
@@ -226,12 +216,12 @@ window.initQuickChat = function () {
 
   formEl.addEventListener("submit", async e => {
     e.preventDefault();
-    if (isSending) return;
+    if (sending) return;
 
     const text = (inputEl.value || "").trim();
     if (!text && !editingId) return;
 
-    isSending = true;
+    sending = true;
     sendBtn.disabled = true;
 
     try {
@@ -243,7 +233,7 @@ window.initQuickChat = function () {
 
         if (error) {
           console.warn("Quick chat update error:", error);
-          alert("Update failed: " + error.message);
+          alert("Edit failed: " + error.message);
           return;
         }
 
@@ -269,7 +259,7 @@ window.initQuickChat = function () {
         await loadMessages();
       }
     } finally {
-      isSending = false;
+      sending = false;
       sendBtn.disabled = false;
     }
   });
@@ -284,19 +274,12 @@ window.initQuickChat = function () {
     renderMessages();
   });
 
- 
-  const channelName = "quick-chat-feed-" + ROOM_KEY;
-
+  // realtime
   supabaseClient
-    .channel(channelName)
+    .channel("quick-chat-feed-" + ROOM_KEY)
     .on(
       "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "quick_chat",
-        filter: "room_key=eq." + ROOM_KEY,
-      },
+      { event: "*", schema: "public", table: "quick_chat", filter: "room_key=eq." + ROOM_KEY },
       () => loadMessages()
     )
     .subscribe();
