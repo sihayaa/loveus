@@ -1,4 +1,9 @@
+// js/reminders.js
 window.initReminders = function () {
+  // ✅ init guard (prevents double listeners + double realtime)
+  if (window.__REMINDERS_INITED) return;
+  window.__REMINDERS_INITED = true;
+
   const supabaseClient = window.supabaseClient;
   const ROOM_KEY = window.ROOM_KEY || "couple";
   const HAS_SORT_COLUMN = !!window.HAS_SORT_COLUMN;
@@ -27,6 +32,11 @@ window.initReminders = function () {
 
   let editingId = null;
   let SHOW_HISTORY = false;
+  let isSaving = false;
+  let isLoading = false;
+
+  // avoid duplicate realtime subscriptions if init somehow called again
+  const channelName = "reminders-feed-" + ROOM_KEY;
 
   if (historyBtn) {
     historyBtn.addEventListener("click", () => {
@@ -55,7 +65,7 @@ window.initReminders = function () {
     editorBackdrop.setAttribute("aria-hidden", "true");
   }
 
-  // your input is readonly by design, so click opens editor
+  // readonly input opens editor
   inputEl.addEventListener("click", () => openEditor(""));
   inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") openEditor("");
@@ -68,54 +78,77 @@ window.initReminders = function () {
     });
   }
 
+  // ✅ Save handler with lock
   if (editorSave) {
     editorSave.addEventListener("click", async () => {
-      const text = (editorArea?.value || "").trim();
-      if (!text) {
+      if (isSaving) return;
+      isSaving = true;
+
+      try {
+        const text = (editorArea?.value || "").trim();
+        if (!text) {
+          closeEditor();
+          return;
+        }
+
+        if (editingId) await updateReminderText(editingId, text);
+        else await addReminderText(text);
+
         closeEditor();
-        return;
+      } finally {
+        isSaving = false;
       }
-      if (editingId) await updateReminderText(editingId, text);
-      else await addReminderText(text);
-      closeEditor();
     });
   }
 
   async function loadReminders() {
-    const cols = HAS_SORT_COLUMN
-      ? "id, text, done, sort, created_at"
-      : "id, text, done, created_at";
+    if (isLoading) return;
+    isLoading = true;
 
-    const { data, error } = await supabaseClient
-      .from("reminders")
-      .select(cols)
-      .eq("room_key", ROOM_KEY);
+    try {
+      const cols = HAS_SORT_COLUMN
+        ? "id, text, done, sort, created_at"
+        : "id, text, done, created_at";
 
-    if (error) {
-      console.warn("Load reminders error:", error.message);
-      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">Couldn’t load reminders.</div>`;
-      return;
-    }
+      const { data, error } = await supabaseClient
+        .from("reminders")
+        .select(cols)
+        .eq("room_key", ROOM_KEY);
 
-    let rows = (data || []).filter((r) => (SHOW_HISTORY ? !!r.done : !r.done));
+      if (error) {
+        console.warn("Load reminders error:", error);
+        listEl.innerHTML = `<div style="font-size:12px;opacity:.8">Couldn’t load reminders.</div>`;
+        return;
+      }
 
-    if (!SHOW_HISTORY) {
-      if (HAS_SORT_COLUMN) {
-        rows.sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || (a.created_at > b.created_at ? 1 : -1));
+      let rows = (data || []).filter((r) => (SHOW_HISTORY ? !!r.done : !r.done));
+
+      if (!SHOW_HISTORY) {
+        if (HAS_SORT_COLUMN) {
+          rows.sort(
+            (a, b) =>
+              (a.sort ?? 0) - (b.sort ?? 0) ||
+              (a.created_at > b.created_at ? 1 : -1)
+          );
+        } else {
+          rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+        }
       } else {
         rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
       }
-    } else {
-      rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-    }
 
-    renderReminders(rows);
+      renderReminders(rows);
+    } finally {
+      isLoading = false;
+    }
   }
 
   function renderReminders(rows) {
     listEl.innerHTML = "";
     if (!rows.length) {
-      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${SHOW_HISTORY ? "No completed reminders yet." : "No reminders yet."}</div>`;
+      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${
+        SHOW_HISTORY ? "No completed reminders yet." : "No reminders yet."
+      }</div>`;
       return;
     }
 
@@ -146,6 +179,7 @@ window.initReminders = function () {
       const edit = document.createElement("button");
       edit.className = "edit-btn";
       edit.title = "Edit";
+      edit.type = "button";
       edit.textContent = "✏️";
       edit.addEventListener("click", () => openEditor(r.text, r.id));
 
@@ -161,33 +195,59 @@ window.initReminders = function () {
     if (HAS_SORT_COLUMN) payload.sort = Date.now();
 
     const { error } = await supabaseClient.from("reminders").insert(payload);
-    if (error) console.warn("Add reminder error:", error.message);
+
+    if (error) {
+      console.warn("Add reminder error:", error);
+      alert("Reminder failed: " + error.message);
+      return;
+    }
 
     await loadReminders();
   }
 
   async function updateReminderText(id, text) {
-    const { error } = await supabaseClient.from("reminders").update({ text }).eq("id", id);
-    if (error) console.warn("Update text error:", error.message);
+    const { error } = await supabaseClient
+      .from("reminders")
+      .update({ text })
+      .eq("id", id);
+
+    if (error) {
+      console.warn("Update text error:", error);
+      alert("Update failed: " + error.message);
+      return;
+    }
 
     await loadReminders();
   }
 
   async function toggleDone(id, done) {
-    const { error } = await supabaseClient.from("reminders").update({ done }).eq("id", id);
-    if (error) console.warn("Toggle error:", error.message);
+    const { error } = await supabaseClient
+      .from("reminders")
+      .update({ done })
+      .eq("id", id);
+
+    if (error) {
+      console.warn("Toggle error:", error);
+      alert("Toggle failed: " + error.message);
+    }
   }
 
   addBtn.addEventListener("click", () => openEditor(""));
 
-  loadReminders();
+  // realtime (single subscription)
+  try {
+    supabaseClient
+      .removeChannel?.(channelName); // harmless if unsupported
+  } catch (_) {}
 
   supabaseClient
-    .channel("reminders-feed-" + ROOM_KEY)
+    .channel(channelName)
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "reminders", filter: `room_key=eq.${ROOM_KEY}` },
-      loadReminders
+      () => loadReminders()
     )
     .subscribe();
+
+  loadReminders();
 };
