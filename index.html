@@ -6,10 +6,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="icon" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/ChatGPT%20Image%20Nov%2019%2C%202025%2C%2002_05_51%20PM.png" type="image/png" sizes="32x32">
+
+  <!-- Supabase (must be BEFORE supabase-init.js) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
+
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Patrick+Hand&display=swap" rel="stylesheet">
-
-
   <link rel="stylesheet" href="css/index.css">
 </head>
 
@@ -89,13 +90,10 @@
           <div id="quick-sender-switch-thumb"></div>
         </div>
         <button id="quick-btn-godbrand" type="button" class="quick-sender-btn">💜</button>
-        <button id="quick-master-edit-btn" type="button" class="quick-master-edit-btn" title="Edit your notes">
-          🪄
-        </button>
+        <button id="quick-master-edit-btn" type="button" class="quick-master-edit-btn" title="Edit your notes">🪄</button>
       </div>
     </div>
 
-    <!-- editing banner exists in HTML but fully hidden by CSS -->
     <div id="quick-editing-indicator">
       editing: <span id="quick-editing-preview"></span>
       <button id="quick-cancel-edit" type="button">cancel</button>
@@ -104,10 +102,7 @@
     <div id="quick-messages"></div>
 
     <form id="quick-message-form" autocomplete="off">
-      <input id="quick-message-input"
-             type="text"
-             placeholder="leave a small note…"
-             maxlength="200" />
+      <input id="quick-message-input" type="text" placeholder="leave a small note…" maxlength="200" />
       <button id="quick-send-btn" type="submit">Send</button>
     </form>
   </div>
@@ -126,14 +121,15 @@
       <h4 class="editor-title" id="editorTitle">New Reminder</h4>
       <textarea class="editor-area" id="editorArea" placeholder="Type your reminder here…"></textarea>
       <div class="editor-actions">
-        <button class="btn btn-secondary" id="editorCancel">Cancel</button>
-        <button class="btn btn-primary" id="editorSave">Save</button>
+        <button class="btn btn-secondary" id="editorCancel" type="button">Cancel</button>
+        <button class="btn btn-primary" id="editorSave" type="button">Save</button>
       </div>
     </div>
   </div>
 
   <canvas id="heart-canvas" style="position:fixed;inset:0;pointer-events:none"></canvas>
 
+  <!-- hearts -->
   <script>
     const canvas = document.getElementById('heart-canvas');
     const ctx = canvas.getContext('2d');
@@ -220,6 +216,7 @@
     </div>
   </div>
 
+  <!-- timezone/duration/countdown -->
   <script>
     const TZ = 'America/Los_Angeles';
     const MS_DAY = 24*60*60*1000;
@@ -331,6 +328,7 @@
     setInterval(applyMoodOverlay,60*60*1000);
   </script>
 
+  <!-- secret modal -->
   <script>
     (() => {
       const backdrop = document.getElementById('secretBackdrop');
@@ -372,6 +370,7 @@
     })();
   </script>
 
+  <!-- hold heart to open story -->
   <script>
     (() => {
       const heartEl = document.getElementById('title-heart');
@@ -406,6 +405,7 @@
     })();
   </script>
 
+  <!-- open journal -->
   <script>
     (() => {
       const start = document.getElementById('startHeart');
@@ -422,16 +422,20 @@
     })();
   </script>
 
-   <script src="js/quotes.js"></script>
+  <script src="js/quotes.js"></script>
 
+  <!-- Supabase + features -->
   <script src="js/supabase-init.js"></script>
-<script src="js/reminders.js"></script>
-<script src="js/quick-chat.js"></script>
-<script>
-  window.initReminders?.();
-  window.initQuickChat?.();
-</script>
+  <script src="js/reminders.js"></script>
+  <script src="js/quick-chat.js"></script>
 
-
+  <!-- INIT ONCE -->
+  <script>
+    if (!window.__HOME_INIT_DONE) {
+      window.__HOME_INIT_DONE = true;
+      window.initReminders?.();
+      window.initQuickChat?.();
+    }
+  </script>
 </body>
 </html>
