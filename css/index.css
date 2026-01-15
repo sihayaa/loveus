@@ -229,16 +229,16 @@ button:hover{
   font-weight:bold;
   color:#ffecf7;
   text-shadow:0 0 8px #a027a0;
-  filter:blur(6px);
   user-select:none;
 }
+
 #countdown-box .count-label{
   font-size:1em;
   color:#f8e5f8;
   text-shadow:0 0 6px #a027a0;
-  filter:blur(6px);
   user-select:none;
 }
+
 
 #mood-overlay{
   position:fixed;
