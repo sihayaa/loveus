@@ -1,17 +1,6 @@
-// js/reminders.js
 window.initReminders = function () {
-  // ✅ init guard (prevents duplicates)
-  if (window.__REMINDERS_INITED) return;
-  window.__REMINDERS_INITED = true;
-
-  const supabaseClient = window.supabaseClient;
+  const sb = window.supabaseClient;
   const ROOM_KEY = window.ROOM_KEY || "couple";
-  const HAS_SORT_COLUMN = !!window.HAS_SORT_COLUMN;
-
-  if (!supabaseClient) {
-    console.warn("Reminders: supabaseClient not ready yet");
-    return;
-  }
 
   const listEl = document.getElementById("reminder-list");
   const inputEl = document.getElementById("reminder-input");
@@ -22,157 +11,107 @@ window.initReminders = function () {
   const editorSave = document.getElementById("editorSave");
   const editorCancel = document.getElementById("editorCancel");
   const editorTitle = document.getElementById("editorTitle");
-
   const historyBtn = document.getElementById("history-toggle");
-
-  if (!listEl || !inputEl || !addBtn) {
-    console.warn("Reminders: missing core DOM elements");
-    return;
-  }
 
   let editingId = null;
   let SHOW_HISTORY = false;
-  let isSaving = false;
-  let isLoading = false;
+  let saving = false;
 
-  if (historyBtn) {
-    historyBtn.addEventListener("click", () => {
-      SHOW_HISTORY = !SHOW_HISTORY;
-      historyBtn.textContent = SHOW_HISTORY ? "Active" : "History";
-      loadReminders();
-    });
-  }
-
-  function openEditor(prefill = "", id = null) {
+  function openEditor(text = "", id = null) {
     editingId = id;
-    if (editorTitle) editorTitle.textContent = id ? "Edit Reminder" : "New Reminder";
-    if (editorArea) editorArea.value = prefill;
-
-    if (editorBackdrop) {
-      editorBackdrop.classList.add("show");
-      editorBackdrop.setAttribute("aria-hidden", "false");
-    }
-    setTimeout(() => editorArea && editorArea.focus(), 0);
+    editorTitle.textContent = id ? "Edit Reminder" : "New Reminder";
+    editorArea.value = text;
+    editorBackdrop.classList.add("show");
+    editorBackdrop.setAttribute("aria-hidden", "false");
+    setTimeout(() => editorArea.focus(), 0);
   }
 
   function closeEditor() {
     editingId = null;
-    if (!editorBackdrop) return;
     editorBackdrop.classList.remove("show");
     editorBackdrop.setAttribute("aria-hidden", "true");
   }
 
   inputEl.addEventListener("click", () => openEditor(""));
-  inputEl.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") openEditor("");
+  addBtn.addEventListener("click", () => openEditor(""));
+
+  editorCancel.addEventListener("click", closeEditor);
+  editorBackdrop.addEventListener("click", (e) => {
+    if (e.target === editorBackdrop) closeEditor();
   });
 
-  if (editorCancel) editorCancel.addEventListener("click", closeEditor);
-  if (editorBackdrop) {
-    editorBackdrop.addEventListener("click", (e) => {
-      if (e.target === editorBackdrop) closeEditor();
-    });
-  }
+  historyBtn.addEventListener("click", () => {
+    SHOW_HISTORY = !SHOW_HISTORY;
+    historyBtn.textContent = SHOW_HISTORY ? "Active" : "History";
+    loadReminders();
+  });
 
-  if (editorSave) {
-    editorSave.addEventListener("click", async () => {
-      if (isSaving) return;
-      isSaving = true;
-
-      try {
-        const text = (editorArea?.value || "").trim();
-        if (!text) {
-          closeEditor();
-          return;
-        }
-
-        if (editingId) await updateReminderText(editingId, text);
-        else await addReminderText(text);
-
-        closeEditor();
-      } finally {
-        isSaving = false;
-      }
-    });
-  }
-
-  async function loadReminders() {
-    if (isLoading) return;
-    isLoading = true;
+  editorSave.addEventListener("click", async () => {
+    if (saving) return;
+    saving = true;
 
     try {
-      const cols = HAS_SORT_COLUMN
-        ? "id, text, done, sort, created_at"
-        : "id, text, done, created_at";
+      const text = editorArea.value.trim();
+      if (!text) return closeEditor();
 
-      const { data, error } = await supabaseClient
-        .from("reminders")
-        .select(cols)
-        .eq("room_key", ROOM_KEY);
-
-      if (error) {
-        console.warn("Load reminders error:", error);
-        listEl.innerHTML = `<div style="font-size:12px;opacity:.8">Couldn’t load reminders.</div>`;
-        return;
-      }
-
-      let rows = (data || []).filter((r) => (SHOW_HISTORY ? !!r.done : !r.done));
-
-      if (!SHOW_HISTORY) {
-        if (HAS_SORT_COLUMN) {
-          rows.sort(
-            (a, b) =>
-              (a.sort ?? 0) - (b.sort ?? 0) ||
-              (a.created_at > b.created_at ? 1 : -1)
-          );
-        } else {
-          rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
-        }
+      if (editingId) {
+        const { error } = await sb.from("reminders").update({ text }).eq("id", editingId);
+        if (error) return alert(error.message);
       } else {
-        rows.sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
+        const { error } = await sb.from("reminders").insert({ room_key: ROOM_KEY, text, done: false });
+        if (error) return alert(error.message);
       }
 
-      renderReminders(rows);
+      closeEditor();
+      loadReminders();
     } finally {
-      isLoading = false;
+      saving = false;
     }
-  }
+  });
 
-  function renderReminders(rows) {
-    listEl.innerHTML = "";
-    if (!rows.length) {
-      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${
-        SHOW_HISTORY ? "No completed reminders yet." : "No reminders yet."
-      }</div>`;
+  async function loadReminders() {
+    const { data, error } = await sb
+      .from("reminders")
+      .select("id,text,done,created_at")
+      .eq("room_key", ROOM_KEY)
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.warn(error);
+      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">Couldn’t load reminders.</div>`;
       return;
     }
 
-    rows.forEach((r) => {
+    const rows = (data || []).filter(r => SHOW_HISTORY ? !!r.done : !r.done);
+
+    listEl.innerHTML = "";
+    if (!rows.length) {
+      listEl.innerHTML = `<div style="font-size:12px;opacity:.8">${SHOW_HISTORY ? "No completed reminders yet." : "No reminders yet."}</div>`;
+      return;
+    }
+
+    rows.forEach(r => {
       const item = document.createElement("div");
       item.className = "reminder-item";
-      item.dataset.id = r.id;
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
       cb.checked = !!r.done;
+      cb.disabled = SHOW_HISTORY;
 
-      if (SHOW_HISTORY) {
-        cb.disabled = true;
-      } else {
-        cb.addEventListener("change", async () => {
-          await toggleDone(r.id, cb.checked);
-          if (cb.checked) loadReminders();
-        });
-      }
+      cb.addEventListener("change", async () => {
+        const { error } = await sb.from("reminders").update({ done: cb.checked }).eq("id", r.id);
+        if (error) alert(error.message);
+        loadReminders();
+      });
 
       const span = document.createElement("span");
       span.className = "reminder-text";
       span.textContent = r.text;
-      if (SHOW_HISTORY || r.done) span.classList.add("done");
+      if (r.done) span.classList.add("done");
 
       const edit = document.createElement("button");
       edit.className = "edit-btn";
-      edit.title = "Edit";
       edit.type = "button";
       edit.textContent = "✏️";
       edit.addEventListener("click", () => openEditor(r.text, r.id));
@@ -184,59 +123,13 @@ window.initReminders = function () {
     });
   }
 
-  async function addReminderText(text) {
-    const payload = { room_key: ROOM_KEY, text, done: false };
-    if (HAS_SORT_COLUMN) payload.sort = Date.now();
-
-    const { error } = await supabaseClient.from("reminders").insert(payload);
-    if (error) {
-      console.warn("Add reminder error:", error);
-      alert("Reminder failed: " + error.message);
-      return;
-    }
-    await loadReminders();
-  }
-
-  async function updateReminderText(id, text) {
-    const { error } = await supabaseClient
-      .from("reminders")
-      .update({ text })
-      .eq("id", id);
-
-    if (error) {
-      console.warn("Update text error:", error);
-      alert("Update failed: " + error.message);
-      return;
-    }
-    await loadReminders();
-  }
-
-  async function toggleDone(id, done) {
-    const { error } = await supabaseClient
-      .from("reminders")
-      .update({ done })
-      .eq("id", id);
-
-    if (error) {
-      console.warn("Toggle error:", error);
-      alert("Toggle failed: " + error.message);
-    }
-  }
-
-  addBtn.addEventListener("click", () => openEditor(""));
-
-  // ✅ realtime subscription (no removeChannel)
-  const channel = supabaseClient
-    .channel("reminders-feed-" + ROOM_KEY)
-    .on(
-      "postgres_changes",
+  // realtime (simple)
+  sb.channel("reminders-" + ROOM_KEY)
+    .on("postgres_changes",
       { event: "*", schema: "public", table: "reminders", filter: `room_key=eq.${ROOM_KEY}` },
       () => loadReminders()
     )
     .subscribe();
-
-  // optional: keep reference (if you ever want to remove later properly)
-  window.__REMINDERS_CHANNEL = channel;
 
   loadReminders();
 };
