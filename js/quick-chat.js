@@ -1,4 +1,3 @@
-// js/quick-chat.js
 window.initQuickChat = function () {
   const supabaseClient = window.supabaseClient;
   const ROOM_KEY = window.ROOM_KEY || "couple";
@@ -11,6 +10,7 @@ window.initQuickChat = function () {
   const shell = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
+  
   if (shell.dataset.quickChatInitialized === "1") return;
   shell.dataset.quickChatInitialized = "1";
 
@@ -39,8 +39,10 @@ window.initQuickChat = function () {
   let messages  = [];
   let editingId = null;
   let editMode  = false;
+  let isSending = false;
+  let isLoading = false;
 
-  // 🧠 POV sender (LOCAL ONLY)
+  // local POV sender
   const SENDER_KEY = "quickChatSender";
   let sender = localStorage.getItem(SENDER_KEY) || "sihaya";
 
@@ -48,7 +50,7 @@ window.initQuickChat = function () {
     sender = newSender === "godbrand" ? "godbrand" : "sihaya";
     localStorage.setItem(SENDER_KEY, sender);
     applySenderUI();
-    renderMessages(); // re-align instantly
+    renderMessages();
   }
 
   function applySenderUI() {
@@ -72,25 +74,29 @@ window.initQuickChat = function () {
 
   applySenderUI();
 
-  // =========================
-  // LOAD + RENDER
-  // =========================
   async function loadMessages() {
-    const { data, error } = await supabaseClient
-      .from("quick_chat")
-      .select("id, room_key, sender, text, created_at, updated_at")
-      .eq("room_key", ROOM_KEY)
-      .order("created_at", { ascending: true });
+    if (isLoading) return;
+    isLoading = true;
 
-    if (error) {
-      console.warn("Quick chat load error:", error.message);
-      messagesEl.innerHTML =
-        '<div class="quick-empty-state">couldn’t load notes right now 💧</div>';
-      return;
+    try {
+      const { data, error } = await supabaseClient
+        .from("quick_chat")
+        .select("id, room_key, sender, text, created_at, updated_at")
+        .eq("room_key", ROOM_KEY)
+        .order("created_at", { ascending: true });
+
+      if (error) {
+        console.warn("Quick chat load error:", error);
+        messagesEl.innerHTML =
+          '<div class="quick-empty-state">couldn’t load notes right now 💧</div>';
+        return;
+      }
+
+      messages = data || [];
+      renderMessages();
+    } finally {
+      isLoading = false;
     }
-
-    messages = data || [];
-    renderMessages();
   }
 
   function renderMessages() {
@@ -105,17 +111,13 @@ window.initQuickChat = function () {
     messages.forEach(msg => {
       const row = document.createElement("div");
 
-      // base sender class
       row.className =
         "quick-message-row sender-" +
         (msg.sender === "godbrand" ? "godbrand" : "sihaya");
 
-      // ⭐ POV ALIGNMENT ⭐
-      if (msg.sender === sender) {
-        row.classList.add("mine");    // RIGHT
-      } else {
-        row.classList.add("theirs");  // LEFT
-      }
+     
+      if (msg.sender === sender) row.classList.add("mine");
+      else row.classList.add("theirs");
 
       row.dataset.id = msg.id;
 
@@ -144,7 +146,6 @@ window.initQuickChat = function () {
       bubble.appendChild(header);
       bubble.appendChild(body);
 
-      // delete / edit (edit-mode only)
       const delBtn = document.createElement("button");
       delBtn.className = "quick-message-delete";
       delBtn.type = "button";
@@ -179,16 +180,18 @@ window.initQuickChat = function () {
     });
   }
 
-  // =========================
-  // CRUD
-  // =========================
   async function deleteMessage(id) {
     const { error } = await supabaseClient
       .from("quick_chat")
       .delete()
       .eq("id", id);
 
-    if (error) console.warn("Quick chat delete error:", error.message);
+    if (error) {
+      console.warn("Quick chat delete error:", error);
+      alert("Delete failed: " + error.message);
+      return;
+    }
+
     await loadMessages();
   }
 
@@ -223,9 +226,12 @@ window.initQuickChat = function () {
 
   formEl.addEventListener("submit", async e => {
     e.preventDefault();
+    if (isSending) return;
+
     const text = (inputEl.value || "").trim();
     if (!text && !editingId) return;
 
+    isSending = true;
     sendBtn.disabled = true;
 
     try {
@@ -235,30 +241,35 @@ window.initQuickChat = function () {
           .update({ text, updated_at: new Date().toISOString() })
           .eq("id", editingId);
 
-        if (!error) {
-          cancelEditing();
-          editMode = false;
-          shell.classList.remove("edit-mode");
-          masterEditBtn.classList.remove("active");
-          await loadMessages();
+        if (error) {
+          console.warn("Quick chat update error:", error);
+          alert("Update failed: " + error.message);
+          return;
         }
+
+        cancelEditing();
+        editMode = false;
+        shell.classList.remove("edit-mode");
+        masterEditBtn.classList.remove("active");
+        await loadMessages();
       } else {
-        const payload = {
-          room_key: ROOM_KEY,
-          sender,
-          text,
-        };
+        const payload = { room_key: ROOM_KEY, sender, text };
 
         const { error } = await supabaseClient
           .from("quick_chat")
           .insert(payload);
 
-        if (!error) {
-          inputEl.value = "";
-          await loadMessages();
+        if (error) {
+          console.warn("Quick chat insert error:", error);
+          alert("Send failed: " + error.message);
+          return;
         }
+
+        inputEl.value = "";
+        await loadMessages();
       }
     } finally {
+      isSending = false;
       sendBtn.disabled = false;
     }
   });
@@ -273,8 +284,11 @@ window.initQuickChat = function () {
     renderMessages();
   });
 
+ 
+  const channelName = "quick-chat-feed-" + ROOM_KEY;
+
   supabaseClient
-    .channel("quick-chat-feed-" + ROOM_KEY)
+    .channel(channelName)
     .on(
       "postgres_changes",
       {
@@ -283,7 +297,7 @@ window.initQuickChat = function () {
         table: "quick_chat",
         filter: "room_key=eq." + ROOM_KEY,
       },
-      loadMessages
+      () => loadMessages()
     )
     .subscribe();
 
