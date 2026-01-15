@@ -1,6 +1,6 @@
 // js/reminders.js
 window.initReminders = function () {
-  // ✅ init guard (prevents double listeners + double realtime)
+  // ✅ init guard (prevents duplicates)
   if (window.__REMINDERS_INITED) return;
   window.__REMINDERS_INITED = true;
 
@@ -35,9 +35,6 @@ window.initReminders = function () {
   let isSaving = false;
   let isLoading = false;
 
-  // avoid duplicate realtime subscriptions if init somehow called again
-  const channelName = "reminders-feed-" + ROOM_KEY;
-
   if (historyBtn) {
     historyBtn.addEventListener("click", () => {
       SHOW_HISTORY = !SHOW_HISTORY;
@@ -65,7 +62,6 @@ window.initReminders = function () {
     editorBackdrop.setAttribute("aria-hidden", "true");
   }
 
-  // readonly input opens editor
   inputEl.addEventListener("click", () => openEditor(""));
   inputEl.addEventListener("keydown", (e) => {
     if (e.key === "Enter") openEditor("");
@@ -78,7 +74,6 @@ window.initReminders = function () {
     });
   }
 
-  // ✅ Save handler with lock
   if (editorSave) {
     editorSave.addEventListener("click", async () => {
       if (isSaving) return;
@@ -156,7 +151,6 @@ window.initReminders = function () {
       const item = document.createElement("div");
       item.className = "reminder-item";
       item.dataset.id = r.id;
-      item.draggable = !SHOW_HISTORY && HAS_SORT_COLUMN;
 
       const cb = document.createElement("input");
       cb.type = "checkbox";
@@ -195,13 +189,11 @@ window.initReminders = function () {
     if (HAS_SORT_COLUMN) payload.sort = Date.now();
 
     const { error } = await supabaseClient.from("reminders").insert(payload);
-
     if (error) {
       console.warn("Add reminder error:", error);
       alert("Reminder failed: " + error.message);
       return;
     }
-
     await loadReminders();
   }
 
@@ -216,7 +208,6 @@ window.initReminders = function () {
       alert("Update failed: " + error.message);
       return;
     }
-
     await loadReminders();
   }
 
@@ -234,20 +225,18 @@ window.initReminders = function () {
 
   addBtn.addEventListener("click", () => openEditor(""));
 
-  // realtime (single subscription)
-  try {
-    supabaseClient
-      .removeChannel?.(channelName); // harmless if unsupported
-  } catch (_) {}
-
-  supabaseClient
-    .channel(channelName)
+  // ✅ realtime subscription (no removeChannel)
+  const channel = supabaseClient
+    .channel("reminders-feed-" + ROOM_KEY)
     .on(
       "postgres_changes",
       { event: "*", schema: "public", table: "reminders", filter: `room_key=eq.${ROOM_KEY}` },
       () => loadReminders()
     )
     .subscribe();
+
+  // optional: keep reference (if you ever want to remove later properly)
+  window.__REMINDERS_CHANNEL = channel;
 
   loadReminders();
 };
