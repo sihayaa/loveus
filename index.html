@@ -1,3 +1,4 @@
+<!-- ===== UPDATED index.html (LOGIN VERSION) ===== -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,11 +7,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
   <link rel="icon" href="https://raw.githubusercontent.com/sihayaa/loveus/refs/heads/main/ChatGPT%20Image%20Nov%2019%2C%202025%2C%2002_05_51%20PM.png" type="image/png" sizes="32x32">
-
-  <!-- Supabase (must be BEFORE supabase-init.js) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.43.4/dist/umd/supabase.min.js"></script>
-
   <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Patrick+Hand&display=swap" rel="stylesheet">
+
   <link rel="stylesheet" href="css/index.css">
 </head>
 
@@ -424,18 +423,11 @@
 
   <script src="js/quotes.js"></script>
 
-  <!-- Supabase + features -->
+  <!-- ✅ IMPORTANT: keep login flow + single init place (supabase-init.js boot) -->
   <script src="js/supabase-init.js"></script>
   <script src="js/reminders.js"></script>
   <script src="js/quick-chat.js"></script>
 
-  <!-- INIT ONCE -->
-  <script>
-    if (!window.__HOME_INIT_DONE) {
-      window.__HOME_INIT_DONE = true;
-      window.initReminders?.();
-      window.initQuickChat?.();
-    }
-  </script>
+  <!-- ❌ DO NOT call initReminders/initQuickChat here (supabase-init.js already does it) -->
 </body>
 </html>
