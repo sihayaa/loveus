@@ -421,13 +421,22 @@
     })();
   </script>
 
-  <script src="js/quotes.js"></script>
+    <script src="js/quotes.js?v=20260116a"></script>
 
-  <!-- ✅ IMPORTANT: keep login flow + single init place (supabase-init.js boot) -->
-  <script src="js/supabase-init.js"></script>
-  <script src="js/reminders.js"></script>
-  <script src="js/quick-chat.js"></script>
+  <!-- IMPORTANT: cache-bust these 3 so the browser stops using old files -->
+  <script src="js/supabase-init.js?v=20260116a"></script>
+  <script src="js/reminders.js?v=20260116a"></script>
+  <script src="js/quick-chat.js?v=20260116a"></script>
 
-  <!-- ❌ DO NOT call initReminders/initQuickChat here (supabase-init.js already does it) -->
+  <script>
+    // run features only after supabase-init finishes auth
+    window.addEventListener("app:ready", () => {
+      window.initReminders?.();
+      window.initQuickChat?.();
+    });
+  </script>
+</body>
+</html>
+
 </body>
 </html>
