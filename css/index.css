@@ -160,6 +160,7 @@ button:hover{
   text-align:left;
   z-index:5;
 }
+
 .tz-header{
   font-family:'Great Vibes',cursive;
   font-size:1.6em;
@@ -168,50 +169,56 @@ button:hover{
   margin-bottom:10px;
 }
 
+/* changed layout so temp can sit under each city */
 .tz-line{
-  margin:6px 0;
-  font-size:1em;
-  color:#fff;
+  margin:10px 0;
   display:flex;
-  align-items:baseline;
-  column-gap:4px;
-  flex-wrap:nowrap;
+  flex-direction:column;
+  align-items:flex-start;
+  gap:2px;
+  color:#fff;
   text-shadow:
     -1px -1px 0 #000,
      1px -1px 0 #000,
     -1px  1px 0 #000,
      1px  1px 0 #000;
+}
+
+/* top row: city + time + date */
+.tz-top{
+  display:flex;
+  align-items:baseline;
+  gap:5px;
+  flex-wrap:nowrap;
 }
 
 .tz-label{
   font-weight:bold;
-  color:#fff;
-  text-shadow:
-    -1px -1px 0 #000,
-     1px -1px 0 #000,
-    -1px  1px 0 #000,
-     1px  1px 0 #000;
   flex-shrink:0;
-}
-
-.tz-time-main,
-.tz-time-sub{
-  white-space:nowrap;
 }
 
 .tz-time-main{
   font-size:1.05em;
   font-weight:700;
+  white-space:nowrap;
 }
+
 .tz-time-sub{
   font-size:0.78em;
   opacity:0.9;
-  margin-left:6px;
+  white-space:nowrap;
+}
+
+.tz-temp{
+  font-size:0.88em;
+  color:#ffd9f8;
+  padding-left:24px;
+  text-shadow:0 0 6px #a027a0;
 }
 
 #countdown-box{
   position:fixed;
-  top:180px;
+  top:225px;   /* was 180px */
   right:40px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
