@@ -211,8 +211,8 @@ button:hover{
 
 
 #countdown-box{
-  top:225px;
-}
+  position:fixed;
+  top:190px;   /* original spot */
   right:40px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
