@@ -210,35 +210,36 @@ button:hover{
 }
 
 
-#countdown-box{
-  position:fixed;
-  top:190px;   /* original spot */
-  right:40px;
-  background:rgba(255,255,255,0.25);
-  backdrop-filter:blur(10px);
-  border-radius:20px;
-  padding:18px;
-  width:220px;
-  color:#fff;
-  font-family:'Segoe UI',sans-serif;
-  box-shadow:0 0 12px #f5b3f5,4px 4px 12px rgba(0,0,0,0.3);
-  text-align:center;
-  z-index:5;
-}
-#countdown-box .count-number{
-  font-size:1.6em;
-  font-weight:bold;
-  color:#ffecf7;
-  text-shadow:0 0 8px #a027a0;
-  user-select:none;
+#countdown-box{ 
+position:fixed; 
+top:180px; 
+right:40px; 
+background:rgba(255,255,255,0.25); 
+backdrop-filter:blur(10px); 
+border-radius:20px; 
+padding:18px; 
+width:220px; 
+color:#fff; 
+font-family:'Segoe UI',sans-serif; 
+box-shadow:0 0 12px #f5b3f5,4px 4px 12px rgba(0,0,0,0.3); 
+text-align:center; 
+z-index:5; 
+} 
+
+#countdown-box .count-number{ 
+font-size:1.6em; 
+font-weight:bold; 
+color:#ffecf7; 
+text-shadow:0 0 8px #a027a0; 
+user-select:none; 
+} 
+#countdown-box .count-label{ 
+font-size:1em; 
+color:#f8e5f8; 
+text-shadow:0 0 6px #a027a0; 
+user-select:none; 
 }
 
-#countdown-box .count-label{
-  font-size:1em;
-  color:#f8e5f8;
-  text-shadow:0 0 6px #a027a0;
-  user-select:none;
-}
 
 
 #mood-overlay{
