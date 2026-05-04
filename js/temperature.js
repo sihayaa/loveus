@@ -1,18 +1,30 @@
-async function updateTemps(){
-  try{
-    const vegas = await fetch("https://wttr.in/Las+Vegas?format=j1").then(r=>r.json());
-    const manila = await fetch("https://wttr.in/Manila?format=j1").then(r=>r.json());
+async function updateTemps() {
+  try {
+    // Coordinates
+    const vegasCoords = "36.1699,-115.1398";
+    const manilaCoords = "14.5995,120.9842";
+
+    const vegasRes = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=36.1699&longitude=-115.1398&current=temperature_2m,apparent_temperature&timezone=America/Los_Angeles`
+    ).then(r => r.json());
+
+    const manilaRes = await fetch(
+      `https://api.open-meteo.com/v1/forecast?latitude=14.5995&longitude=120.9842&current=temperature_2m,apparent_temperature&timezone=Asia/Manila`
+    ).then(r => r.json());
+
+    const v = vegasRes.current;
+    const m = manilaRes.current;
 
     document.getElementById("vegas-temp").textContent =
-      `🌡️ ${vegas.current_condition[0].temp_C}°C/${vegas.current_condition[0].temp_F}°F`;
+      `🌡️ ${v.temperature_2m}°C (feels ${v.apparent_temperature}°C)`;
 
     document.getElementById("manila-temp").textContent =
-      `🌡️ ${manila.current_condition[0].temp_C}°C/${manila.current_condition[0].temp_F}°F`;
+      `🌡️ ${m.temperature_2m}°C (feels ${m.apparent_temperature}°C)`;
 
-  }catch(err){
-    console.log("temperature failed");
+  } catch (err) {
+    console.log("temperature failed", err);
   }
 }
 
 updateTemps();
-setInterval(updateTemps,1800000);
+setInterval(updateTemps, 1800000);
