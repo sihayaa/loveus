@@ -10,7 +10,6 @@ window.initQuickChat = function () {
   const shell = document.getElementById("quick-chat-shell");
   if (!shell) return;
 
-  // guard
   if (shell.dataset.quickChatInitialized === "1") return;
   shell.dataset.quickChatInitialized = "1";
 
@@ -29,7 +28,6 @@ window.initQuickChat = function () {
     return;
   }
 
-  // remember sender per device
   const SENDER_KEY = "quickChatSender";
   let sender = localStorage.getItem(SENDER_KEY) || "sihaya";
 
@@ -69,12 +67,46 @@ window.initQuickChat = function () {
 
     if (error) {
       console.warn("Quick chat load error:", error);
-      messagesEl.innerHTML = `<div class="quick-empty-state">couldn’t load notes 💧</div>`;
+      messagesEl.innerHTML = `<div class="quick-empty-state">couldn't load notes 💧</div>`;
       return;
     }
 
     messages = data || [];
     renderMessages();
+  }
+
+  function formatTime(isoString) {
+    const date = new Date(isoString);
+    const now = new Date();
+
+    const isToday =
+      date.getDate() === now.getDate() &&
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear();
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    const isYesterday =
+      date.getDate() === yesterday.getDate() &&
+      date.getMonth() === yesterday.getMonth() &&
+      date.getFullYear() === yesterday.getFullYear();
+
+    const timeStr = date.toLocaleString("en-PH", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
+
+    if (isToday) return `Today, ${timeStr}`;
+    if (isYesterday) return `Yesterday, ${timeStr}`;
+
+    return date.toLocaleString("en-PH", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true
+    });
   }
 
   function renderMessages() {
@@ -88,15 +120,18 @@ window.initQuickChat = function () {
     for (const msg of messages) {
       const row = document.createElement("div");
       row.className = "quick-message-row sender-" + (msg.sender === "godbrand" ? "godbrand" : "sihaya");
-
-      // POV alignment (same as your old behavior)
       row.classList.add(msg.sender === sender ? "mine" : "theirs");
 
       const bubble = document.createElement("div");
       bubble.className = "quick-message-bubble";
       bubble.textContent = msg.text || "";
 
+      const time = document.createElement("div");
+      time.className = "quick-message-time";
+      time.textContent = formatTime(msg.created_at);
+
       row.appendChild(bubble);
+      row.appendChild(time);
       messagesEl.appendChild(row);
     }
 
@@ -126,7 +161,6 @@ window.initQuickChat = function () {
     loadMessages();
   });
 
-  // realtime refresh
   supabaseClient
     .channel("quick-chat-feed-" + ROOM_KEY)
     .on(
