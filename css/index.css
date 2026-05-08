@@ -652,8 +652,13 @@ user-select:none;
 .quick-message-time {
   font-size: 10px;      
   opacity: 0.75;       
-  color: #555;         
+  color: #555;
+  margin-top: 2px;        /* add this */
+  padding: 0 6px;         /* add this */
 }
+
+.mine .quick-message-time  { text-align: right; }   /* add this */
+.theirs .quick-message-time { text-align: left; }   /* add this */
 
 .quick-message-body {
   font-size: 15px;     
