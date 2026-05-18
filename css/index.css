@@ -163,7 +163,7 @@ button:hover{
 
 #countdown-box{
   position:fixed;
-  top:220px;
+  top:260px;
   right:40px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
@@ -193,7 +193,7 @@ button:hover{
 
 #reminder-box{
   position:fixed;
-  top:360px;
+  top:400px;
   right:40px;
   width:280px;
   max-height:500px;
