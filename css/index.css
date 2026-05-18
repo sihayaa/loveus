@@ -21,7 +21,6 @@ body{
   z-index:0;
 }
 
-
 h1{
   font-family:'Great Vibes',cursive;
   font-size:3.4em;
@@ -208,11 +207,30 @@ button:hover{
   text-shadow:0 0 6px #a027a0;
 }
 
+/* reminder sits at bottom-right, countdown floats 100px above it */
+#reminder-box{
+  position:fixed;
+  right:40px;
+  bottom:16px;
+  width:320px;
+  padding:14px;
+  background:rgba(0,0,0,0.55);
+  backdrop-filter:blur(10px);
+  border-radius:16px;
+  box-shadow:0 0 12px #7e5bd2,4px 4px 12px rgba(0,0,0,0.35);
+  border:1px solid rgba(255,255,255,0.25);
+  color:#fff;
+  z-index:5;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
+}
 
 #countdown-box{
   position:fixed;
   right:40px;
-  bottom:420px;
+  /* reminder ~340px tall + 16px bottom + 100px gap = 456px */
+  bottom:456px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
   border-radius:20px;
@@ -238,8 +256,6 @@ button:hover{
   text-shadow:0 0 6px #a027a0;
   user-select:none;
 }
-
-
 
 #mood-overlay{
   position:fixed;
@@ -278,23 +294,6 @@ button:hover{
 .quote-box.show{opacity:1;transform:translateY(0);}
 .quote-box.fade-out{opacity:0;transform:translateY(4px);}
 
-#reminder-box{
-  position:fixed;
-  right:40px;
-  bottom:120px;
-  width:320px;
-  padding:14px;
-  background:rgba(0,0,0,0.55);
-  backdrop-filter:blur(10px);
-  border-radius:16px;
-  box-shadow:0 0 12px #7e5bd2,4px 4px 12px rgba(0,0,0,0.35);
-  border:1px solid rgba(255,255,255,0.25);
-  color:#fff;
-  z-index:5;
-  text-align:left;
-  display:flex;
-  flex-direction:column;
-}
 #reminder-box h3{
   margin:0 0 10px 0;
   font-family:'Patrick Hand',cursive;
@@ -493,7 +492,6 @@ button:hover{
   transition:transform 0.18s ease;
 }
 
-
 .quick-master-edit-btn{
   border:none;
   background:rgba(255,255,255,0.10);
@@ -512,13 +510,11 @@ button:hover{
   box-shadow:0 0 8px rgba(255,255,255,0.4);
 }
 
-
 #quick-editing-indicator,
 #quick-editing-preview,
 #quick-cancel-edit{
   display:none !important;
 }
-
 
 #quick-chat-shell.edit-mode .quick-message-bubble.can-edit{
   cursor:pointer;
@@ -530,9 +526,7 @@ button:hover{
   transform:translateY(-1px);
 }
 
-
 .quick-edit-icon{display:none !important;}
-
 
 #quick-messages{
   max-height:180px;
