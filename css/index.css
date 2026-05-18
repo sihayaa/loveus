@@ -914,3 +914,34 @@ user-select:none;
   #duration-label,#duration-value{font-size:1.35em;}
   button{padding:9px 14px;font-size:.95em;}
 }
+
+ body > *,
+  #timezone-box,
+  #countdown-box,
+  #reminder-box,
+  #quick-chat-shell {
+    margin-top: 0 !important;
+    margin-bottom: 100px !important;
+  }
+
+  #reminder-box {
+    max-height: none;
+  }
+  #reminder-list {
+    max-height: 28vh;
+  }
+
+
+  #reminder-box {
+    padding: 10px 12px;
+  }
+
+ 
+  .reminder-text {
+    font-size: 15px;
+  }
+  #reminder-input {
+    font-size: 13px;
+    padding: 8px 10px;
+  }
+}
