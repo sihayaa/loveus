@@ -229,8 +229,7 @@ button:hover{
 #countdown-box{
   position:fixed;
   right:40px;
-  /* reminder ~340px tall + 16px bottom + 100px gap = 456px */
-  bottom:456px;
+  bottom: 250px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
   border-radius:20px;
