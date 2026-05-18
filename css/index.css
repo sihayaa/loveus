@@ -353,7 +353,7 @@ button:hover{
   flex:1;
   min-height:0;
   overflow-y:auto;
-  max-height:120px;
+  max-height:350px;
   padding-right:0;
   -ms-overflow-style:none;
   scrollbar-width:none;
@@ -850,8 +850,6 @@ button:hover{
   #duration-label,#duration-value{font-size:1.5em;}
 
   #timezone-box,#countdown-box,#reminder-box{
-  max-height:280px;
-  overflow:hidden;
     position:static;
     width:100%;
     max-width:540px;
