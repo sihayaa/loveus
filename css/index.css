@@ -144,7 +144,6 @@ button:hover{
   pointer-events:none;
 }
 
-/* ── RIGHT COLUMN: timezone → countdown → reminder, all top-anchored ── */
 #timezone-box{
   position:fixed;
   top:20px;
@@ -163,7 +162,7 @@ button:hover{
 
 #countdown-box{
   position:fixed;
-  top:260px;
+  top:280px;
   right:40px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
