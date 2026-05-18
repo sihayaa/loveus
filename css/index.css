@@ -144,6 +144,7 @@ button:hover{
   pointer-events:none;
 }
 
+/* ── RIGHT COLUMN: timezone → countdown → reminder, all top-anchored ── */
 #timezone-box{
   position:fixed;
   top:20px;
@@ -162,7 +163,7 @@ button:hover{
 
 #countdown-box{
   position:fixed;
-  top:280px;
+  top:260px;
   right:40px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
@@ -842,7 +843,7 @@ button:hover{
   #timezone-box,#countdown-box,#reminder-box{right:20px;}
 }
 
-@media (max-width:768px){
+@media (max-width:600px){
   body{padding:16px;}
   h1{font-size:2.2em;margin-bottom:12px;}
   #duration-block{padding:10px 14px;}
