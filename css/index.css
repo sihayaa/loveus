@@ -144,9 +144,10 @@ button:hover{
   pointer-events:none;
 }
 
+/* ── RIGHT COLUMN: timezone → countdown → reminder, all top-anchored ── */
 #timezone-box{
   position:fixed;
-  top:40px;
+  top:20px;
   right:40px;
   background:rgba(0,0,0,0.6);
   backdrop-filter:blur(10px);
@@ -158,6 +159,54 @@ button:hover{
   box-shadow:0 0 12px #d2b4de,4px 4px 12px rgba(0,0,0,0.3);
   text-align:left;
   z-index:5;
+}
+
+#countdown-box{
+  position:fixed;
+  top:220px;
+  right:40px;
+  background:rgba(255,255,255,0.25);
+  backdrop-filter:blur(10px);
+  border-radius:20px;
+  padding:18px;
+  width:280px;
+  color:#fff;
+  font-family:'Segoe UI',sans-serif;
+  box-shadow:0 0 12px #f5b3f5,4px 4px 12px rgba(0,0,0,0.3);
+  text-align:center;
+  z-index:5;
+}
+
+#countdown-box .count-number{
+  font-size:1.6em;
+  font-weight:bold;
+  color:#ffecf7;
+  text-shadow:0 0 8px #a027a0;
+  user-select:none;
+}
+#countdown-box .count-label{
+  font-size:1em;
+  color:#f8e5f8;
+  text-shadow:0 0 6px #a027a0;
+  user-select:none;
+}
+
+#reminder-box{
+  position:fixed;
+  top:360px;
+  right:40px;
+  width:280px;
+  padding:14px;
+  background:rgba(0,0,0,0.55);
+  backdrop-filter:blur(10px);
+  border-radius:16px;
+  box-shadow:0 0 12px #7e5bd2,4px 4px 12px rgba(0,0,0,0.35);
+  border:1px solid rgba(255,255,255,0.25);
+  color:#fff;
+  z-index:5;
+  text-align:left;
+  display:flex;
+  flex-direction:column;
 }
 
 .tz-header{
@@ -205,55 +254,6 @@ button:hover{
   font-size:0.88em;
   color:#ffd9f8;
   text-shadow:0 0 6px #a027a0;
-}
-
-/* reminder sits at bottom-right, countdown floats 100px above it */
-#reminder-box{
-  position:fixed;
-  right:40px;
-  bottom:16px;
-  width:320px;
-  padding:14px;
-  background:rgba(0,0,0,0.55);
-  backdrop-filter:blur(10px);
-  border-radius:16px;
-  box-shadow:0 0 12px #7e5bd2,4px 4px 12px rgba(0,0,0,0.35);
-  border:1px solid rgba(255,255,255,0.25);
-  color:#fff;
-  z-index:5;
-  text-align:left;
-  display:flex;
-  flex-direction:column;
-}
-
-#countdown-box{
-  position:fixed;
-  right:40px;
-  bottom:320px;
-  background:rgba(255,255,255,0.25);
-  backdrop-filter:blur(10px);
-  border-radius:20px;
-  padding:18px;
-  width:220px;
-  color:#fff;
-  font-family:'Segoe UI',sans-serif;
-  box-shadow:0 0 12px #f5b3f5,4px 4px 12px rgba(0,0,0,0.3);
-  text-align:center;
-  z-index:5;
-}
-
-#countdown-box .count-number{
-  font-size:1.6em;
-  font-weight:bold;
-  color:#ffecf7;
-  text-shadow:0 0 8px #a027a0;
-  user-select:none;
-}
-#countdown-box .count-label{
-  font-size:1em;
-  color:#f8e5f8;
-  text-shadow:0 0 6px #a027a0;
-  user-select:none;
 }
 
 #mood-overlay{
