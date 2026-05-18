@@ -229,7 +229,7 @@ button:hover{
 #countdown-box{
   position:fixed;
   right:40px;
-  bottom: 250px;
+  bottom:320px;
   background:rgba(255,255,255,0.25);
   backdrop-filter:blur(10px);
   border-radius:20px;
@@ -351,6 +351,7 @@ button:hover{
   flex:1;
   min-height:0;
   overflow-y:auto;
+  max-height:150px;
   padding-right:0;
   -ms-overflow-style:none;
   scrollbar-width:none;
@@ -850,7 +851,7 @@ button:hover{
     position:static;
     width:100%;
     max-width:540px;
-    margin:10px auto;
+    margin:100px auto;
   }
   #reminder-list{max-height:40vh;overflow-y:auto;}
 
