@@ -212,7 +212,6 @@ button:hover{
 
 #countdown-box{
   position:fixed;
-  top:220px; /* THIS is the only real fix */
   right:40px;
 background:rgba(255,255,255,0.25); 
 backdrop-filter:blur(10px); 
@@ -281,7 +280,6 @@ user-select:none;
 
 #reminder-box{
   position:fixed;
-  top:330px;
   right:40px;
   bottom:16px;
   width:320px;
