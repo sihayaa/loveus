@@ -196,6 +196,8 @@ button:hover{
   top:360px;
   right:40px;
   width:280px;
+  max-height:280px;
+  overflow:hidden;
   padding:14px;
   background:rgba(0,0,0,0.55);
   backdrop-filter:blur(10px);
@@ -848,6 +850,8 @@ button:hover{
   #duration-label,#duration-value{font-size:1.5em;}
 
   #timezone-box,#countdown-box,#reminder-box{
+  max-height:280px;
+  overflow:hidden;
     position:static;
     width:100%;
     max-width:540px;
