@@ -196,7 +196,7 @@ button:hover{
   top:360px;
   right:40px;
   width:280px;
-  max-height:280px;
+  max-height:220px;
   overflow:hidden;
   padding:14px;
   background:rgba(0,0,0,0.55);
@@ -353,7 +353,7 @@ button:hover{
   flex:1;
   min-height:0;
   overflow-y:auto;
-  max-height:150px;
+  max-height:120px;
   padding-right:0;
   -ms-overflow-style:none;
   scrollbar-width:none;
